@@ -28,6 +28,10 @@ public class MeslekmenuConfig : BasePluginConfig
   [JsonPropertyName("rambo_helmet")] public bool RamboHelmet { get; set; } = true;
   [JsonPropertyName("rambo_fix")] public bool RamboFix { get; set; } = true;
 
+  [JsonPropertyName("zeus_enabled")] public bool ZeusEnabled { get; set; } = true;
+  [JsonPropertyName("zeus_recharge_taser")] public int ZeusRechargeTaser { get; set; } = 30;
+  [JsonPropertyName("zeus_drop_taser")] public bool ZeusDropTaser { get; set; } = true;
+
   [JsonPropertyName("chat_prefix")]
   public string ChatPrefix { get; set; } = "[ByDexter]";
 }
@@ -42,16 +46,18 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
 
   private Dictionary<uint, bool> meslekAktif = new();
 
-  private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
-  {
-    meslekAktif.Clear();
-    return HookResult.Continue;
-  }
-
   public void OnConfigParsed(MeslekmenuConfig config)
   {
     Config = config;
+  }
 
+  public override void Load(bool hotReload)
+  {
+    RegisterEventHandler<EventRoundStart>(OnRoundStart);
+  }
+
+  private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
+  {
     var healthshothp = ConVar.Find("healthshot_health");
     if (healthshothp != null)
       healthshothp.SetValue(Config.DoktorRegen);
@@ -59,11 +65,17 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
     var drophealthshot = ConVar.Find("mp_death_drop_healthshot");
     if (drophealthshot != null)
       drophealthshot.SetValue(Config.DoktorDropHealthshot);
-  }
 
-  public override void Load(bool hotReload)
-  {
-    RegisterEventHandler<EventRoundStart>(OnRoundStart);
+    var taserRecharge = ConVar.Find("mp_taser_recharge_time");
+    if (taserRecharge != null)
+      taserRecharge.SetValue((float)Config.ZeusRechargeTaser);
+
+    var dropTaser = ConVar.Find("mp_death_drop_taser");
+    if (dropTaser != null)
+      dropTaser.SetValue(Config.ZeusDropTaser);
+
+    meslekAktif.Clear();
+    return HookResult.Continue;
   }
 
   [ConsoleCommand("css_meslek", "css_meslek")]
@@ -77,13 +89,15 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
       var helpLines = new List<string>();
 
       if (Config.DoktorEnabled)
-        helpLines.Add($"!meslek {CC.Green}Doktor{CC.Default}: {Config.DoktorRegen} sağlık aşısı (weapon_healthshot)");
+        helpLines.Add($"!meslek {CC.Green}Doktor{CC.Default} » {Config.DoktorRegen} sağlık aşısı (weapon_healthshot)");
       if (Config.FlashEnabled)
-        helpLines.Add($"!meslek {CC.Green}Flash{CC.Default}: {Config.FlashDuration} saniye flash efekti (Hız x{Config.FlashSpeed})");
+        helpLines.Add($"!meslek {CC.Green}Flash{CC.Default} » {Config.FlashDuration} saniye flash efekti (Hız x{Config.FlashSpeed})");
       if (Config.BombaciEnabled && (Config.BombaciGiveSmoke || Config.BombaciGiveGrenade || Config.BombaciGiveFlashbang || Config.BombaciGiveMolotov))
-        helpLines.Add($"!meslek {CC.Green}Bombacı{CC.Default}: Rastgele {GetBombaciNades()} verilir.");
+        helpLines.Add($"!meslek {CC.Green}Bombacı{CC.Default} » Rastgele {GetBombaciNades()} verilir.");
       if (Config.RamboEnabled)
-        helpLines.Add($"!meslek {CC.Green}Rambo{CC.Default}: {Config.RamboHp} can, {Config.RamboArmor} armor.");
+        helpLines.Add($"!meslek {CC.Green}Rambo{CC.Default} » {Config.RamboHp} can, {Config.RamboArmor} armor.");
+      if (Config.ZeusEnabled)
+        helpLines.Add($"!meslek {CC.Green}Zeus{CC.Default} » Taser alır.");
 
 
       if (helpLines.Count == 0)
@@ -190,6 +204,20 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
             player.GiveNamedItem("item_kevlar");
 
           commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Mesleğin değiştirildi: {CC.Green}Rambo");
+        }
+        break;
+
+      case "zeus":
+        if (!Config.ZeusEnabled)
+        {
+          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Zeus mesleği kapalı.");
+          return;
+        }
+        var zeusPawn = player.PlayerPawn.Value as CCSPlayerPawn;
+        if (zeusPawn != null)
+        {
+          player.GiveNamedItem("weapon_taser");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Mesleğin değiştirildi: {CC.Green}Zeus");
         }
         break;
 
