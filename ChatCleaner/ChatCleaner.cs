@@ -15,9 +15,9 @@ public class ChatCleaner : BasePlugin
   public override string ModuleName => "ChatCleaner";
   public override string ModuleVersion => "1.0.0";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Players can clean their chat with !cc or /cc command.";
+  public override string ModuleDescription => "Deletes all chat messages in the server.";
 
-  [ConsoleCommand("css_selfcc", "Tests")]
+  [ConsoleCommand("css_selfcc", "Cleans your own chat.")]
   public void OnSelfChatCleanCommand(CCSPlayerController? player, CommandInfo commandInfo)
   {
     if (player == null) return;
@@ -29,8 +29,8 @@ public class ChatCleaner : BasePlugin
     player.PrintToChat(Localizer.ForPlayer(player, "chatcleaner.selfcleaned"));
   }
 
-  [ConsoleCommand("css_cc", "")]
-  [RequiresPermissions("@css/chatcleaner")]
+  [ConsoleCommand("css_cc", "Cleans all chat.")]
+  [RequiresPermissions("@css/chat")]
   public void OnAdminChatCleanCommand(CCSPlayerController? player, CommandInfo commandInfo)
   {
     if (player == null) return;
