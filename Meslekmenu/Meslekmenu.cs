@@ -1,6 +1,5 @@
 ﻿using System.Text.Json.Serialization;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -33,7 +32,6 @@ public class MeslekmenuConfig : BasePluginConfig
   public string ChatPrefix { get; set; } = "[ByDexter]";
 }
 
-[MinimumApiVersion(80)]
 public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
 {
   public override string ModuleName => "Meslekmenu";
@@ -68,7 +66,7 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
   }
 
-  [ConsoleCommand("css_meslek", "Meslek seçimi ve yardım")]
+  [ConsoleCommand("css_meslek", "css_meslek")]
   public void OnMeslekCommand(CCSPlayerController? player, CommandInfo commandInfo)
   {
     if (player == null || !player.IsValid)

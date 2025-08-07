@@ -1,4 +1,4 @@
 {
-  "chatcleaner.selfcleaned": "[ChatCleaner] Your chat cleaned!",
-  "chatcleaner.admincleaned": "[ChatCleaner] Chat cleaned by admin: {0}"
+  "chatcleaner.selfcleaned": "Your chat cleaned!",
+  "chatcleaner.admincleaned": "Chat cleaned by admin:"
 }

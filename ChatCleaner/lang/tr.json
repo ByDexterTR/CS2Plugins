@@ -1,4 +1,4 @@
 {
-  "chatcleaner.selfcleaned": "[ChatCleaner] Sohbetiniz temizlendi!",
-  "chatcleaner.admincleaned": "[ChatCleaner] Sohbet admin tarafından temizlendi: {0}"
+  "chatcleaner.selfcleaned": "Sohbet temizlendi!",
+  "chatcleaner.admincleaned": "Sohbet admin tarafından temizlendi:"
 }
