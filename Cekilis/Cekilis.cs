@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
+using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
 
@@ -28,6 +29,7 @@ public class Cekilis : BasePlugin, IPluginConfig<CekilisConfig>
     }
 
     [ConsoleCommand("css_cek", "css_cek")]
+    [RequiresPermissions("@css/chat")]
     public void OnCekilisCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player == null || !player.IsValid)
