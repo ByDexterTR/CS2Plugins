@@ -25,7 +25,7 @@ public class Silahsil : BasePlugin, IPluginConfig<SilahsilConfig>
     Config = config;
   }
 
-  [ConsoleCommand("css_silahsil", "Yerdeki silahları siler")]
+  [ConsoleCommand("css_silahsil", "css_silahsil")]
   [RequiresPermissions("@css/slay")]
   public void OnSilahSilCommand(CCSPlayerController? player, CommandInfo info)
   {
