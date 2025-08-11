@@ -12,4 +12,8 @@
     <PackageReference Include="CounterStrikeSharp.API" Version="1.0.333" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Sustum.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

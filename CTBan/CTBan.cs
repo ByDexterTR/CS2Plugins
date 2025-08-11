@@ -75,7 +75,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         File.WriteAllText(BanListPath, json);
     }
 
-    private long ParseDuration(string input)
+    private static long ParseDuration(string input)
     {
         input = input.Trim().ToLower();
         if (string.IsNullOrEmpty(input)) return 0;
@@ -99,7 +99,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         }
     }
 
-    private string FormatTimeLeft(long seconds)
+    private static string FormatTimeLeft(long seconds)
     {
         if (seconds <= 0)
             return $"{CC.Green}0{CC.Default} saniye";
@@ -398,7 +398,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         return HookResult.Continue;
     }
 
-    private CCSPlayerController? FindPlayer(string arg)
+    private static CCSPlayerController? FindPlayer(string arg)
     {
         if (arg.StartsWith("#"))
         {

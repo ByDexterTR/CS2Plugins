@@ -3,6 +3,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
+using CounterStrikeSharp.API.Modules.Timers;
 
 namespace Meslekmenu;
 
@@ -158,7 +159,7 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
           {
             if (pawn.IsValid)
               pawn.VelocityModifier = normalSpeed;
-          });
+          }, TimerFlags.STOP_ON_MAPCHANGE);
         }
         break;
 

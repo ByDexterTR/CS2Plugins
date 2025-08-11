@@ -50,14 +50,12 @@ public class Cit : BasePlugin
   }
 
   [ConsoleCommand("css_cit", "css_cit")]
+  [RequiresPermissionsOr("@css/root", "@jailbreak/warden")]
   public void OnCitCommand(CCSPlayerController? player, CommandInfo info)
   {
     if (player == null || !player.IsValid || !IsAlive(player))
       return;
-
-    if (!AdminManager.PlayerHasPermissions(player, "@css/root") && !AdminManager.PlayerHasPermissions(player, "@jailbreak/warden"))
-      return;
-
+    
     ShowFenceMenu(player);
   }
 
