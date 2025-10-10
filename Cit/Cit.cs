@@ -55,7 +55,7 @@ public class Cit : BasePlugin
   {
     if (player == null || !player.IsValid || !IsAlive(player))
       return;
-    
+
     ShowFenceMenu(player);
   }
 
@@ -94,7 +94,7 @@ public class Cit : BasePlugin
 
     menu.AddMenuOption("Çitleri Sil", (player, option) =>
     {
-      RemoveAllModel(player);
+      RemoveAllModel();
     });
 
     MenuManager.OpenCenterHtmlMenu(this, player, menu);
@@ -133,29 +133,25 @@ public class Cit : BasePlugin
     spawnPos += new System.Numerics.Vector3(right.X * offset, right.Y * offset, 0);
 
     var model = Utilities.CreateEntityByName<CPhysicsPropOverride>("prop_physics_override");
-    if (model == null)
+    if (model == null || model.Entity == null || !model.IsValid)
     {
       return;
     }
-
+    model.Entity.Name = FenceName;
     model.DispatchSpawn();
     model.SetModel(modelpath);
-    model.Entity!.Name = FenceName;
+
     model.AcceptInput("DisableMotion");
     model.Teleport(new Vector(spawnPos.X, spawnPos.Y, spawnPos.Z), angles, Vector.Zero);
   }
 
-  private static void RemoveAllModel(CCSPlayerController? player)
+  private static void RemoveAllModel()
   {
-    int count = 0;
     var allProps = Utilities.FindAllEntitiesByDesignerName<CPhysicsPropOverride>("prop_physics_override");
     foreach (var prop in allProps)
     {
-      if (prop?.Entity != null && string.Equals(prop.Entity.Name, FenceName, StringComparison.Ordinal))
-      {
+      if (prop.Entity != null && prop.IsValid && !string.IsNullOrEmpty(prop.Entity.Name) && string.Equals(prop.Entity.Name, FenceName, StringComparison.Ordinal))
         prop.Remove();
-        count++;
-      }
     }
   }
 

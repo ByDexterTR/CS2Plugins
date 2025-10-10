@@ -14,7 +14,11 @@ Sustum/obj/
 Sustum/bin/
 PlayerRGB/obj/
 PlayerRGB/bin/
+MapBlock/obj/
+MapBlock/bin/
 CS2Test.sln
 Server Addons.lnk
 Server Path.lnk
 Server Start.lnk
+copy.bat
+compile.bat
