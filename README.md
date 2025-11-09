@@ -32,6 +32,12 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya .Compiled klasöründen der
 - **Yetki:** `@css/ban`; `css_ctbanlist` yetkisizler kullanabilir
 - **Ayar:** `chat_prefix`
 
+### DiscordLogger
+
+- **Açıklama:** Discord webhook entegrasyonu ile 6 farklı kategoride sunucu logları tutar (harita, bağlantı, komut, chat, kill, raunt).
+- **Ayar:** `webhook_map`, `webhook_connect`, `webhook_command`, `webhook_chat`, `webhook_kill`, `webhook_round` (Discord webhook URL'leri).
+- **Not:** Her log kategorisi için ayrı webhook kullanmanız önerilir.
+
 ### MapBlock
 
 - **Açıklama:** Oyuncu sayısına göre belirli yerlere çit ekler.
@@ -41,11 +47,11 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya .Compiled klasöründen der
 
 ### Meslekmenu
 
-- **Açıklama:** Terörist takımının tur başında Doktor, Flash, Bombacı, Rambo veya Zeus gibi roller seçmesini sağlar.
+- **Açıklama:** Terörist takımının tur başında Doktor, Flash, Bombacı, Rambo veya Zeus gibi meslekleri seçmesini sağlar.
 - **Komut:** `css_meslek`, `css_meslek doktor`, `css_meslek flash`, `css_meslek bombacı`, `css_meslek rambo`, `css_meslek zeus`
 - **Yetki:** Oyuncular tarafından doğrudan kullanılabilir (ekstra yetki gerekmez).
 - **Ayar:** `chat_prefix`, `doktor_*`, `flash_*`, `bombaci_*`, `rambo_*`, `zeus_*` anahtarlarıyla rol davranışı ayarlanır.
-- **Not:** Roller sadece canlı T oyuncuları tarafından turda bir kez seçilebilir.
+- **Not:** Meslekler sadece canlı T oyuncuları tarafından turda bir kez seçilebilir.
 
 ### PlayerRGB
 

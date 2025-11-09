@@ -75,7 +75,8 @@ public class Cekilis : BasePlugin, IPluginConfig<CekilisConfig>
         var rnd = new Random();
         var winner = pool[rnd.Next(pool.Count)];
         var adminName = player != null ? player.PlayerName : "unknown";
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{adminName}{CC.Default} Çekiliş yaptı, kazanan: {CC.Gold}{winner.PlayerName}{CC.Default}");
+        var categoryName = arg.ToUpper();
+        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{adminName}{CC.Default} Çekiliş yaptı ({CC.Green}{categoryName}{CC.Default}), kazanan: {CC.Gold}{winner.PlayerName}{CC.Default}");
     }
 
     static bool IsAlive(CCSPlayerController? player)
