@@ -1,74 +1,200 @@
-## Kurulum
+# CS2 Plugins
 
-Kurmak istediğiniz eklentiyi derleyebilirsiniz veya .Compiled klasöründen derlenmiş halini alıp direkt sunucunuza yükleyebilirsiniz.
+Counter-Strike 2 için geliştirilmiş sunucu eklentileri koleksiyonu.
 
-> Not: Bazı eklentiler harici kütüphaneler kullanır.
+## 📥 Kurulum
 
-## Eklentiler
+Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen derlenmiş halini alıp direkt sunucunuza yükleyebilirsiniz.
+
+> **Not:** Bazı eklentiler harici kütüphaneler kullanır. Eklenti açıklamalarını kontrol edin.
+
+---
+
+## 🔌 Eklentiler
+
+### 1v1Slay
+> Oyuncular 1v1 kaldıklarında otomatik geri sayım ve slay sistemi
+
+**Özellikler:**
+- Otomatik 1v1 algılama (botlar dahil)
+- HUD ve chat bildirimleri
+- Yapılandırılabilir geri sayım süresi
+- Minimum oyuncu kontrolü
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
+| `min_players` | Sistemin aktif olması için minimum oyuncu sayısı | `3` |
+| `countdown_time` | Geri sayım süresi (saniye) | `30` |
+| `enable_announcements` | Tüm bildirimleri aktif/pasif yapar (HUD + Chat) | `true` |
+
+---
 
 ### Cekilis
+> Rastgele oyuncu seçme aracı
 
-- **Açıklama:** T veya CT takımlarından, ölü/canlı durumuna göre rastgele oyuncu seçer.
-- **Komut:** `css_cek all | dead | live | T | Tdead | Tlive | CT | CTdead | CTlive`
-- **Yetki:** `@css/chat`
+**Komutlar:**
+- `css_cek all` - Tüm oyunculardan seç
+- `css_cek dead` - Ölü oyunculardan seç
+- `css_cek live` - Canlı oyunculardan seç
+- `css_cek T` / `Tdead` / `Tlive` - Terörist takımından seç
+- `css_cek CT` / `CTdead` / `CTlive` - CT takımından seç
+
+**Yetki:** `@css/chat`
+
+---
 
 ### ChatCleaner
+> Sohbet temizleme sistemi
 
-- **Açıklama:** Oyuncuların kendi sohbetini temizlemesini, adminlerin tüm sohbeti sıfırlamasını sağlar.
-- **Komut:** `css_cc`, `css_selfcc`
-- **Yetki:** `css_cc` için `@css/chat`; `css_selfcc` yetkisizler kullanabilir
+**Komutlar:**
+- `css_cc` - Tüm sohbeti temizle (admin)
+- `css_selfcc` - Kendi sohbetini temizle
+
+**Yetkiler:**
+- `css_cc` için `@css/chat`
+- `css_selfcc` için yetki gerekmez
+
+---
 
 ### Cit
+> Warden için harita bariyerleri
 
-- **Açıklama:** Warden kontrolünde haritada bariyerler/çitler oluşturur.
-- **Komut:** `css_cit`
-- **Yetki:** `@css/root` veya `@jailbreak/warden`
-- **Kütüphane:** [CS2TraceRay](https://github.com/schwarper/CS2TraceRay)
+**Komut:** `css_cit`
+
+**Yetki:** `@css/root` veya `@jailbreak/warden`
+
+**Gereksinimler:** [CS2TraceRay](https://github.com/schwarper/CS2TraceRay)
+
+---
 
 ### CTBan
+> CT takımı yasaklama sistemi
 
-- **Açıklama:** Oyuncuların CT takımına geçmesini yasaklar.
-- **Komut:** `css_ctban`, `css_ctunban`, `cs_ctaddban`, `css_ctbanlist`
-- **Yetki:** `@css/ban`; `css_ctbanlist` yetkisizler kullanabilir
-- **Ayar:** `chat_prefix`
+**Komutlar:**
+- `css_ctban <oyuncu> <süre>` - CT yasağı ver
+- `css_ctunban <oyuncu>` - CT yasağını kaldır
+- `css_ctaddban <oyuncu> <süre>` - CT yasağına ek süre ekle
+- `css_ctbanlist` - Yasaklı oyuncuları listele
+
+**Yetkiler:**
+- `@css/ban` (ctban, ctunban, ctaddban için)
+- Yetki gerekmez (ctbanlist için)
+
+**Ayarlar:**
+| Ayar | Açıklama |
+|------|----------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek |
+
+---
 
 ### DiscordLogger
+> Discord webhook entegrasyonu ile sunucu logları
 
-- **Açıklama:** Discord webhook entegrasyonu ile 6 farklı kategoride sunucu logları tutar (harita, bağlantı, komut, chat, kill, raunt).
-- **Ayar:** `webhook_map`, `webhook_connect`, `webhook_command`, `webhook_chat`, `webhook_kill`, `webhook_round` (Discord webhook URL'leri).
-- **Not:** Her log kategorisi için ayrı webhook kullanmanız önerilir.
+**Özellikler:**
+- 6 farklı log kategorisi
+- Harita değişikliği, bağlantı, komut, chat, kill, round logları
+- Ayrı webhook URL'leri ile kategorize edilmiş loglar
+
+**Ayarlar:**
+| Ayar | Açıklama |
+|------|----------|
+| `webhook_map` | Harita değişikliği logları için webhook URL |
+| `webhook_connect` | Oyuncu bağlantı logları için webhook URL |
+| `webhook_command` | Komut logları için webhook URL |
+| `webhook_chat` | Chat logları için webhook URL |
+| `webhook_kill` | Öldürme logları için webhook URL |
+| `webhook_round` | Round logları için webhook URL |
+
+> **Öneri:** Her log kategorisi için ayrı webhook kullanın.
+
+---
 
 ### MapBlock
+> Oyuncu sayısına göre dinamik harita engelleri
 
-- **Açıklama:** Oyuncu sayısına göre belirli yerlere çit ekler.
-- **Komut:** Manuel kullanım; harita dosyalarıyla beraber çalışır.
-- **Yetki:** Sunucu Ayarsına bağlı (önerilen `@css/root`).
-- **Ayar:** `mapblock_mode` (0: kapalı, 1: CT sayısına göre, 2: toplam oyuncuya göre), `mapblock_count` (tetiklenecek oyuncu sayısı).
+**Özellikler:**
+- Harita dosyaları ile önceden tanımlı engel noktaları
+- CT sayısı veya toplam oyuncu sayısına göre otomatik aktivasyon
+
+**Ayarlar:**
+| Ayar | Açıklama | Değerler |
+|------|----------|----------|
+| `mapblock_mode` | Çalışma modu | `0`: Kapalı, `1`: CT sayısı, `2`: Toplam oyuncu |
+| `mapblock_count` | Tetiklenecek oyuncu sayısı | Sayısal değer |
+
+**Yetki:** Sunucu ayarına bağlı (önerilen: `@css/root`)
+
+---
 
 ### Meslekmenu
+> Terörist takımı için meslek seçim sistemi
 
-- **Açıklama:** Terörist takımının tur başında Doktor, Flash, Bombacı, Rambo veya Zeus gibi meslekleri seçmesini sağlar.
-- **Komut:** `css_meslek`, `css_meslek doktor`, `css_meslek flash`, `css_meslek bombacı`, `css_meslek rambo`, `css_meslek zeus`
-- **Yetki:** Oyuncular tarafından doğrudan kullanılabilir (ekstra yetki gerekmez).
-- **Ayar:** `chat_prefix`, `doktor_*`, `flash_*`, `bombaci_*`, `rambo_*`, `zeus_*` anahtarlarıyla rol davranışı ayarlanır.
-- **Not:** Meslekler sadece canlı T oyuncuları tarafından turda bir kez seçilebilir.
+**Komutlar:**
+- `css_meslek` - Meslek menüsünü aç
+- `css_meslek doktor` - Doktor mesleğini seç
+- `css_meslek flash` - Flash mesleğini seç
+- `css_meslek bombacı` - Bombacı mesleğini seç
+- `css_meslek rambo` - Rambo mesleğini seç
+- `css_meslek zeus` - Zeus mesleğini seç
+
+**Yetki:** Yok (tüm oyuncular kullanabilir)
+
+**Ayarlar:**
+| Ayar | Açıklama |
+|------|----------|
+| `chat_prefix` | Sohbet etiketi |
+| `doktor_*` | Doktor meslek ayarları |
+| `flash_*` | Flash meslek ayarları |
+| `bombaci_*` | Bombacı meslek ayarları |
+| `rambo_*` | Rambo meslek ayarları |
+| `zeus_*` | Zeus meslek ayarları |
+
+> **Not:** Meslekler sadece canlı T oyuncuları tarafından turda bir kez seçilebilir.
+
+---
 
 ### PlayerRGB
+> Oyuncu modeli RGB renklendirme
 
-- **Açıklama:** Oyuncu modelini RGB renk döngüsüyle renklendirir.
-- **Komut:** `css_rgb`
-- **Yetki:** `@css/cheats`
+**Komut:** `css_rgb`
+
+**Yetki:** `@css/cheats`
+
+**Özellik:** Oyuncu modelini sürekli renk değiştiren RGB döngüsüyle renklendirir.
+
+---
 
 ### Silahsil
+> Yere düşen silahları temizleme
 
-- **Açıklama:** Haritada yere düşen silahları siler.
-- **Komut:** `css_silahsil`
-- **Yetki:** `@css/slay`
+**Komut:** `css_silahsil`
+
+**Yetki:** `@css/slay`
+
+---
 
 ### Sustum
+> Jailbreak için hızlı yazma yarışı sistemi
 
-- **Açıklama:** Jailbreak sunucularında hızlı yazma yarışları düzenler; farklı modlarla CT, T veya ölü oyuncular arasında rekabet oluşturur.
-- **Komut:** `css_ctsustum`, `css_tsustum`, `css_dsustum`, `css_olusustum`, `css_ctsustum0`, `css_dsustum0`, `css_tsustum0`, `css_olusustum0`, `css_sustum0`
-- **Yetki:** `@css/root` veya `@jailbreak/warden`
-- **Ayar:** `chat_prefix` (sohbet etiketi), `sustum.json` (kelime havuzu)
-- **Not:** HUD üzerinde geri sayım ve hedef kelime gösterilir. `DSustum` kazananı turuncu parlayan `Deagle` ile ödüllendirir ve ateş sonrası silah otomatik alınır.
+**Komutlar:**
+- `css_ctsustum` - CT'ler arası yarış (son kalan CT-ban yer)
+- `css_tsustum` - T'ler arası yarış
+- `css_dsustum` - Ölüler arası yarış (kazanan turuncu Deagle kazanır)
+- `css_olusustum` - Tüm oyuncular arası yarış
+- `css_ctsustum0` / `css_tsustum0` / `css_dsustum0` / `css_olusustum0` - Kelime havuzunu yeniden yükle
+- `css_sustum0` - Genel yeniden yükleme
+
+**Yetki:** `@css/root` veya `@jailbreak/warden`
+
+**Ayarlar:**
+| Ayar | Açıklama |
+|------|----------|
+| `chat_prefix` | Sohbet etiketi |
+| `sustum.json` | Yarış için kullanılacak kelime havuzu |
+
+**Özellikler:**
+- HUD üzerinde geri sayım ve hedef kelime
+- DSustum kazananı turuncu parlayan Deagle ile ödüllendirilir
+- Ateş sonrası silah otomatik alınır
