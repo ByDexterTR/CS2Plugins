@@ -237,7 +237,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
     }
 
     [ConsoleCommand("css_ctsustum", "css_ctsustum")]
-    [RequiresPermissionsOr("@css/root", "@jailbreak/warden")]
+    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnCTSustumCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player == null || !player.IsValid)
@@ -254,7 +254,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
     }
 
     [ConsoleCommand("css_tsustum", "css_tsustum")]
-    [RequiresPermissionsOr("@css/root", "@jailbreak/warden")]
+    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnTSustumCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player == null || !player.IsValid)
@@ -270,7 +270,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
     }
 
     [ConsoleCommand("css_dsustum", "css_dsustum")]
-    [RequiresPermissionsOr("@css/root", "@jailbreak/warden")]
+    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnDSustumCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player == null || !player.IsValid)
@@ -286,7 +286,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
     }
 
     [ConsoleCommand("css_olusustum", "css_olusustum")]
-    [RequiresPermissionsOr("@css/root", "@jailbreak/warden")]
+    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnOluSustumCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player == null || !player.IsValid)
@@ -306,7 +306,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
     [ConsoleCommand("css_tsustum0", "css_tsustum0")]
     [ConsoleCommand("css_olusustum0", "css_olusustum0")]
     [ConsoleCommand("css_sustum0", "css_sustum0")]
-    [RequiresPermissionsOr("@css/root", "@jailbreak/warden")]
+    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnSustumCancelCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player == null || !player.IsValid)

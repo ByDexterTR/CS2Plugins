@@ -111,7 +111,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
   }
 
   [ConsoleCommand("css_takim", "Takım sistemi")]
-  [RequiresPermissions("@css/generic")]
+  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnTakimCommand(CCSPlayerController? player, CommandInfo info)
   {
     if (player == null || !player.IsValid)

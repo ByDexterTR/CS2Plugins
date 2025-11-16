@@ -50,7 +50,7 @@ public class Cit : BasePlugin
   }
 
   [ConsoleCommand("css_cit", "css_cit")]
-  [RequiresPermissionsOr("@css/root", "@jailbreak/warden")]
+  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnCitCommand(CCSPlayerController? player, CommandInfo info)
   {
     if (player == null || !player.IsValid || !IsAlive(player))

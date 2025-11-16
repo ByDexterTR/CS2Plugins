@@ -10,16 +10,8 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
-## 🔌 Eklentiler
-
 ### 1v1Slay
 > Oyuncular 1v1 kaldıklarında otomatik geri sayım ve slay sistemi
-
-**Özellikler:**
-- Otomatik 1v1 algılama (botlar dahil)
-- HUD ve chat bildirimleri
-- Yapılandırılabilir geri sayım süresi
-- Minimum oyuncu kontrolü
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
@@ -89,13 +81,66 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
-### DiscordLogger
-> Discord webhook entegrasyonu ile sunucu logları
+### CTKit
+> CT takımı için silah kiti menüsü (Jailbreak)
+
+**Komut:**
+- `css_kit` - CT silah menüsünü açar
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
+| `default_primary_weapon` | Varsayılan ana silah | `weapon_ak47` |
+| `default_secondary_weapon` | Varsayılan yan silah | `weapon_deagle` |
+| `primary_weapons` | Ana silah seçenekleri | AK47, M4A4, M4A1-S, AWP, MAG7 |
+| `secondary_weapons` | Yan silah seçenekleri | DEAGLE, CZ75A, TEC9, ÇİFT BERETTA, USP-S, GLOCK, REVOLVER |
 
 **Özellikler:**
-- 6 farklı log kategorisi
-- Harita değişikliği, bağlantı, komut, chat, kill, round logları
-- Ayrı webhook URL'leri ile kategorize edilmiş loglar
+- CT oyuncuları raunt başında seçtiği silahlarla doğar
+
+---
+
+### CTKov
+> CT takımındaki gardiyanları (komutçu hariç) tüm CT'leri T takımına gönderir
+
+**Komut:**
+- `css_ctkov` - CT gardiyanları hariç tüm CT'leri T'ye atar
+
+**Yetki:** `@css/generic` veya `@jailbreak/warden`
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
+
+---
+
+### CTRev
+> CT takımına canlandırma (revive) menüsü ve otomatik canlandırma sistemi
+
+**Komutlar:**
+- `css_ctr`, `css_ctrev`, `css_ctrevmenu` - CT revive menüsünü açar
+- `css_hak0`, `css_haksifir`, `css_haksifirla` - Canlandırma haklarını sıfırlar
+
+**Yetki:** 
+- `@css/generic` veya `@jailbreak/warden` (revive menüsü)
+- `@css/generic` (hak sıfırlama)
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
+| `cooldown` | Canlanma bekleme süresi (sn) | `15` |
+| `revive_count` | Raunt başına maksimum canlandırma hakkı | `3` |
+
+**Özellikler:**
+- Otomatik canlandırma modu ve manuel canlandırma seçeneği
+
+---
+
+### DiscordLogger
+> Discord webhook entegrasyonu ile sunucu logları
 
 **Ayarlar:**
 | Ayar | Açıklama |
@@ -111,20 +156,29 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
+### JBTeams
+> Jailbreak için takım sistemi (T oyuncularını belirtilen sayıda renklere göre takımlara böler ve takım içi dost hasarını engeller)
+
+**Komutlar:**
+- `css_takim <0-5>` - `0/1` kapatır, `2-5` arası takım sayısını ayarlar
+
+**Yetki:** `@css/generic`
+
+**Ayarlar:**
+| Ayar | Açıklama |
+|------|----------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek |
+
+---
+
 ### MapBlock
 > Oyuncu sayısına göre dinamik harita engelleri
-
-**Özellikler:**
-- Harita dosyaları ile önceden tanımlı engel noktaları
-- CT sayısı veya toplam oyuncu sayısına göre otomatik aktivasyon
 
 **Ayarlar:**
 | Ayar | Açıklama | Değerler |
 |------|----------|----------|
 | `mapblock_mode` | Çalışma modu | `0`: Kapalı, `1`: CT sayısı, `2`: Toplam oyuncu |
 | `mapblock_count` | Tetiklenecek oyuncu sayısı | Sayısal değer |
-
-**Yetki:** Sunucu ayarına bağlı (önerilen: `@css/root`)
 
 ---
 
@@ -139,19 +193,7 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 - `css_meslek rambo` - Rambo mesleğini seç
 - `css_meslek zeus` - Zeus mesleğini seç
 
-**Yetki:** Yok (tüm oyuncular kullanabilir)
-
-**Ayarlar:**
-| Ayar | Açıklama |
-|------|----------|
-| `chat_prefix` | Sohbet etiketi |
-| `doktor_*` | Doktor meslek ayarları |
-| `flash_*` | Flash meslek ayarları |
-| `bombaci_*` | Bombacı meslek ayarları |
-| `rambo_*` | Rambo meslek ayarları |
-| `zeus_*` | Zeus meslek ayarları |
-
-> **Not:** Meslekler sadece canlı T oyuncuları tarafından turda bir kez seçilebilir.
+**Yetki:** Yok
 
 ---
 
@@ -162,7 +204,24 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 **Yetki:** `@css/cheats`
 
-**Özellik:** Oyuncu modelini sürekli renk değiştiren RGB döngüsüyle renklendirir.
+---
+
+### Redbull
+> Oyuncuya geçici hız ve renk efekti uygular
+
+**Komut:**
+- `css_redbull` - Redbull efektini etkinleştir
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
+| `speed` | Hız çarpanı (`1.0` normal) | `2.0` |
+| `duration` | Etki süresi (saniye) | `10` |
+| `filter_team` | Kullanım kısıtı (`T`, `CT`, `Both`) | `T` |
+| `player_color` | Efekt rengi (RGB) | `[248,123,27]` |
+| `round_limiter` | Raunt başına kullanım limiti (`0` sınırsız) | `2` |
+| `cooldown` | Tekrar kullanım bekleme süresi (saniye) | `15` |
 
 ---
 
@@ -179,14 +238,13 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 > Jailbreak için hızlı yazma yarışı sistemi
 
 **Komutlar:**
-- `css_ctsustum` - CT'ler arası yarış (son kalan CT-ban yer)
+- `css_ctsustum` - CT'ler arası yarış
 - `css_tsustum` - T'ler arası yarış
-- `css_dsustum` - Ölüler arası yarış (kazanan turuncu Deagle kazanır)
+- `css_dsustum` - Ölüler arası yarış
 - `css_olusustum` - Tüm oyuncular arası yarış
-- `css_ctsustum0` / `css_tsustum0` / `css_dsustum0` / `css_olusustum0` - Kelime havuzunu yeniden yükle
-- `css_sustum0` - Genel yeniden yükleme
+- `css_sustum0` / `css_ctsustum0` / `css_tsustum0` / `css_dsustum0` / `css_olusustum0` - Sustum yarışmasını durdurur
 
-**Yetki:** `@css/root` veya `@jailbreak/warden`
+**Yetki:** `@css/generic` veya `@jailbreak/warden`
 
 **Ayarlar:**
 | Ayar | Açıklama |
@@ -194,7 +252,4 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 | `chat_prefix` | Sohbet etiketi |
 | `sustum.json` | Yarış için kullanılacak kelime havuzu |
 
-**Özellikler:**
-- HUD üzerinde geri sayım ve hedef kelime
-- DSustum kazananı turuncu parlayan Deagle ile ödüllendirilir
-- Ateş sonrası silah otomatik alınır
+---
