@@ -169,6 +169,23 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 |------|----------|
 | `chat_prefix` | Sohbet mesajlarında kullanılacak önek |
 
+
+### JBRace
+> Jailbreak için yarış (race) sistemi
+
+**Komut:**
+- `css_race` - Yarış menüsünü açar
+
+**Yetki:** `@css/generic` veya `@jailbreak/warden`
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
+
+**Özellikler:**
+- Belirlenen noktalar arasında yarış başlatılır, kazananlar otomatik belirlenir
+
 ---
 
 ### MapBlock
