@@ -65,7 +65,7 @@ public class Cit : BasePlugin
       return;
 
     var keys = FenceOptions.Keys.ToList();
-    CenterHtmlMenu menu = new("Çit Menüsü", this);
+    CenterHtmlMenu menu = new("<font color='#e7aa6c' class='fontSize-l'><img src='https://images.weserv.nl/?url=cdn-icons-png.flaticon.com/256/4017/4017841.png&w=24&h=24&fit=cover'> Çit Menüsü <img src='https://images.weserv.nl/?url=cdn-icons-png.flaticon.com/256/4017/4017841.png&w=24&h=24&fit=cover'></font>", this);
 
     menu.AddMenuOption($"Oluştur: [{FenceOptions[SelectedFenceSize].Label}] [{(SelectedFenceType == FenceType.Fence ? "Çit" : "Barikat")}]", (player, option) =>
     {

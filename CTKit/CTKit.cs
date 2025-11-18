@@ -148,7 +148,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
         ? GetWeaponDisplayName(secondary, false)
         : "Seçilmedi";
 
-    var menu = new CenterHtmlMenu("CT Silah Menü", this);
+    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'> CT Silah Menü <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'></font>", this);
 
     menu.AddMenuOption($"Silah: {currentPrimary}", (p, option) =>
     {
@@ -177,7 +177,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid)
       return;
 
-    var menu = new CenterHtmlMenu("Silah Seçimi", this);
+    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'> CT Silah Menü <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'></font>", this);
 
     foreach (var weapon in Config.PrimaryWeapons)
     {
@@ -198,7 +198,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid)
       return;
 
-    var menu = new CenterHtmlMenu("Pistol Seçimi", this);
+    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'> CT Silah Menü <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'></font>", this);
 
     foreach (var weapon in Config.SecondaryWeapons)
     {

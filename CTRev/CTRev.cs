@@ -148,7 +148,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
       return;
 
     var now = DateTime.UtcNow;
-    var menu = new CenterHtmlMenu($"CT Revive Menü (Hak: {_remainingRespawns})", this);
+    var menu = new CenterHtmlMenu($"<font color='#d63f25' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/158/syringe_1f489.png&w=24&h=24&fit=cover'> CTRev (Hak: {_remainingRespawns}) <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/158/syringe_1f489.png&w=24&h=24&fit=cover'></font>", this);
 
     menu.AddMenuOption($"Oto Rev: {(_autoRespawnEnabled ? "AÇIK" : "KAPALI")}", (p, option) =>
     {

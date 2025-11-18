@@ -99,7 +99,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 
   private void ShowRaceMenu(CCSPlayerController player)
   {
-    var menu = new CenterHtmlMenu("Race", this);
+    var menu = new CenterHtmlMenu($"<font color='#bab9be' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/samsung/411/chequered-flag_1f3c1.png&w=24&h=24&fit=cover'> Race <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/samsung/411/chequered-flag_1f3c1.png&w=24&h=24&fit=cover'></font>", this);
 
     if (!_raceActive)
     {
@@ -219,7 +219,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
       {
         Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Yarış {CC.Gold}{countdown}{CC.Default} saniye sonra başlıyor...");
         _showHud = true;
-        _hudHtml = $"<font color='#FFA500'>Yarış başlıyor</font>: {countdown}";
+        _hudHtml = $"<font color='#bab9be' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/samsung/411/chequered-flag_1f3c1.png&w=24&h=24&fit=cover'> Yarış başlıyor: {countdown}</font>";
         countdown--;
       }
       else
@@ -242,12 +242,6 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 
         Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Yarış {CC.Green}başladı{CC.Default}!");
         _showHud = false;
-
-        foreach (var pl in Utilities.GetPlayers())
-        {
-          if (pl != null && pl.IsValid)
-            pl.PrintToCenterHtml(" ");
-        }
 
         _countdownTimer?.Kill();
         _countdownTimer = null;

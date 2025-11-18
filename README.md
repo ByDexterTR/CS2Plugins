@@ -156,6 +156,19 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
+### JBDoors
+> Haritadaki tüm kapıları hızlıca açıp/kapatma
+
+**Komut:**
+- `css_kapiac`
+- `css_kapikapat`
+
+**Yetki:** `@css/generic` veya `@jailbreak/warden`
+
+> Not: `func_door`, `func_movelinear`, `func_door_rotating`, `prop_door_rotating` ve `func_breakable` üzerinde çalışır.
+
+---
+
 ### JBTeams
 > Jailbreak için takım sistemi (T oyuncularını belirtilen sayıda renklere göre takımlara böler ve takım içi dost hasarını engeller)
 
@@ -169,6 +182,7 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 |------|----------|
 | `chat_prefix` | Sohbet mesajlarında kullanılacak önek |
 
+---
 
 ### JBRace
 > Jailbreak için yarış (race) sistemi
@@ -239,6 +253,19 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 | `player_color` | Efekt rengi (RGB) | `[248,123,27]` |
 | `round_limiter` | Raunt başına kullanım limiti (`0` sınırsız) | `2` |
 | `cooldown` | Tekrar kullanım bekleme süresi (saniye) | `15` |
+
+---
+
+### Sesler
+> Oyuncu ses kontrolü (bıçak, ayak/yürüme, oyuncu/hasar seslerini açma/kapama)
+
+**Komut:**
+- `css_ses` - Ses ayarları menüsünü açar
+
+**Yetki:** Yok
+
+**Özellikler:**
+- Oyuncular kendi sesleri için bıçak, ayak/yürüme ve oyuncu/hasar seslerini kapatabilir
 
 ---
 

@@ -140,7 +140,7 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
       {
         if (Config.EnableAnnouncements)
         {
-          _hudHtml = $"<b><font color='#ff0000'>1v1 Ölüm sayacı: {_remainingTime} saniye</font></b>";
+          _hudHtml = $"<font color='#ff0000' class='fontSize-m'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/355/skull_1f480.png&w=24&h=24&fit=cover'> 1v1 Ölüm sayacı: {_remainingTime} saniye</font>";
 
           if (_remainingTime % 5 == 0 || _remainingTime < 5)
           {
@@ -163,14 +163,6 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
     _isCountdownActive = false;
     _showHud = false;
     _hudHtml = "";
-
-    foreach (var player in Utilities.GetPlayers())
-    {
-      if (player.IsValid && !player.IsBot)
-      {
-        player.PrintToCenterHtml(" ");
-      }
-    }
   }
 
   private void SlayRemainingPlayers()

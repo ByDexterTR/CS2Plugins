@@ -150,14 +150,12 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
         SustumType = "";
         CurrentWord = "";
         _showHud = false;
-        foreach (var player in Utilities.GetPlayers())
-            player.PrintToCenterHtml(" ");
     }
 
     private void ShowWinnerHud(string winnerName)
     {
         PrintPrefixAll(SustumType == "CTSustum" ? $"{CC.Blue}{SustumType} {CC.Default}Kaybetti: {CC.Gold}{winnerName}{CC.Default}" : $"{CC.Blue}{SustumType} {CC.Default}Kazandı: {CC.Gold}{winnerName}{CC.Default}");
-        _hudHtml = SustumType == "CTSustum" ? $"<b><font color='#FF0000'>{winnerName} kaybetti!</font></b>" : $"<b><font color='#AAFF00'>{winnerName} kazandı!</font></b>";
+        _hudHtml = SustumType == "CTSustum" ? $"<font color='#FF0000'>{winnerName} kaybetti!</font>" : $"<font color='#AAFF00'>{winnerName} kazandı!</font>";
         _showHud = true;
 
         AddTimer(2.0f, HideHud);
@@ -205,7 +203,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
         _showHud = true;
         _hudHtml =
-            $"<b><font color='#FFA500'>{adminName} {SustumType} başlattı</font></b><br>"
+            $"<font color='#FFA500'>{adminName} {SustumType} başlattı</font><br>"
             + $"{countdown} saniye: kelime burada gözükecek";
 
         _sustumTimer = AddTimer(1.0f, () =>
@@ -214,7 +212,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
                 {
                     countdown--;
                     _hudHtml =
-                        $"<b><font color='#FFA500'>{adminName} {SustumType} başlattı</font></b><br>"
+                        $"<font color='#FFA500'>{adminName} {SustumType} başlattı</font><br>"
                         + $"{countdown} saniye: kelime burada gözükecek";
                 }
                 else
@@ -228,8 +226,8 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
                     }
                     CurrentWord = string.Join(" ", kelimeler);
                     _hudHtml =
-                        $"<b><font color='#FFA500'>{adminName} {SustumType} başlattı</font></b><br>"
-                        + $"<font color='#FF0000'>&raquo;</font> {CurrentWord} <font color='#FF0000'>&laquo;</font>";
+                        $"<font color='#FFA500'>{adminName} {SustumType} başlattı</font><br>"
+                        + $"<font class='fontSize-l'>{CurrentWord}</font>";
                     _showHud = true;
                     _sustumTimer?.Kill();
                 }
