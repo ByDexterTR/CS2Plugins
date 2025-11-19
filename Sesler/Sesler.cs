@@ -3,24 +3,29 @@ using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.UserMessages;
+using CounterStrikeSharp.API;
 
 public class Sesler : BasePlugin
 {
   public override string ModuleName => "Sesler";
   public override string ModuleVersion => "1.0.0";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Oyuncu ses kontrolü - Bıçak, Ayak/Yürüme, Oyuncu/Hasar";
+  public override string ModuleDescription => "Oyuncu ses kontrolü - Bıçak, Silah, Ayak/Yürüme, Oyuncu/Hasar";
 
   private readonly Dictionary<ulong, Pref> _prefs = new();
 
   public override void Load(bool hotReload)
   {
     HookUserMessage(208, OnSound, HookMode.Pre);
+    HookUserMessage(369, OnWeaponSound, HookMode.Pre);
+    HookUserMessage(452, OnWeaponEvent, HookMode.Pre);
   }
 
   public override void Unload(bool hotReload)
   {
     UnhookUserMessage(208, OnSound, HookMode.Pre);
+    UnhookUserMessage(369, OnWeaponSound, HookMode.Pre);
+    UnhookUserMessage(452, OnWeaponEvent, HookMode.Pre);
   }
 
   private Pref GetPref(CCSPlayerController p)
@@ -43,27 +48,25 @@ public class Sesler : BasePlugin
   private void ShowMenu(CCSPlayerController player)
   {
     var pref = GetPref(player);
-    var menu = new CenterHtmlMenu($"<font color='#8899a6' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'> Sesler <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'></font>", this);
+    var menu = new CenterHtmlMenu("<font color='#8899a6' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'> Sesler <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'></font>", this);
 
-    menu.AddMenuOption($"Bıçak Sesleri: {State(pref.Knife)}", (p, o) => Toggle(player, pref, 0));
-    menu.AddMenuOption($"Ayak/Yürüme Sesleri: {State(pref.Foot)}", (p, o) => Toggle(player, pref, 1));
-    menu.AddMenuOption($"Oyuncu/Hasar Sesleri: {State(pref.Player)}", (p, o) => Toggle(player, pref, 2));
+    var items = new (string Label, Func<Pref, bool> Get, Action<Pref> Toggle)[]
+    {
+      ("Bıçak Sesleri", p => p.Knife, p => p.Knife = !p.Knife),
+      ("Silah Sesleri", p => p.Weapon, p => p.Weapon = !p.Weapon),
+      ("Ayak/Yürüme Sesleri", p => p.Foot, p => p.Foot = !p.Foot),
+      ("Oyuncu/Hasar Sesleri", p => p.Player, p => p.Player = !p.Player)
+    };
+
+    foreach (var item in items)
+    {
+      menu.AddMenuOption($"{item.Label}: {State(item.Get(pref))}", (p, o) => { item.Toggle(pref); ShowMenu(player); });
+    }
 
     MenuManager.OpenCenterHtmlMenu(this, player, menu);
   }
 
-  private void Toggle(CCSPlayerController player, Pref pref, int cat)
-  {
-    switch (cat)
-    {
-      case 0: pref.Knife = !pref.Knife; break;
-      case 1: pref.Foot = !pref.Foot; break;
-      case 2: pref.Player = !pref.Player; break;
-    }
-    ShowMenu(player);
-  }
-
-  private string State(bool muted) => muted ? "❌" : "✔️";
+  private string State(bool muted) => muted ? "<font color='red'>❌</font>" : "<font color='green'>✔️</font>";
 
   private HookResult OnSound(UserMessage msg)
   {
@@ -75,15 +78,50 @@ public class Sesler : BasePlugin
 
     if (!isKnife && !isFoot && !isPlayer) return HookResult.Continue;
 
+    FilterRecipients(msg, pref => (isKnife && pref.Knife) || (isFoot && pref.Foot) || (isPlayer && pref.Player));
+    return msg.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+  }
+
+  private HookResult OnWeaponSound(UserMessage um)
+  {
+    var entityIndex = um.ReadInt("entidx");
+    var entity = Utilities.GetEntityFromIndex<CBaseEntity>(entityIndex);
+    if (entity == null)
+      return HookResult.Continue;
+
+    var pawn = entity.As<CBasePlayerPawn>();
+    if (pawn == null || !pawn.IsValid || pawn.DesignerName != "player")
+      return HookResult.Continue;
+
+    var soundName = um.ReadString("sound") ?? string.Empty;
+    if (soundName.Length == 0)
+      return HookResult.Continue;
+
+    var lower = soundName.ToLowerInvariant();
+    bool looksLikeWeapon = lower.Contains("weapons/") || lower.Contains("weapon_") || lower.Contains("wpn_");
+    if (!looksLikeWeapon)
+      return HookResult.Continue;
+
+    FilterRecipients(um, pref => pref.Weapon);
+    return um.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+  }
+
+  private HookResult OnWeaponEvent(UserMessage um)
+  {
+    FilterRecipients(um, pref => pref.Weapon);
+    if (um.Recipients.Count == 0) return HookResult.Stop;
+    return HookResult.Continue;
+  }
+
+  private void FilterRecipients(UserMessage msg, Func<Pref, bool> predicate)
+  {
     foreach (var pl in msg.Recipients.ToList())
     {
       if (pl == null || !pl.IsValid) continue;
       var pref = GetPref(pl);
-      if ((isKnife && pref.Knife) || (isFoot && pref.Foot) || (isPlayer && pref.Player))
+      if (predicate(pref))
         msg.Recipients.Remove(pl);
     }
-
-    return msg.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
   }
 
   private static readonly HashSet<uint> KnifeHashes = new()
@@ -107,4 +145,5 @@ public class Pref
   public bool Knife;
   public bool Foot;
   public bool Player;
+  public bool Weapon;
 }

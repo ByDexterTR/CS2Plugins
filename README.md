@@ -116,6 +116,31 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
+### CTPerk
+> CT takımı için perk (özellik) sistemi (Jailbreak)
+
+**Komut:**
+- `css_ctperk` - CT perk seçim menüsünü açar
+
+**Yetki:** `@css/generic` veya `@jailbreak/warden`
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
+| `perk_hparmor_hp` | HP & Armor perk HP miktarı | `200` |
+| `perk_hparmor_armor` | HP & Armor perk zırh miktarı | `100` |
+| `perk_lifesteal_ratio` | Lifesteal perk oranı | `0.25` |
+| `perk_damagereducation_ratio` | Hasar azaltma perk oranı | `0.25` |
+| `perk_damageboost_ratio` | Hasar artırma perk oranı | `1.50` |
+| `enabled_perk_*` | Perkleri aktif/pasif yapar | `true` |
+| `selection_rights` | T sayısına göre seçim hakkı | Özelleştirilebilir |
+
+**Özellikler:**
+- CT'ler raunt başında perk seçebilir (HP/Zırh, Lifesteal, Sınırsız Mermi, Hasar Azaltma, Hasar Artırma)
+
+---
+
 ### CTRev
 > CT takımına canlandırma (revive) menüsü ve otomatik canlandırma sistemi
 
@@ -136,6 +161,22 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 **Özellikler:**
 - Otomatik canlandırma modu ve manuel canlandırma seçeneği
+
+---
+
+### CTSpawnKill
+> CT doğumunda geçici ölümsüzlük (spawn kill önleme)
+
+**Yetki:** Yok
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
+| `spawn_protect_seconds` | Spawn koruma süresi (saniye) | `5` |
+
+**Özellikler:**
+- CT'ler doğduğunda belirtilen süre boyunca hasar almaz ve turuncu renkle işaretlenir
 
 ---
 
@@ -257,7 +298,7 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 ---
 
 ### Sesler
-> Oyuncu ses kontrolü (bıçak, ayak/yürüme, oyuncu/hasar seslerini açma/kapama)
+> Oyuncu ses kontrolü (bıçak, silah, ayak/yürüme, oyuncu/hasar seslerini açma/kapama)
 
 **Komut:**
 - `css_ses` - Ses ayarları menüsünü açar
@@ -265,7 +306,7 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 **Yetki:** Yok
 
 **Özellikler:**
-- Oyuncular kendi sesleri için bıçak, ayak/yürüme ve oyuncu/hasar seslerini kapatabilir
+- Diğer oyuncuların iç bıçak, silah, ayak/yürüme ve oyuncu/hasar seslerini kapatabilir
 
 ---
 

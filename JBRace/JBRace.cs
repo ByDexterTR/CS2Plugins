@@ -34,7 +34,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
   private bool _raceActive = false;
   private bool _waitingForWinnerInput = false;
 
-  private CPhysicsPropOverride? _finishModel;
+  private CDynamicProp? _finishModel;
   private CBeam? _finishBeam;
   private CounterStrikeSharp.API.Modules.Timers.Timer? _countdownTimer = null;
 
@@ -52,6 +52,11 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
     RegisterListener<OnServerPrecacheResources>(OnServerPrecacheResources);
     AddCommandListener("say", OnPlayerChatHandler);
     AddCommandListener("say_team", OnPlayerChatHandler);
+  }
+
+  public override void Unload(bool hotReload)
+  {
+    ResetRace();
   }
 
   public void OnConfigParsed(JBRaceConfig config)
@@ -296,7 +301,6 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
           pl.PlayerPawn.Value?.CommitSuicide(false, true);
       }
 
-      Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Hedef kazanan sayısına ulaşıldı! Kalan oyuncular {CC.Red}elendi{CC.Default}.");
       ResetRace();
     }
   }
@@ -314,13 +318,13 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
     RemoveFinishMarker();
     if (_finishPos == null) return;
 
-    var model = Utilities.CreateEntityByName<CPhysicsPropOverride>("prop_physics_override");
+    var model = Utilities.CreateEntityByName<CDynamicProp>("prop_dynamic");
     if (model != null)
     {
-      var pos = new Vector(_finishPos.X, _finishPos.Y, _finishPos.Z + 32f);
+      var pos = new Vector(_finishPos.X, _finishPos.Y, _finishPos.Z + 48f);
       model.DispatchSpawn();
       model.SetModel("models/coop/challenge_coin.vmdl");
-      try { model.AcceptInput("SetAnimation", value: "challenge_coin_idle"); } catch { }
+      Server.NextWorldUpdate(() => model.AcceptInput("SetAnimation", value: "challenge_coin_idle"));
       model.Teleport(pos, new QAngle(0, 0, 0), Vector.Zero);
       _finishModel = model;
     }
@@ -331,7 +335,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
       if (beam != null)
       {
         beam.Render = Color.FromArgb(255, 0, 255, 0);
-        beam.Width = 3f;
+        beam.Width = 1.5f;
         beam.Teleport(new Vector(_finishPos.X, _finishPos.Y, _finishPos.Z), new QAngle(0, 0, 0), Vector.Zero);
         beam.EndPos.X = _finishPos.X;
         beam.EndPos.Y = _finishPos.Y;

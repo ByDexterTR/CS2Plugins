@@ -150,34 +150,29 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     var now = DateTime.UtcNow;
     var menu = new CenterHtmlMenu($"<font color='#d63f25' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/158/syringe_1f489.png&w=24&h=24&fit=cover'> CTRev (Hak: {_remainingRespawns}) <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/158/syringe_1f489.png&w=24&h=24&fit=cover'></font>", this);
 
-    menu.AddMenuOption($"Oto Rev: {(_autoRespawnEnabled ? "AÇIK" : "KAPALI")}", (p, option) =>
+    menu.AddMenuOption($"Oto Rev: {(_autoRespawnEnabled ? "<font color='green'>AÇIK</font>" : "<font color='grey'>KAPALI</font>")}", (p, option) =>
     {
       _autoRespawnEnabled = !_autoRespawnEnabled;
       p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Oto Rev: {(_autoRespawnEnabled ? CC.Green + "AÇIK" + CC.Default : CC.Red + "KAPALI" + CC.Default)}");
     });
 
-    var deadCts = Utilities.GetPlayers().Where(pl => pl != null && pl.IsValid && pl.TeamNum == 3 && !IsAlive(pl) && pl.SteamID != player.SteamID).ToList();
-
-    if (!IsAlive(player))
-    {
-      var selfRemain = _ctDeathEligibleAt.TryGetValue(player.SteamID, out var selfAt) ? Math.Max(0, (int)Math.Ceiling((selfAt - now).TotalSeconds)) : 0;
-      var label = selfRemain == 0 ? $"{player.PlayerName} (Hazır)" : $"{player.PlayerName} ({selfRemain}s)";
-      menu.AddMenuOption(label, (p, option) =>
-      {
-        TryRespawn(p, p);
-      });
-    }
+    var deadCts = Utilities.GetPlayers().Where(pl => pl != null && pl.IsValid && pl.TeamNum == 3 && !IsAlive(pl)).ToList();
 
     if (deadCts.Count != 0)
     {
       foreach (var ct in deadCts)
       {
         var remain = _ctDeathEligibleAt.TryGetValue(ct.SteamID, out var at) ? Math.Max(0, (int)Math.Ceiling((at - now).TotalSeconds)) : 0;
-        var label = remain == 0 ? $"{ct.PlayerName} (Hazır)" : $"{ct.PlayerName} ({remain}s)";
-        menu.AddMenuOption(label, (p, option) =>
+        if (remain == 0)
         {
-          TryRespawn(p, ct);
-        });
+          var label = $"<font color='green'>{ct.PlayerName}</font>";
+          menu.AddMenuOption(label, (p, option) => { TryRespawn(p, ct); });
+        }
+        else
+        {
+          var label = $"<font color='grey'>{ct.PlayerName} ({remain} sn)</font>";
+          menu.AddMenuOption(label, (p, option) => { }, true);
+        }
       }
     }
 
