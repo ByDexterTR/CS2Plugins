@@ -20,9 +20,9 @@ public class MapBlockConfig : BasePluginConfig
 public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 {
 	public override string ModuleName => "MapBlock";
-	public override string ModuleVersion => "1.0.0";
+	public override string ModuleVersion => "1.0.1";
 	public override string ModuleAuthor => "ByDexter";
-	public override string ModuleDescription => "B Blok";
+	public override string ModuleDescription => "Map Blok";
 
 	private const string FenceName = "bydexter_mapblock";
 	private const string SaveFileName = "MapBlock.json";
