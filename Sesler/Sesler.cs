@@ -11,14 +11,14 @@ public enum MuteMode : byte { None, Enemy, Team, All }
 public class Sesler : BasePlugin
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.0.1";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "Oyuncu ses kontrolü - Bıçak, Silah, Ayak/Yürüme, Oyuncu/Hasar, MVP Müzik";
 
   private readonly Dictionary<ulong, Pref> _prefs = new();
 
-  private static readonly string[] ModeLabels = { "Herkesin Açık", "Düşmanları Sustur", "Takımı Sustur", "Herkesi Sustur" };
-  private static readonly string[] ModeColors = { "green", "orange", "yellow", "red" };
+  private static readonly string[] ModeLabels = { "Açık", "Düşmanı Sustur", "Takımı Sustur", "Kapalı" };
+  private static readonly string[] ModeColors = { "green", "orange", "orange", "red" };
 
   public override void Load(bool hotReload)
   {
@@ -59,10 +59,10 @@ public class Sesler : BasePlugin
 
     var items = new (string Label, Func<Pref, MuteMode> Get, Action<Pref, MuteMode> Set)[]
     {
-      ("Bıçak Sesleri", p => p.Knife, (p, m) => p.Knife = m),
-      ("Silah Sesleri", p => p.Weapon, (p, m) => p.Weapon = m),
-      ("Ayak/Yürüme Sesleri", p => p.Foot, (p, m) => p.Foot = m),
-      ("Oyuncu/Hasar Sesleri", p => p.Player, (p, m) => p.Player = m),
+      ("Bıçak", p => p.Knife, (p, m) => p.Knife = m),
+      ("Silah", p => p.Weapon, (p, m) => p.Weapon = m),
+      ("Ayak/Yürüme", p => p.Foot, (p, m) => p.Foot = m),
+      ("Oyuncu/Hasar", p => p.Player, (p, m) => p.Player = m),
       ("MVP Müzik", p => p.Mvp, (p, m) => p.Mvp = m)
     };
 
@@ -81,13 +81,13 @@ public class Sesler : BasePlugin
   private void ShowSubMenu(CCSPlayerController player, string label, Func<Pref, MuteMode> get, Action<Pref, MuteMode> set)
   {
     var pref = GetPref(player);
-    var menu = new CenterHtmlMenu($"<font color='#8899a6'>{label}</font>", this);
+    var menu = new CenterHtmlMenu($"<font color='#8899a6' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'> {label} <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'></font>", this);
 
     for (int i = 0; i < 4; i++)
     {
       var mode = (MuteMode)i;
       var current = get(pref);
-      var prefix = current == mode ? "► " : "";
+      var prefix = current == mode ? "→ " : "";
       var color = ModeColors[i];
       menu.AddMenuOption($"{prefix}<font color='{color}'>{ModeLabels[i]}</font>", (p, o) =>
       {
@@ -96,7 +96,8 @@ public class Sesler : BasePlugin
       });
     }
 
-    menu.AddMenuOption("<font color='gray'>← Geri</font>", (p, o) => ShowMainMenu(player));
+    menu.AddMenuOption("Geri", (p, o) => ShowMainMenu(player));
+    menu.ExitButton = false;
     MenuManager.OpenCenterHtmlMenu(this, player, menu);
   }
 
