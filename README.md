@@ -269,6 +269,62 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
+### PlayerHourCheck
+> Steam oyun saati kontrolü ve kademeli ceza sistemi
+
+**Özellikler:**
+- Oyuncuların CS2 oyun saatini kontrol eder
+- Yetersiz saati olan oyunculara kademeli ceza sistemi uygular
+- Gizli profillere uyarı ve ceza sistemi
+- MySQL veritabanı desteği
+- Steam API, DecAPI ve ByDexter API desteği
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `phc_db` | MySQL veritabanı bağlantı bilgileri | `localhost:3306` |
+| `phc_chat_prefix` | Sohbet mesajlarında kullanılacak önek | `{Orchid}[ByDexter]` |
+| `phc_steam_api_key` | Steam API anahtarı (opsiyonel) | `""` |
+| `phc_required_playtime` | Gereken minimum oyun saati | `100` |
+| `phc_warn_times` | Gizli profil için uyarı sayısı | `3` |
+| `phc_warn_enabled` | Uyarı sistemi aktif/pasif | `1` |
+| `phc_warn_timer` | Uyarılar arası bekleme süresi (saniye) | `30` |
+| `phc_warn_reason_private` | Gizli profil uyarı mesajı | Özelleştirilebilir |
+| `phc_kick_reason_private` | Gizli profil kick mesajı | Özelleştirilebilir |
+| `phc_penalty` | Kademeli ceza ayarları | Özelleştirilebilir |
+| `phc_ignore_flags` | Kontrolden muaf yetkiler | `@bydexter/ignoreplaytime`, `@css/root` |
+| `phc_ignore_steamids` | Kontrolden muaf SteamID'ler | Özelleştirilebilir |
+
+**Ceza Sistemi:**
+
+Ceza anahtarları esnek şekilde tanımlanabilir. İhlal sayısına en yakın (küçük veya eşit) ceza uygulanır.
+
+| Config | Açıklama |
+|--------|----------|
+| `"1"` | 1-2. ihlal için uygulanır |
+| `"3"` | 3-4. ihlal için uygulanır |
+| `"5"` | 5+ ihlal için uygulanır |
+
+**Örnek Config:**
+```json
+"phc_penalty": {
+  "1": { "type": "kick", "time": 0, "reason": "Yetersiz oyun saati ({PlayerPlaytime}/{RequiredPlaytime} saat)" },
+  "3": { "type": "ban", "time": 60, "reason": "Yetersiz oyun saati - 1 saat ban" },
+  "5": { "type": "ban", "time": 1440, "reason": "Yetersiz oyun saati - 1 gün ban" }
+}
+```
+
+**Placeholder'lar:**
+- `{RequiredPlaytime}` - Gereken oyun saati
+- `{PlayerPlaytime}` - Oyuncunun mevcut saati
+- `{Default}` `{White}` `{Red}` `{LightRed}` `{DarkRed}` `{BlueGrey}` `{Blue}` `{DarkBlue}` `{Purple}` `{Orchid}` `{Yellow}` `{Gold}` `{Orange}` `{LightGreen}` `{Green}` `{Lime}` `{Grey}` `{Gray}` `{Grey2}` - Renk kodları
+
+**Gereksinimler:**
+- MySQL veritabanı
+- MySqlConnector.dll (plugin ile birlikte gelir)
+
+---
+
 ### PlayerRGB
 > Oyuncu modeli RGB renklendirme
 
