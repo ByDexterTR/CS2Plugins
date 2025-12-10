@@ -76,7 +76,7 @@ public enum PerkType
 public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 {
   public override string ModuleName => "CTPerk";
-  public override string ModuleVersion => "1.1.0";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "[JB] CT Perk System - Komutçu başlangıç özellikleri (tekil seçim)";
 
@@ -136,8 +136,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
   [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnCTPerkCommand(CCSPlayerController? player, CommandInfo commandInfo)
   {
-    if (player == null || !player.IsValid || player.IsBot)
-      return;
+    if (player == null || !player.IsValid || player.IsBot) return;
     ShowPerkMenu(player);
   }
 
@@ -146,16 +145,14 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     var sorted = Config.SelectionRights.OrderByDescending(r => r.TCount).ToList();
     foreach (var right in sorted)
     {
-      if (tCount >= right.TCount)
-        return right.Hak;
+      if (tCount >= right.TCount) return right.Hak;
     }
     return sorted.LastOrDefault()?.Hak ?? 0;
   }
 
   private void ShowPerkMenu(CCSPlayerController player)
   {
-    if (player == null || !player.IsValid)
-      return;
+    if (player == null || !player.IsValid) return;
 
     CenterHtmlMenu menu = new("<font color='#f7e882' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/lg/307/shield_1f6e1-fe0f.png&w=24&h=24&fit=cover'> CT Perk (" + usedSelections + "/" + allowedSelections + ") <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/lg/307/shield_1f6e1-fe0f.png&w=24&h=24&fit=cover'></font>", this);
     int hp = Config.PerkHpArmorHp;
@@ -183,10 +180,8 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     string label = already ? $"<font color='green'>{display} ✔</font>" : display;
     menu.AddMenuOption(label, (p, o) =>
     {
-      if (already)
-      {
-        return;
-      }
+      if (already) return;
+
 
       if (usedSelections >= allowedSelections)
       {
@@ -215,11 +210,11 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     {
       foreach (var ct in Utilities.GetPlayers().Where(pl => pl?.IsValid == true && !pl.IsBot && pl.Team == CsTeam.CounterTerrorist))
       {
-        var pawn = ct.PlayerPawn.Value;
-        if (pawn?.IsValid == true && pawn.LifeState == (byte)LifeState_t.LIFE_ALIVE)
-        {
-          ApplyHealthArmor(ct, pawn);
-        }
+        var pawn = ct.PlayerPawn?.Value;
+        if (pawn?.IsValid != true || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+          continue;
+
+        ApplyHealthArmor(ct, pawn);
       }
     }
   }
@@ -264,21 +259,18 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
   private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
   {
-    var player = @event.Userid;
-    if (player == null || !player.IsValid || player.IsBot || player.Team != CsTeam.CounterTerrorist)
-      return HookResult.Continue;
+    if (!activePerks.Contains(PerkType.Health)) return HookResult.Continue;
 
-    var pawn = player.PlayerPawn.Value;
-    if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
-      return HookResult.Continue;
+    var player = @event.Userid;
+    if (player?.IsValid != true || player.IsBot || player.Team != CsTeam.CounterTerrorist) return HookResult.Continue;
+
+    var pawn = player.PlayerPawn?.Value;
+    if (pawn?.IsValid != true || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE) return HookResult.Continue;
 
     Server.NextFrame(() =>
     {
-      if (player == null || !player.IsValid || pawn == null || !pawn.IsValid)
-        return;
-
-      if (activePerks.Contains(PerkType.Health))
-        ApplyHealthArmor(player, pawn);
+      if (pawn?.IsValid != true) return;
+      ApplyHealthArmor(player, pawn);
     });
 
     return HookResult.Continue;
@@ -286,11 +278,23 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
   private void ApplyHealthArmor(CCSPlayerController player, CCSPlayerPawn pawn)
   {
+    if (pawn?.IsValid != true) return;
+
     int hp = Config.PerkHpArmorHp;
     int armor = Config.PerkHpArmorArmor;
-    pawn.Health = hp;
-    pawn.MaxHealth = hp;
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+
+    if (pawn.Health >= 100)
+    {
+      pawn.Health = hp;
+      pawn.MaxHealth = hp;
+      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+    }
+    else
+    {
+      pawn.MaxHealth = hp;
+      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+    }
+
     pawn.ArmorValue = armor;
     Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
     player.GiveNamedItem("item_assaultsuit");
@@ -298,59 +302,49 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
   private void SetAmmo(CBasePlayerWeapon? weapon)
   {
-    if (weapon == null || !weapon.IsValid)
-      return;
+    if (weapon?.IsValid != true) return;
+
     var data = weapon.As<CCSWeaponBase>().VData;
     int maxClip = data?.MaxClip1 ?? weapon.Clip1;
-    int newClip = weapon.Clip1 + 1;
-    if (newClip > maxClip) newClip = maxClip;
-    weapon.Clip1 = newClip;
-    Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+
+    if (weapon.Clip1 <= maxClip / 2)
+    {
+      weapon.Clip1 = maxClip;
+      Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+    }
   }
 
   private HookResult OnWeaponFire(EventWeaponFire @event, GameEventInfo info)
   {
-    if (!activePerks.Contains(PerkType.InfiniteAmmo))
-      return HookResult.Continue;
+    if (!activePerks.Contains(PerkType.InfiniteAmmo)) return HookResult.Continue;
     var player = @event.Userid;
-    if (player == null || !player.IsValid || player.Team != CsTeam.CounterTerrorist || player.IsBot)
-      return HookResult.Continue;
+    if (player == null || !player.IsValid || player.Team != CsTeam.CounterTerrorist || player.IsBot) return HookResult.Continue;
     var pawn = player.PlayerPawn.Value;
-    if (pawn?.IsValid != true || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
-      return HookResult.Continue;
+    if (pawn?.IsValid != true || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE) return HookResult.Continue;
     var weapon = pawn.WeaponServices?.ActiveWeapon.Get();
-    if (weapon == null || !weapon.IsValid)
-      return HookResult.Continue;
-    if (weapon.DesignerName.Contains("knife") || weapon.DesignerName.Contains("bayonet"))
-      return HookResult.Continue;
+    if (weapon == null || !weapon.IsValid) return HookResult.Continue;
+    if (weapon.DesignerName.Contains("knife") || weapon.DesignerName.Contains("bayonet") || weapon.DesignerName.Contains("taser")) return HookResult.Continue;
     SetAmmo(weapon);
     return HookResult.Continue;
   }
 
   private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
   {
+    if (!activePerks.Contains(PerkType.Lifesteal)) return HookResult.Continue;
+
     var attacker = @event.Attacker;
     var victim = @event.Userid;
 
-    if (attacker == null || !attacker.IsValid || attacker.IsBot)
-      return HookResult.Continue;
+    if (attacker?.IsValid != true || attacker.IsBot) return HookResult.Continue;
+    if (victim?.IsValid != true) return HookResult.Continue;
+    if (attacker.UserId == victim.UserId) return HookResult.Continue;
+    if (attacker.Team != CsTeam.CounterTerrorist) return HookResult.Continue;
 
-    if (victim == null || !victim.IsValid)
-      return HookResult.Continue;
+    var attackerPawn = attacker.PlayerPawn?.Value;
+    if (attackerPawn?.IsValid != true || attackerPawn.LifeState != (byte)LifeState_t.LIFE_ALIVE) return HookResult.Continue;
 
-    if (attacker.UserId == victim.UserId)
-      return HookResult.Continue;
-
-    if (attacker.Team != CsTeam.CounterTerrorist)
-      return HookResult.Continue;
-
-    var attackerPawn = attacker.PlayerPawn.Value;
-    if (attackerPawn == null || !attackerPawn.IsValid || attackerPawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
-      return HookResult.Continue;
-    if (!activePerks.Contains(PerkType.Lifesteal))
-      return HookResult.Continue;
     float lifesteal = Config.PerkLifestealRatio;
-    if (lifesteal <= 0) return HookResult.Continue;
+    if (lifesteal <= 0 || lifesteal > 1.0f) return HookResult.Continue;
 
     var damage = @event.DmgHealth;
     var healAmount = (int)(damage * lifesteal);
@@ -372,26 +366,33 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
   public HookResult OnTakeDamage(DynamicHook h)
   {
+    if (!activePerks.Contains(PerkType.DamageReduction) && !activePerks.Contains(PerkType.DamageBoost)) return HookResult.Continue;
+
     var victimEnt = h.GetParam<CEntityInstance>(0);
     var info = h.GetParam<CTakeDamageInfo>(1);
-    if (victimEnt == null || info == null)
-      return HookResult.Continue;
+    if (victimEnt == null || info == null) return HookResult.Continue;
 
-    var attackerEnt = info.Attacker.Value;
-    CCSPlayerPawn? victimPawn = victimEnt as CCSPlayerPawn ?? new CCSPlayerPawn(victimEnt.Handle);
-    CCSPlayerPawn? attackerPawn = attackerEnt as CCSPlayerPawn ?? (attackerEnt != null ? new CCSPlayerPawn(attackerEnt.Handle) : null);
+    var victimPawn = victimEnt as CCSPlayerPawn;
+    if (victimPawn?.IsValid != true) return HookResult.Continue;
 
-    var victimController = victimPawn?.OriginalController.Value;
-    var attackerController = attackerPawn?.OriginalController.Value;
+    var attackerEnt = info.Attacker?.Value;
+    var attackerPawn = attackerEnt as CCSPlayerPawn;
 
-    if (activePerks.Contains(PerkType.DamageReduction) && victimController != null && victimController.IsValid && victimController.Team == CsTeam.CounterTerrorist)
+    var victimController = victimPawn.OriginalController?.Value;
+    var attackerController = attackerPawn?.OriginalController?.Value;
+
+    if (activePerks.Contains(PerkType.DamageReduction) &&
+        victimController?.IsValid == true &&
+        victimController.Team == CsTeam.CounterTerrorist)
     {
       float reduction = Config.PerkDamageReductionRatio;
       if (reduction > 0.0f)
         info.Damage *= (1f - reduction);
     }
 
-    if (activePerks.Contains(PerkType.DamageBoost) && attackerController != null && attackerController.IsValid && attackerController.Team == CsTeam.CounterTerrorist)
+    if (activePerks.Contains(PerkType.DamageBoost) &&
+        attackerController?.IsValid == true &&
+        attackerController.Team == CsTeam.CounterTerrorist)
     {
       float mult = Math.Max(1.0f, Config.PerkDamageBoostRatio);
       info.Damage *= mult;

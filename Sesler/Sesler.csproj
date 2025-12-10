@@ -9,7 +9,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.347" />
+    <Compile Remove="Clientprefs\**" />
+    <EmbeddedResource Remove="Clientprefs\**" />
+    <None Remove="Clientprefs\**" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.347" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="MySqlConnector" Version="2.5.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+  </ItemGroup>
+
+  <Target Name="CopyMySqlConnector" AfterTargets="Build">
+    <Copy SourceFiles="$(NuGetPackageRoot)mysqlconnector\2.5.0\lib\net8.0\MySqlConnector.dll" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(NuGetPackageRoot)dapper\2.1.66\lib\net8.0\Dapper.dll" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(NuGetPackageRoot)microsoft.data.sqlite.core\10.0.1\lib\net8.0\Microsoft.Data.Sqlite.dll" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(NuGetPackageRoot)sqlitepclraw.core\2.1.10\lib\netstandard2.0\SQLitePCLRaw.core.dll" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(NuGetPackageRoot)sqlitepclraw.bundle_e_sqlite3\2.1.10\lib\netstandard2.0\SQLitePCLRaw.batteries_v2.dll" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(NuGetPackageRoot)sqlitepclraw.provider.e_sqlite3\2.1.10\lib\netstandard2.0\SQLitePCLRaw.provider.e_sqlite3.dll" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(NuGetPackageRoot)sqlitepclraw.lib.e_sqlite3\2.1.10\runtimes\win-x64\native\e_sqlite3.dll" DestinationFolder="$(OutputPath)" />
+  </Target>
 
 </Project>

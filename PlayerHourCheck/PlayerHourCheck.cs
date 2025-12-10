@@ -1,12 +1,15 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Timers;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
+using Microsoft.Data.Sqlite;
+using Dapper;
 using CssTimer = CounterStrikeSharp.API.Modules.Timers.Timer;
 
 public class PenaltyConfig
@@ -26,6 +29,7 @@ public class PlayerHourCheckConfig : BasePluginConfig
   [JsonPropertyName("phc_db")]
   public Dictionary<string, string> Database { get; set; } = new Dictionary<string, string>()
   {
+    { "provider", "sqlite" }, // "mysql" - "sqlite"
     { "host", "localhost" },
     { "name", "cs2_playerhourcheck" },
     { "port", "3306" },
@@ -78,7 +82,7 @@ public class PlayerHourCheckConfig : BasePluginConfig
 public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 {
   public override string ModuleName => "PlayerHourCheck";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "Oyuncu saat kontrolü";
 
@@ -89,24 +93,66 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
   private readonly Dictionary<ulong, CssTimer?> _pendingChecks = new();
 
   private string _dbConnectionString = "";
+  private bool _usingSqlite = false;
 
   public PlayerHourCheckConfig Config { get; set; } = new();
 
   public void OnConfigParsed(PlayerHourCheckConfig config)
   {
     Config = config;
-    _dbConnectionString = new MySqlConnectionStringBuilder
-    {
-      Server = config.Database["host"],
-      Database = config.Database["name"],
-      UserID = config.Database["user"],
-      Password = config.Database["password"],
-      Port = uint.Parse(config.Database["port"])
-    }.ConnectionString;
   }
 
   public override void Load(bool hotReload)
   {
+    try
+    {
+      var pluginDir = ModuleDirectory;
+      var nativeDllPath = Path.Combine(pluginDir, "e_sqlite3.dll");
+      
+      if (File.Exists(nativeDllPath))
+      {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+          NativeLibrary.Load(nativeDllPath);
+        }
+        
+        SQLitePCL.Batteries_V2.Init();
+      }
+      else
+      {
+        Logger.LogWarning($"[PlayerHourCheck] Native SQLite DLL bulunamadı: {nativeDllPath}");
+      }
+    }
+    catch (Exception ex)
+    {
+      Logger.LogWarning(ex, "[PlayerHourCheck] SQLite native kütüphanesi yüklenirken hata (devam ediliyor)");
+    }
+
+    var provider = Config.Database.TryGetValue("provider", out var p) ? p.ToLower() : "sqlite";
+
+    if (provider == "mysql")
+    {
+      if (!TryLoadMySQL())
+      {
+        Logger.LogWarning("[PlayerHourCheck] MySQL yüklenemedi, SQLite'a geçiliyor...");
+        if (!TryLoadSQLite())
+        {
+          throw new Exception("[PlayerHourCheck] Hiçbir veritabanı yüklenemedi! Eklenti çalışamıyor.");
+        }
+      }
+    }
+    else
+    {
+      if (!TryLoadSQLite())
+      {
+        Logger.LogWarning("[PlayerHourCheck] SQLite yüklenemedi, MySQL'e geçiliyor...");
+        if (!TryLoadMySQL())
+        {
+          throw new Exception("[PlayerHourCheck] Hiçbir veritabanı yüklenemedi! Eklenti çalışamıyor.");
+        }
+      }
+    }
+
     InitializeDatabase();
     RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
@@ -128,62 +174,134 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     _http.Dispose();
   }
 
+  private bool TryLoadMySQL()
+  {
+    try
+    {
+      _usingSqlite = false;
+      var builder = new MySqlConnectionStringBuilder
+      {
+        Server = Config.Database["host"],
+        Database = Config.Database["name"],
+        UserID = Config.Database["user"],
+        Password = Config.Database["password"],
+        Port = uint.Parse(Config.Database["port"])
+      };
+      _dbConnectionString = builder.ToString();
+      return true;
+    }
+    catch (Exception ex)
+    {
+      Logger.LogWarning(ex, "[PlayerHourCheck] MySQL yükleme hatası");
+      return false;
+    }
+  }
+
+  private bool TryLoadSQLite()
+  {
+    try
+    {
+      _usingSqlite = true;
+      var fullPath = Path.Combine(ModuleDirectory, "PlayerHourCheck.sqlite");
+      _dbConnectionString = $"Data Source={fullPath}";
+      return true;
+    }
+    catch (Exception ex)
+    {
+      Logger.LogWarning(ex, "[PlayerHourCheck] SQLite yükleme hatası");
+      return false;
+    }
+  }
+
   private void InitializeDatabase()
   {
     Task.Run(async () =>
     {
       try
       {
-        var dbName = Config.Database["name"];
-        var connStringWithoutDb = new MySqlConnectionStringBuilder
+        if (_usingSqlite)
         {
-          Server = Config.Database["host"],
-          UserID = Config.Database["user"],
-          Password = Config.Database["password"],
-          Port = uint.Parse(Config.Database["port"])
-        }.ConnectionString;
-
-        await using (var conn = new MySqlConnection(connStringWithoutDb))
-        {
+          using var conn = new SqliteConnection(_dbConnectionString);
           await conn.OpenAsync();
-          await using var cmd = new MySqlCommand($"CREATE DATABASE IF NOT EXISTS `{dbName}`;", conn);
-          await cmd.ExecuteNonQueryAsync();
+
+          var sql = @"CREATE TABLE IF NOT EXISTS player_records (
+            steamid TEXT PRIMARY KEY,
+            playtime INTEGER NOT NULL DEFAULT 0,
+            penalty_count INTEGER NOT NULL DEFAULT 0,
+            checked_at INTEGER NOT NULL DEFAULT 0
+          )";
+
+          await conn.ExecuteAsync(sql);
         }
-
-        await using (var conn = new MySqlConnection(_dbConnectionString))
+        else
         {
-          await conn.OpenAsync();
-          await using var cmd = new MySqlCommand(@"
-            CREATE TABLE IF NOT EXISTS `player_records` (
+          var dbName = Config.Database["name"];
+
+          var builderWithoutDb = new MySqlConnectionStringBuilder
+          {
+            Server = Config.Database["host"],
+            UserID = Config.Database["user"],
+            Password = Config.Database["password"],
+            Port = uint.Parse(Config.Database["port"])
+          };
+
+          using (var conn = new MySqlConnection(builderWithoutDb.ToString()))
+          {
+            await conn.OpenAsync();
+            await conn.ExecuteAsync($"CREATE DATABASE IF NOT EXISTS `{dbName}`");
+          }
+
+          using (var conn = new MySqlConnection(_dbConnectionString))
+          {
+            await conn.OpenAsync();
+
+            var sql = @"CREATE TABLE IF NOT EXISTS `player_records` (
               `steamid` VARCHAR(20) PRIMARY KEY,
               `playtime` INT NOT NULL DEFAULT 0,
               `penalty_count` INT NOT NULL DEFAULT 0,
               `checked_at` BIGINT NOT NULL DEFAULT 0
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;", conn);
-          await cmd.ExecuteNonQueryAsync();
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+            await conn.ExecuteAsync(sql);
+          }
         }
       }
       catch (Exception ex)
       {
         Server.NextFrame(() => Logger.LogError(ex, "[PlayerHourCheck] Veritabanı bağlantı hatası."));
       }
-    });
+    }).Wait();
   }
 
   private (int Playtime, int PenaltyCount, long CheckedAt)? GetPlayerRecord(string steamId)
   {
     try
     {
-      using var conn = new MySqlConnection(_dbConnectionString);
-      conn.Open();
-
-      using var cmd = new MySqlCommand("SELECT playtime, penalty_count, checked_at FROM player_records WHERE steamid = @steamid", conn);
-      cmd.Parameters.AddWithValue("@steamid", steamId);
-
-      using var reader = cmd.ExecuteReader();
-      if (reader.Read())
+      if (_usingSqlite)
       {
-        return (reader.GetInt32("playtime"), reader.GetInt32("penalty_count"), reader.GetInt64("checked_at"));
+        using var conn = new SqliteConnection(_dbConnectionString);
+        conn.Open();
+
+        var row = conn.QueryFirstOrDefault("SELECT playtime, penalty_count, checked_at FROM player_records WHERE steamid = @steamid",
+          new { steamid = steamId });
+
+        if (row != null)
+        {
+          return ((int)row.playtime, (int)row.penalty_count, (long)row.checked_at);
+        }
+      }
+      else
+      {
+        using var conn = new MySqlConnection(_dbConnectionString);
+        conn.Open();
+
+        var row = conn.QueryFirstOrDefault("SELECT playtime, penalty_count, checked_at FROM player_records WHERE steamid = @steamid",
+          new { steamid = steamId });
+
+        if (row != null)
+        {
+          return ((int)row.playtime, (int)row.penalty_count, (long)row.checked_at);
+        }
       }
     }
     catch (Exception ex)
@@ -199,18 +317,41 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     {
       try
       {
-        await using var conn = new MySqlConnection(_dbConnectionString);
-        await conn.OpenAsync();
+        var checkedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-        await using var cmd = new MySqlCommand(@"
-          INSERT INTO player_records (steamid, playtime, penalty_count, checked_at)
-          VALUES (@steamid, @playtime, @penalty_count, @checked_at)
-          ON DUPLICATE KEY UPDATE playtime = @playtime, penalty_count = @penalty_count, checked_at = @checked_at", conn);
-        cmd.Parameters.AddWithValue("@steamid", steamId);
-        cmd.Parameters.AddWithValue("@playtime", playtime);
-        cmd.Parameters.AddWithValue("@penalty_count", penaltyCount);
-        cmd.Parameters.AddWithValue("@checked_at", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-        await cmd.ExecuteNonQueryAsync();
+        if (_usingSqlite)
+        {
+          using var conn = new SqliteConnection(_dbConnectionString);
+          await conn.OpenAsync();
+
+          var sql = @"INSERT OR REPLACE INTO player_records (steamid, playtime, penalty_count, checked_at)
+            VALUES (@steamid, @playtime, @penalty_count, @checked_at)";
+
+          await conn.ExecuteAsync(sql, new
+          {
+            steamid = steamId,
+            playtime = playtime,
+            penalty_count = penaltyCount,
+            checked_at = checkedAt
+          });
+        }
+        else
+        {
+          using var conn = new MySqlConnection(_dbConnectionString);
+          await conn.OpenAsync();
+
+          var sql = @"INSERT INTO player_records (steamid, playtime, penalty_count, checked_at)
+            VALUES (@steamid, @playtime, @penalty_count, @checked_at)
+            ON DUPLICATE KEY UPDATE playtime = @playtime, penalty_count = @penalty_count, checked_at = @checked_at";
+
+          await conn.ExecuteAsync(sql, new
+          {
+            steamid = steamId,
+            playtime = playtime,
+            penalty_count = penaltyCount,
+            checked_at = checkedAt
+          });
+        }
       }
       catch (Exception ex)
       {
@@ -240,6 +381,19 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
       if (playerHours >= requiredHours)
       {
+        return HookResult.Continue;
+      }
+
+      var missingHours = requiredHours - playerHours;
+      var lastChecked = record.Value.CheckedAt;
+      var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+      var hoursSinceCheck = (currentTime - lastChecked) / 3600.0;
+
+      if (hoursSinceCheck < missingHours)
+      {
+        var penaltyCount = record.Value.PenaltyCount + 1;
+        SavePlayerRecord(steamIdStr, playerHours, penaltyCount);
+        ApplyPenalty(player, penaltyCount, playerHours);
         return HookResult.Continue;
       }
     }
@@ -281,8 +435,23 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     if (record.HasValue)
     {
       var requiredHours = Config.RequiredPlaytime;
-      if (record.Value.Playtime >= requiredHours)
+      var playerHours = record.Value.Playtime;
+
+      if (playerHours >= requiredHours)
       {
+        return;
+      }
+
+      var missingHours = requiredHours - playerHours;
+      var lastChecked = record.Value.CheckedAt;
+      var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+      var hoursSinceCheck = (currentTime - lastChecked) / 3600.0;
+
+      if (hoursSinceCheck < missingHours)
+      {
+        var penaltyCount = record.Value.PenaltyCount + 1;
+        SavePlayerRecord(steamIdStr, playerHours, penaltyCount);
+        ApplyPenalty(player, penaltyCount, playerHours);
         return;
       }
     }
@@ -347,9 +516,6 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
   private void ApplyPenalty(CCSPlayerController player, int penaltyCount, int playerHours)
   {
-    // Find the closest penalty key that is <= penaltyCount
-    // Example: Config has 1,3,5,7 and penaltyCount is 4 -> use penalty 3
-    // If penaltyCount is 8 -> use penalty 7 (highest available)
     var penaltyKeys = Config.Penalties.Keys
       .Select(k => int.TryParse(k, out var num) ? num : 0)
       .Where(k => k > 0)
@@ -362,10 +528,8 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
       return;
     }
 
-    // Find the highest penalty key that is <= penaltyCount
     var selectedKey = penaltyKeys.Where(k => k <= penaltyCount).DefaultIfEmpty(penaltyKeys.First()).Max();
     
-    // If penaltyCount exceeds all keys, use the highest one
     if (penaltyCount > penaltyKeys.Max())
     {
       selectedKey = penaltyKeys.Max();
