@@ -220,40 +220,25 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         try
         {
             string configPath = Path.Combine(ModuleDirectory, Config.ConfigPath);
-            Console.WriteLine($"[CommandMaker] Config path: {configPath}");
 
             if (!File.Exists(configPath))
             {
-                Console.WriteLine($"[CommandMaker] Config file not found, creating default...");
                 CreateDefaultCommandsJson(configPath);
             }
 
             string json = File.ReadAllText(configPath);
-            Console.WriteLine($"[CommandMaker] JSON loaded, length: {json.Length} characters");
-
             _commandsConfig = JsonSerializer.Deserialize<CommandsConfig>(json);
-            Console.WriteLine($"[CommandMaker] Deserialization complete");
 
-            if (_commandsConfig == null)
+            if (_commandsConfig == null || _commandsConfig.Commands == null)
             {
-                Console.WriteLine($"[CommandMaker] ERROR: _commandsConfig is null after deserialization!");
                 return;
             }
-
-            if (_commandsConfig.Commands == null)
-            {
-                Console.WriteLine($"[CommandMaker] ERROR: Commands list is null!");
-                return;
-            }
-
-            Console.WriteLine($"[CommandMaker] Found {_commandsConfig.Commands.Count} commands in config");
 
             foreach (var kvp in _registeredCommands.ToList())
             {
                 if (_commandCallbacks.TryGetValue(kvp.Key, out var callback))
                 {
                     RemoveCommand(kvp.Key, callback);
-                    Console.WriteLine($"[CommandMaker] Removed command: {kvp.Key}");
                 }
             }
 
@@ -262,16 +247,12 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
             foreach (var cmd in _commandsConfig.Commands)
             {
-                Console.WriteLine($"[CommandMaker] Registering command: {cmd.Command}");
                 RegisterDynamicCommand(cmd);
             }
-
-            Console.WriteLine($"[CommandMaker] Successfully registered {_registeredCommands.Count} command aliases");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CommandMaker] ERROR loading commands: {ex.Message}");
-            Console.WriteLine($"[CommandMaker] Stack trace: {ex.StackTrace}");
+            Console.WriteLine($"[CommandMaker] ERROR: {ex.Message}");
         }
     }
 
@@ -291,7 +272,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
                     Arg1NumberMax = 500,
                     Flag = "@css/slay;@css/cheats",
                     SetHealth = "[TARGET] [ARG1]",
-                    Chat = "[GOLD][PLAYERNAME] [DEFAULT]adlı oyuncunun canı [GOLD][ARG1] [DEFAULT]olarak ayarlandı.",
+                    Chat = "[GOLD][TARGET] [DEFAULT]adlı oyuncunun canı [GOLD][ARG1] [DEFAULT]olarak ayarlandı.",
                     Center = "<font color='green'>Can: [ARG1]</font>",
                     CenterTime = 3.0f,
                     Announce = false
@@ -347,7 +328,11 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             }
         };
 
-        var options = new JsonSerializerOptions { WriteIndented = true };
+        var options = new JsonSerializerOptions 
+        { 
+            WriteIndented = true,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
         string jsonContent = JsonSerializer.Serialize(defaultConfig, options);
         File.WriteAllText(path, jsonContent);
     }

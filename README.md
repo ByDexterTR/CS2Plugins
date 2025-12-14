@@ -161,14 +161,6 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 }
 ```
 
-**Gelişmiş Özellikler:**
-- JSON dosyası yoksa otomatik örnek komutlar oluşturur
-- Multi-flag desteği (OR mantığı ile)
-- Komut alias desteği (noktalı virgül ile: `css_hp;css_health`)
-- OnTick optimizasyonu (sadece aktif efektler çalışır)
-- CTakeDamage hook ile godmode (EventPlayerHurt yerine)
-- Center mesajları timer ile kontrol edilir
-
 ---
 
 ### CTBan
@@ -474,7 +466,7 @@ Ceza anahtarları esnek şekilde tanımlanabilir. İhlal sayısına en yakın (k
 **Ayarlar:**
 | Ayar | Açıklama | Değerler |
 |------|----------|----------|
-| `Database.provider` | Veritabanı türü | `sqlite` (varsayılan), `mysql` |
+| `Database.provider` | Veritabanı türü | `sqlite` |
 | `Database.host` | MySQL sunucu adresi | `localhost` |
 | `Database.name` | Veritabanı adı | `bydexter_sesler` |
 | `Database.port` | MySQL port | `3306` |
@@ -483,11 +475,6 @@ Ceza anahtarları esnek şekilde tanımlanabilir. İhlal sayısına en yakın (k
 
 **Özellikler:**
 - Diğer oyuncuların bıçak, silah, ayak/yürüme, oyuncu/hasar ve MVP müziği seslerini kapatabilir
-- Her ses kategorisi için 4 mod: Açık, Düşmanı Sustur, Takımı Sustur, Kapalı
-- MVP müziği için 2 mod: Açık, Kapalı
-- Tercihler veritabanında saklanır (SQLite veya MySQL)
-- Otomatik veritabanı oluşturma ve tablo yönetimi
-- SQLite varsayılan, MySQL kullanılamıyorsa otomatik fallback
 
 **Gereksinimler:**
 - SQLite: `e_sqlite3.dll` (plugin ile birlikte gelir)
