@@ -61,6 +61,116 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
+### CommandMaker
+> JSON tabanlı dinamik komut oluşturma sistemi
+
+**Komutlar:**
+- `css_cm_reload` - Komutları yeniden yükle (yetki: `@css/root`)
+
+**Yetki:** Her komut için JSON'da tanımlanabilir (multi-flag destekler)
+
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `ConfigPath` | Komut tanımlarının bulunduğu JSON dosyası | `commands.json` |
+
+**Komut Türleri:**
+- `default` - Basit komutlar (chat/center mesajı gösterir)
+- `target` - Hedef oyuncu gerektiren komutlar (örn: `!hp <oyuncu> <değer>`)
+- `playertarget` - Opsiyonel hedef (kendine veya başkasına, örn: `!god [oyuncu]`)
+- `execute` - Sunucu komutu çalıştırır
+
+**Özellikler:**
+
+*Validasyon:*
+- `arg1`, `arg2`, `arg3` - 3 argümana kadar destek
+- `arg*_number_min/max` - Sayısal sınırlar
+- `arg*_word_length` - Kelime uzunluğu sınırı
+- `arg*`: `"number"`, `"word"`, `"optional"`
+
+*Aksiyon Sistemi (18 aksiyon):*
+- `sethealth` - Can ayarla
+- `setmaxhealth` - Maksimum can ayarla
+- `setarmor` - Zırh ayarla
+- `sethelmet` - Miğfer ver
+- `setfreeze` - Dondur/çöz
+- `setnoclip` - Noclip aç/kapat
+- `setspeed` - Hız çarpanı ayarla
+- `setgravity` - Yerçekimi ayarla
+- `setgodmode` - Ölümsüzlük aç/kapat
+- `setmovetype` - Hareket tipi ayarla
+- `giveweapon` - Silah ver
+- `stripweapons` - Tüm silahları kaldır
+- `setclip` - Şarjör mermisi ayarla
+- `setammo` - Yedek mermi ayarla
+- `teleport` - Işınla (x y z)
+- `setplayercolor` - Oyuncu rengi (r g b)
+- `setmodel` - Model değiştir
+- `playsound` - Ses oynat
+- `setname` - İsim değiştir
+- `slapdamage` - Tokat ve hasar
+- `setmoney` - Para ayarla
+- `changeteam` - Takım değiştir (0-3)
+- `respawn` - Yeniden canlandır
+- `kill` - Öldür
+
+*Mesaj Sistemi:*
+- `chat` - Komutu kullanan oyuncuya chat mesajı
+- `center` - Komutu kullanan oyuncuya merkez ekran mesajı (HTML destekli)
+- `centertime` - Merkez mesajın ekranda kalma süresi (saniye, varsayılan: 5.0)
+- `serverchat` - Tüm oyunculara chat mesajı
+- `servercenter` - Tüm oyunculara merkez ekran mesajı (HTML destekli)
+
+*Yer Tutucular (17+):*
+- `[PLAYER]` / `[PLAYERNAME]` - Komutu kullanan oyuncu
+- `[TARGET]` - Hedef oyuncu
+- `[PLAYER/TARGET]` - Hedef oyuncu (playertarget için)
+- `[ARG1]`, `[ARG2]`, `[ARG3]` - Argümanlar
+- `[TARGETHEALTH]` - Hedef oyuncunun canı
+- `[TARGETTEAM]` - Hedef oyuncunun takımı
+- `[PLAYERCOORDINATE]` - Oyuncu koordinatları (x y z)
+- `[TARGETCOORDINATE]` - Hedef koordinatları (x y z)
+- `[SERVERIP]`, `[SERVERPORT]` - Sunucu IP ve port
+- `[HOSTNAME]` - Sunucu ismi
+- `[MAPNAME]` - Harita ismi
+- `[PLAYERCOUNT]` - Oyuncu sayısı
+- `[ALIVECOUNT]` - Canlı oyuncu sayısı
+- `[RANDOMPLAYER]` - Rastgele oyuncu
+- `[TIME]` - Saat (HH:mm:ss)
+- `[DEFAULT]`, `[RED]`, `[GOLD]`, `[GREEN]`, `[BLUE]`, `[ORCHID]`, vb. - Renk kodları
+
+*Diğer:*
+- `announce` - Komut kullanımını sunucuya duyurur (true/false)
+- `flag` - Yetki (noktalı virgül ile çoklu yetki: `@css/slay;@css/cheats`)
+
+**Örnek Komut:**
+```json
+{
+  "command": "css_hp;css_health",
+  "type": "target",
+  "args": 1,
+  "arg1": "number",
+  "arg1_number_min": 1,
+  "arg1_number_max": 500,
+  "flag": "@css/slay;@css/cheats",
+  "sethealth": "[TARGET] [ARG1]",
+  "chat": "[GOLD][TARGET][DEFAULT] oyuncusunun canı [GOLD][ARG1][DEFAULT] yapıldı.",
+  "center": "<font color='green'>Can: [ARG1]</font>",
+  "centertime": 3.0,
+  "announce": false
+}
+```
+
+**Gelişmiş Özellikler:**
+- JSON dosyası yoksa otomatik örnek komutlar oluşturur
+- Multi-flag desteği (OR mantığı ile)
+- Komut alias desteği (noktalı virgül ile: `css_hp;css_health`)
+- OnTick optimizasyonu (sadece aktif efektler çalışır)
+- CTakeDamage hook ile godmode (EventPlayerHurt yerine)
+- Center mesajları timer ile kontrol edilir
+
+---
+
 ### CTBan
 > CT takımı yasaklama sistemi
 
@@ -357,12 +467,40 @@ Ceza anahtarları esnek şekilde tanımlanabilir. İhlal sayısına en yakın (k
 > Oyuncu ses kontrolü (bıçak, silah, ayak/yürüme, oyuncu/hasar seslerini açma/kapama)
 
 **Komut:**
-- `css_ses` - Ses ayarları menüsünü açar
+- `css_ses`, `css_sesler` - Ses ayarları menüsünü açar
 
 **Yetki:** Yok
 
+**Ayarlar:**
+| Ayar | Açıklama | Değerler |
+|------|----------|----------|
+| `Database.provider` | Veritabanı türü | `sqlite` (varsayılan), `mysql` |
+| `Database.host` | MySQL sunucu adresi | `localhost` |
+| `Database.name` | Veritabanı adı | `bydexter_sesler` |
+| `Database.port` | MySQL port | `3306` |
+| `Database.user` | MySQL kullanıcı adı | `root` |
+| `Database.password` | MySQL şifre | `""` |
+
 **Özellikler:**
-- Diğer oyuncuların iç bıçak, silah, ayak/yürüme ve oyuncu/hasar seslerini kapatabilir
+- Diğer oyuncuların bıçak, silah, ayak/yürüme, oyuncu/hasar ve MVP müziği seslerini kapatabilir
+- Her ses kategorisi için 4 mod: Açık, Düşmanı Sustur, Takımı Sustur, Kapalı
+- MVP müziği için 2 mod: Açık, Kapalı
+- Tercihler veritabanında saklanır (SQLite veya MySQL)
+- Otomatik veritabanı oluşturma ve tablo yönetimi
+- SQLite varsayılan, MySQL kullanılamıyorsa otomatik fallback
+
+**Gereksinimler:**
+- SQLite: `e_sqlite3.dll` (plugin ile birlikte gelir)
+- MySQL: `MySqlConnector.dll` (plugin ile birlikte gelir)
+
+**Veritabanı:**
+Plugin ilk çalıştırıldığında otomatik olarak `player_preferences` tablosunu oluşturur:
+- `steamid` - Oyuncu Steam ID
+- `knife` - Bıçak sesi tercihi (0-3)
+- `weapon` - Silah sesi tercihi (0-3)
+- `foot` - Ayak/Yürüme sesi tercihi (0-3)
+- `player` - Oyuncu/Hasar sesi tercihi (0-3)
+- `mvp` - MVP müziği tercihi (0 veya 3)
 
 ---
 
