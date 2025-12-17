@@ -7,13 +7,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Clientprefs\**" />
-    <EmbeddedResource Remove="Clientprefs\**" />
-    <None Remove="Clientprefs\**" />
-  </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="CounterStrikeSharp.API" Version="1.0.347" PrivateAssets="all" ExcludeAssets="runtime" />
     <PackageReference Include="MySqlConnector" Version="2.5.0" />
@@ -29,6 +23,7 @@
     <Copy SourceFiles="$(NuGetPackageRoot)sqlitepclraw.bundle_e_sqlite3\2.1.10\lib\netstandard2.0\SQLitePCLRaw.batteries_v2.dll" DestinationFolder="$(OutputPath)" />
     <Copy SourceFiles="$(NuGetPackageRoot)sqlitepclraw.provider.e_sqlite3\2.1.10\lib\netstandard2.0\SQLitePCLRaw.provider.e_sqlite3.dll" DestinationFolder="$(OutputPath)" />
     <Copy SourceFiles="$(NuGetPackageRoot)sqlitepclraw.lib.e_sqlite3\2.1.10\runtimes\win-x64\native\e_sqlite3.dll" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(NuGetPackageRoot)sqlitepclraw.lib.e_sqlite3\2.1.10\runtimes\linux-x64\native\libe_sqlite3.so" DestinationFolder="$(OutputPath)" />
   </Target>
 
 </Project>

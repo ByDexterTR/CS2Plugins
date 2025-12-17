@@ -30,7 +30,7 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.0.3";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "Oyuncu ses kontrolü - Bıçak, Silah, Ayak/Yürüme, Oyuncu/Hasar, MVP Müzik";
 
@@ -54,25 +54,41 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     try
     {
       var pluginDir = ModuleDirectory;
-      var nativeDllPath = Path.Combine(pluginDir, "e_sqlite3.dll");
-      
-      if (File.Exists(nativeDllPath))
+
+      if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
       {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        var nativeDllPath = Path.Combine(pluginDir, "e_sqlite3.dll");
+        if (File.Exists(nativeDllPath))
         {
           NativeLibrary.Load(nativeDllPath);
+          SQLitePCL.Batteries_V2.Init();
         }
-        
-        SQLitePCL.Batteries_V2.Init();
+        else
+        {
+          Logger.LogWarning("[Sesler] Windows e_sqlite3 bulunamadı");
+        }
+      }
+      else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+      {
+        var nativeSoPath = Path.Combine(pluginDir, "e_sqlite3.so");
+        if (File.Exists(nativeSoPath))
+        {
+          NativeLibrary.Load(nativeSoPath);
+          SQLitePCL.Batteries_V2.Init();
+        }
+        else
+        {
+          Logger.LogWarning("[Sesler] Sistem sqlite kullanılacak (libsqlite3 eksik olabilir)");
+        }
       }
       else
       {
-        Logger.LogWarning($"[Sesler] Native SQLite DLL bulunamadı: {nativeDllPath}");
+        Logger.LogWarning("[Sesler] Platform tanınmadı, sqlite yükleme atlandı");
       }
     }
     catch (Exception ex)
     {
-      Logger.LogWarning(ex, "[Sesler] SQLite native kütüphanesi yüklenirken hata (devam ediliyor)");
+      Logger.LogWarning(ex, "[Sesler] SQLite yüklenemedi");
     }
 
     var provider = Config.Database.TryGetValue("provider", out var p) ? p.ToLower() : "sqlite";
@@ -81,7 +97,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     {
       if (!TryLoadMySQL())
       {
-        Logger.LogWarning("[Sesler] MySQL yüklenemedi, SQLite'a geçiliyor...");
+        Logger.LogWarning("[Sesler] MySQL yüklenemedi, SQLite'a geçiliyor");
         if (!TryLoadSQLite())
         {
           throw new Exception("[Sesler] Hiçbir veritabanı yüklenemedi! Eklenti çalışamıyor.");
@@ -92,7 +108,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     {
       if (!TryLoadSQLite())
       {
-        Logger.LogWarning("[Sesler] SQLite yüklenemedi, MySQL'e geçiliyor...");
+        Logger.LogWarning("[Sesler] SQLite yüklenemedi, MySQL'e geçiliyor");
         if (!TryLoadMySQL())
         {
           throw new Exception("[Sesler] Hiçbir veritabanı yüklenemedi! Eklenti çalışamıyor.");
