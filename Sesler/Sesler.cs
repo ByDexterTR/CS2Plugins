@@ -6,7 +6,7 @@ using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API;
 using Microsoft.Extensions.Logging;
-using Microsoft.Data.Sqlite;
+using System.Data.SQLite;
 using MySqlConnector;
 using Dapper;
 using System.Runtime.InteropServices;
@@ -30,7 +30,7 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "Oyuncu ses kontrolü - Bıçak, Silah, Ayak/Yürüme, Oyuncu/Hasar, MVP Müzik";
 
@@ -51,46 +51,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   public override void Load(bool hotReload)
   {
-    try
-    {
-      var pluginDir = ModuleDirectory;
-
-      if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-      {
-        var nativeDllPath = Path.Combine(pluginDir, "e_sqlite3.dll");
-        if (File.Exists(nativeDllPath))
-        {
-          NativeLibrary.Load(nativeDllPath);
-          SQLitePCL.Batteries_V2.Init();
-        }
-        else
-        {
-          Logger.LogWarning("[Sesler] Windows e_sqlite3 bulunamadı");
-        }
-      }
-      else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-      {
-        var nativeSoPath = Path.Combine(pluginDir, "e_sqlite3.so");
-        if (File.Exists(nativeSoPath))
-        {
-          NativeLibrary.Load(nativeSoPath);
-          SQLitePCL.Batteries_V2.Init();
-        }
-        else
-        {
-          Logger.LogWarning("[Sesler] Sistem sqlite kullanılacak (libsqlite3 eksik olabilir)");
-        }
-      }
-      else
-      {
-        Logger.LogWarning("[Sesler] Platform tanınmadı, sqlite yükleme atlandı");
-      }
-    }
-    catch (Exception ex)
-    {
-      Logger.LogWarning(ex, "[Sesler] SQLite yüklenemedi");
-    }
-
     var provider = Config.Database.TryGetValue("provider", out var p) ? p.ToLower() : "sqlite";
 
     if (provider == "mysql")
@@ -157,12 +117,36 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       _usingSqlite = true;
       var fullPath = Path.Combine(ModuleDirectory, "Sesler.sqlite");
       _dbConnectionString = $"Data Source={fullPath}";
+      Server.NextFrame(() => Logger.LogInformation($"[Sesler] TryLoadSQLite ModuleDirectory={ModuleDirectory}, DBPath={fullPath}"));
       return true;
     }
     catch (Exception ex)
     {
       Logger.LogWarning(ex, "[Sesler] SQLite yükleme hatası");
       return false;
+    }
+  }
+
+  private async Task EnsurePlayerPreferencesTableAsync()
+  {
+    try
+    {
+      using var conn = new SQLiteConnection(_dbConnectionString);
+      await conn.OpenAsync();
+      var sql = @"CREATE TABLE IF NOT EXISTS player_preferences (
+            steamid TEXT PRIMARY KEY,
+            knife INTEGER NOT NULL DEFAULT 0,
+            weapon INTEGER NOT NULL DEFAULT 0,
+            foot INTEGER NOT NULL DEFAULT 0,
+            player INTEGER NOT NULL DEFAULT 0,
+            mvp INTEGER NOT NULL DEFAULT 0
+          )";
+      await conn.ExecuteAsync(sql);
+    }
+    catch (Exception ex)
+    {
+      Server.NextFrame(() => Logger.LogError(ex, "[Sesler] EnsurePlayerPreferencesTableAsync failed"));
+      throw;
     }
   }
 
@@ -190,9 +174,8 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       {
         if (_usingSqlite)
         {
-          using var conn = new SqliteConnection(_dbConnectionString);
+          using var conn = new SQLiteConnection(_dbConnectionString);
           await conn.OpenAsync();
-
           var sql = @"CREATE TABLE IF NOT EXISTS player_preferences (
             steamid TEXT PRIMARY KEY,
             knife INTEGER NOT NULL DEFAULT 0,
@@ -254,10 +237,20 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       {
         if (_usingSqlite)
         {
-          using var conn = new SqliteConnection(_dbConnectionString);
+          using var conn = new SQLiteConnection(_dbConnectionString);
           await conn.OpenAsync();
 
-          var rows = await conn.QueryAsync("SELECT * FROM player_preferences");
+          IEnumerable<dynamic> rows;
+          try
+          {
+            rows = await conn.QueryAsync("SELECT * FROM player_preferences");
+          }
+          catch (SQLiteException sex) when (sex.Message?.Contains("no such table") == true)
+          {
+            Server.NextFrame(() => Logger.LogWarning(sex, "[Sesler] player_preferences table missing, attempting to create it and retry load"));
+            await EnsurePlayerPreferencesTableAsync();
+            rows = await conn.QueryAsync("SELECT * FROM player_preferences");
+          }
 
           int loadedCount = 0;
           foreach (var row in rows)
@@ -324,7 +317,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     {
       if (_usingSqlite)
       {
-        using var conn = new SqliteConnection(_dbConnectionString);
+        using var conn = new SQLiteConnection(_dbConnectionString);
         await conn.OpenAsync();
 
         var sql = @"INSERT OR REPLACE INTO player_preferences (steamid, knife, weapon, foot, player, mvp)
@@ -362,6 +355,36 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     }
     catch (Exception ex)
     {
+      if (_usingSqlite && ex is SQLiteException sqlex && sqlex.Message?.Contains("no such table") == true)
+      {
+        try
+        {
+          await EnsurePlayerPreferencesTableAsync();
+          using var conn = new SQLiteConnection(_dbConnectionString);
+          await conn.OpenAsync();
+
+          var sql = @"INSERT OR REPLACE INTO player_preferences (steamid, knife, weapon, foot, player, mvp)
+            VALUES (@steamid, @knife, @weapon, @foot, @player, @mvp)";
+
+          await conn.ExecuteAsync(sql, new
+          {
+            steamid = steamId.ToString(),
+            knife = (byte)pref.Knife,
+            weapon = (byte)pref.Weapon,
+            foot = (byte)pref.Foot,
+            player = (byte)pref.Player,
+            mvp = (byte)pref.Mvp
+          });
+
+          return;
+        }
+        catch (Exception rex)
+        {
+          Server.NextFrame(() => Logger.LogError(rex, $"[Sesler] Tercih kaydedilemedi after recreate - SteamID: {steamId}"));
+          return;
+        }
+      }
+
       Server.NextFrame(() => Logger.LogError(ex, $"[Sesler] Tercih kaydedilemedi - SteamID: {steamId}"));
     }
   }
@@ -386,7 +409,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       {
         if (_usingSqlite)
         {
-          using var conn = new SqliteConnection(_dbConnectionString);
+          using var conn = new SQLiteConnection(_dbConnectionString);
           await conn.OpenAsync();
 
           var row = await conn.QueryFirstOrDefaultAsync("SELECT * FROM player_preferences WHERE steamid = @steamid",
@@ -640,17 +663,30 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   private HookResult OnRoundMvp(EventRoundMvp @event, GameEventInfo info)
   {
-    if (@event?.Userid?.IsValid != true) return HookResult.Continue;
-
-    var worldEntity = Utilities.GetEntityFromIndex<CBaseEntity>(0);
-    if (worldEntity?.IsValid != true) return HookResult.Continue;
-
-    foreach (var player in Utilities.GetPlayers())
+    try
     {
-      if (player?.IsValid != true || player.Connected != PlayerConnectedState.PlayerConnected) continue;
-      if (GetPref(player).Mvp != MuteMode.All) continue;
+      if (@event?.Userid?.IsValid != true) return HookResult.Continue;
 
-      worldEntity.EmitSound("StopSoundEvents.StopAllMusic", new RecipientFilter(player));
+      var worldEntity = Utilities.GetEntityFromIndex<CBaseEntity>(0);
+      if (worldEntity?.IsValid != true) return HookResult.Continue;
+
+      foreach (var player in Utilities.GetPlayers())
+      {
+        if (player?.IsValid != true || player.Connected != PlayerConnectedState.PlayerConnected) continue;
+        if (GetPref(player).Mvp != MuteMode.All) continue;
+
+        worldEntity.EmitSound("StopSoundEvents.StopAllMusic", new RecipientFilter(player));
+      }
+    }
+    catch (CounterStrikeSharp.API.Core.NativeException nex)
+    {
+      Server.NextFrame(() => Logger.LogWarning(nex, "[Sesler] Game event field access failed in OnRoundMvp - ignoring event"));
+      return HookResult.Continue;
+    }
+    catch (Exception ex)
+    {
+      Server.NextFrame(() => Logger.LogError(ex, "[Sesler] Unexpected error in OnRoundMvp"));
+      return HookResult.Continue;
     }
 
     return HookResult.Continue;
