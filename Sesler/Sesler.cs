@@ -6,11 +6,9 @@ using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API;
 using Microsoft.Extensions.Logging;
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 using MySqlConnector;
 using Dapper;
-using System.Runtime.InteropServices;
-using System.Reflection;
 
 public enum MuteMode : byte { None, Enemy, Team, All }
 
@@ -30,7 +28,7 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.0.6";
+  public override string ModuleVersion => "1.0.7";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "Oyuncu ses kontrolü - Bıçak, Silah, Ayak/Yürüme, Oyuncu/Hasar, MVP Müzik";
 
@@ -39,6 +37,8 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
   private readonly Dictionary<ulong, Pref> _prefs = new();
   private string _dbConnectionString = "";
   private bool _usingSqlite = false;
+  private bool _databaseInitialized = false;
+  private readonly object _dbLock = new();
   private readonly List<Task> _pendingSaves = new();
 
   private static readonly string[] ModeLabels = { "Açık", "Düşmanı Sustur", "Takımı Sustur", "Kapalı" };
@@ -117,7 +117,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       _usingSqlite = true;
       var fullPath = Path.Combine(ModuleDirectory, "Sesler.sqlite");
       _dbConnectionString = $"Data Source={fullPath}";
-      Server.NextFrame(() => Logger.LogInformation($"[Sesler] TryLoadSQLite ModuleDirectory={ModuleDirectory}, DBPath={fullPath}"));
       return true;
     }
     catch (Exception ex)
@@ -131,7 +130,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
   {
     try
     {
-      using var conn = new SQLiteConnection(_dbConnectionString);
+      using var conn = new SqliteConnection(_dbConnectionString);
       await conn.OpenAsync();
       var sql = @"CREATE TABLE IF NOT EXISTS player_preferences (
             steamid TEXT PRIMARY KEY,
@@ -141,7 +140,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
             player INTEGER NOT NULL DEFAULT 0,
             mvp INTEGER NOT NULL DEFAULT 0
           )";
-      await conn.ExecuteAsync(sql);
+        await conn.ExecuteAsync(sql);
     }
     catch (Exception ex)
     {
@@ -168,29 +167,32 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   private void InitializeDatabase()
   {
-    Task.Run(async () =>
+    lock (_dbLock)
     {
+      if (_databaseInitialized) return;
+
       try
       {
+        if (string.IsNullOrEmpty(_dbConnectionString))
+          throw new Exception("Database connection string boş!");
+
         if (_usingSqlite)
         {
-          using var conn = new SQLiteConnection(_dbConnectionString);
-          await conn.OpenAsync();
-          var sql = @"CREATE TABLE IF NOT EXISTS player_preferences (
+            using var conn = new SqliteConnection(_dbConnectionString);
+          conn.Open();
+
+          conn.Execute(@"CREATE TABLE IF NOT EXISTS player_preferences (
             steamid TEXT PRIMARY KEY,
             knife INTEGER NOT NULL DEFAULT 0,
             weapon INTEGER NOT NULL DEFAULT 0,
             foot INTEGER NOT NULL DEFAULT 0,
             player INTEGER NOT NULL DEFAULT 0,
             mvp INTEGER NOT NULL DEFAULT 0
-          )";
-
-          await conn.ExecuteAsync(sql);
+          )");
         }
         else
         {
           var dbName = Config.Database["name"];
-
           var builderWithoutDb = new MySqlConnectionStringBuilder
           {
             Server = Config.Database["host"],
@@ -201,114 +203,111 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
           using (var conn = new MySqlConnection(builderWithoutDb.ToString()))
           {
-            await conn.OpenAsync();
-            await conn.ExecuteAsync($"CREATE DATABASE IF NOT EXISTS `{dbName}`");
+            conn.Open();
+            conn.Execute($"CREATE DATABASE IF NOT EXISTS `{dbName}`");
           }
 
-          using (var conn = new MySqlConnection(_dbConnectionString))
-          {
-            await conn.OpenAsync();
+          using var connWithDb = new MySqlConnection(_dbConnectionString);
+          connWithDb.Open();
 
-            var sql = @"CREATE TABLE IF NOT EXISTS `player_preferences` (
-              `steamid` VARCHAR(20) PRIMARY KEY,
-              `knife` TINYINT NOT NULL DEFAULT 0,
-              `weapon` TINYINT NOT NULL DEFAULT 0,
-              `foot` TINYINT NOT NULL DEFAULT 0,
-              `player` TINYINT NOT NULL DEFAULT 0,
-              `mvp` TINYINT NOT NULL DEFAULT 0
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
-            await conn.ExecuteAsync(sql);
-          }
+          connWithDb.Execute(@"CREATE TABLE IF NOT EXISTS `player_preferences` (
+            `steamid` VARCHAR(20) PRIMARY KEY,
+            `knife` TINYINT NOT NULL DEFAULT 0,
+            `weapon` TINYINT NOT NULL DEFAULT 0,
+            `foot` TINYINT NOT NULL DEFAULT 0,
+            `player` TINYINT NOT NULL DEFAULT 0,
+            `mvp` TINYINT NOT NULL DEFAULT 0
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         }
+
+        _databaseInitialized = true;
+        LoadPreferencesFromDatabase();
       }
       catch (Exception ex)
       {
         Server.NextFrame(() => Logger.LogError(ex, "[Sesler] Veritabanı başlatma hatası"));
+        throw;
       }
-    }).Wait();
+    }
   }
 
   private void LoadPreferencesFromDatabase()
   {
-    Task.Run(async () =>
+    try
     {
-      try
+      if (_usingSqlite)
       {
-        if (_usingSqlite)
+          using var conn = new SqliteConnection(_dbConnectionString);
+        conn.Open();
+
+        IEnumerable<dynamic> rows;
+        try
         {
-          using var conn = new SQLiteConnection(_dbConnectionString);
-          await conn.OpenAsync();
-
-          IEnumerable<dynamic> rows;
-          try
-          {
-            rows = await conn.QueryAsync("SELECT * FROM player_preferences");
-          }
-          catch (SQLiteException sex) when (sex.Message?.Contains("no such table") == true)
-          {
-            Server.NextFrame(() => Logger.LogWarning(sex, "[Sesler] player_preferences table missing, attempting to create it and retry load"));
-            await EnsurePlayerPreferencesTableAsync();
-            rows = await conn.QueryAsync("SELECT * FROM player_preferences");
-          }
-
-          int loadedCount = 0;
-          foreach (var row in rows)
-          {
-            string steamId = row.steamid;
-            if (ulong.TryParse(steamId, out ulong steamIdNum))
-            {
-              var pref = new Pref
-              {
-                Knife = (MuteMode)(int)row.knife,
-                Weapon = (MuteMode)(int)row.weapon,
-                Foot = (MuteMode)(int)row.foot,
-                Player = (MuteMode)(int)row.player,
-                Mvp = (MuteMode)(int)row.mvp
-              };
-
-              var capturedSteamId = steamIdNum;
-              var capturedPref = pref;
-              Server.NextFrame(() => _prefs[capturedSteamId] = capturedPref);
-              loadedCount++;
-            }
-          }
+          rows = conn.Query("SELECT * FROM player_preferences");
         }
-        else
+        catch (SqliteException sex) when (sex.Message?.Contains("no such table") == true)
         {
-          using var conn = new MySqlConnection(_dbConnectionString);
-          await conn.OpenAsync();
+          Server.NextFrame(() => Logger.LogWarning(sex, "[Sesler] player_preferences table missing, attempting to create it and retry load"));
+          EnsurePlayerPreferencesTableAsync().Wait();
+          rows = conn.Query("SELECT * FROM player_preferences");
+        }
 
-          var rows = await conn.QueryAsync("SELECT * FROM player_preferences");
-
-          int loadedCount = 0;
-          foreach (var row in rows)
+        int loadedCount = 0;
+        foreach (var row in rows)
+        {
+          string steamId = row.steamid;
+          if (ulong.TryParse(steamId, out ulong steamIdNum))
           {
-            string steamId = row.steamid;
-            if (ulong.TryParse(steamId, out ulong steamIdNum))
+            var pref = new Pref
             {
-              var pref = new Pref
-              {
-                Knife = (MuteMode)(byte)row.knife,
-                Weapon = (MuteMode)(byte)row.weapon,
-                Foot = (MuteMode)(byte)row.foot,
-                Player = (MuteMode)(byte)row.player,
-                Mvp = (MuteMode)(byte)row.mvp
-              };
+              Knife = (MuteMode)(int)row.knife,
+              Weapon = (MuteMode)(int)row.weapon,
+              Foot = (MuteMode)(int)row.foot,
+              Player = (MuteMode)(int)row.player,
+              Mvp = (MuteMode)(int)row.mvp
+            };
 
-              var capturedSteamId = steamIdNum;
-              var capturedPref = pref;
-              Server.NextFrame(() => _prefs[capturedSteamId] = capturedPref);
-              loadedCount++;
-            }
+            var capturedSteamId = steamIdNum;
+            var capturedPref = pref;
+            Server.NextFrame(() => _prefs[capturedSteamId] = capturedPref);
+            loadedCount++;
           }
         }
       }
-      catch (Exception ex)
+      else
       {
-        Server.NextFrame(() => Logger.LogError(ex, "[Sesler] Tercihler yüklenemedi"));
+        using var conn = new MySqlConnection(_dbConnectionString);
+        conn.Open();
+
+        var rows = conn.Query("SELECT * FROM player_preferences");
+
+        int loadedCount = 0;
+        foreach (var row in rows)
+        {
+          string steamId = row.steamid;
+          if (ulong.TryParse(steamId, out ulong steamIdNum))
+          {
+            var pref = new Pref
+            {
+              Knife = (MuteMode)(byte)row.knife,
+              Weapon = (MuteMode)(byte)row.weapon,
+              Foot = (MuteMode)(byte)row.foot,
+              Player = (MuteMode)(byte)row.player,
+              Mvp = (MuteMode)(byte)row.mvp
+            };
+
+            var capturedSteamId = steamIdNum;
+            var capturedPref = pref;
+            Server.NextFrame(() => _prefs[capturedSteamId] = capturedPref);
+            loadedCount++;
+          }
+        }
       }
-    });
+    }
+    catch (Exception ex)
+    {
+      Server.NextFrame(() => Logger.LogError(ex, "[Sesler] Tercihler yüklenemedi"));
+    }
   }
 
   private async Task SavePreferenceToDatabaseAsync(ulong steamId, Pref pref)
@@ -317,7 +316,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     {
       if (_usingSqlite)
       {
-        using var conn = new SQLiteConnection(_dbConnectionString);
+          using var conn = new SqliteConnection(_dbConnectionString);
         await conn.OpenAsync();
 
         var sql = @"INSERT OR REPLACE INTO player_preferences (steamid, knife, weapon, foot, player, mvp)
@@ -355,12 +354,12 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     }
     catch (Exception ex)
     {
-      if (_usingSqlite && ex is SQLiteException sqlex && sqlex.Message?.Contains("no such table") == true)
+      if (_usingSqlite && ex is SqliteException sqlex && sqlex.Message?.Contains("no such table") == true)
       {
         try
         {
           await EnsurePlayerPreferencesTableAsync();
-          using var conn = new SQLiteConnection(_dbConnectionString);
+          using var conn = new SqliteConnection(_dbConnectionString);
           await conn.OpenAsync();
 
           var sql = @"INSERT OR REPLACE INTO player_preferences (steamid, knife, weapon, foot, player, mvp)
@@ -409,11 +408,11 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       {
         if (_usingSqlite)
         {
-          using var conn = new SQLiteConnection(_dbConnectionString);
-          await conn.OpenAsync();
+              using var conn = new SqliteConnection(_dbConnectionString);
+              await conn.OpenAsync();
 
-          var row = await conn.QueryFirstOrDefaultAsync("SELECT * FROM player_preferences WHERE steamid = @steamid",
-            new { steamid = player.SteamID.ToString() });
+              var row = await conn.QueryFirstOrDefaultAsync("SELECT * FROM player_preferences WHERE steamid = @steamid",
+                new { steamid = player.SteamID.ToString() });
 
           if (row != null)
           {
