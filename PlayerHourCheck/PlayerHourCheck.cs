@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
@@ -10,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Microsoft.Data.Sqlite;
 using Dapper;
+using System.Collections.Concurrent;
 using CssTimer = CounterStrikeSharp.API.Modules.Timers.Timer;
 
 public class PenaltyConfig
@@ -82,7 +82,7 @@ public class PlayerHourCheckConfig : BasePluginConfig
 public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 {
   public override string ModuleName => "PlayerHourCheck";
-  public override string ModuleVersion => "1.0.2";
+  public override string ModuleVersion => "1.0.3";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "Oyuncu saat kontrolü";
 
@@ -91,6 +91,11 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
   private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
   private readonly Dictionary<ulong, int> _warnCounts = new();
   private readonly Dictionary<ulong, CssTimer?> _pendingChecks = new();
+
+
+
+  private readonly ConcurrentQueue<Action> _mainThreadActions = new();
+  private CssTimer? _mainThreadProcessor;
 
   private string _dbConnectionString = "";
   private bool _usingSqlite = false;
@@ -104,30 +109,6 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
   public override void Load(bool hotReload)
   {
-    try
-    {
-      var pluginDir = ModuleDirectory;
-      var nativeDllPath = Path.Combine(pluginDir, "e_sqlite3.dll");
-      
-      if (File.Exists(nativeDllPath))
-      {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-          NativeLibrary.Load(nativeDllPath);
-        }
-        
-        SQLitePCL.Batteries_V2.Init();
-      }
-      else
-      {
-        Logger.LogWarning($"[PlayerHourCheck] Native SQLite DLL bulunamadı: {nativeDllPath}");
-      }
-    }
-    catch (Exception ex)
-    {
-      Logger.LogWarning(ex, "[PlayerHourCheck] SQLite native kütüphanesi yüklenirken hata (devam ediliyor)");
-    }
-
     var provider = Config.Database.TryGetValue("provider", out var p) ? p.ToLower() : "sqlite";
 
     if (provider == "mysql")
@@ -157,6 +138,28 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
 
+    _mainThreadProcessor = AddTimer(0.1f, () =>
+    {
+      try
+      {
+        while (_mainThreadActions.TryDequeue(out var act))
+        {
+          try
+          {
+            act();
+          }
+          catch (Exception ex)
+          {
+            Logger.LogError(ex, "[PlayerHourCheck] main-thread action error");
+          }
+        }
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, "[PlayerHourCheck] error in main-thread processor");
+      }
+    });
+
     if (hotReload)
     {
       foreach (var player in Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot && !p.IsHLTV))
@@ -172,6 +175,12 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
       timer?.Kill();
     _pendingChecks.Clear();
     _http.Dispose();
+    try
+    {
+      _mainThreadProcessor?.Kill();
+      _mainThreadProcessor = null;
+    }
+    catch { }
   }
 
   private bool TryLoadMySQL()
@@ -268,7 +277,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
       }
       catch (Exception ex)
       {
-        Server.NextFrame(() => Logger.LogError(ex, "[PlayerHourCheck] Veritabanı bağlantı hatası."));
+        _mainThreadActions.Enqueue(() => Logger.LogError(ex, "[PlayerHourCheck] Veritabanı bağlantı hatası."));
       }
     }).Wait();
   }
@@ -355,7 +364,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
       }
       catch (Exception ex)
       {
-        Server.NextFrame(() => Logger.LogError(ex, "[PlayerHourCheck] Veritabanı kaydetme hatası."));
+        _mainThreadActions.Enqueue(() => Logger.LogError(ex, "[PlayerHourCheck] Veritabanı kaydetme hatası."));
       }
     });
   }
@@ -368,10 +377,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     var steamId = player.SteamID;
     var steamIdStr = steamId.ToString();
 
-    if (IsIgnored(player))
-    {
-      return HookResult.Continue;
-    }
+    if (IsIgnored(player)) return HookResult.Continue;
 
     var record = GetPlayerRecord(steamIdStr);
     if (record.HasValue)
@@ -406,7 +412,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
   private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player == null) return HookResult.Continue;
+    if (player == null || player.IsBot) return HookResult.Continue;
 
     var steamId = player.SteamID;
     if (_pendingChecks.TryGetValue(steamId, out var timer))
@@ -469,23 +475,54 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     try
     {
       var result = await GetPlaytimeAsync(steamId);
+      var steamIdStr = steamId.ToString();
 
-      Server.NextFrame(() =>
+      if (result.Status == PlaytimeStatus.Success)
       {
-        if (player == null || !player.IsValid) return;
-
-        switch (result.Status)
+        var requiredHours = Config.RequiredPlaytime;
+        if (result.Hours >= requiredHours)
         {
-          case PlaytimeStatus.Success:
-            HandlePlaytimeResult(player, result.Hours);
-            break;
-
-          case PlaytimeStatus.Private:
-          case PlaytimeStatus.Error:
-            HandlePrivateProfile(player);
-            break;
+          SavePlayerRecord(steamIdStr, result.Hours, 0);
+          _mainThreadActions.Enqueue(() =>
+          {
+            try { _warnCounts.Remove(steamId); } catch { }
+          });
         }
-      });
+        else
+        {
+          var record = GetPlayerRecord(steamIdStr);
+          var penaltyCount = (record?.PenaltyCount ?? 0) + 1;
+          SavePlayerRecord(steamIdStr, result.Hours, penaltyCount);
+
+          _mainThreadActions.Enqueue(() =>
+          {
+            try
+            {
+              if (player == null || !player.IsValid) return;
+              ApplyPenalty(player, penaltyCount, result.Hours);
+            }
+            catch (Exception ex)
+            {
+              Logger.LogError(ex, "[PlayerHourCheck] error applying penalty on main thread");
+            }
+          });
+        }
+      }
+      else
+      {
+        _mainThreadActions.Enqueue(() =>
+        {
+          try
+          {
+            if (player == null || !player.IsValid) return;
+            HandlePrivateProfile(player);
+          }
+          catch (Exception ex)
+          {
+            Logger.LogError(ex, "[PlayerHourCheck] error handling private/error profile on main thread");
+          }
+        });
+      }
     }
     catch (Exception ex)
     {
@@ -529,7 +566,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     }
 
     var selectedKey = penaltyKeys.Where(k => k <= penaltyCount).DefaultIfEmpty(penaltyKeys.First()).Max();
-    
+
     if (penaltyCount > penaltyKeys.Max())
     {
       selectedKey = penaltyKeys.Max();
@@ -608,12 +645,44 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
   private bool IsIgnored(CCSPlayerController player)
   {
-    var steamId = player.SteamID.ToString();
-    if (Config.IgnoreSteamIds.Contains(steamId)) return true;
+    if (player == null) return false;
 
-    foreach (var flag in Config.IgnoreFlags)
+    var hasValidSteamIds = Config.IgnoreSteamIds != null && Config.IgnoreSteamIds.Any(s => !string.IsNullOrWhiteSpace(s));
+    var hasValidFlags = Config.IgnoreFlags != null && Config.IgnoreFlags.Any(f => !string.IsNullOrWhiteSpace(f));
+
+    if (!hasValidSteamIds && !hasValidFlags)
+      return false;
+
+    var steamId = player.SteamID.ToString();
+    if (hasValidSteamIds)
     {
-      if (AdminManager.PlayerHasPermissions(player, flag)) return true;
+      foreach (var id in Config.IgnoreSteamIds!)
+      {
+        if (string.IsNullOrWhiteSpace(id)) continue;
+        if (id.Trim() == steamId)
+        {
+          return true;
+        }
+      }
+    }
+
+    if (hasValidFlags)
+    {
+      foreach (var flag in Config.IgnoreFlags!)
+      {
+        if (string.IsNullOrWhiteSpace(flag)) continue;
+        try
+        {
+          if (AdminManager.PlayerHasPermissions(player, flag))
+          {
+            return true;
+          }
+        }
+        catch (Exception ex)
+        {
+          Logger.LogWarning(ex, "[PlayerHourCheck] PlayerHasPermissions threw for flag={0}", flag);
+        }
+      }
     }
 
     return false;
