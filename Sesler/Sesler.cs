@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Data.Sqlite;
 using MySqlConnector;
 using Dapper;
+using System.Collections.Concurrent;
 
 public enum MuteMode : byte { None, Enemy, Team, All }
 
@@ -28,13 +29,13 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.0.7";
+  public override string ModuleVersion => "1.0.8";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "Oyuncu ses kontrolü - Bıçak, Silah, Ayak/Yürüme, Oyuncu/Hasar, MVP Müzik";
 
   public SeslerConfig Config { get; set; } = new();
 
-  private readonly Dictionary<ulong, Pref> _prefs = new();
+  private readonly ConcurrentDictionary<ulong, Pref> _prefs = new();
   private string _dbConnectionString = "";
   private bool _usingSqlite = false;
   private bool _databaseInitialized = false;
@@ -77,7 +78,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     }
 
     InitializeDatabase();
-    LoadPreferencesFromDatabase();
 
     HookUserMessage(208, OnSound, HookMode.Pre);
     HookUserMessage(369, OnWeaponSound, HookMode.Pre);
@@ -140,17 +140,21 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
             player INTEGER NOT NULL DEFAULT 0,
             mvp INTEGER NOT NULL DEFAULT 0
           )";
-        await conn.ExecuteAsync(sql);
+      await conn.ExecuteAsync(sql);
     }
     catch (Exception ex)
     {
-      Server.NextFrame(() => Logger.LogError(ex, "[Sesler] EnsurePlayerPreferencesTableAsync failed"));
+      Logger.LogError(ex, "[Sesler] EnsurePlayerPreferencesTableAsync failed");
       throw;
     }
   }
 
   public override void Unload(bool hotReload)
   {
+    UnhookUserMessage(208, OnSound, HookMode.Pre);
+    UnhookUserMessage(369, OnWeaponSound, HookMode.Pre);
+    UnhookUserMessage(452, OnWeaponEvent, HookMode.Pre);
+
     var saveTasks = new List<Task>();
     foreach (var kvp in _prefs)
     {
@@ -159,10 +163,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
     saveTasks.AddRange(_pendingSaves);
     Task.WaitAll(saveTasks.ToArray(), TimeSpan.FromSeconds(10));
-
-    UnhookUserMessage(208, OnSound, HookMode.Pre);
-    UnhookUserMessage(369, OnWeaponSound, HookMode.Pre);
-    UnhookUserMessage(452, OnWeaponEvent, HookMode.Pre);
   }
 
   private void InitializeDatabase()
@@ -178,7 +178,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
         if (_usingSqlite)
         {
-            using var conn = new SqliteConnection(_dbConnectionString);
+          using var conn = new SqliteConnection(_dbConnectionString);
           conn.Open();
 
           conn.Execute(@"CREATE TABLE IF NOT EXISTS player_preferences (
@@ -225,7 +225,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       }
       catch (Exception ex)
       {
-        Server.NextFrame(() => Logger.LogError(ex, "[Sesler] Veritabanı başlatma hatası"));
+        Logger.LogError(ex, "[Sesler] Veritabanı başlatma hatası");
         throw;
       }
     }
@@ -237,7 +237,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     {
       if (_usingSqlite)
       {
-          using var conn = new SqliteConnection(_dbConnectionString);
+        using var conn = new SqliteConnection(_dbConnectionString);
         conn.Open();
 
         IEnumerable<dynamic> rows;
@@ -247,12 +247,11 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
         }
         catch (SqliteException sex) when (sex.Message?.Contains("no such table") == true)
         {
-          Server.NextFrame(() => Logger.LogWarning(sex, "[Sesler] player_preferences table missing, attempting to create it and retry load"));
+          Logger.LogWarning(sex, "[Sesler] player_preferences table missing, attempting to create it and retry load");
           EnsurePlayerPreferencesTableAsync().Wait();
           rows = conn.Query("SELECT * FROM player_preferences");
         }
 
-        int loadedCount = 0;
         foreach (var row in rows)
         {
           string steamId = row.steamid;
@@ -267,10 +266,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
               Mvp = (MuteMode)(int)row.mvp
             };
 
-            var capturedSteamId = steamIdNum;
-            var capturedPref = pref;
-            Server.NextFrame(() => _prefs[capturedSteamId] = capturedPref);
-            loadedCount++;
+            _prefs[steamIdNum] = pref;
           }
         }
       }
@@ -281,7 +277,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
         var rows = conn.Query("SELECT * FROM player_preferences");
 
-        int loadedCount = 0;
         foreach (var row in rows)
         {
           string steamId = row.steamid;
@@ -296,17 +291,14 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
               Mvp = (MuteMode)(byte)row.mvp
             };
 
-            var capturedSteamId = steamIdNum;
-            var capturedPref = pref;
-            Server.NextFrame(() => _prefs[capturedSteamId] = capturedPref);
-            loadedCount++;
+            _prefs[steamIdNum] = pref;
           }
         }
       }
     }
     catch (Exception ex)
     {
-      Server.NextFrame(() => Logger.LogError(ex, "[Sesler] Tercihler yüklenemedi"));
+      Logger.LogError(ex, "[Sesler] Tercihler yüklenemedi");
     }
   }
 
@@ -316,7 +308,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     {
       if (_usingSqlite)
       {
-          using var conn = new SqliteConnection(_dbConnectionString);
+        using var conn = new SqliteConnection(_dbConnectionString);
         await conn.OpenAsync();
 
         var sql = @"INSERT OR REPLACE INTO player_preferences (steamid, knife, weapon, foot, player, mvp)
@@ -379,12 +371,12 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
         }
         catch (Exception rex)
         {
-          Server.NextFrame(() => Logger.LogError(rex, $"[Sesler] Tercih kaydedilemedi after recreate - SteamID: {steamId}"));
+          Logger.LogError(rex, $"[Sesler] Tercih kaydedilemedi after recreate - SteamID: {steamId}");
           return;
         }
       }
 
-      Server.NextFrame(() => Logger.LogError(ex, $"[Sesler] Tercih kaydedilemedi - SteamID: {steamId}"));
+      Logger.LogError(ex, $"[Sesler] Tercih kaydedilemedi - SteamID: {steamId}");
     }
   }
 
@@ -399,8 +391,10 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
   private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player?.IsValid != true || player.IsBot || player.SteamID == 0)
-      return HookResult.Continue;
+    if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0) return HookResult.Continue;
+
+    var steamId = player.SteamID;
+    var steamIdString = steamId.ToString();
 
     Task.Run(async () =>
     {
@@ -408,11 +402,11 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       {
         if (_usingSqlite)
         {
-              using var conn = new SqliteConnection(_dbConnectionString);
-              await conn.OpenAsync();
+          using var conn = new SqliteConnection(_dbConnectionString);
+          await conn.OpenAsync();
 
-              var row = await conn.QueryFirstOrDefaultAsync("SELECT * FROM player_preferences WHERE steamid = @steamid",
-                new { steamid = player.SteamID.ToString() });
+          var row = await conn.QueryFirstOrDefaultAsync("SELECT * FROM player_preferences WHERE steamid = @steamid",
+            new { steamid = steamIdString });
 
           if (row != null)
           {
@@ -425,12 +419,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
               Mvp = (MuteMode)(int)row.mvp
             };
 
-            var capturedSteamId = player.SteamID;
-            var capturedPref = pref;
-            Server.NextFrame(() =>
-            {
-              _prefs[capturedSteamId] = capturedPref;
-            });
+            _prefs[steamId] = pref;
           }
         }
         else
@@ -439,7 +428,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
           await conn.OpenAsync();
 
           var row = await conn.QueryFirstOrDefaultAsync("SELECT * FROM player_preferences WHERE steamid = @steamid",
-            new { steamid = player.SteamID.ToString() });
+            new { steamid = steamIdString });
 
           if (row != null)
           {
@@ -452,18 +441,13 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
               Mvp = (MuteMode)(byte)row.mvp
             };
 
-            var capturedSteamId = player.SteamID;
-            var capturedPref = pref;
-            Server.NextFrame(() =>
-            {
-              _prefs[capturedSteamId] = capturedPref;
-            });
+            _prefs[steamId] = pref;
           }
         }
       }
       catch (Exception ex)
       {
-        Server.NextFrame(() => Logger.LogError(ex, $"[Sesler] Oyuncu tercihleri yüklenemedi - SteamID: {player.SteamID}"));
+        Logger.LogError(ex, $"[Sesler] Oyuncu tercihleri yüklenemedi - SteamID: {steamId}");
       }
     });
 
@@ -473,13 +457,10 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
   private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player?.IsValid == true && !player.IsBot && player.SteamID != 0)
-    {
-      if (_prefs.TryGetValue(player.SteamID, out var pref))
-      {
-        SavePreferenceToDatabase(player.SteamID, pref);
-      }
-    }
+    if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0) return HookResult.Continue;
+
+    if (_prefs.TryGetValue(player.SteamID, out var pref)) SavePreferenceToDatabase(player.SteamID, pref);
+
     return HookResult.Continue;
   }
 
@@ -550,7 +531,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       menu.AddMenuOption($"{prefix}<font color='{color}'>{labelText}</font>", (p, o) =>
       {
         set(pref, mode);
-        SavePreferenceToDatabase(player.SteamID, pref);
         ShowMainMenu(player);
       });
     }
@@ -572,23 +552,35 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   private HookResult OnSound(UserMessage msg)
   {
-    var hash = msg.ReadUInt("soundevent_hash");
-
-    var soundType = GetSoundType(hash);
-    if (soundType == SoundType.None) return HookResult.Continue;
-
-    var entityIndex = msg.ReadInt("source_entity_index");
-    var entity = Utilities.GetEntityFromIndex<CBaseEntity>(entityIndex);
-
-    FilterRecipients(msg, entity, pref => soundType switch
+    try
     {
-      SoundType.Knife => pref.Knife,
-      SoundType.Foot => pref.Foot,
-      SoundType.Player => pref.Player,
-      _ => MuteMode.None
-    });
+      var hash = msg.ReadUInt("soundevent_hash");
+      
+      var soundType = GetSoundType(hash);
+      if (soundType == SoundType.None) return HookResult.Continue;
 
-    return msg.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+      var entityIndex = msg.ReadInt("source_entity_index");
+      var entity = Utilities.GetEntityFromIndex<CBaseEntity>(entityIndex);
+
+      FilterRecipients(msg, entity, pref => soundType switch
+      {
+        SoundType.Knife => pref.Knife,
+        SoundType.Foot => pref.Foot,
+        SoundType.Player => pref.Player,
+        _ => MuteMode.None
+      });
+
+      return msg.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "[Sesler] OnSound hook error");
+      return HookResult.Continue;
+    }
+    finally
+    {
+      msg?.Dispose();
+    }
   }
 
   private enum SoundType : byte { None, Knife, Foot, Player }
@@ -626,66 +618,73 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   private HookResult OnWeaponSound(UserMessage um)
   {
-    var entityIndex = um.ReadInt("entidx");
-    var entity = Utilities.GetEntityFromIndex<CBaseEntity>(entityIndex);
-    if (entity?.IsValid != true)
-      return HookResult.Continue;
+    try
+    {
+      var entityIndex = um.ReadInt("entidx");
+      var entity = Utilities.GetEntityFromIndex<CBaseEntity>(entityIndex);
+      if (entity == null || !entity.IsValid) return HookResult.Continue;
 
-    var pawn = entity.As<CBasePlayerPawn>();
-    if (pawn?.IsValid != true || pawn.DesignerName != "player")
-      return HookResult.Continue;
+      var pawn = entity.As<CBasePlayerPawn>();
+      if (pawn == null || !pawn.IsValid || pawn.DesignerName != "player") return HookResult.Continue;
 
-    var soundName = um.ReadString("sound") ?? string.Empty;
-    if (soundName.Length == 0)
-      return HookResult.Continue;
+      var soundName = um.ReadString("sound") ?? string.Empty;
+      if (soundName.Length == 0) return HookResult.Continue;
 
-    bool looksLikeWeapon = soundName.Contains("weapons/", StringComparison.OrdinalIgnoreCase)
-                        || soundName.Contains("weapon_", StringComparison.OrdinalIgnoreCase)
-                        || soundName.Contains("wpn_", StringComparison.OrdinalIgnoreCase);
-    if (!looksLikeWeapon)
-      return HookResult.Continue;
+      bool looksLikeWeapon = soundName.Contains("weapons/", StringComparison.OrdinalIgnoreCase) || soundName.Contains("weapon_", StringComparison.OrdinalIgnoreCase) || soundName.Contains("wpn_", StringComparison.OrdinalIgnoreCase);
+      if (!looksLikeWeapon) return HookResult.Continue;
 
-    FilterRecipients(um, entity, pref => pref.Weapon);
-    return um.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+      FilterRecipients(um, entity, pref => pref.Weapon);
+      return um.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "[Sesler] OnWeaponSound hook error");
+      return HookResult.Continue;
+    }
+    finally
+    {
+      um?.Dispose();
+    }
   }
 
   private HookResult OnWeaponEvent(UserMessage um)
   {
-    var entityHandle = um.ReadUInt("player");
-    var entity = Utilities.GetEntityFromIndex<CBaseEntity>((int)(entityHandle & 0x7FF));
-    if (entity?.IsValid != true)
-      return HookResult.Continue;
+    try
+    {
+      var entityHandle = um.ReadUInt("player");
+      var entity = Utilities.GetEntityFromIndex<CBaseEntity>((int)(entityHandle & 0x7FF));
+      if (entity == null || !entity.IsValid) return HookResult.Continue;
 
-    FilterRecipients(um, entity, pref => pref.Weapon);
-    return um.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+      FilterRecipients(um, entity, pref => pref.Weapon);
+      return um.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "[Sesler] OnWeaponEvent hook error");
+      return HookResult.Continue;
+    }
+    finally
+    {
+      um?.Dispose();
+    }
   }
 
   private HookResult OnRoundMvp(EventRoundMvp @event, GameEventInfo info)
   {
-    try
-    {
-      if (@event?.Userid?.IsValid != true) return HookResult.Continue;
+    if (@event == null) return HookResult.Continue;
 
-      var worldEntity = Utilities.GetEntityFromIndex<CBaseEntity>(0);
-      if (worldEntity?.IsValid != true) return HookResult.Continue;
+    var mvp = @event.Userid;
+    if (mvp == null || !mvp.IsValid) return HookResult.Continue;
 
-      foreach (var player in Utilities.GetPlayers())
-      {
-        if (player?.IsValid != true || player.Connected != PlayerConnectedState.PlayerConnected) continue;
-        if (GetPref(player).Mvp != MuteMode.All) continue;
+    var worldEntity = Utilities.GetEntityFromIndex<CBaseEntity>(0);
+    if (worldEntity == null || !worldEntity.IsValid || !worldEntity.DesignerName.Contains("world")) return HookResult.Continue;
 
-        worldEntity.EmitSound("StopSoundEvents.StopAllMusic", new RecipientFilter(player));
-      }
-    }
-    catch (CounterStrikeSharp.API.Core.NativeException nex)
+    foreach (var player in Utilities.GetPlayers())
     {
-      Server.NextFrame(() => Logger.LogWarning(nex, "[Sesler] Game event field access failed in OnRoundMvp - ignoring event"));
-      return HookResult.Continue;
-    }
-    catch (Exception ex)
-    {
-      Server.NextFrame(() => Logger.LogError(ex, "[Sesler] Unexpected error in OnRoundMvp"));
-      return HookResult.Continue;
+      if (player == null || !player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected) continue;
+      if (GetPref(player).Mvp != MuteMode.All) continue;
+
+      worldEntity.EmitSound("StopSoundEvents.StopAllMusic", new RecipientFilter(player));
     }
 
     return HookResult.Continue;
@@ -693,10 +692,12 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   private void FilterRecipients(UserMessage msg, CBaseEntity? soundSource, Func<Pref, MuteMode> getMode)
   {
+    if (msg.Recipients == null) return;
+
     for (int i = msg.Recipients.Count - 1; i >= 0; i--)
     {
       var listener = msg.Recipients[i];
-      if (listener?.IsValid != true) continue;
+      if (listener == null || !listener.IsValid) continue;
 
       var pref = GetPref(listener);
       var mode = getMode(pref);
