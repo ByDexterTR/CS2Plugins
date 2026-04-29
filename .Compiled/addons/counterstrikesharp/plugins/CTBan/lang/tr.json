@@ -1,0 +1,16 @@
+{
+  "ctban.usage_ban": "Kullanım: css_ctban <Hedef> <Süre> [Sebep]",
+  "ctban.target_not_found": "Hedef bulunamadı",
+  "ctban.invalid_duration": "Geçerli bir süre giriniz. (Örnek: 30m, 2h, 1d)",
+  "ctban.banned": "{0}, {1} tarafından {2} CTden banlandı! Sebep: {3}",
+  "ctban.usage_unban": "Kullanım: css_ctunban <Hedef>",
+  "ctban.unban_not_found": "{0} CT banı bulunamadı.",
+  "ctban.unbanned": "{0}, CT banı {1} tarafından kaldırıldı!",
+  "ctban.usage_addban": "Kullanım: css_ctaddban <STEAMID64> <Süre> [Sebep]",
+  "ctban.invalid_steamid": "Geçerli bir STEAMID64 giriniz.",
+  "ctban.addban_applied": "{0} {1} CTden banlandı! Sebep: {2}",
+  "ctban.banlist_header": "CT Ban Listesi:",
+  "ctban.banlist_entry": "{0}, (Kalan Süre: {1}) Sebep: {2}",
+  "ctban.banlist_empty": "CTBanlı oyuncu yok.",
+  "ctban.join_blocked": "CT takımdan banlısın! (Kalan Süre: {0}) Sebep: {1}"
+}

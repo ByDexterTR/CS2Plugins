@@ -1,0 +1,8 @@
+{
+  "sustum.in_progress": "{0} oynanıyor!",
+  "sustum.started": "{0}, {1} başlattı!",
+  "sustum.no_active": "Aktif bir sustum oyunu yok!",
+  "sustum.cancelled": "{0} sustum oyununu iptal etti!",
+  "sustum.winner": "{0} Kazandı!",
+  "sustum.loser": "{0} Kaybetti!"
+}

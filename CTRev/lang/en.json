@@ -1,0 +1,11 @@
+{
+  "ctrev.auto_revived": "Auto: {0} was revived. Remaining revives: {1}",
+  "ctrev.rights_reset": "{0} reset the revive rights. Total rights: {1}",
+  "ctrev.state_on": "ON",
+  "ctrev.state_off": "OFF",
+  "ctrev.no_rights": "Revive rights are used up.",
+  "ctrev.already_alive": "Guard is already alive.",
+  "ctrev.cooldown_wait": "Cooldown: {0}s.",
+  "ctrev.revived": "{0}: {1} was revived. Remaining revives: {2}",
+  "ctrev.menu_auto_rev": "Auto Rev: {0}"
+}

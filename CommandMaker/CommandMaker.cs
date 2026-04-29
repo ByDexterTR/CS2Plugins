@@ -6,7 +6,6 @@ using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Memory;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
 
@@ -192,7 +191,6 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
     public override void Unload(bool hotReload)
     {
-        try { VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Unhook(OnTakeDamage, HookMode.Pre); } catch { }
     }
 
     public override void Load(bool hotReload)
@@ -200,7 +198,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         base.Load(hotReload);
 
         RegisterListener<OnTick>(OnTick);
-        VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
+        RegisterListener<OnEntityTakeDamagePre>(OnEntityDamage);
 
         AddCommand("css_cm_reload", "Komutları yeniden yükle", (player, info) =>
         {
@@ -364,7 +362,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         {
             if (!HasAnyPermission(player, cmd.Flag))
             {
-                info.ReplyToCommand("Bu komutu kullanmak için yetkiniz yok.");
+                info.ReplyToCommand(Localizer["commandmaker.no_permission"]);
                 return;
             }
         }
@@ -384,7 +382,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
                 HandleExecuteCommand(player, info, cmd);
                 break;
             default:
-                info.ReplyToCommand($"Bilinmeyen komut tipi: {cmd.Type}");
+                info.ReplyToCommand(Localizer["commandmaker.unknown_type", cmd.Type]);
                 break;
         }
     }
@@ -434,7 +432,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
     {
         if (info.ArgCount < 2)
         {
-            info.ReplyToCommand($"Kullanım: {info.GetArg(0)} <oyuncu> {(cmd.Args > 0 ? "<arg1>" : "")} {(cmd.Args > 1 ? "<arg2>" : "")} {(cmd.Args > 2 ? "<arg3>" : "")}");
+            info.ReplyToCommand($"{Localizer["commandmaker.usage_player", info.GetArg(0)]} {(cmd.Args > 0 ? "<arg1>" : "")} {(cmd.Args > 1 ? "<arg2>" : "")} {(cmd.Args > 2 ? "<arg3>" : "")}".TrimEnd());
             return;
         }
 
@@ -443,7 +441,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
         if (target == null)
         {
-            info.ReplyToCommand($"Oyuncu bulunamadı: {targetName}");
+            info.ReplyToCommand(Localizer["commandmaker.player_not_found", targetName]);
             return;
         }
 
@@ -455,7 +453,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         {
             if (info.ArgCount < 3)
             {
-                info.ReplyToCommand($"Kullanım: {info.GetArg(0)} <oyuncu> <arg1> {(cmd.Args > 1 ? "<arg2>" : "")} {(cmd.Args > 2 ? "<arg3>" : "")}");
+                info.ReplyToCommand($"{Localizer["commandmaker.usage_player", info.GetArg(0)]} <arg1> {(cmd.Args > 1 ? "<arg2>" : "")} {(cmd.Args > 2 ? "<arg3>" : "")}".TrimEnd());
                 return;
             }
             arg1 = info.GetArg(2);
@@ -471,7 +469,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         {
             if (info.ArgCount < 4)
             {
-                info.ReplyToCommand($"Kullanım: {info.GetArg(0)} <oyuncu> <arg1> <arg2> {(cmd.Args > 2 ? "<arg3>" : "")}");
+                info.ReplyToCommand($"{Localizer["commandmaker.usage_player", info.GetArg(0)]} <arg1> <arg2> {(cmd.Args > 2 ? "<arg3>" : "")}".TrimEnd());
                 return;
             }
             arg2 = info.GetArg(3);
@@ -487,7 +485,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         {
             if (info.ArgCount < 5)
             {
-                info.ReplyToCommand($"Kullanım: {info.GetArg(0)} <oyuncu> <arg1> <arg2> <arg3>");
+                info.ReplyToCommand($"{Localizer["commandmaker.usage_player", info.GetArg(0)]} <arg1> <arg2> <arg3>");
                 return;
             }
             arg3 = info.GetArg(4);
@@ -515,7 +513,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
             if (target == null)
             {
-                info.ReplyToCommand($"Oyuncu bulunamadı: {targetName}");
+                info.ReplyToCommand(Localizer["commandmaker.player_not_found", targetName]);
                 return;
             }
 
@@ -532,7 +530,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
         if (target == null)
         {
-            info.ReplyToCommand("Bu komut sadece oyuncular tarafından kullanılabilir.");
+            info.ReplyToCommand(Localizer["commandmaker.player_only"]);
             return;
         }
 
@@ -560,7 +558,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
     {
         if (string.IsNullOrEmpty(cmd.Execute))
         {
-            info.ReplyToCommand("Çalıştırılacak komut tanımlanmamış.");
+            info.ReplyToCommand(Localizer["commandmaker.execute_undefined"]);
             return;
         }
 
@@ -577,7 +575,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         if (cmd.Announce && player != null)
         {
             var commandName = cmd.Command.Split(';')[0];
-            Server.PrintToChatAll($" {CC.Orchid}{player.PlayerName}{CC.Default}, {CC.Gold}{commandName}{CC.Default} komutunu kullandı.");
+            Server.PrintToChatAll($" {Localizer["commandmaker.announce", $"{CC.Orchid}{player.PlayerName}{CC.Default}", $"{CC.Gold}{commandName}{CC.Default}"]}");
         }
 
         if (!string.IsNullOrEmpty(cmd.Chat))
@@ -1045,12 +1043,11 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         }
     }
 
-    private HookResult OnTakeDamage(DynamicHook h)
+    private HookResult OnEntityDamage(CEntityInstance victimEnt, CTakeDamageInfo info)
     {
         if (_godmodePlayers.Count == 0)
             return HookResult.Continue;
 
-        var victimEnt = h.GetParam<CEntityInstance>(0);
         if (victimEnt == null)
             return HookResult.Continue;
 
@@ -1062,12 +1059,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
         if (_godmodePlayers.Contains(victimController.SteamID))
         {
-            var info = h.GetParam<CTakeDamageInfo>(1);
-            if (info != null)
-            {
-                info.Damage = 0f;
-                return HookResult.Changed;
-            }
+            info.Damage = 0f;
         }
 
         return HookResult.Continue;

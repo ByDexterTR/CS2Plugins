@@ -1,0 +1,15 @@
+{
+  "meslekmenu.usage_doktor": "!meslek Doktor » {0} sağlık aşısı (weapon_healthshot)",
+  "meslekmenu.usage_flash": "!meslek Flash » {0} saniye flash efekti (Hız x{1})",
+  "meslekmenu.usage_bombaci": "!meslek Bombacı » Rastgele {0} verilir.",
+  "meslekmenu.usage_rambo": "!meslek Rambo » {0} can, {1} armor.",
+  "meslekmenu.usage_zeus": "!meslek Zeus » Taser alır.",
+  "meslekmenu.no_active": "Hiçbir meslek aktif değil!",
+  "meslekmenu.alive_only": "Bu komutu sadece canlı oyuncular kullanabilir!",
+  "meslekmenu.t_only": "Bu komutu sadece Terörist takımı kullanabilir!",
+  "meslekmenu.already_selected": "Bu turda zaten meslek seçtin!",
+  "meslekmenu.disabled": "{0} mesleği kapalı.",
+  "meslekmenu.profession_changed": "Mesleğin değiştirildi: {0}",
+  "meslekmenu.rambo_low_hp": "Rambo mesleğini seçemezsin: Canın 100ün altında!",
+  "meslekmenu.unknown": "Bilinmeyen meslek! Yardım için !meslek yazınız."
+}

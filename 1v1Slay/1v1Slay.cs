@@ -127,7 +127,7 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
     if (Config.EnableAnnouncements)
     {
       _showHud = true;
-      Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix} {CC.Red}{_remainingTime} {CC.Default}saniye içinde oyuncular öldürülecek!");
+      Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["onevsoneslay.countdown_warning", _remainingTime]}");
     }
 
     _countdownTimer = AddTimer(1.0f, () =>
@@ -144,7 +144,7 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 
           if (_remainingTime % 5 == 0 || _remainingTime < 5)
           {
-            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix} {CC.Red}{_remainingTime} {CC.Default}saniye içinde oyuncular öldürülecek!");
+            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["onevsoneslay.countdown_warning", _remainingTime]}");
           }
         }
       }
@@ -174,7 +174,7 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 
     if (Config.EnableAnnouncements)
     {
-      Server.PrintToChatAll($"{CC.Gold}{Config.ChatPrefix} {CC.Red}Süre doldu! Kalan oyuncular öldürülüyor!");
+      Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["onevsoneslay.time_up"]}");
     }
 
     foreach (var player in alivePlayers)

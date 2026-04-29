@@ -40,7 +40,7 @@ public class Silahsil : BasePlugin, IPluginConfig<SilahsilConfig>
       groundWpn++;
     }
 
-    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{player.PlayerName}{CC.Default}, Yerdeki {CC.Green}{groundWpn}{CC.Default} silahı sildi!");
+    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["silahsil.removed", player.PlayerName, groundWpn]}");
   }
 }
 

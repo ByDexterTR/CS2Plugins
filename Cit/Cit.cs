@@ -65,21 +65,26 @@ public class Cit : BasePlugin
       return;
 
     var keys = FenceOptions.Keys.ToList();
-    CenterHtmlMenu menu = new("<font color='#e7aa6c' class='fontSize-l'><img src='https://images.weserv.nl/?url=cdn-icons-png.flaticon.com/256/4017/4017841.png&w=24&h=24&fit=cover'> Çit Menüsü <img src='https://images.weserv.nl/?url=cdn-icons-png.flaticon.com/256/4017/4017841.png&w=24&h=24&fit=cover'></font>", this);
+    CenterHtmlMenu menu = new(Localizer["cit.menu_title"].ToString(), this);
 
-    menu.AddMenuOption($"Oluştur: [{FenceOptions[SelectedFenceSize].Label}] [{(SelectedFenceType == FenceType.Fence ? "Çit" : "Barikat")}]", (player, option) =>
+    var sizeLabel = SelectedFenceSize == "64x128" ? Localizer["cit.size_small"].ToString()
+                    : SelectedFenceSize == "256x128" ? Localizer["cit.size_large"].ToString()
+                    : Localizer["cit.size_medium"].ToString();
+    var typeLabel = SelectedFenceType == FenceType.Fence ? Localizer["cit.type_fence"].ToString() : Localizer["cit.type_cover"].ToString();
+
+    menu.AddMenuOption(Localizer["cit.create", sizeLabel, typeLabel].ToString(), (player, option) =>
     {
       var modelPath = SelectedFenceType == FenceType.Fence ? FenceOptions[SelectedFenceSize].FenceModel : FenceOptions[SelectedFenceSize].CoverModel;
       CreateModel(player, modelPath);
     });
 
-    menu.AddMenuOption("Türü Değiştir", (player, option) =>
+    menu.AddMenuOption(Localizer["cit.change_type"].ToString(), (player, option) =>
     {
       SelectedFenceType = SelectedFenceType == FenceType.Fence ? FenceType.Cover : FenceType.Fence;
       ShowFenceMenu(player);
     });
 
-    menu.AddMenuOption("Boyutu Değiştir", (player, option) =>
+    menu.AddMenuOption(Localizer["cit.change_size"].ToString(), (player, option) =>
     {
       int idx = keys.IndexOf(SelectedFenceSize);
       idx = (idx + 1) % keys.Count;
@@ -87,12 +92,12 @@ public class Cit : BasePlugin
       ShowFenceMenu(player);
     });
 
-    menu.AddMenuOption("Çiti Sil", (player, option) =>
+    menu.AddMenuOption(Localizer["cit.delete_aimed"].ToString(), (player, option) =>
     {
       RemoveAimModel(player);
     });
 
-    menu.AddMenuOption("Çitleri Sil", (player, option) =>
+    menu.AddMenuOption(Localizer["cit.delete_all"].ToString(), (player, option) =>
     {
       RemoveAllModel();
     });

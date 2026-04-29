@@ -1,0 +1,11 @@
+{
+  "ctrev.auto_revived": "Otomatik: {0} canlandırıldı. Kalan hak: {1}",
+  "ctrev.rights_reset": "{0} canlandırma haklarını sıfırlandı. Toplam hak: {1}",
+  "ctrev.state_on": "AÇIK",
+  "ctrev.state_off": "KAPALI",
+  "ctrev.no_rights": "Canlandırma hakkı bitti.",
+  "ctrev.already_alive": "Gardiyan zaten canlı.",
+  "ctrev.cooldown_wait": "Bekleme süresi: {0}sn.",
+  "ctrev.revived": "{0}: {1} canlandırıldı. Kalan hak: {2}",
+  "ctrev.menu_auto_rev": "Oto Rev: {0}"
+}

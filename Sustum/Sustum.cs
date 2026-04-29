@@ -32,7 +32,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
     private bool _showHud = false;
     private string _hudHtml = "";
 
-    private HashSet<CCSPlayerController> CTSustumPlayers = new();
+    private HashSet<ulong> CTSustumPlayers = new();
     private Dictionary<ulong, bool> DSustumWin = new();
 
     public void OnConfigParsed(SustumConfig config)
@@ -61,16 +61,20 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
         var text = message.ArgString.Trim().Trim('"');
 
-        if (SustumType == "CTSustum" && player.Team == CsTeam.CounterTerrorist && CTSustumPlayers.Contains(player))
+        if (SustumType == "CTSustum" && player.Team == CsTeam.CounterTerrorist && CTSustumPlayers.Contains(player.SteamID))
         {
             if (string.Equals(text, CurrentWord, StringComparison.OrdinalIgnoreCase))
             {
-                CTSustumPlayers.Remove(player);
+                CTSustumPlayers.Remove(player.SteamID);
                 if (CTSustumPlayers.Count == 1)
                 {
-                    var lastCT = CTSustumPlayers.First();
-                    ShowWinnerHud(lastCT.PlayerName);
-                    lastCT.ChangeTeam(CsTeam.Terrorist);
+                    var lastSteamId = CTSustumPlayers.First();
+                    var lastCT = Utilities.GetPlayerFromSteamId(lastSteamId);
+                    if (lastCT != null && lastCT.IsValid)
+                    {
+                        ShowWinnerHud(lastCT.PlayerName);
+                        lastCT.ChangeTeam(CsTeam.Terrorist);
+                    }
                     CTSustumPlayers.Clear();
                 }
             }
@@ -154,7 +158,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
     private void ShowWinnerHud(string winnerName)
     {
-        PrintPrefixAll(SustumType == "CTSustum" ? $"{CC.Blue}{SustumType} {CC.Default}Kaybetti: {CC.Gold}{winnerName}{CC.Default}" : $"{CC.Blue}{SustumType} {CC.Default}Kazandı: {CC.Gold}{winnerName}{CC.Default}");
+        PrintPrefixAll(SustumType == "CTSustum" ? Localizer["sustum.loser", winnerName].ToString() : Localizer["sustum.winner", winnerName].ToString());
         _hudHtml = SustumType == "CTSustum" ? $"<font color='#FF0000'>{winnerName} kaybetti!</font>" : $"<font color='#AAFF00'>{winnerName} kazandı!</font>";
         _showHud = true;
 
@@ -183,14 +187,18 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
             {
                 if (player.Team == CsTeam.CounterTerrorist && player != warden)
                 {
-                    CTSustumPlayers.Add(player);
+                    CTSustumPlayers.Add(player.SteamID);
                 }
             }
             if (CTSustumPlayers.Count == 1)
             {
-                var lastCT = CTSustumPlayers.First();
-                ShowWinnerHud(lastCT.PlayerName);
-                lastCT.ChangeTeam(CsTeam.Terrorist);
+                var lastSteamId = CTSustumPlayers.First();
+                var lastCT = Utilities.GetPlayerFromSteamId(lastSteamId);
+                if (lastCT != null && lastCT.IsValid)
+                {
+                    ShowWinnerHud(lastCT.PlayerName);
+                    lastCT.ChangeTeam(CsTeam.Terrorist);
+                }
                 CTSustumPlayers.Clear();
                 return;
             }
@@ -243,10 +251,10 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
         if (!string.IsNullOrEmpty(SustumType))
         {
-            PrintPrefix(player, $" {CC.Green}{SustumType}{CC.Default} oynanıyor!");
+            PrintPrefix(player, Localizer["sustum.in_progress", SustumType].ToString());
             return;
         }
-        PrintPrefixAll($"{CC.Gold}{player.PlayerName}{CC.Default}, CTSustum {CC.Green}başlattı{CC.Default}!");
+        PrintPrefixAll(Localizer["sustum.started", player.PlayerName, "CTSustum"].ToString());
 
         StartSustumRound("CTSustum", player);
     }
@@ -260,10 +268,10 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
         if (!string.IsNullOrEmpty(SustumType))
         {
-            PrintPrefix(player, $"{CC.Green}{SustumType}{CC.Default} oynanıyor!");
+            PrintPrefix(player, Localizer["sustum.in_progress", SustumType].ToString());
             return;
         }
-        PrintPrefixAll($"{CC.Gold}{player.PlayerName}{CC.Default}, TSustum {CC.Green}başlattı{CC.Default}!");
+        PrintPrefixAll(Localizer["sustum.started", player.PlayerName, "TSustum"].ToString());
         StartSustumRound("TSustum", player);
     }
 
@@ -276,10 +284,10 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
         if (!string.IsNullOrEmpty(SustumType))
         {
-            PrintPrefix(player, $"{CC.Green}{SustumType}{CC.Default} oynanıyor!");
+            PrintPrefix(player, Localizer["sustum.in_progress", SustumType].ToString());
             return;
         }
-        PrintPrefixAll($"{CC.Gold}{player.PlayerName}{CC.Default}, DSustum {CC.Green}başlattı{CC.Default}!");
+        PrintPrefixAll(Localizer["sustum.started", player.PlayerName, "DSustum"].ToString());
         StartSustumRound("DSustum", player);
     }
 
@@ -292,10 +300,10 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
         if (!string.IsNullOrEmpty(SustumType))
         {
-            PrintPrefix(player, $"{CC.Green}{SustumType}{CC.Default} oynanıyor!");
+            PrintPrefix(player, Localizer["sustum.in_progress", SustumType].ToString());
             return;
         }
-        PrintPrefixAll($"{CC.Gold}{player.PlayerName}{CC.Default}, ÖlüSustum {CC.Green}başlattı{CC.Default}!");
+        PrintPrefixAll(Localizer["sustum.started", player.PlayerName, "ÖlüSustum"].ToString());
         StartSustumRound("ÖlüSustum", player);
     }
 
@@ -312,12 +320,12 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
         if (string.IsNullOrEmpty(SustumType))
         {
-            PrintPrefix(player, "Aktif bir sustum oyunu yok!");
+            PrintPrefix(player, Localizer["sustum.no_active"].ToString());
             return;
         }
 
         HideHud();
-        PrintPrefixAll($"{CC.Gold}{player.PlayerName}{CC.Default} sustum oyununu {CC.Red}iptal etti{CC.Default}!");
+        PrintPrefixAll(Localizer["sustum.cancelled", player.PlayerName].ToString());
     }
 
     private void PrintPrefix(CCSPlayerController? player, string message)

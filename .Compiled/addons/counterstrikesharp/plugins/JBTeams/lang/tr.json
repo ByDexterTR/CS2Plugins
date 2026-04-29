@@ -1,0 +1,10 @@
+{
+  "jbteams.usage": "Kullanım: !takim <0-5>",
+  "jbteams.invalid_input": "0-5 arası bir sayı gir!",
+  "jbteams.no_players": "Yeterli oyuncu yok.",
+  "jbteams.uneven": "{0} oyuncu {1} takıma eşit bölünemez.",
+  "jbteams.team_assigned": "Takımın: {0}",
+  "jbteams.teams_created": "{0}: {1} takım oluşturuldu.",
+  "jbteams.no_active": "Aktif takım yok!",
+  "jbteams.teams_disabled": "{0}: takımları kapattı."
+}

@@ -1,0 +1,13 @@
+{
+  "cit.menu_title": "Fence Menu",
+  "cit.create": "Create: [{0}] [{1}]",
+  "cit.change_type": "Change Type",
+  "cit.change_size": "Change Size",
+  "cit.delete_aimed": "Delete Aimed Fence",
+  "cit.delete_all": "Delete All Fences",
+  "cit.type_fence": "Fence",
+  "cit.type_cover": "Cover",
+  "cit.size_small": "Small",
+  "cit.size_medium": "Medium",
+  "cit.size_large": "Large"
+}

@@ -63,11 +63,11 @@ public class CTKov : BasePlugin, IPluginConfig<CTKovConfig>
 
         if (kickedCount > 0)
         {
-            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{player.PlayerName}{CC.Default} tarafından {CC.Red}{kickedCount}{CC.Default} gardiyan kovuldu!");
+            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkov.guards_moved", player.PlayerName, kickedCount]}");
         }
         else
         {
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Gardiyan bulunamadı!");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkov.no_guards"]}");
         }
     }
 }

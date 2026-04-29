@@ -1,0 +1,15 @@
+{
+  "ctperk.rights": "Your perk rights: {0}",
+  "ctperk.no_rights": "Your perk rights are used up!",
+  "ctperk.perk_hp_armor": "{0} HP & {1} Armor",
+  "ctperk.perk_lifesteal": "Lifesteal ({0}%)",
+  "ctperk.perk_infinite_ammo": "Infinite Ammo",
+  "ctperk.perk_damage_reduction": "Damage Reduction ({0}%)",
+  "ctperk.perk_damage_boost": "Damage Boost (+{0}%)",
+  "ctperk.perk_active_hp_armor": "Perk: {0} HP / {1} Armor active",
+  "ctperk.perk_active_lifesteal": "Perk: Lifesteal {0}% active",
+  "ctperk.perk_active_infammo": "Perk: Infinite Ammo active",
+  "ctperk.perk_active_dmgreduction": "Perk: Damage Reduction {0}% active",
+  "ctperk.perk_active_dmgboost": "Perk: Damage Boost {0}% active",
+  "ctperk.perk_active_generic": "Perk: Active"
+}

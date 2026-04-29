@@ -37,15 +37,15 @@ public class Cekilis : BasePlugin, IPluginConfig<CekilisConfig>
 
         if (info.ArgCount < 2)
         {
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}all{CC.Default} » Herkesten rastgele bir isim seçer");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}dead{CC.Default} » Ölü oyunculardan rastgele bir isim seçer");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}live{CC.Default} » Canlı oyunculardan rastgele bir isim seçer");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}T{CC.Default} » Terörist takımından rastgele bir isim seçer");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}CT{CC.Default} » CT takımından rastgele bir isim seçer");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}Tdead{CC.Default} » Ölü teröristlerden rastgele bir isim seçer");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}Tlive{CC.Default} » Canlı teröristlerden rastgele bir isim seçer");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}CTdead{CC.Default} » Ölü CT oyuncularından rastgele bir isim seçer");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} !cek {CC.Green}CTlive{CC.Default} » Canlı CT oyuncularından rastgele bir isim seçer");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_all"]}");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_dead"]}");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_live"]}");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_t"]}");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_ct"]}");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_tdead"]}");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_tlive"]}");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_ctdead"]}");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_ctlive"]}");
             return;
         }
 
@@ -68,7 +68,7 @@ public class Cekilis : BasePlugin, IPluginConfig<CekilisConfig>
 
         if (pool.Count == 0)
         {
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Çekiliş için uygun oyuncu bulunamadı!");
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.no_player"]}");
             return;
         }
 
@@ -76,7 +76,7 @@ public class Cekilis : BasePlugin, IPluginConfig<CekilisConfig>
         var winner = pool[rnd.Next(pool.Count)];
         var adminName = player != null ? player.PlayerName : "unknown";
         var categoryName = arg.ToUpper();
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{adminName}{CC.Default} Çekiliş yaptı ({CC.Green}{categoryName}{CC.Default}), kazanan: {CC.Gold}{winner.PlayerName}{CC.Default}");
+        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.winner", adminName, categoryName, winner.PlayerName]}");
     }
 
     static bool IsAlive(CCSPlayerController? player)

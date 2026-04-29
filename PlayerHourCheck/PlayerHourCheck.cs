@@ -561,7 +561,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
     if (penaltyKeys.Count == 0)
     {
-      KickPlayer(player, $"Yetersiz oyun saati ({playerHours}/{Config.RequiredPlaytime} saat)");
+      KickPlayer(player, Localizer["playerhourcheck.fallback_kick", playerHours, Config.RequiredPlaytime]);
       return;
     }
 
@@ -574,7 +574,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
     if (!Config.Penalties.TryGetValue(selectedKey.ToString(), out var penalty))
     {
-      KickPlayer(player, $"Yetersiz oyun saati ({playerHours}/{Config.RequiredPlaytime} saat)");
+      KickPlayer(player, Localizer["playerhourcheck.fallback_kick", playerHours, Config.RequiredPlaytime]);
       return;
     }
 

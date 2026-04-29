@@ -1,0 +1,15 @@
+{
+  "ctperk.rights": "Perk hakkınız: {0}",
+  "ctperk.no_rights": "Perk hakkınız bitti!",
+  "ctperk.perk_hp_armor": "{0} Can & {1} Armor",
+  "ctperk.perk_lifesteal": "Can Çalma (%{0})",
+  "ctperk.perk_infinite_ammo": "Sınırsız Mermi",
+  "ctperk.perk_damage_reduction": "Hasar Azaltma (%{0})",
+  "ctperk.perk_damage_boost": "Hasar Arttırma (+%{0})",
+  "ctperk.perk_active_hp_armor": "Perk: {0} HP / {1} Armor aktif",
+  "ctperk.perk_active_lifesteal": "Perk: Can Çalma %{0} aktif",
+  "ctperk.perk_active_infammo": "Perk: Sınırsız Mermi aktif",
+  "ctperk.perk_active_dmgreduction": "Perk: Hasar Azaltma %{0} aktif",
+  "ctperk.perk_active_dmgboost": "Perk: Hasar Arttırma %{0} aktif",
+  "ctperk.perk_active_generic": "Perk: Aktif"
+}

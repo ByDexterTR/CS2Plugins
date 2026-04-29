@@ -71,14 +71,14 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
     {
       if ((Config.FilterTeam == "CT" && player.Team != CsTeam.CounterTerrorist) || (Config.FilterTeam == "T" && player.Team != CsTeam.Terrorist))
       {
-        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Bu takımda Red Bull {CC.Gold}içemezsin{CC.Default}!");
+        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.wrong_team"]}");
         return;
       }
     }
 
     if (_redbullActive.ContainsKey(player.SteamID))
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Red Bull etkileri zaten {CC.Green}aktif{CC.Default}!");
+      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.already_active"]}");
       return;
     }
 
@@ -88,7 +88,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
       if (until > now)
       {
         var remain = (int)Math.Ceiling((until - now).TotalSeconds);
-        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Red Bull bekleme süresi: {CC.Gold}{remain}{CC.Default} sn kaldı!");
+        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.cooldown", remain]}");
         return;
       }
     }
@@ -99,14 +99,14 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
       var used = _roundUses.TryGetValue(player.SteamID, out var val) ? val : 0;
       if (used >= limit)
       {
-        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Red Bull limiti: Her raunt {CC.Gold}{limit}{CC.Default} Red Bull içebilirsin.");
+        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.limit", limit]}");
         return;
       }
       _roundUses[player.SteamID] = used + 1;
     }
 
     _redbullActive[player.SteamID] = DateTime.Now.AddSeconds(Config.Duration);
-    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Redbull: {CC.Green}{Config.Duration} saniye{CC.Default} kanatlandın!");
+    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.activated", Config.Duration]}");
   }
 
   private void OnTickSpeed()
@@ -116,7 +116,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 
     foreach (var kvp in _redbullActive)
     {
-      var player = Utilities.GetPlayers().FirstOrDefault(p => p?.IsValid == true && p.SteamID == kvp.Key);
+      var player = Utilities.GetPlayerFromSteamId(kvp.Key);
 
       if (player == null || !IsAlive(player) || now >= kvp.Value)
       {
@@ -124,7 +124,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
         if (player != null && IsAlive(player))
         {
           ResetPlayer(player);
-          player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Redbull efekti {CC.Red}bitti{CC.Default}!");
+          player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.expired"]}");
           if (Config.Cooldown > 0)
           {
             _cooldownUntil[player.SteamID] = DateTime.Now.AddSeconds(Config.Cooldown);

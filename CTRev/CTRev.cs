@@ -87,7 +87,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
           p.Respawn();
           _ctDeathEligibleAt.Remove(p.SteamID);
           _remainingRespawns--;
-          Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Otomatik: {CC.Gold}{p.PlayerName}{CC.Default} canlandırıldı. Kalan hak: {CC.Gold}{_remainingRespawns}");
+          Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.auto_revived", p.PlayerName, _remainingRespawns]}");
         }
       }
     }
@@ -139,7 +139,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
       return;
 
     _remainingRespawns = Config.MaxRespawnsPerRound;
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{player?.PlayerName}{CC.Default} canlandırma haklarını {CC.Gold}sıfırlandı{CC.Default}. Toplam hak: {CC.Gold}{_remainingRespawns}");
+    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.rights_reset", player?.PlayerName ?? "", _remainingRespawns]}");
   }
 
   private void ShowMainMenu(CCSPlayerController? player)
@@ -150,10 +150,10 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     var now = DateTime.UtcNow;
     var menu = new CenterHtmlMenu($"<font color='#d63f25' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/158/syringe_1f489.png&w=24&h=24&fit=cover'> CTRev (Hak: {_remainingRespawns}) <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/158/syringe_1f489.png&w=24&h=24&fit=cover'></font>", this);
 
-    menu.AddMenuOption($"Oto Rev: {(_autoRespawnEnabled ? "<font color='green'>AÇIK</font>" : "<font color='grey'>KAPALI</font>")}", (p, option) =>
+    menu.AddMenuOption(Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]], (p, option) =>
     {
       _autoRespawnEnabled = !_autoRespawnEnabled;
-      p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Oto Rev: {(_autoRespawnEnabled ? CC.Green + "AÇIK" + CC.Default : CC.Red + "KAPALI" + CC.Default)}");
+      p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]]}");
     });
 
     var deadCts = Utilities.GetPlayers().Where(pl => pl != null && pl.IsValid && pl.TeamNum == 3 && !IsAlive(pl)).ToList();
@@ -183,7 +183,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
   {
     if (_remainingRespawns <= 0)
     {
-      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Canlandırma hakkı {CC.Red}bitti{CC.Default}.");
+      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.no_rights"]}");
       return;
     }
 
@@ -194,7 +194,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 
     if (IsAlive(target))
     {
-      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Gardiyan {CC.Gold}zaten canlı{CC.Default}.");
+      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.already_alive"]}");
       return;
     }
 
@@ -202,14 +202,14 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     if (_ctDeathEligibleAt.TryGetValue(target.SteamID, out var at) && now < at)
     {
       var remain = Math.Max(0, (int)Math.Ceiling((at - now).TotalSeconds));
-      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Bekleme süresi: {CC.Gold}{remain}sn{CC.Default}.");
+      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.cooldown_wait", remain]}");
       return;
     }
 
     target.Respawn();
     _ctDeathEligibleAt.Remove(target.SteamID);
     _remainingRespawns--;
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{actor.PlayerName}{CC.Default}: {CC.Gold}{target.PlayerName}{CC.Default} canlandırıldı. Kalan hak: {CC.Gold}{_remainingRespawns}");
+    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.revived", actor.PlayerName, target.PlayerName, _remainingRespawns]}");
   }
 
   private static bool IsAlive(CCSPlayerController? player)

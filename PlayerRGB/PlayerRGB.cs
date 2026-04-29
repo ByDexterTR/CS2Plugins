@@ -48,7 +48,7 @@ public class PlayerRGB : BasePlugin, IPluginConfig<PlayerRGBConfig>
 
     if (enabled)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} RGB efekti {CC.Green}açıldı{CC.Default}!");
+      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["playerrgb.enabled"]}");
     }
     else
     {
@@ -58,7 +58,7 @@ public class PlayerRGB : BasePlugin, IPluginConfig<PlayerRGBConfig>
         pawn.Render = Color.FromArgb(255, 255, 255, 255);
         Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
       }
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} RGB efekti {CC.Red}kapatıldı{CC.Default}!");
+      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["playerrgb.disabled"]}");
     }
   }
 

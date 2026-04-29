@@ -6,6 +6,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Timers;
+using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace DiscordLogger;
 
@@ -60,8 +61,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
 
-    AddCommandListener("say", OnPlayerChat, HookMode.Post);
-    AddCommandListener("say_team", OnPlayerChat, HookMode.Post);
+    RegisterListener<OnPlayerChat>(OnPlayerChatListener);
 
     AddCommandListener(null, OnCommand, HookMode.Post);
 
@@ -166,30 +166,20 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     return HookResult.Continue;
   }
 
-  private HookResult OnPlayerChat(CCSPlayerController? player, CommandInfo commandInfo)
+  private void OnPlayerChatListener(CCSPlayerController player, string text, bool teamChat)
   {
     if (string.IsNullOrEmpty(Config.WebhookChat))
-      return HookResult.Continue;
+      return;
 
-    var message = commandInfo.ArgString.Trim().Trim('"');
-    if (string.IsNullOrEmpty(message))
-      return HookResult.Continue;
-
-    if (player == null)
-    {
-      AddToBuffer(Config.WebhookChat, $"{GetTimestampPrefix()}``CONSOLE: {message}``");
-      return HookResult.Continue;
-    }
+    if (string.IsNullOrEmpty(text))
+      return;
 
     if (!player.IsValid || player.IsBot)
-      return HookResult.Continue;
+      return;
 
     var steamId = player.SteamID.ToString();
-    var isTeamChat = commandInfo.GetArg(0).Equals("say_team", StringComparison.OrdinalIgnoreCase);
-    var chatType = isTeamChat ? " (Takım)" : "";
-    AddToBuffer(Config.WebhookChat, $"{GetTimestampPrefix()}``{steamId} - {player.PlayerName}{chatType}: {message}``");
-
-    return HookResult.Continue;
+    var chatType = teamChat ? " (Takım)" : "";
+    AddToBuffer(Config.WebhookChat, $"{GetTimestampPrefix()}``{steamId} - {player.PlayerName}{chatType}: {text}``");
   }
 
   private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
@@ -208,7 +198,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
     if (attacker == null || !attacker.IsValid || attacker.SteamID == victim.SteamID)
     {
-      if (victim.Connected == PlayerConnectedState.PlayerConnected)
+      if (victim.IsValid)
       {
         AddToBuffer(Config.WebhookKill, $"{GetTimestampPrefix()}``Ölen: {victimSteamId} - {victim.PlayerName} | İntihar etti.``");
       }
@@ -233,7 +223,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
     _roundStartTime = DateTime.UtcNow;
 
-    var players = Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot && p.Connected == PlayerConnectedState.PlayerConnected).ToList();
+    var players = Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot).ToList();
     var playerCount = players.Count;
     var adminCount = players.Count(IsAdmin);
 

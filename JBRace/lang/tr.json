@@ -1,0 +1,18 @@
+{
+  "jbrace.started": "{0}: Yarışı başlattı.",
+  "jbrace.cancelled": "{0}: Yarışı iptal etti.",
+  "jbrace.start_set": "Başlangıç ayarlandı.",
+  "jbrace.finish_set": "Bitiş ayarlandı.",
+  "jbrace.winner_count": "Kazanan Sayısı: {0}",
+  "jbrace.enter_winner_count": "Chate kazanan sayısı yazın:",
+  "jbrace.winner_count_set": "Kazanan sayısı {0} olarak ayarlandı.",
+  "jbrace.markers_cleared": "İşaretler temizlendi.",
+  "jbrace.no_start": "Önce başlangıç konumu ayarlayın.",
+  "jbrace.no_finish": "Önce bitiş konumu ayarlayın.",
+  "jbrace.winner": "Yarış kazananı #{0}: {1}",
+  "jbrace.menu_start_race": "Yarışı Başlat",
+  "jbrace.menu_cancel_race": "Yarışı İptal Et",
+  "jbrace.menu_set_start": "Başlangıç Ayarla",
+  "jbrace.menu_set_finish": "Bitiş Ayarla",
+  "jbrace.menu_clear_markers": "İşaretleri Temizle"
+}

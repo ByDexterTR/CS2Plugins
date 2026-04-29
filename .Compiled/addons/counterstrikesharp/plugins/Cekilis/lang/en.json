@@ -1,0 +1,13 @@
+{
+  "cekilis.help_all": "!cek all » Selects a random name from everyone",
+  "cekilis.help_dead": "!cek dead » Selects a random name from dead players",
+  "cekilis.help_live": "!cek live » Selects a random name from alive players",
+  "cekilis.help_t": "!cek T » Selects a random name from Terrorist team",
+  "cekilis.help_ct": "!cek CT » Selects a random name from CT team",
+  "cekilis.help_tdead": "!cek Tdead » Selects a random name from dead Terrorists",
+  "cekilis.help_tlive": "!cek Tlive » Selects a random name from alive Terrorists",
+  "cekilis.help_ctdead": "!cek CTdead » Selects a random name from dead CTs",
+  "cekilis.help_ctlive": "!cek CTlive » Selects a random name from alive CTs",
+  "cekilis.no_player": "No eligible player found for the draw!",
+  "cekilis.winner": "{0} drew ({1}), winner: {2}"
+}

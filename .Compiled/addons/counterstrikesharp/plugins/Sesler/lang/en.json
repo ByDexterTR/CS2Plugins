@@ -1,0 +1,13 @@
+{
+  "sesler.menu_title": "Sounds",
+  "sesler.category_knife": "Knife",
+  "sesler.category_weapon": "Weapon",
+  "sesler.category_foot": "Footstep/Walking",
+  "sesler.category_player": "Player/Damage",
+  "sesler.category_mvp": "MVP Music",
+  "sesler.mode_open": "Open",
+  "sesler.mode_mute_enemy": "Mute Enemy",
+  "sesler.mode_mute_team": "Mute Team",
+  "sesler.mode_closed": "Closed",
+  "sesler.back": "Back"
+}

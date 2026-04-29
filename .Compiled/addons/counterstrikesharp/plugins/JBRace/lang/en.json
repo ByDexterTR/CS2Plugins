@@ -1,0 +1,18 @@
+{
+  "jbrace.started": "{0}: started the race.",
+  "jbrace.cancelled": "{0}: cancelled the race.",
+  "jbrace.start_set": "Start position set.",
+  "jbrace.finish_set": "Finish position set.",
+  "jbrace.winner_count": "Winner Count: {0}",
+  "jbrace.enter_winner_count": "Enter winner count in chat:",
+  "jbrace.winner_count_set": "Winner count set to {0}.",
+  "jbrace.markers_cleared": "Markers cleared.",
+  "jbrace.no_start": "First set the start position.",
+  "jbrace.no_finish": "First set the finish position.",
+  "jbrace.winner": "Race winner #{0}: {1}",
+  "jbrace.menu_start_race": "Start Race",
+  "jbrace.menu_cancel_race": "Cancel Race",
+  "jbrace.menu_set_start": "Set Start",
+  "jbrace.menu_set_finish": "Set Finish",
+  "jbrace.menu_clear_markers": "Clear Markers"
+}

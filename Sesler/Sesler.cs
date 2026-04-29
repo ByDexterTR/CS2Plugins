@@ -42,8 +42,16 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
   private readonly object _dbLock = new();
   private readonly List<Task> _pendingSaves = new();
 
-  private static readonly string[] ModeLabels = { "Açık", "Düşmanı Sustur", "Takımı Sustur", "Kapalı" };
   private static readonly string[] ModeColors = { "green", "orange", "lightblue", "red" };
+
+  private string GetModeLabel(int idx) => idx switch
+  {
+    0 => Localizer["sesler.mode_open"],
+    1 => Localizer["sesler.mode_mute_enemy"],
+    2 => Localizer["sesler.mode_mute_team"],
+    3 => Localizer["sesler.mode_closed"],
+    _ => ""
+  };
 
   public void OnConfigParsed(SeslerConfig config)
   {
@@ -492,11 +500,11 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
     var items = new (string Label, Func<Pref, MuteMode> Get, Action<Pref, MuteMode> Set, bool MvpOnly)[]
     {
-      ("Bıçak", p => p.Knife, (p, m) => p.Knife = m, false),
-      ("Silah", p => p.Weapon, (p, m) => p.Weapon = m, false),
-      ("Ayak/Yürüme", p => p.Foot, (p, m) => p.Foot = m, false),
-      ("Oyuncu/Hasar", p => p.Player, (p, m) => p.Player = m, false),
-      ("MVP Müzik", p => p.Mvp, (p, m) => p.Mvp = m, true)
+      (Localizer["sesler.category_knife"], p => p.Knife, (p, m) => p.Knife = m, false),
+      (Localizer["sesler.category_weapon"], p => p.Weapon, (p, m) => p.Weapon = m, false),
+      (Localizer["sesler.category_foot"], p => p.Foot, (p, m) => p.Foot = m, false),
+      (Localizer["sesler.category_player"], p => p.Player, (p, m) => p.Player = m, false),
+      (Localizer["sesler.category_mvp"], p => p.Mvp, (p, m) => p.Mvp = m, true)
     };
 
     foreach (var item in items)
@@ -526,7 +534,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       var current = get(pref);
       var prefix = current == mode ? "► " : "";
       var color = ModeColors[modeIndex];
-      var labelText = ModeLabels[modeIndex];
+      var labelText = GetModeLabel(modeIndex);
 
       menu.AddMenuOption($"{prefix}<font color='{color}'>{labelText}</font>", (p, o) =>
       {
@@ -535,7 +543,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       });
     }
 
-    menu.AddMenuOption("Geri", (p, o) => ShowMainMenu(player));
+    menu.AddMenuOption(Localizer["sesler.back"], (p, o) => ShowMainMenu(player));
     menu.ExitButton = false;
     MenuManager.OpenCenterHtmlMenu(this, player, menu);
   }
@@ -547,7 +555,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       mode = MuteMode.All;
 
     idx = (int)mode;
-    return $"<font color='{ModeColors[idx]}'>{ModeLabels[idx]}</font>";
+    return $"<font color='{ModeColors[idx]}'>{GetModeLabel(idx)}</font>";
   }
 
   private HookResult OnSound(UserMessage msg)
@@ -681,7 +689,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
     foreach (var player in Utilities.GetPlayers())
     {
-      if (player == null || !player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected) continue;
+      if (player == null || !player.IsValid) continue;
       if (GetPref(player).Mvp != MuteMode.All) continue;
 
       worldEntity.EmitSound("StopSoundEvents.StopAllMusic", new RecipientFilter(player));

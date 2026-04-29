@@ -1,0 +1,8 @@
+{
+  "redbull.wrong_team": "You can't drink Red Bull in this team!",
+  "redbull.already_active": "Red Bull effects are already active!",
+  "redbull.cooldown": "Red Bull cooldown: {0}s remaining!",
+  "redbull.limit": "Red Bull limit: You can drink {0} Red Bull per round.",
+  "redbull.activated": "Redbull: You got wings for {0} seconds!",
+  "redbull.expired": "Redbull effect expired!"
+}

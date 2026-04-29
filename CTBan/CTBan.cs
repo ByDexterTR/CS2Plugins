@@ -151,7 +151,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
 
         if (info.ArgCount < 3)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Kullanım: css_ctban <Hedef> <Süre> [Sebep]");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.usage_ban"]}");
             return;
         }
 
@@ -159,7 +159,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         var target = FindPlayer(targetArg);
         if (target == null)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Hedef bulunamadı");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
             return;
         }
         var steamid = target.SteamID.ToString();
@@ -168,7 +168,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         var durationSec = ParseDuration(durationStr);
         if (durationSec <= 0)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Geçerli bir süre giriniz. (Örnek: 30m, 2h, 1d)");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.invalid_duration"]}");
             return;
         }
 
@@ -189,7 +189,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         }
 
         var adminName = player != null ? player.PlayerName : "unknown";
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{target.PlayerName}{CC.Default}, {CC.Gold}{adminName}{CC.Default} tarafından {FormatTimeLeft(durationSec)} CTden {CC.Red}banlandı! {CC.Default}Sebep: {CC.Green}{reason}");
+        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.banned", target.PlayerName, adminName, FormatTimeLeft(durationSec), reason]}");
     }
 
     [ConsoleCommand("css_ctunban", "css_ctunban <Hedef>")]
@@ -201,7 +201,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
 
         if (info.ArgCount < 2)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Kullanım: css_ctunban <Hedef>");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.usage_unban"]}");
             return;
         }
 
@@ -209,7 +209,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         var target = FindPlayer(targetArg);
         if (target == null)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Hedef bulunamadı");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
             return;
         }
         var steamid = target.SteamID.ToString();
@@ -217,11 +217,11 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         if (BanList.BannedPlayers.Remove(steamid))
         {
             SaveBanList();
-            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{target.PlayerName}{CC.Default}, CT banı {CC.Gold}{player.PlayerName}{CC.Default} tarafından {CC.Red}kaldırıldı!");
+            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.unbanned", target.PlayerName, player.PlayerName]}");
         }
         else
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{target.PlayerName}{CC.Default} CT banı bulunamadı.");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.unban_not_found", target.PlayerName]}");
         }
     }
 
@@ -234,14 +234,14 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
 
         if (info.ArgCount < 3)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Kullanım: css_ctaddban <STEAMID64> <Süre> [Sebep]");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.usage_addban"]}");
             return;
         }
 
         var steamid = info.GetArg(1);
         if (string.IsNullOrEmpty(steamid))
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Geçerli bir STEAMID64 giriniz.");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.invalid_steamid"]}");
             return;
         }
 
@@ -249,7 +249,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         var durationSec = ParseDuration(durationStr);
         if (durationSec <= 0)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Geçerli bir süre giriniz. (Örnek: 30m, 2h, 1d)");
+            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.invalid_duration"]}");
             return;
         }
 
@@ -264,7 +264,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         };
         SaveBanList();
 
-        info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{steamid}{CC.Default} {FormatTimeLeft(durationSec)} CTden {CC.Red}banlandı! {CC.Default}Sebep: {CC.Green}{reason}");
+        info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.addban_applied", steamid, FormatTimeLeft(durationSec), reason]}");
     }
 
     [ConsoleCommand("css_ctbanlist", "css_ctbanlist")]
@@ -282,18 +282,16 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
             var banEntry = kvp.Value;
             if (banEntry.BanTime > now)
             {
-                player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} CT Ban Listesi:");
+                player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.banlist_header"]}");
                 var timeLeft = FormatTimeLeft(banEntry.BanTime - now);
-                var msg = $" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{banEntry.Nickname}{CC.Default}, (Kalan Süre: {timeLeft}) Sebep: {CC.Green}{banEntry.Reason}{CC.Default}";
-                player.PrintToChat(msg);
+                player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.banlist_entry", banEntry.Nickname, timeLeft, banEntry.Reason]}");
                 found = true;
             }
         }
 
         if (!found)
         {
-            var msg = $" {CC.Orchid}{Config.ChatPrefix}{CC.Default} CTBanlı oyuncu yok.";
-            player.PrintToChat(msg);
+            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.banlist_empty"]}");
         }
     }
 
@@ -311,7 +309,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
                 var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 if (banEntry.BanTime > now)
                 {
-                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} CT takımdan {CC.Red}banlısın! {CC.Default}(Kalan Süre: {FormatTimeLeft(banEntry.BanTime - now)}) Sebep: {CC.Green}{banEntry.Reason}");
+                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
                     player.ChangeTeam(CsTeam.Terrorist);
                     return HookResult.Handled;
                 }
@@ -339,7 +337,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
                 var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 if (banEntry.BanTime > now)
                 {
-                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} CT takımından {CC.Red}banlısın! {CC.Default}(Kalan Süre: {FormatTimeLeft(banEntry.BanTime - now)}) Sebep: {CC.Green}{banEntry.Reason}");
+                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
                     player.ChangeTeam(CsTeam.Terrorist);
                     return HookResult.Continue;
                 }
@@ -366,7 +364,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
                 var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 if (banEntry.BanTime > now)
                 {
-                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} CT takımından {CC.Red}banlısın! {CC.Default}(Kalan Süre: {FormatTimeLeft(banEntry.BanTime - now)}) Sebep: {CC.Green}{banEntry.Reason}");
+                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
                     player.ChangeTeam(CsTeam.Terrorist);
                     return HookResult.Handled;
                 }

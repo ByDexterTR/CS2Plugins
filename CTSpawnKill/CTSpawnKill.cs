@@ -3,9 +3,8 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
-using CounterStrikeSharp.API.Modules.Memory;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using System.Drawing;
+using static CounterStrikeSharp.API.Core.Listeners;
 
 public class CTSpawnKillConfig : BasePluginConfig
 {
@@ -34,13 +33,12 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
 
   public override void Load(bool hotReload)
   {
-    VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
+    RegisterListener<OnEntityTakeDamagePre>(HandleEntityDamage);
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn, HookMode.Post);
   }
 
   public override void Unload(bool hotReload)
   {
-    try { VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Unhook(OnTakeDamage, HookMode.Pre); } catch { }
     foreach (var kv in _timers)
       kv.Value.Kill();
     _timers.Clear();
@@ -74,7 +72,7 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
       _timers.Remove(player.SteamID);
     }
 
-    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Green}{Config.SpawnProtectSeconds} saniye{CC.Default} spawn koruması aktif!");
+    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctspawnkill.protection_active", Config.SpawnProtectSeconds]}");
 
     var timer = AddTimer(Config.SpawnProtectSeconds, () => EndProtection(player.SteamID), TimerFlags.STOP_ON_MAPCHANGE);
     _timers[player.SteamID] = timer;
@@ -95,18 +93,13 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
       pawn.Render = Color.FromArgb(255, 255, 255, 255);
       Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
     }
-    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Spawn koruması {CC.Red}sona erdi{CC.Default}!");
+    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctspawnkill.protection_ended"]}");
   }
 
-  public HookResult OnTakeDamage(DynamicHook h)
+  private HookResult HandleEntityDamage(CEntityInstance victimEnt, CTakeDamageInfo info)
   {
     try
     {
-      var victimEnt = h.GetParam<CEntityInstance>(0);
-      var info = h.GetParam<CTakeDamageInfo>(1);
-      if (victimEnt == null || info == null)
-        return HookResult.Continue;
-
       CCSPlayerPawn? victimPawn = victimEnt as CCSPlayerPawn ?? new CCSPlayerPawn(victimEnt.Handle);
       var victimController = victimPawn?.OriginalController.Value;
       if (victimController == null || !victimController.IsValid)
@@ -126,7 +119,7 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
       }
 
       info.Damage = 0f;
-      return HookResult.Changed;
+      return HookResult.Continue;
     }
     catch { return HookResult.Continue; }
   }

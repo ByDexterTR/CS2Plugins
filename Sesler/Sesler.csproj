@@ -10,7 +10,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.347">
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.367">
       <PrivateAssets>none</PrivateAssets>
       <ExcludeAssets>runtime</ExcludeAssets>
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -21,4 +21,8 @@
     <PackageReference Include="Dapper" Version="2.1.66" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

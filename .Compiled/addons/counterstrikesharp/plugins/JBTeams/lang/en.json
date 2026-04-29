@@ -1,0 +1,10 @@
+{
+  "jbteams.usage": "Usage: !takim <0-5>",
+  "jbteams.invalid_input": "Enter a number between 0-5!",
+  "jbteams.no_players": "Not enough players.",
+  "jbteams.uneven": "{0} players cannot be divided into {1} teams equally.",
+  "jbteams.team_assigned": "Your team: {0}",
+  "jbteams.teams_created": "{0}: {1} teams created.",
+  "jbteams.no_active": "No active teams!",
+  "jbteams.teams_disabled": "{0}: disabled teams."
+}

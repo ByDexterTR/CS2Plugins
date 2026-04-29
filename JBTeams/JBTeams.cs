@@ -6,8 +6,7 @@ using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
-using CounterStrikeSharp.API.Modules.Memory;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
+using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace JBTeams;
 
@@ -27,7 +26,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
   public JBTeamsConfig Config { get; set; } = new JBTeamsConfig();
 
   private int activeTeams = 0;
-  private readonly Dictionary<int, int> playerTeams = new();
+  private readonly Dictionary<ulong, int> playerTeams = new();
 
   private readonly Color[] teamColors = new[]
   {
@@ -54,35 +53,20 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 
   public override void Load(bool hotReload)
   {
-    VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
+    RegisterListener<OnEntityTakeDamagePre>(HandleEntityDamage);
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
   }
 
-  public override void Unload(bool hotReload)
-  {
-    try { VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Unhook(OnTakeDamage, HookMode.Pre); } catch { }
-  }
-
-  public HookResult OnTakeDamage(DynamicHook h)
+  private HookResult HandleEntityDamage(CEntityInstance victimEnt, CTakeDamageInfo info)
   {
     if (activeTeams == 0)
       return HookResult.Continue;
 
-    var victimEnt = h.GetParam<CEntityInstance>(0);
-    var info = h.GetParam<CTakeDamageInfo>(1);
-
-    if (victimEnt == null || info == null)
-      return HookResult.Continue;
-
-    var attackerEnt = info.Attacker.Value;
-    if (attackerEnt == null)
-      return HookResult.Continue;
-
     CCSPlayerPawn? victimPawn = victimEnt as CCSPlayerPawn ?? new CCSPlayerPawn(victimEnt.Handle);
-    CCSPlayerPawn? attackerPawn = attackerEnt as CCSPlayerPawn ?? new CCSPlayerPawn(attackerEnt.Handle);
+    CCSPlayerPawn? attackerPawn = info.Attacker.Value as CCSPlayerPawn;
 
     var victimController = victimPawn?.OriginalController.Value;
     var attackerController = attackerPawn?.OriginalController.Value;
@@ -90,21 +74,17 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     if (victimController == null || attackerController == null)
       return HookResult.Continue;
 
-    if (!victimController.UserId.HasValue || !attackerController.UserId.HasValue)
-      return HookResult.Continue;
-
-    if (victimController.UserId.Value == attackerController.UserId.Value)
+    if (victimController.SteamID == attackerController.SteamID)
       return HookResult.Continue;
 
     if (victimController.TeamNum != (int)CsTeam.Terrorist || attackerController.TeamNum != (int)CsTeam.Terrorist)
       return HookResult.Continue;
 
-    if (playerTeams.TryGetValue(attackerController.UserId.Value, out int aTeam) &&
-        playerTeams.TryGetValue(victimController.UserId.Value, out int vTeam) &&
+    if (playerTeams.TryGetValue(attackerController.SteamID, out int aTeam) &&
+        playerTeams.TryGetValue(victimController.SteamID, out int vTeam) &&
         aTeam == vTeam)
     {
       info.Damage = 0f;
-      return HookResult.Changed;
     }
 
     return HookResult.Continue;
@@ -119,13 +99,13 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 
     if (info.ArgCount < 2)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Kullanım: !takim <0-5>");
+      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.usage"]}");
       return;
     }
 
     if (!int.TryParse(info.ArgByIndex(1), out int teamCount) || teamCount < 0 || teamCount > 5)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} 0-5 arası bir sayı gir!");
+      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.invalid_input"]}");
       return;
     }
 
@@ -141,13 +121,13 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 
     if (terrorists.Count == 0)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Yeterli oyuncu yok.");
+      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.no_players"]}");
       return;
     }
 
     if (terrorists.Count % teamCount != 0)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{terrorists.Count}{CC.Default} oyuncu {CC.Gold}{teamCount}{CC.Default} takıma eşit bölünemez.");
+      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.uneven", terrorists.Count, teamCount]}");
       return;
     }
 
@@ -170,22 +150,19 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
       if (teamIndex >= teamCount) teamIndex = teamCount - 1;
 
       var p = shuffled[i];
-      if (p.UserId.HasValue)
-      {
-        playerTeams[p.UserId.Value] = teamIndex;
-        ApplyTeamColor(p, teamIndex);
-        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Takımın: {GetColoredTeamName(teamIndex)}");
-      }
+      playerTeams[p.SteamID] = teamIndex;
+      ApplyTeamColor(p, teamIndex);
+      p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.team_assigned", teamNames[teamIndex]]}");
     }
 
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{admin.PlayerName}{CC.Default}: {CC.Gold}{teamCount}{CC.Default} takım oluşturuldu.");
+    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.teams_created", admin.PlayerName, teamCount]}");
   }
 
   private void DisableTeams(CCSPlayerController admin)
   {
     if (activeTeams == 0)
     {
-      admin.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Aktif takım yok!");
+      admin.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.no_active"]}");
       return;
     }
 
@@ -194,7 +171,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 
     ResetAllTerroristColors();
 
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{admin.PlayerName}{CC.Default}: takımları kapattı.");
+    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.teams_disabled", admin.PlayerName]}");
   }
 
   private void ApplyTeamColor(CCSPlayerController player, int teamIndex)
@@ -239,11 +216,11 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
   private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player == null || !player.IsValid || !player.UserId.HasValue)
+    if (player == null || !player.IsValid)
       return HookResult.Continue;
 
     ResetPlayerColor(player);
-    playerTeams.Remove(player.UserId.Value);
+    playerTeams.Remove(player.SteamID);
 
     CheckTeamWin();
 
@@ -309,10 +286,10 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
   private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player == null || !player.IsValid || !player.UserId.HasValue)
+    if (player == null || !player.IsValid)
       return HookResult.Continue;
 
-    playerTeams.Remove(player.UserId.Value);
+    playerTeams.Remove(player.SteamID);
 
     return HookResult.Continue;
   }

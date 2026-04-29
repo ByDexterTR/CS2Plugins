@@ -107,7 +107,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       if (weaponName.Contains("knife") || weaponName.Contains("bayonet"))
         continue;
 
-      pawn.RemovePlayerItem(weaponOpt.Value);
+      weaponOpt.Value.Remove();
     }
 
     if (!string.IsNullOrEmpty(primaryWeapon))
@@ -127,7 +127,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
 
     if (player.TeamNum != 3)
     {
-      commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Bu komutu sadece {CC.Gold}CT takımı{CC.Default} kullanabilir!");
+      commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkit.ct_only"]}");
       return;
     }
 
@@ -142,29 +142,29 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     var steamId = player.SteamID;
     var currentPrimary = playerPrimaryWeapon.TryGetValue(steamId, out var primary)
         ? GetWeaponDisplayName(primary, true)
-        : "Seçilmedi";
+        : Localizer["ctkit.not_selected"];
     var currentSecondary = playerSecondaryWeapon.TryGetValue(steamId, out var secondary)
         ? GetWeaponDisplayName(secondary, false)
-        : "Seçilmedi";
+        : Localizer["ctkit.not_selected"];
 
     var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'> CT Silah Menü <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'></font>", this);
 
-    menu.AddMenuOption($"Silah: {currentPrimary}", (p, option) =>
+    menu.AddMenuOption(Localizer["ctkit.menu_primary", currentPrimary], (p, option) =>
     {
       ShowPrimaryWeaponMenu(p);
     });
 
-    menu.AddMenuOption($"Pistol: {currentSecondary}", (p, option) =>
+    menu.AddMenuOption(Localizer["ctkit.menu_secondary", currentSecondary], (p, option) =>
     {
       ShowSecondaryWeaponMenu(p);
     });
 
-    menu.AddMenuOption($"Kitini Sıfırla", (p, option) =>
+    menu.AddMenuOption(Localizer["ctkit.menu_reset"], (p, option) =>
     {
       var sid = p.SteamID;
       playerPrimaryWeapon.Remove(sid);
       playerSecondaryWeapon.Remove(sid);
-      p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Silah kitiniz {CC.Red}sıfırlandı{CC.Default}!");
+      p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkit.kit_reset"]}");
       ShowMainMenu(p);
     });
 
@@ -184,7 +184,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       {
         var steamId = p.SteamID;
         playerPrimaryWeapon[steamId] = weapon.WeaponName;
-        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Silahınız {CC.Green}{weapon.DisplayName}{CC.Default} olarak ayarlandı!");
+        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkit.weapon_set", weapon.DisplayName]}");
         ShowMainMenu(p);
       });
     }
@@ -205,7 +205,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       {
         var steamId = p.SteamID;
         playerSecondaryWeapon[steamId] = weapon.WeaponName;
-        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Pistolunuz {CC.Green}{weapon.DisplayName}{CC.Default} olarak ayarlandı!");
+        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkit.pistol_set", weapon.DisplayName]}");
         ShowMainMenu(p);
       });
     }

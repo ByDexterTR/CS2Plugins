@@ -1,0 +1,10 @@
+{
+  "ctkit.ct_only": "Only the CT team can use this command!",
+  "ctkit.weapon_set": "Your weapon has been set to {0}!",
+  "ctkit.pistol_set": "Your pistol has been set to {0}!",
+  "ctkit.kit_reset": "Your weapon kit has been reset!",
+  "ctkit.not_selected": "Not Selected",
+  "ctkit.menu_primary": "Weapon: {0}",
+  "ctkit.menu_secondary": "Pistol: {0}",
+  "ctkit.menu_reset": "Reset Kit"
+}

@@ -1,0 +1,10 @@
+{
+  "ctkit.ct_only": "Bu komutu sadece CT takımı kullanabilir!",
+  "ctkit.weapon_set": "Silahınız {0} olarak ayarlandı!",
+  "ctkit.pistol_set": "Pistolunuz {0} olarak ayarlandı!",
+  "ctkit.kit_reset": "Silah kitiniz sıfırlandı!",
+  "ctkit.not_selected": "Seçilmedi",
+  "ctkit.menu_primary": "Silah: {0}",
+  "ctkit.menu_secondary": "Pistol: {0}",
+  "ctkit.menu_reset": "Kitini Sıfırla"
+}

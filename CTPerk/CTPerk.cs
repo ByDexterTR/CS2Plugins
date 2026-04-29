@@ -6,8 +6,6 @@ using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.Utils;
-using CounterStrikeSharp.API.Modules.Memory;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 
 namespace CTPerk;
 
@@ -93,16 +91,10 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
   public override void Load(bool hotReload)
   {
-    VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
     RegisterEventHandler<EventWeaponFire>(OnWeaponFire);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
-  }
-
-  public override void Unload(bool hotReload)
-  {
-    try { VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Unhook(OnTakeDamage, HookMode.Pre); } catch { }
   }
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
@@ -111,7 +103,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     usedSelections = 0;
     var tCount = Utilities.GetPlayers().Count(p => p?.IsValid == true && p.Team == CsTeam.Terrorist);
     allowedSelections = GetAllowedUsages(tCount);
-    BroadcastCT($"Perk hakkınız: {CC.Gold}{allowedSelections}");
+    BroadcastCT(Localizer["ctperk.rights", allowedSelections]);
     foreach (var ct in Utilities.GetPlayers().Where(pl => pl?.IsValid == true && !pl.IsBot && pl.Team == CsTeam.CounterTerrorist))
     {
       var pawn = ct.PlayerPawn.Value;
@@ -161,15 +153,15 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     int dmgRedPct = (int)(Config.PerkDamageReductionRatio * 100);
     int dmgBoostPct = (int)((Config.PerkDamageBoostRatio - 1f) * 100);
     if (Config.EnabledPerkHpArmor)
-      AddPerkOption(menu, PerkType.Health, $"{hp} Can & {armor} Armor", () => ActivatePerk(PerkType.Health));
+      AddPerkOption(menu, PerkType.Health, Localizer["ctperk.perk_hp_armor", hp, armor], () => ActivatePerk(PerkType.Health));
     if (Config.EnabledPerkLifesteal)
-      AddPerkOption(menu, PerkType.Lifesteal, $"Can Çalma (%{lifestealPct})", () => ActivatePerk(PerkType.Lifesteal));
+      AddPerkOption(menu, PerkType.Lifesteal, Localizer["ctperk.perk_lifesteal", lifestealPct], () => ActivatePerk(PerkType.Lifesteal));
     if (Config.EnabledPerkInfAmmo)
-      AddPerkOption(menu, PerkType.InfiniteAmmo, "Sınırsız Mermi", () => ActivatePerk(PerkType.InfiniteAmmo));
+      AddPerkOption(menu, PerkType.InfiniteAmmo, Localizer["ctperk.perk_infinite_ammo"], () => ActivatePerk(PerkType.InfiniteAmmo));
     if (Config.EnabledPerkDamageReduction)
-      AddPerkOption(menu, PerkType.DamageReduction, $"Hasar Azaltma (%{dmgRedPct})", () => ActivatePerk(PerkType.DamageReduction));
+      AddPerkOption(menu, PerkType.DamageReduction, Localizer["ctperk.perk_damage_reduction", dmgRedPct], () => ActivatePerk(PerkType.DamageReduction));
     if (Config.EnabledPerkDamageBoost)
-      AddPerkOption(menu, PerkType.DamageBoost, $"Hasar Arttırma (+%{dmgBoostPct})", () => ActivatePerk(PerkType.DamageBoost));
+      AddPerkOption(menu, PerkType.DamageBoost, Localizer["ctperk.perk_damage_boost", dmgBoostPct], () => ActivatePerk(PerkType.DamageBoost));
 
     MenuManager.OpenCenterHtmlMenu(this, player, menu);
   }
@@ -185,7 +177,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
       if (usedSelections >= allowedSelections)
       {
-        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Perk hakkınız {CC.Red}bitti{CC.Default}!");
+        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctperk.no_rights"]}");
         MenuManager.CloseActiveMenu(p);
         return;
       }
@@ -229,22 +221,22 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     switch (type)
     {
       case PerkType.Health:
-        BroadcastCT($"Perk: {CC.Green}{hp} HP / {ar} Armor{CC.Default} aktif");
+        BroadcastCT(Localizer["ctperk.perk_active_hp_armor", hp, ar]);
         break;
       case PerkType.Lifesteal:
-        BroadcastCT($"Perk: {CC.Green}Can Çalma %{ls}{CC.Default} aktif");
+        BroadcastCT(Localizer["ctperk.perk_active_lifesteal", ls]);
         break;
       case PerkType.InfiniteAmmo:
-        BroadcastCT($"Perk: {CC.Green}Sınırsız Mermi{CC.Default} aktif");
+        BroadcastCT(Localizer["ctperk.perk_active_infammo"]);
         break;
       case PerkType.DamageReduction:
-        BroadcastCT($"Perk: {CC.Green}Hasar Azaltma %{dr}{CC.Default} aktif");
+        BroadcastCT(Localizer["ctperk.perk_active_dmgreduction", dr]);
         break;
       case PerkType.DamageBoost:
-        BroadcastCT($"Perk: {CC.Green}Hasar Arttırma %{db}{CC.Default} aktif");
+        BroadcastCT(Localizer["ctperk.perk_active_dmgboost", db]);
         break;
       default:
-        BroadcastCT($"Perk: {CC.Green}Aktif{CC.Default}");
+        BroadcastCT(Localizer["ctperk.perk_active_generic"]);
         break;
     }
   }
@@ -330,76 +322,77 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
   private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
   {
-    if (!activePerks.Contains(PerkType.Lifesteal)) return HookResult.Continue;
-
     var attacker = @event.Attacker;
     var victim = @event.Userid;
-
-    if (attacker?.IsValid != true || attacker.IsBot) return HookResult.Continue;
     if (victim?.IsValid != true) return HookResult.Continue;
-    if (attacker.UserId == victim.UserId) return HookResult.Continue;
-    if (attacker.Team != CsTeam.CounterTerrorist) return HookResult.Continue;
 
-    var attackerPawn = attacker.PlayerPawn?.Value;
-    if (attackerPawn?.IsValid != true || attackerPawn.LifeState != (byte)LifeState_t.LIFE_ALIVE) return HookResult.Continue;
+    int dmgDealt = @event.DmgHealth;
+    if (dmgDealt <= 0) return HookResult.Continue;
 
-    float lifesteal = Config.PerkLifestealRatio;
-    if (lifesteal <= 0 || lifesteal > 1.0f) return HookResult.Continue;
-
-    var damage = @event.DmgHealth;
-    var healAmount = (int)(damage * lifesteal);
-
-    if (healAmount > 0)
+    // Lifesteal: CT saldırgan verdiği hasarın bir kısmını can olarak geri alır
+    if (activePerks.Contains(PerkType.Lifesteal) &&
+        attacker?.IsValid == true && !attacker.IsBot &&
+        attacker.UserId != victim.UserId &&
+        attacker.Team == CsTeam.CounterTerrorist)
     {
-      var newHealth = attackerPawn.Health + healAmount;
-      var maxHealth = attackerPawn.MaxHealth;
-
-      if (newHealth > maxHealth)
-        newHealth = maxHealth;
-
-      attackerPawn.Health = newHealth;
-      Utilities.SetStateChanged(attackerPawn, "CBaseEntity", "m_iHealth");
+      var attackerPawn = attacker.PlayerPawn?.Value;
+      if (attackerPawn?.IsValid == true && attackerPawn.LifeState == (byte)LifeState_t.LIFE_ALIVE)
+      {
+        float lifesteal = Config.PerkLifestealRatio;
+        if (lifesteal > 0 && lifesteal <= 1.0f)
+        {
+          int healAmount = (int)(dmgDealt * lifesteal);
+          if (healAmount > 0)
+          {
+            attackerPawn.Health = Math.Min(attackerPawn.Health + healAmount, attackerPawn.MaxHealth);
+            Utilities.SetStateChanged(attackerPawn, "CBaseEntity", "m_iHealth");
+          }
+        }
+      }
     }
 
-    return HookResult.Continue;
-  }
-
-  public HookResult OnTakeDamage(DynamicHook h)
-  {
-    if (!activePerks.Contains(PerkType.DamageReduction) && !activePerks.Contains(PerkType.DamageBoost)) return HookResult.Continue;
-
-    var victimEnt = h.GetParam<CEntityInstance>(0);
-    var info = h.GetParam<CTakeDamageInfo>(1);
-    if (victimEnt == null || info == null) return HookResult.Continue;
-
-    var victimPawn = victimEnt as CCSPlayerPawn;
-    if (victimPawn?.IsValid != true) return HookResult.Continue;
-
-    var attackerEnt = info.Attacker?.Value;
-    var attackerPawn = attackerEnt as CCSPlayerPawn;
-
-    var victimController = victimPawn.OriginalController?.Value;
-    var attackerController = attackerPawn?.OriginalController?.Value;
-
-    if (activePerks.Contains(PerkType.DamageReduction) &&
-        victimController?.IsValid == true &&
-        victimController.Team == CsTeam.CounterTerrorist)
+    // Hasar Azaltma: CT kurban aldığı hasarın bir kısmını geri iyileşir
+    if (activePerks.Contains(PerkType.DamageReduction) && victim.Team == CsTeam.CounterTerrorist)
     {
-      float reduction = Config.PerkDamageReductionRatio;
-      if (reduction > 0.0f)
-        info.Damage *= (1f - reduction);
+      var victimPawn = victim.PlayerPawn?.Value;
+      if (victimPawn?.IsValid == true && victimPawn.LifeState == (byte)LifeState_t.LIFE_ALIVE)
+      {
+        float reduction = Config.PerkDamageReductionRatio;
+        if (reduction > 0f)
+        {
+          int healBack = (int)(dmgDealt * reduction);
+          if (healBack > 0)
+          {
+            victimPawn.Health = Math.Min(victimPawn.Health + healBack, victimPawn.MaxHealth);
+            Utilities.SetStateChanged(victimPawn, "CBaseEntity", "m_iHealth");
+          }
+        }
+      }
     }
 
+    // Hasar Arttırma: CT saldırgan CT olmayan hedefe ek hasar verir
     if (activePerks.Contains(PerkType.DamageBoost) &&
-        attackerController?.IsValid == true &&
-        attackerController.Team == CsTeam.CounterTerrorist)
+        attacker?.IsValid == true &&
+        attacker.Team == CsTeam.CounterTerrorist &&
+        victim.Team != CsTeam.CounterTerrorist)
     {
-      float mult = Math.Max(1.0f, Config.PerkDamageBoostRatio);
-      info.Damage *= mult;
+      var victimPawn = victim.PlayerPawn?.Value;
+      if (victimPawn?.IsValid == true && victimPawn.LifeState == (byte)LifeState_t.LIFE_ALIVE && victimPawn.Health > 0)
+      {
+        float mult = Math.Max(1.0f, Config.PerkDamageBoostRatio);
+        int extraDmg = (int)(dmgDealt * (mult - 1f));
+        if (extraDmg > 0)
+        {
+          int newHp = victimPawn.Health - extraDmg;
+          victimPawn.Health = Math.Max(0, newHp);
+          Utilities.SetStateChanged(victimPawn, "CBaseEntity", "m_iHealth");
+        }
+      }
     }
 
     return HookResult.Continue;
   }
+
 }
 
 public static class CC

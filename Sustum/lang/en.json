@@ -1,0 +1,8 @@
+{
+  "sustum.in_progress": "{0} is already running!",
+  "sustum.started": "{0} started {1}!",
+  "sustum.no_active": "No active sustum game!",
+  "sustum.cancelled": "{0} cancelled the sustum game!",
+  "sustum.winner": "{0} won!",
+  "sustum.loser": "{0} lost!"
+}

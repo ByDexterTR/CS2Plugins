@@ -1,0 +1,10 @@
+{
+  "commandmaker.no_permission": "Bu komutu kullanmak için yetkiniz yok.",
+  "commandmaker.commands_loaded": "CommandMaker: {0} komut yüklendi.",
+  "commandmaker.unknown_type": "Bilinmeyen komut tipi: {0}",
+  "commandmaker.usage_player": "Kullanım: {0} <oyuncu>",
+  "commandmaker.player_not_found": "Oyuncu bulunamadı: {0}",
+  "commandmaker.player_only": "Bu komut sadece oyuncular tarafından kullanılabilir.",
+  "commandmaker.execute_undefined": "Çalıştırılacak komut tanımlanmamış.",
+  "commandmaker.announce": "{0}, {1} komutunu kullandı."
+}

@@ -1,0 +1,15 @@
+{
+  "meslekmenu.usage_doktor": "!meslek Doctor » {0} HP healthshot (weapon_healthshot)",
+  "meslekmenu.usage_flash": "!meslek Flash » {0}s flash effect (Speed x{1})",
+  "meslekmenu.usage_bombaci": "!meslek Bomber » Random {0} given.",
+  "meslekmenu.usage_rambo": "!meslek Rambo » {0} HP, {1} armor.",
+  "meslekmenu.usage_zeus": "!meslek Zeus » Receives taser.",
+  "meslekmenu.no_active": "No professions are active!",
+  "meslekmenu.alive_only": "Only alive players can use this command!",
+  "meslekmenu.t_only": "Only the Terrorist team can use this command!",
+  "meslekmenu.already_selected": "You already selected a profession this round!",
+  "meslekmenu.disabled": "{0} profession is disabled.",
+  "meslekmenu.profession_changed": "Your profession changed to: {0}",
+  "meslekmenu.rambo_low_hp": "Cannot select Rambo: Your HP is below 100!",
+  "meslekmenu.unknown": "Unknown profession! Type !meslek for help."
+}

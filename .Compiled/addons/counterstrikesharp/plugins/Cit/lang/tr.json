@@ -1,0 +1,13 @@
+{
+  "cit.menu_title": "Çit Menüsü",
+  "cit.create": "Oluştur: [{0}] [{1}]",
+  "cit.change_type": "Türü Değiştir",
+  "cit.change_size": "Boyutu Değiştir",
+  "cit.delete_aimed": "Çiti Sil",
+  "cit.delete_all": "Çitleri Sil",
+  "cit.type_fence": "Çit",
+  "cit.type_cover": "Barikat",
+  "cit.size_small": "Küçük",
+  "cit.size_medium": "Orta",
+  "cit.size_large": "Büyük"
+}

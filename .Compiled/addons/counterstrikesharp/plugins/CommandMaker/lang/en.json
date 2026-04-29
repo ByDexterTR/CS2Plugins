@@ -1,0 +1,10 @@
+{
+  "commandmaker.no_permission": "You do not have permission to use this command.",
+  "commandmaker.commands_loaded": "CommandMaker: {0} commands loaded.",
+  "commandmaker.unknown_type": "Unknown command type: {0}",
+  "commandmaker.usage_player": "Usage: {0} <player>",
+  "commandmaker.player_not_found": "Player not found: {0}",
+  "commandmaker.player_only": "This command can only be used by players.",
+  "commandmaker.execute_undefined": "No command defined to execute.",
+  "commandmaker.announce": "{0} used command {1}."
+}

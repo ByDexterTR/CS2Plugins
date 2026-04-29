@@ -1,6 +1,8 @@
 # CS2 Plugins
 
-Counter-Strike 2 için geliştirilmiş sunucu eklentileri koleksiyonu.
+**Diller:** 
+- 🇹🇷 [Türkçe](README.md) 
+- 🇬🇧 [English](README.en.md)
 
 ## 📥 Kurulum
 
@@ -10,8 +12,13 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
-### 1v1Slay
-> Oyuncular 1v1 kaldıklarında otomatik geri sayım ve slay sistemi
+## 1v1Slay
+
+**Açıklama:** Oyuncular 1v1 kaldıklarında otomatik geri sayım ve slay sistemi
+
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| Otomatik | Sistem otomatik çalışır | Yok |
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
@@ -19,131 +26,120 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 | `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
 | `min_players` | Sistemin aktif olması için minimum oyuncu sayısı | `3` |
 | `countdown_time` | Geri sayım süresi (saniye) | `30` |
-| `enable_announcements` | Tüm bildirimleri aktif/pasif yapar (HUD + Chat) | `true` |
+| `enable_announcements` | Tüm bildirimleri aktif/pasif yapar | `true` |
 
 ---
 
-### Cekilis
-> Rastgele oyuncu seçme aracı
+## Cekilis
 
-**Komutlar:**
-- `css_cek all` - Tüm oyunculardan seç
-- `css_cek dead` - Ölü oyunculardan seç
-- `css_cek live` - Canlı oyunculardan seç
-- `css_cek T` / `Tdead` / `Tlive` - Terörist takımından seç
-- `css_cek CT` / `CTdead` / `CTlive` - CT takımından seç
+**Açıklama:** Rastgele oyuncu seçme aracı
 
-**Yetki:** `@css/chat`
-
----
-
-### ChatCleaner
-> Sohbet temizleme sistemi
-
-**Komutlar:**
-- `css_cc` - Tüm sohbeti temizle (admin)
-- `css_selfcc` - Kendi sohbetini temizle
-
-**Yetkiler:**
-- `css_cc` için `@css/chat`
-- `css_selfcc` için yetki gerekmez
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_cek all` | Tüm oyunculardan seç | `@css/chat` |
+| `css_cek dead` | Ölü oyunculardan seç | `@css/chat` |
+| `css_cek live` | Canlı oyunculardan seç | `@css/chat` |
+| `css_cek T` | Terörist oyunculardan seç | `@css/chat` |
+| `css_cek CT` | CT oyuncularından seç | `@css/chat` |
 
 ---
 
-### Cit
-> Warden için harita bariyerleri
+## ChatCleaner
 
-**Komut:** `css_cit`
+**Açıklama:** Sohbet temizleme sistemi
 
-**Yetki:** `@css/root` veya `@jailbreak/warden`
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_cc` | Tüm sohbeti temizle | `@css/chat` |
+| `css_selfcc` | Kendi sohbetini temizle | Yok |
+
+---
+
+## Cit
+
+**Açıklama:** Warden için harita bariyerleri
+
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_cit` | Barrier menüsünü açar | `@css/root` veya `@jailbreak/warden` |
 
 **Gereksinimler:** [CS2TraceRay](https://github.com/schwarper/CS2TraceRay)
 
 ---
 
-### CommandMaker
-> JSON tabanlı dinamik komut oluşturma sistemi
+## CommandMaker
 
-**Komutlar:**
-- `css_cm_reload` - Komutları yeniden yükle (yetki: `@css/root`)
+**Açıklama:** JSON tabanlı dinamik komut oluşturma sistemi
 
-**Yetki:** Her komut için JSON'da tanımlanabilir (multi-flag destekler)
-
-**Ayarlar:**
-| Ayar | Açıklama | Varsayılan |
-|------|----------|------------|
-| `ConfigPath` | Komut tanımlarının bulunduğu JSON dosyası | `commands.json` |
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_cm_reload` | Komutları yeniden yükle | `@css/root` |
 
 **Komut Türleri:**
-- `default` - Basit komutlar (chat/center mesajı gösterir)
-- `target` - Hedef oyuncu gerektiren komutlar (örn: `!hp <oyuncu> <değer>`)
-- `playertarget` - Opsiyonel hedef (kendine veya başkasına, örn: `!god [oyuncu]`)
-- `execute` - Sunucu komutu çalıştırır
+| Tür | Açıklama |
+|-----|----------|
+| `default` | Basit komutlar, argümansız |
+| `target` | Hedef oyuncu gerekli |
+| `playertarget` | İsteğe bağlı hedef oyuncu |
+| `execute` | Sunucu komutu çalıştırır |
 
-**Özellikler:**
+**Validasyon Seçenekleri:**
+| Validasyon | Açıklama | Örnek |
+|------------|----------|-------|
+| `arg1: "number"` | Sayısal argüman | `Arg1NumberMin: 1, Arg1NumberMax: 500` |
+| `arg1: "word"` | Kelime argümanı | `Arg1WordLength: 20` |
+| `flag` | Yetki kontrolü | `@css/slay;@css/cheats` (multi-flag) |
 
-*Validasyon:*
-- `arg1`, `arg2`, `arg3` - 3 argümana kadar destek
-- `arg*_number_min/max` - Sayısal sınırlar
-- `arg*_word_length` - Kelime uzunluğu sınırı
-- `arg*`: `"number"`, `"word"`, `"optional"`
+**Aksiyon Sistemi:**
+| Aksiyon | Açıklama | Parametreler |
+|--------|----------|-------------|
+| `sethealth` | Can ayarla | `[TARGET] [ARG1]` |
+| `setarmor` | Zırh ayarla | `[TARGET] [ARG1]` |
+| `setmoney` | Para ayarla | `[TARGET] [ARG1]` |
+| `setmaxhealth` | Max can ayarla | `[TARGET] [ARG1]` |
+| `setfreeze` | Dondur | `[TARGET]` |
+| `giveweapon` | Silah ver | `[TARGET] [ARG1]` |
+| `stripweapons` | Silahları al | `[TARGET]` |
+| `setnoclip` | No-clip modunu aç/kapat | `[TARGET] [ARG1]` |
+| `setgodmode` | Tanrı modunu aç/kapat | `[TARGET] [ARG1]` |
+| `kill` | Öldür | `[TARGET]` |
+| `setname` | İsim değiştir | `[TARGET] [ARG1]` |
+| `setmodel` | Model değiştir | `[TARGET] [ARG1]` |
+| `changeteam` | Takım değiştir | `[TARGET] [ARG1]` |
+| `respawn` | Diriltme | `[TARGET]` |
+| `setspeed` | Hız çarpanı | `[TARGET] [ARG1]` |
+| `setgravity` | Yerçekimi | `[TARGET] [ARG1]` |
+| `teleport` | Teleport | `[TARGET] [ARG1] [ARG2] [ARG3]` (X Y Z) |
+| `setplayercolor` | Oyuncu rengi | `[TARGET] [ARG1]` |
+| `slapdamage` | Hasar ver | `[TARGET] [ARG1]` |
+| `sethelmet` | Kask ayarla | `[TARGET] [ARG1]` |
+| `setclip` | Yüksükleme miktarı | `[TARGET] [ARG1]` |
+| `setammo` | Mühimmat ayarla | `[TARGET] [ARG1]` |
+| `playsound` | Ses çal | `[TARGET] [ARG1]` |
+| `execute` | Sunucu komutu | `say [ARG1]` |
 
-*Aksiyon Sistemi (18 aksiyon):*
-- `sethealth` - Can ayarla
-- `setmaxhealth` - Maksimum can ayarla
-- `setarmor` - Zırh ayarla
-- `sethelmet` - Miğfer ver
-- `setfreeze` - Dondur/çöz
-- `setnoclip` - Noclip aç/kapat
-- `setspeed` - Hız çarpanı ayarla
-- `setgravity` - Yerçekimi ayarla
-- `setgodmode` - Ölümsüzlük aç/kapat
-- `setmovetype` - Hareket tipi ayarla
-- `giveweapon` - Silah ver
-- `stripweapons` - Tüm silahları kaldır
-- `setclip` - Şarjör mermisi ayarla
-- `setammo` - Yedek mermi ayarla
-- `teleport` - Işınla (x y z)
-- `setplayercolor` - Oyuncu rengi (r g b)
-- `setmodel` - Model değiştir
-- `playsound` - Ses oynat
-- `setname` - İsim değiştir
-- `slapdamage` - Tokat ve hasar
-- `setmoney` - Para ayarla
-- `changeteam` - Takım değiştir (0-3)
-- `respawn` - Yeniden canlandır
-- `kill` - Öldür
+**Mesaj Sistemi:**
+| Mesaj | Açıklama | Özellikler |
+|-------|----------|----------|
+| `chat` | Oyuncu sohbetine yazı gönder | Renk kodları: `[GOLD]`, `[DEFAULT]`, vs |
+| `center` | Center mesajı (HUD) | `centertime` ile süre ayarlanır |
+| `serverchat` | Sunucu geneli sohbetine yazı | Tüm oyuncuların görmesi için |
+| `servercenter` | Sunucu geneli center mesajı | Tüm oyuncuları bilgilendir |
 
-*Mesaj Sistemi:*
-- `chat` - Komutu kullanan oyuncuya chat mesajı
-- `center` - Komutu kullanan oyuncuya merkez ekran mesajı (HTML destekli)
-- `centertime` - Merkez mesajın ekranda kalma süresi (saniye, varsayılan: 5.0)
-- `serverchat` - Tüm oyunculara chat mesajı
-- `servercenter` - Tüm oyunculara merkez ekran mesajı (HTML destekli)
+**Yer Tutucular (Placeholder'lar):**
+| Placeholder | Açıklama | Örnek |
+|-------------|----------|-------|
+| `[TARGET]` | Hedef oyuncu ismi | `Oyuncu1` |
+| `[ARG1]` | 1. argüman | `100` |
+| `[ARG2]` | 2. argüman | `200` |
+| `[ARG3]` | 3. argüman | `300` |
+| `[PLAYER]` | Komutu çalıştıran oyuncu | `Admin1` |
+| `[GOLD]` | Altın renk kodu | Mesajlarda renklendirme |
+| `[DEFAULT]` | Varsayılan renk | Mesajlarda renklendirme |
+| `[RED]` | Kırmızı renk | Uyarı mesajları için |
+| `[ORCHID]` | Mor renk | Özel mesajlar için |
 
-*Yer Tutucular (17+):*
-- `[PLAYER]` / `[PLAYERNAME]` - Komutu kullanan oyuncu
-- `[TARGET]` - Hedef oyuncu
-- `[PLAYER/TARGET]` - Hedef oyuncu (playertarget için)
-- `[ARG1]`, `[ARG2]`, `[ARG3]` - Argümanlar
-- `[TARGETHEALTH]` - Hedef oyuncunun canı
-- `[TARGETTEAM]` - Hedef oyuncunun takımı
-- `[PLAYERCOORDINATE]` - Oyuncu koordinatları (x y z)
-- `[TARGETCOORDINATE]` - Hedef koordinatları (x y z)
-- `[SERVERIP]`, `[SERVERPORT]` - Sunucu IP ve port
-- `[HOSTNAME]` - Sunucu ismi
-- `[MAPNAME]` - Harita ismi
-- `[PLAYERCOUNT]` - Oyuncu sayısı
-- `[ALIVECOUNT]` - Canlı oyuncu sayısı
-- `[RANDOMPLAYER]` - Rastgele oyuncu
-- `[TIME]` - Saat (HH:mm:ss)
-- `[DEFAULT]`, `[RED]`, `[GOLD]`, `[GREEN]`, `[BLUE]`, `[ORCHID]`, vb. - Renk kodları
-
-*Diğer:*
-- `announce` - Komut kullanımını sunucuya duyurur (true/false)
-- `flag` - Yetki (noktalı virgül ile çoklu yetki: `@css/slay;@css/cheats`)
-
-**Örnek Komut:**
+**Örnek Komut (HP Ayarı):**
 ```json
 {
   "command": "css_hp;css_health",
@@ -154,27 +150,30 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
   "arg1_number_max": 500,
   "flag": "@css/slay;@css/cheats",
   "sethealth": "[TARGET] [ARG1]",
-  "chat": "[GOLD][TARGET][DEFAULT] oyuncusunun canı [GOLD][ARG1][DEFAULT] yapıldı.",
+  "chat": "[GOLD][TARGET] [DEFAULT]adlı oyuncunun canı [GOLD][ARG1] [DEFAULT]olarak ayarlandı.",
   "center": "<font color='green'>Can: [ARG1]</font>",
   "centertime": 3.0,
   "announce": false
 }
 ```
 
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `ConfigPath` | Komut tanımlarının bulunduğu JSON dosyası | `commands.json` |
+
 ---
 
-### CTBan
-> CT takımı yasaklama sistemi
+## CTBan
 
-**Komutlar:**
-- `css_ctban <oyuncu> <süre>` - CT yasağı ver
-- `css_ctunban <oyuncu>` - CT yasağını kaldır
-- `css_ctaddban <oyuncu> <süre>` - CT yasağına ek süre ekle
-- `css_ctbanlist` - Yasaklı oyuncuları listele
+**Açıklama:** CT takımı yasaklama sistemi
 
-**Yetkiler:**
-- `@css/ban` (ctban, ctunban, ctaddban için)
-- Yetki gerekmez (ctbanlist için)
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_ctban <oyuncu> <süre>` | CT yasağı ver | `@css/ban` |
+| `css_ctunban <oyuncu>` | CT yasağını kaldır | `@css/ban` |
+| `css_ctaddban <oyuncu> <süre>` | CT yasağına ek süre ekle | `@css/ban` |
+| `css_ctbanlist` | Yasaklı oyuncuları listele | Yok |
 
 **Ayarlar:**
 | Ayar | Açıklama |
@@ -183,11 +182,13 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
-### CTKit
-> CT takımı için silah kiti menüsü (Jailbreak)
+## CTKit
 
-**Komut:**
-- `css_kit` - CT silah menüsünü açar
+**Açıklama:** CT takımı için silah kiti menüsü
+
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_kit` | CT silah menüsünü açar | Yok |
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
@@ -195,21 +196,16 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 | `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
 | `default_primary_weapon` | Varsayılan ana silah | `weapon_ak47` |
 | `default_secondary_weapon` | Varsayılan yan silah | `weapon_deagle` |
-| `primary_weapons` | Ana silah seçenekleri | AK47, M4A4, M4A1-S, AWP, MAG7 |
-| `secondary_weapons` | Yan silah seçenekleri | DEAGLE, CZ75A, TEC9, ÇİFT BERETTA, USP-S, GLOCK, REVOLVER |
-
-**Özellikler:**
-- CT oyuncuları raunt başında seçtiği silahlarla doğar
 
 ---
 
-### CTKov
-> CT takımındaki gardiyanları (komutçu hariç) tüm CT'leri T takımına gönderir
+## CTKov
 
-**Komut:**
-- `css_ctkov` - CT gardiyanları hariç tüm CT'leri T'ye atar
+**Açıklama:** CT gardiyanları hariç tüm CT'leri T takımına gönderir
 
-**Yetki:** `@css/generic` veya `@jailbreak/warden`
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_ctkov` | CT'leri T'ye atar | `@css/generic` veya `@jailbreak/warden` |
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
@@ -218,13 +214,13 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
-### CTPerk
-> CT takımı için perk (özellik) sistemi (Jailbreak)
+## CTPerk
 
-**Komut:**
-- `css_ctperk` - CT perk seçim menüsünü açar
+**Açıklama:** CT takımı için perk (özellik) sistemi
 
-**Yetki:** `@css/generic` veya `@jailbreak/warden`
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_ctperk` | CT perk seçim menüsünü açar | `@css/generic` veya `@jailbreak/warden` |
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
@@ -235,24 +231,17 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 | `perk_lifesteal_ratio` | Lifesteal perk oranı | `0.25` |
 | `perk_damagereducation_ratio` | Hasar azaltma perk oranı | `0.25` |
 | `perk_damageboost_ratio` | Hasar artırma perk oranı | `1.50` |
-| `enabled_perk_*` | Perkleri aktif/pasif yapar | `true` |
-| `selection_rights` | T sayısına göre seçim hakkı | Özelleştirilebilir |
-
-**Özellikler:**
-- CT'ler raunt başında perk seçebilir (HP/Zırh, Lifesteal, Sınırsız Mermi, Hasar Azaltma, Hasar Artırma)
 
 ---
 
-### CTRev
-> CT takımına canlandırma (revive) menüsü ve otomatik canlandırma sistemi
+## CTRev
 
-**Komutlar:**
-- `css_ctr`, `css_ctrev`, `css_ctrevmenu` - CT revive menüsünü açar
-- `css_hak0`, `css_haksifir`, `css_haksifirla` - Canlandırma haklarını sıfırlar
+**Açıklama:** CT takımına canlandırma (revive) sistemi
 
-**Yetki:** 
-- `@css/generic` veya `@jailbreak/warden` (revive menüsü)
-- `@css/generic` (hak sıfırlama)
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_ctr` / `css_ctrev` | Revive menüsünü açar | `@css/generic` veya `@jailbreak/warden` |
+| `css_hak0` / `css_haksifir` | Canlandırma haklarını sıfırla | `@css/generic` |
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
@@ -261,15 +250,15 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 | `cooldown` | Canlanma bekleme süresi (sn) | `15` |
 | `revive_count` | Raunt başına maksimum canlandırma hakkı | `3` |
 
-**Özellikler:**
-- Otomatik canlandırma modu ve manuel canlandırma seçeneği
-
 ---
 
-### CTSpawnKill
-> CT doğumunda geçici ölümsüzlük (spawn kill önleme)
+## CTSpawnKill
 
-**Yetki:** Yok
+**Açıklama:** CT doğumunda geçici ölümsüzlük (spawn kill önleme)
+
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| Otomatik | Sistem otomatik çalışır | Yok |
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
@@ -277,13 +266,15 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 | `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
 | `spawn_protect_seconds` | Spawn koruma süresi (saniye) | `5` |
 
-**Özellikler:**
-- CT'ler doğduğunda belirtilen süre boyunca hasar almaz ve turuncu renkle işaretlenir
-
 ---
 
-### DiscordLogger
-> Discord webhook entegrasyonu ile sunucu logları
+## DiscordLogger
+
+**Açıklama:** Discord webhook entegrasyonu ile sunucu logları
+
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| Otomatik | Sistem otomatik çalışır | Yok |
 
 **Ayarlar:**
 | Ayar | Açıklama |
@@ -295,30 +286,41 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 | `webhook_kill` | Öldürme logları için webhook URL |
 | `webhook_round` | Round logları için webhook URL |
 
-> **Öneri:** Her log kategorisi için ayrı webhook kullanın.
+---
+
+## JBDoors
+
+**Açıklama:** Haritadaki tüm kapıları hızlıca açıp/kapatma
+
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_kapiac` | Tüm kapıları aç | `@css/generic` veya `@jailbreak/warden` |
+| `css_kapikapat` | Tüm kapıları kapat | `@css/generic` veya `@jailbreak/warden` |
 
 ---
 
-### JBDoors
-> Haritadaki tüm kapıları hızlıca açıp/kapatma
+## JBRace
 
-**Komut:**
-- `css_kapiac`
-- `css_kapikapat`
+**Açıklama:** Jailbreak için yarış sistemi
 
-**Yetki:** `@css/generic` veya `@jailbreak/warden`
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_race` | Yarış menüsünü açar | `@css/generic` veya `@jailbreak/warden` |
 
-> Not: `func_door`, `func_movelinear`, `func_door_rotating`, `prop_door_rotating` ve `func_breakable` üzerinde çalışır.
+**Ayarlar:**
+| Ayar | Açıklama | Varsayılan |
+|------|----------|------------|
+| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
 
 ---
 
-### JBTeams
-> Jailbreak için takım sistemi (T oyuncularını belirtilen sayıda renklere göre takımlara böler ve takım içi dost hasarını engeller)
+## JBTeams
 
-**Komutlar:**
-- `css_takim <0-5>` - `0/1` kapatır, `2-5` arası takım sayısını ayarlar
+**Açıklama:** Jailbreak için takım sistemi
 
-**Yetki:** `@css/generic`
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_takim <0-5>` | Takım sayısını ayarla | `@css/generic` |
 
 **Ayarlar:**
 | Ayar | Açıklama |
@@ -327,26 +329,13 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
-### JBRace
-> Jailbreak için yarış (race) sistemi
+## MapBlock
 
-**Komut:**
-- `css_race` - Yarış menüsünü açar
+**Açıklama:** Oyuncu sayısına göre dinamik harita engelleri
 
-**Yetki:** `@css/generic` veya `@jailbreak/warden`
-
-**Ayarlar:**
-| Ayar | Açıklama | Varsayılan |
-|------|----------|------------|
-| `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
-
-**Özellikler:**
-- Belirlenen noktalar arasında yarış başlatılır, kazananlar otomatik belirlenir
-
----
-
-### MapBlock
-> Oyuncu sayısına göre dinamik harita engelleri
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| Otomatik | Sistem otomatik çalışır | Yok |
 
 **Ayarlar:**
 | Ayar | Açıklama | Değerler |
@@ -356,166 +345,171 @@ Kurmak istediğiniz eklentiyi derleyebilirsiniz veya `.Compiled` klasöründen d
 
 ---
 
-### Meslekmenu
-> Terörist takımı için meslek seçim sistemi
+## Meslekmenu
 
-**Komutlar:**
-- `css_meslek` - Meslek menüsünü aç
-- `css_meslek doktor` - Doktor mesleğini seç
-- `css_meslek flash` - Flash mesleğini seç
-- `css_meslek bombacı` - Bombacı mesleğini seç
-- `css_meslek rambo` - Rambo mesleğini seç
-- `css_meslek zeus` - Zeus mesleğini seç
+**Açıklama:** Terörist takımı için meslek seçim sistemi
 
-**Yetki:** Yok
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_meslek` | Meslek menüsünü aç | Yok |
+| `css_meslek doktor` / `css_meslek doctor` | Doktor seç | Yok |
+| `css_meslek flash` | Flash seç | Yok |
+| `css_meslek bombacı` / `css_meslek bomber` | Bombacı seç | Yok |
+| `css_meslek rambo` | Rambo seç | Yok |
+| `css_meslek zeus` | Zeus seç | Yok |
 
 ---
 
-### PlayerHourCheck
-> Steam oyun saati kontrolü ve kademeli ceza sistemi
+## PlayerHourCheck
 
-**Özellikler:**
-- Oyuncuların CS2 oyun saatini kontrol eder
-- Yetersiz saati olan oyunculara kademeli ceza sistemi uygular
-- Gizli profillere uyarı ve ceza sistemi
-- MySQL veritabanı desteği
-- Steam API, DecAPI ve ByDexter API desteği
+**Açıklama:** Steam oyun saati kontrolü ve kademeli ceza sistemi
+
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| Otomatik | Sistem otomatik çalışır | Yok |
+
+**Placeholder'lar:**
+| Placeholder | Açıklama | Örnek |
+|-------------|----------|-------|
+| `{PlayerPlaytime}` | Oyuncunun oyun saati | `45` (saat cinsinden) |
+| `{RequiredPlaytime}` | Gerekli minimum oyun saati | `100` |
+| `{PenaltyCount}` | Ceza sayısı | `2` |
+| `{Orchid}` | Mor renk kodu | Chat mesajlarında |
+| `{Gold}` | Altın renk kodu | Uyarı mesajlarında |
+| `{Red}` | Kırmızı renk kodu | Tehdit mesajlarında |
+
+**Ceza Sistemi:**
+- Oyuncu saatini kontrol eder
+- Yetersizse kademeli ceza uygular
+- Konfigürasyonda belirlenen sayıda uyarı sonrası ceza
+
+**Örnek Config:**
+```json
+{
+  "phc_db": {
+    "provider": "sqlite",
+    "host": "localhost",
+    "name": "cs2_playerhourcheck",
+    "port": "3306",
+    "user": "root",
+    "password": ""
+  },
+  "phc_chat_prefix": "{Orchid}[ByDexter]",
+  "phc_steam_api_key": "SteamWebAPI-AnahtarınızBuraya",
+  "phc_required_playtime": 100,
+  "phc_warn_times": 3,
+  "phc_warn_enabled": 1,
+  "phc_warn_timer": 30,
+  "phc_warn_reason_private": "{Gold}Oyun detaylarınızı açmazsanız atılacaksınız. {Red}[{0}/{1}]",
+  "phc_penalty": {
+    "1": {
+      "type": "kick",
+      "time": 0,
+      "reason": "Yetersiz oyun saati ({PlayerPlaytime}/{RequiredPlaytime} saat)"
+    },
+    "3": {
+      "type": "ban",
+      "time": 60,
+      "reason": "Yetersiz oyun saati ({PlayerPlaytime}/{RequiredPlaytime} saat)"
+    },
+    "5": {
+      "type": "ban",
+      "time": 1440,
+      "reason": "Yetersiz oyun saati ({PlayerPlaytime}/{RequiredPlaytime} saat)"
+    }
+  },
+  "phc_ignore_flags": ["@bydexter/ignoreplaytime", "@css/root"],
+  "phc_ignore_steamids": ["76561198843494248"]
+}
+```
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
 |------|----------|------------|
-| `phc_db` | MySQL veritabanı bağlantı bilgileri | `localhost:3306` |
-| `phc_chat_prefix` | Sohbet mesajlarında kullanılacak önek | `{Orchid}[ByDexter]` |
-| `phc_steam_api_key` | Steam API anahtarı (opsiyonel) | `""` |
 | `phc_required_playtime` | Gereken minimum oyun saati | `100` |
-| `phc_warn_times` | Gizli profil için uyarı sayısı | `3` |
 | `phc_warn_enabled` | Uyarı sistemi aktif/pasif | `1` |
-| `phc_warn_timer` | Uyarılar arası bekleme süresi (saniye) | `30` |
-| `phc_warn_reason_private` | Gizli profil uyarı mesajı | Özelleştirilebilir |
-| `phc_kick_reason_private` | Gizli profil kick mesajı | Özelleştirilebilir |
-| `phc_penalty` | Kademeli ceza ayarları | Özelleştirilebilir |
-| `phc_ignore_flags` | Kontrolden muaf yetkiler | `@bydexter/ignoreplaytime`, `@css/root` |
-| `phc_ignore_steamids` | Kontrolden muaf SteamID'ler | Özelleştirilebilir |
+| `phc_warn_times` | Gizli profil için uyarı sayısı | `3` |
+| `phc_warn_timer` | Uyarılar arası bekleme süresi (sn) | `30` |
 
-**Ceza Sistemi:**
+**Gereksinimler:** MySQL veritabanı, Steam API anahtarı (opsiyonel)
 
-Ceza anahtarları esnek şekilde tanımlanabilir. İhlal sayısına en yakın (küçük veya eşit) ceza uygulanır.
-
-| Config | Açıklama |
-|--------|----------|
-| `"1"` | 1-2. ihlal için uygulanır |
-| `"3"` | 3-4. ihlal için uygulanır |
-| `"5"` | 5+ ihlal için uygulanır |
-
-**Örnek Config:**
-```json
-"phc_penalty": {
-  "1": { "type": "kick", "time": 0, "reason": "Yetersiz oyun saati ({PlayerPlaytime}/{RequiredPlaytime} saat)" },
-  "3": { "type": "ban", "time": 60, "reason": "Yetersiz oyun saati - 1 saat ban" },
-  "5": { "type": "ban", "time": 1440, "reason": "Yetersiz oyun saati - 1 gün ban" }
-}
-```
-
-**Placeholder'lar:**
-- `{RequiredPlaytime}` - Gereken oyun saati
-- `{PlayerPlaytime}` - Oyuncunun mevcut saati
-- `{Default}` `{White}` `{Red}` `{LightRed}` `{DarkRed}` `{BlueGrey}` `{Blue}` `{DarkBlue}` `{Purple}` `{Orchid}` `{Yellow}` `{Gold}` `{Orange}` `{LightGreen}` `{Green}` `{Lime}` `{Grey}` `{Gray}` `{Grey2}` - Renk kodları
-
-**Gereksinimler:**
-- MySQL veritabanı
-- MySqlConnector.dll (plugin ile birlikte gelir)
+**Veritabanı:** MySQL / SQLite
 
 ---
 
-### PlayerRGB
-> Oyuncu modeli RGB renklendirme
+## PlayerRGB
 
-**Komut:** `css_rgb`
+**Açıklama:** Oyuncu modeli RGB renklendirme
 
-**Yetki:** `@css/cheats`
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_rgb` | RGB menüsünü açar | `@css/cheats` |
 
 ---
 
-### Redbull
-> Oyuncuya geçici hız ve renk efekti uygular
+## Redbull
 
-**Komut:**
-- `css_redbull` - Redbull efektini etkinleştir
+**Açıklama:** Oyuncuya geçici hız ve renk efekti uygular
+
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_redbull` | Redbull efektini etkinleştir | Yok |
 
 **Ayarlar:**
 | Ayar | Açıklama | Varsayılan |
 |------|----------|------------|
 | `chat_prefix` | Sohbet mesajlarında kullanılacak önek | `[ByDexter]` |
-| `speed` | Hız çarpanı (`1.0` normal) | `2.0` |
+| `speed` | Hız çarpanı | `2.0` |
 | `duration` | Etki süresi (saniye) | `10` |
-| `filter_team` | Kullanım kısıtı (`T`, `CT`, `Both`) | `T` |
-| `player_color` | Efekt rengi (RGB) | `[248,123,27]` |
-| `round_limiter` | Raunt başına kullanım limiti (`0` sınırsız) | `2` |
-| `cooldown` | Tekrar kullanım bekleme süresi (saniye) | `15` |
+| `round_limiter` | Raunt başına kullanım limiti | `2` |
+| `cooldown` | Tekrar kullanım bekleme süresi (sn) | `15` |
 
 ---
 
-### Sesler
-> Oyuncu ses kontrolü (bıçak, silah, ayak/yürüme, oyuncu/hasar seslerini açma/kapama)
+## Sesler
 
-**Komut:**
-- `css_ses`, `css_sesler` - Ses ayarları menüsünü açar
+**Açıklama:** Oyuncu ses kontrolü (bıçak, silah, ayak/yürüme, oyuncu/hasar seslerini kontrol etme)
 
-**Yetki:** Yok
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_ses` / `css_sesler` | Ses ayarları menüsünü açar | Yok |
 
 **Ayarlar:**
 | Ayar | Açıklama | Değerler |
 |------|----------|----------|
-| `Database.provider` | Veritabanı türü | `sqlite` |
+| `Database.provider` | Veritabanı türü | `sqlite` / `mysql` |
 | `Database.host` | MySQL sunucu adresi | `localhost` |
 | `Database.name` | Veritabanı adı | `bydexter_sesler` |
-| `Database.port` | MySQL port | `3306` |
-| `Database.user` | MySQL kullanıcı adı | `root` |
-| `Database.password` | MySQL şifre | `""` |
 
-**Özellikler:**
-- Diğer oyuncuların bıçak, silah, ayak/yürüme, oyuncu/hasar ve MVP müziği seslerini kapatabilir
-
-**Gereksinimler:**
-- SQLite: `e_sqlite3.dll` (plugin ile birlikte gelir)
-- MySQL: `MySqlConnector.dll` (plugin ile birlikte gelir)
-
-**Veritabanı:**
-Plugin ilk çalıştırıldığında otomatik olarak `player_preferences` tablosunu oluşturur:
-- `steamid` - Oyuncu Steam ID
-- `knife` - Bıçak sesi tercihi (0-3)
-- `weapon` - Silah sesi tercihi (0-3)
-- `foot` - Ayak/Yürüme sesi tercihi (0-3)
-- `player` - Oyuncu/Hasar sesi tercihi (0-3)
-- `mvp` - MVP müziği tercihi (0 veya 3)
+**Veritabanı:** SQLite / MySQL
 
 ---
 
-### Silahsil
-> Yere düşen silahları temizleme
+## Silahsil
 
-**Komut:** `css_silahsil`
+**Açıklama:** Yere düşen silahları temizleme
 
-**Yetki:** `@css/slay`
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_silahsil` | Silahları temizle | `@css/slay` |
 
 ---
 
-### Sustum
-> Jailbreak için hızlı yazma yarışı sistemi
+## Sustum
 
-**Komutlar:**
-- `css_ctsustum` - CT'ler arası yarış
-- `css_tsustum` - T'ler arası yarış
-- `css_dsustum` - Ölüler arası yarış
-- `css_olusustum` - Tüm oyuncular arası yarış
-- `css_sustum0` / `css_ctsustum0` / `css_tsustum0` / `css_dsustum0` / `css_olusustum0` - Sustum yarışmasını durdurur
+**Açıklama:** Jailbreak için hızlı yazma yarışı sistemi
 
-**Yetki:** `@css/generic` veya `@jailbreak/warden`
+| Komut | Açıklama | Yetki |
+|-------|----------|-------|
+| `css_ctsustum` | CT'ler arası yarış | `@css/generic` veya `@jailbreak/warden` |
+| `css_tsustum` | T'ler arası yarış | `@css/generic` veya `@jailbreak/warden` |
+| `css_dsustum` | Ölüler arası yarış | `@css/generic` veya `@jailbreak/warden` |
+| `css_olusustum` | Tüm oyuncular arası yarış | `@css/generic` veya `@jailbreak/warden` |
+| `css_sustum0` | Yarışmayı durdur | `@css/generic` veya `@jailbreak/warden` |
 
 **Ayarlar:**
 | Ayar | Açıklama |
 |------|----------|
 | `chat_prefix` | Sohbet etiketi |
-| `sustum.json` | Yarış için kullanılacak kelime havuzu |
 
 ---

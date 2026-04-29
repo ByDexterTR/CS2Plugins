@@ -1,0 +1,13 @@
+{
+  "cekilis.help_all": "!cek all » Herkesten rastgele bir isim seçer",
+  "cekilis.help_dead": "!cek dead » Ölü oyunculardan rastgele bir isim seçer",
+  "cekilis.help_live": "!cek live » Canlı oyunculardan rastgele bir isim seçer",
+  "cekilis.help_t": "!cek T » Terörist takımından rastgele bir isim seçer",
+  "cekilis.help_ct": "!cek CT » CT takımından rastgele bir isim seçer",
+  "cekilis.help_tdead": "!cek Tdead » Ölü teröristlerden rastgele bir isim seçer",
+  "cekilis.help_tlive": "!cek Tlive » Canlı teröristlerden rastgele bir isim seçer",
+  "cekilis.help_ctdead": "!cek CTdead » Ölü CT oyuncularından rastgele bir isim seçer",
+  "cekilis.help_ctlive": "!cek CTlive » Canlı CT oyuncularından rastgele bir isim seçer",
+  "cekilis.no_player": "Çekiliş için uygun oyuncu bulunamadı!",
+  "cekilis.winner": "{0} Çekiliş yaptı ({1}), kazanan: {2}"
+}

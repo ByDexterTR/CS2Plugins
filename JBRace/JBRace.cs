@@ -95,7 +95,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
     {
       _winnerTarget = n;
       _waitingForWinnerInput = false;
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Kazanan sayısı {CC.Gold}{_winnerTarget}{CC.Default} olarak ayarlandı.");
+      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.winner_count_set", _winnerTarget]}");
       Server.NextFrame(() => ShowRaceMenu(player));
       return HookResult.Handled;
     }
@@ -108,7 +108,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 
     if (!_raceActive)
     {
-      menu.AddMenuOption("Yarışı Başlat", (p, o) =>
+      menu.AddMenuOption(Localizer["jbrace.menu_start_race"], (p, o) =>
       {
         if (!ValidateCanStart(p))
         {
@@ -118,20 +118,20 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
         _winners.Clear();
         MenuManager.CloseActiveMenu(p!);
         StartRaceCountdown();
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{player?.PlayerName}{CC.Default}: Yarışı {CC.Green}başlattı{CC.Default}.");
+        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.started", player?.PlayerName ?? ""]}");
       });
     }
     else
     {
-      menu.AddMenuOption("Yarışı İptal Et", (p, o) =>
+      menu.AddMenuOption(Localizer["jbrace.menu_cancel_race"], (p, o) =>
       {
         ResetRace();
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{player?.PlayerName}{CC.Default}: Yarışı {CC.Red}iptal etti{CC.Default}.");
+        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.cancelled", player?.PlayerName ?? ""]}");
         MenuManager.CloseActiveMenu(p!);
       });
     }
 
-    menu.AddMenuOption("Başlangıç Ayarla", (p, o) =>
+    menu.AddMenuOption(Localizer["jbrace.menu_set_start"], (p, o) =>
     {
       var pos = p?.PlayerPawn.Value?.AbsOrigin;
       var ang = p?.PlayerPawn.Value?.EyeAngles ?? new QAngle(0, 0, 0);
@@ -139,35 +139,35 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
       {
         _startPos = new Vector(pos.X, pos.Y, pos.Z);
         _startAngle = new QAngle(0, ang.Y, 0);
-        p!.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Başlangıç {CC.Green}ayarlandı{CC.Default}.");
+        p!.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.start_set"]}");
       }
       ShowRaceMenu(player);
     });
 
-    menu.AddMenuOption("Bitiş Ayarla", (p, o) =>
+    menu.AddMenuOption(Localizer["jbrace.menu_set_finish"], (p, o) =>
     {
       var pos = p?.PlayerPawn.Value?.AbsOrigin;
       if (pos != null)
       {
         _finishPos = new Vector(pos.X, pos.Y, pos.Z);
         SpawnFinishMarker();
-        p!.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Bitiş {CC.Green}ayarlandı{CC.Default}.");
+        p!.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.finish_set"]}");
       }
       ShowRaceMenu(player);
     });
 
-    menu.AddMenuOption($"Kazanan Sayısı: {CC.Gold}{_winnerTarget}", (p, o) =>
+    menu.AddMenuOption(Localizer["jbrace.winner_count", _winnerTarget], (p, o) =>
     {
       _waitingForWinnerInput = true;
-      p!.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Chate kazanan sayısı {CC.Gold}yazın{CC.Default}:");
+      p!.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.enter_winner_count"]}");
       MenuManager.CloseActiveMenu(p);
     });
 
-    menu.AddMenuOption("İşaretleri Temizle", (p, o) =>
+    menu.AddMenuOption(Localizer["jbrace.menu_clear_markers"], (p, o) =>
     {
       RemoveFinishMarker();
       _finishPos = null;
-      p!.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} İşaretler temizlendi.");
+      p!.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.markers_cleared"]}");
       ShowRaceMenu(player);
     });
 
@@ -178,12 +178,12 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
   {
     if (_startPos == null)
     {
-      player?.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Önce {CC.Gold}başlangıç konumu{CC.Default} ayarlayın.");
+      player?.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.no_start"]}");
       return false;
     }
     if (_finishPos == null)
     {
-      player?.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} Önce {CC.Gold}bitiş konumu{CC.Default} ayarlayın.");
+      player?.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.no_finish"]}");
       return false;
     }
     if (_winnerTarget < 1)
@@ -282,7 +282,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
       {
         _winners.Add(pl.SteamID);
         var secs = _raceStartTime.HasValue ? (DateTime.Now - _raceStartTime.Value).TotalSeconds : 0.0;
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{pl.PlayerName}{CC.Default} yarışı {CC.Gold}{secs:0.00}{CC.Default} sn'de {CC.Green}bitirdi{CC.Default}! ({_winners.Count}/{_winnerTarget})");
+        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbrace.winner", _winners.Count, pl.PlayerName]}");
 
         var pawn = pl.PlayerPawn?.Value;
         if (pawn != null)

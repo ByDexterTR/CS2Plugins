@@ -31,7 +31,7 @@ public class JBDoors : BasePlugin, IPluginConfig<JBDoorsConfig>
   [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnConsoleOpen(CCSPlayerController? player, CommandInfo info)
   {
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{player?.PlayerName}{CC.Default}: kapıları {CC.Green}açtı{CC.Default}.");
+    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbdoors.doors_opened", player?.PlayerName ?? ""]}");
     ForceEntInput("func_door", "Open");
     ForceEntInput("func_movelinear", "Open");
     ForceEntInput("func_door_rotating", "Open");
@@ -43,7 +43,7 @@ public class JBDoors : BasePlugin, IPluginConfig<JBDoorsConfig>
   [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnConsoleClose(CCSPlayerController? player, CommandInfo info)
   {
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {CC.Gold}{player?.PlayerName}{CC.Default}: kapıları {CC.Red}kapattı{CC.Default}.");
+    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbdoors.doors_closed", player?.PlayerName ?? ""]}");
     ForceEntInput("func_door", "Close");
     ForceEntInput("func_movelinear", "Close");
     ForceEntInput("func_door_rotating", "Close");

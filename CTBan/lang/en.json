@@ -1,0 +1,16 @@
+{
+  "ctban.usage_ban": "Usage: css_ctban <target> <duration> [reason]",
+  "ctban.target_not_found": "Target not found",
+  "ctban.invalid_duration": "Please enter a valid duration. (Example: 30m, 2h, 1d)",
+  "ctban.banned": "{0} was CT banned by {1} for {2}! Reason: {3}",
+  "ctban.usage_unban": "Usage: css_ctunban <target>",
+  "ctban.unban_not_found": "{0} CT ban not found.",
+  "ctban.unbanned": "{0} CT ban removed by {1}!",
+  "ctban.usage_addban": "Usage: css_ctaddban <STEAMID64> <duration> [reason]",
+  "ctban.invalid_steamid": "Please enter a valid STEAMID64.",
+  "ctban.addban_applied": "{0} CT banned for {1}! Reason: {2}",
+  "ctban.banlist_header": "CT Ban List:",
+  "ctban.banlist_entry": "{0}, (Time Remaining: {1}) Reason: {2}",
+  "ctban.banlist_empty": "No players are CT banned.",
+  "ctban.join_blocked": "You are CT banned! (Time remaining: {0}) Reason: {1}"
+}
