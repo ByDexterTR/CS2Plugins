@@ -1,0 +1,18 @@
+{
+  "discord.map_changed": "New map: {0}",
+  "discord.connected": "{0} - {1} connected to the server.",
+  "discord.disconnected": "{0} - {1} disconnected from the server{2}.",
+  "discord.played_for": ", played for {0}",
+  "discord.console_command": "CONSOLE: {0} {1}",
+  "discord.player_command": "{0} - {1}: {2} {3}",
+  "discord.team_chat_suffix": " (Team)",
+  "discord.chat": "{0} - {1}{2}: {3}",
+  "discord.suicide": "Victim: {0} - {1} | Suicide.",
+  "discord.kill": "Victim: {0} - {1} | Killer: {2} - {3} | Weapon: {4}",
+  "discord.round_start": "Round {0} started | Score: {1} CT - {2} T | Players: {3} (Admins: {4})",
+  "discord.round_end": "Round {0} ended | Duration: {1} | Winner: {2}",
+  "discord.draw": "Draw",
+  "discord.duration_hours": "{0} hours",
+  "discord.duration_minutes": "{0} minutes",
+  "discord.duration_seconds": "{0} seconds"
+}

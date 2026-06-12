@@ -10,20 +10,14 @@ using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
 
-public class SustumConfig : BasePluginConfig
-{
-    [JsonPropertyName("chat_prefix")]
-    public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
+public class Sustum : BasePlugin
 {
     public override string ModuleName => "Sustum";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.5";
     public override string ModuleAuthor => "ByDexter";
-    public override string ModuleDescription => "Sustum eklentisi";
+    public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-    public SustumConfig Config { get; set; } = new SustumConfig();
+  private string ChatPrefix => Localizer["chat_prefix"];
 
     private string SustumType = "";
     private string CurrentWord = "";
@@ -34,11 +28,6 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
     private HashSet<ulong> CTSustumPlayers = new();
     private Dictionary<ulong, bool> DSustumWin = new();
-
-    public void OnConfigParsed(SustumConfig config)
-    {
-        Config = config;
-    }
 
     public override void Load(bool hotReload)
     {
@@ -51,7 +40,19 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
         AddCommandListener("say", OnPlayerChat);
         AddCommandListener("say_team", OnPlayerChat);
         RegisterEventHandler<EventWeaponFire>(OnWeaponFire, HookMode.Post);
+        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         RegisterListener<OnTick>(OnTickHud);
+    }
+
+    private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+    {
+        var player = @event.Userid;
+        if (player != null)
+        {
+            DSustumWin.Remove(player.SteamID);
+            CTSustumPlayers.Remove(player.SteamID);
+        }
+        return HookResult.Continue;
     }
 
     public HookResult OnPlayerChat(CCSPlayerController? player, CommandInfo message)
@@ -225,12 +226,11 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
                 }
                 else
                 {
-                    var rnd = new Random();
-                    int kelimeSayisi = rnd.Next(1, 5);
+                    int kelimeSayisi = Random.Shared.Next(1, 5);
                     List<string> kelimeler = new();
                     for (int i = 0; i < kelimeSayisi; i++)
                     {
-                        kelimeler.Add(SustumWords[rnd.Next(SustumWords.Count)]);
+                        kelimeler.Add(SustumWords[Random.Shared.Next(SustumWords.Count)]);
                     }
                     CurrentWord = string.Join(" ", kelimeler);
                     _hudHtml =
@@ -333,12 +333,12 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
         if (player == null || !player.IsValid)
             return;
 
-        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {message}");
+        player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {message}");
     }
 
     private void PrintPrefixAll(string message)
     {
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {message}");
+        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {message}");
     }
 
     static bool IsAlive(CCSPlayerController? player)

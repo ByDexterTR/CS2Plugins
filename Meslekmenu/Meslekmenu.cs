@@ -33,16 +33,16 @@ public class MeslekmenuConfig : BasePluginConfig
   [JsonPropertyName("zeus_recharge_taser")] public int ZeusRechargeTaser { get; set; } = 30;
   [JsonPropertyName("zeus_drop_taser")] public bool ZeusDropTaser { get; set; } = true;
 
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
 }
 
 public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
 {
   public override string ModuleName => "Meslekmenu";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Meslek menü";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
   public MeslekmenuConfig Config { get; set; } = new MeslekmenuConfig();
 
   private Dictionary<ulong, bool> meslekAktif = new();
@@ -106,26 +106,26 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
 
       foreach (var line in helpLines)
       {
-        commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {line}");
+        commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {line}");
       }
       return;
     }
 
     if (!IsAlive(player))
     {
-      commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.alive_only"]}");
+      commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.alive_only"]}");
       return;
     }
 
     if (player.TeamNum != 2)
     {
-      commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.t_only"]}");
+      commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.t_only"]}");
       return;
     }
 
     if (meslekAktif.TryGetValue(player.SteamID, out bool secildi) && secildi)
     {
-      commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.already_selected"]}");
+      commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.already_selected"]}");
       return;
     }
 
@@ -137,17 +137,17 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
       case "doctor":
         if (!Config.DoktorEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Doktor"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Doktor"]}");
           return;
         }
         player.GiveNamedItem("weapon_healthshot");
-        commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Doktor"]}");
+        commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Doktor"]}");
         break;
 
       case "flash":
         if (!Config.FlashEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Flash"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Flash"]}");
           return;
         }
         var pawn = player.PlayerPawn.Value as CCSPlayerPawn;
@@ -155,7 +155,7 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
         {
           float normalSpeed = pawn.VelocityModifier;
           pawn.VelocityModifier = Config.FlashSpeed;
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Flash"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Flash"]}");
           AddTimer(Config.FlashDuration, () =>
           {
             if (pawn.IsValid)
@@ -169,7 +169,7 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
       case "bomber":
         if (!Config.BombaciEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Bombacı"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Bombacı"]}");
           return;
         }
         var bombs = new List<string>();
@@ -179,19 +179,18 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
         if (Config.BombaciGiveMolotov) bombs.Add("weapon_molotov");
         if (bombs.Count == 0)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Bombacı"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Bombacı"]}");
           return;
         }
-        var rnd = new Random();
-        var randomBomb = bombs[rnd.Next(bombs.Count)];
+        var randomBomb = bombs[Random.Shared.Next(bombs.Count)];
         player.GiveNamedItem(randomBomb);
-        commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Bombacı"]}");
+        commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Bombacı"]}");
         break;
 
       case "rambo":
         if (!Config.RamboEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Rambo"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Rambo"]}");
           return;
         }
         var ramboPawn = player.PlayerPawn.Value as CCSPlayerPawn;
@@ -199,7 +198,7 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
         {
           if (Config.RamboFix && ramboPawn.Health < 100)
           {
-            commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.rambo_low_hp"]}");
+            commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.rambo_low_hp"]}");
             return;
           }
           ramboPawn.Health = Config.RamboHp;
@@ -208,27 +207,27 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
           if (Config.RamboHelmet)
             player.GiveNamedItem("item_kevlar");
 
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Rambo"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Rambo"]}");
         }
         break;
 
       case "zeus":
         if (!Config.ZeusEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Zeus"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Zeus"]}");
           return;
         }
         var zeusPawn = player.PlayerPawn.Value as CCSPlayerPawn;
         if (zeusPawn != null)
         {
           player.GiveNamedItem("weapon_taser");
-          commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Zeus"]}");
+          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Zeus"]}");
         }
         break;
 
       default:
-        commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["meslekmenu.unknown"]}");
-        break;
+        commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.unknown"]}");
+        return;
     }
 
     meslekAktif[player.SteamID] = true;

@@ -10,20 +10,14 @@ using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace JBTeams;
 
-public class JBTeamsConfig : BasePluginConfig
-{
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
+public class JBTeams : BasePlugin
 {
   public override string ModuleName => "JBTeams";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.4";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Jailbreak Takım Sistemi";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-  public JBTeamsConfig Config { get; set; } = new JBTeamsConfig();
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   private int activeTeams = 0;
   private readonly Dictionary<ulong, int> playerTeams = new();
@@ -45,11 +39,6 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     "Sarı",
     "Magenta"
   };
-
-  public void OnConfigParsed(JBTeamsConfig config)
-  {
-    Config = config;
-  }
 
   public override void Load(bool hotReload)
   {
@@ -99,13 +88,13 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 
     if (info.ArgCount < 2)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.usage"]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.usage"]}");
       return;
     }
 
     if (!int.TryParse(info.ArgByIndex(1), out int teamCount) || teamCount < 0 || teamCount > 5)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.invalid_input"]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.invalid_input"]}");
       return;
     }
 
@@ -121,13 +110,13 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 
     if (terrorists.Count == 0)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.no_players"]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.no_players"]}");
       return;
     }
 
     if (terrorists.Count % teamCount != 0)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.uneven", terrorists.Count, teamCount]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.uneven", terrorists.Count, teamCount]}");
       return;
     }
 
@@ -139,8 +128,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     activeTeams = teamCount;
     playerTeams.Clear();
 
-    var random = new Random();
-    var shuffled = terrorists.OrderBy(x => random.Next()).ToList();
+    var shuffled = terrorists.OrderBy(x => Random.Shared.Next()).ToList();
 
     int playersPerTeam = shuffled.Count / teamCount;
 
@@ -152,17 +140,17 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
       var p = shuffled[i];
       playerTeams[p.SteamID] = teamIndex;
       ApplyTeamColor(p, teamIndex);
-      p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.team_assigned", teamNames[teamIndex]]}");
+      p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.team_assigned", teamNames[teamIndex]]}");
     }
 
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.teams_created", admin.PlayerName, teamCount]}");
+    Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.teams_created", admin.PlayerName, teamCount]}");
   }
 
   private void DisableTeams(CCSPlayerController admin)
   {
     if (activeTeams == 0)
     {
-      admin.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.no_active"]}");
+      admin.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.no_active"]}");
       return;
     }
 
@@ -171,7 +159,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 
     ResetAllTerroristColors();
 
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbteams.teams_disabled", admin.PlayerName]}");
+    Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.teams_disabled", admin.PlayerName]}");
   }
 
   private void ApplyTeamColor(CCSPlayerController player, int teamIndex)
@@ -237,7 +225,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     if (remainingTeams.Count == 1)
     {
       int winningTeam = remainingTeams[0];
-      Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {GetColoredTeamName(winningTeam)} kazandı.");
+      Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {GetColoredTeamName(winningTeam)} kazandı.");
 
       activeTeams = 0;
       playerTeams.Clear();

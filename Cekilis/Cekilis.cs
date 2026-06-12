@@ -8,25 +8,14 @@ using CounterStrikeSharp.API.Modules.Utils;
 
 namespace Cekilis;
 
-public class CekilisConfig : BasePluginConfig
+public class Cekilis : BasePlugin
 {
-    [JsonPropertyName("chat_prefix")]
-    public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class Cekilis : BasePlugin, IPluginConfig<CekilisConfig>
-{
-    public CekilisConfig Config { get; set; } = new CekilisConfig();
-
     public override string ModuleName => "Cekiliş";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.5";
     public override string ModuleAuthor => "ByDexter";
-    public override string ModuleDescription => "Çekiliş";
+    public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-    public void OnConfigParsed(CekilisConfig config)
-    {
-        Config = config;
-    }
+  private string ChatPrefix => Localizer["chat_prefix"];
 
     [ConsoleCommand("css_cek", "css_cek")]
     [RequiresPermissions("@css/chat")]
@@ -37,15 +26,15 @@ public class Cekilis : BasePlugin, IPluginConfig<CekilisConfig>
 
         if (info.ArgCount < 2)
         {
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_all"]}");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_dead"]}");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_live"]}");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_t"]}");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_ct"]}");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_tdead"]}");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_tlive"]}");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_ctdead"]}");
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.help_ctlive"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_all"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_dead"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_live"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_t"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_ct"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_tdead"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_tlive"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_ctdead"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.help_ctlive"]}");
             return;
         }
 
@@ -68,15 +57,14 @@ public class Cekilis : BasePlugin, IPluginConfig<CekilisConfig>
 
         if (pool.Count == 0)
         {
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.no_player"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.no_player"]}");
             return;
         }
 
-        var rnd = new Random();
-        var winner = pool[rnd.Next(pool.Count)];
+        var winner = pool[Random.Shared.Next(pool.Count)];
         var adminName = player != null ? player.PlayerName : "unknown";
         var categoryName = arg.ToUpper();
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["cekilis.winner", adminName, categoryName, winner.PlayerName]}");
+        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["cekilis.winner", adminName, categoryName, winner.PlayerName]}");
     }
 
     static bool IsAlive(CCSPlayerController? player)

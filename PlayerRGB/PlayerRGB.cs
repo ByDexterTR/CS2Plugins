@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
@@ -7,33 +8,87 @@ using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using static CounterStrikeSharp.API.Core.Listeners;
 
-public class PlayerRGBConfig : BasePluginConfig
-{
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class PlayerRGB : BasePlugin, IPluginConfig<PlayerRGBConfig>
+public class PlayerRGB : BasePlugin
 {
   public override string ModuleName => "PlayerRGB";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.3";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Oyuncu RGB efekti";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-  public PlayerRGBConfig Config { get; set; } = new PlayerRGBConfig();
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   private readonly Dictionary<ulong, bool> rgbEnabled = new();
+  private readonly HashSet<ulong> _savedEnabled = new();
+  private readonly object _saveLock = new();
+
+  private string SavePath => Path.Combine(ModuleDirectory, "PlayerRGB.json");
 
   private int r1 = 255, g1 = 0, b1 = 0;
 
-  public void OnConfigParsed(PlayerRGBConfig config)
-  {
-    Config = config;
-  }
-
   public override void Load(bool hotReload)
   {
+    LoadSaved();
     RegisterListener<OnTick>(OnTickRGB);
+    RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
+    RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+  }
+
+  private void LoadSaved()
+  {
+    try
+    {
+      if (!File.Exists(SavePath))
+        return;
+
+      var list = JsonSerializer.Deserialize<List<string>>(File.ReadAllText(SavePath));
+      if (list == null)
+        return;
+
+      foreach (var entry in list)
+      {
+        if (ulong.TryParse(entry, out var steamId))
+          _savedEnabled.Add(steamId);
+      }
+    }
+    catch
+    {
+    }
+  }
+
+  private void SaveAsync()
+  {
+    List<string> snapshot;
+    lock (_saveLock)
+      snapshot = _savedEnabled.Select(id => id.ToString()).ToList();
+
+    var path = SavePath;
+    Task.Run(() =>
+    {
+      try
+      {
+        lock (_saveLock)
+          File.WriteAllText(path, JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true }));
+      }
+      catch
+      {
+      }
+    });
+  }
+
+  private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
+  {
+    var player = @event.Userid;
+    if (player != null && player.IsValid && !player.IsBot && _savedEnabled.Contains(player.SteamID))
+      rgbEnabled[player.SteamID] = true;
+    return HookResult.Continue;
+  }
+
+  private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+  {
+    var player = @event.Userid;
+    if (player != null)
+      rgbEnabled.Remove(player.SteamID);
+    return HookResult.Continue;
   }
 
   [ConsoleCommand("css_rgb", "css_rgb")]
@@ -46,9 +101,18 @@ public class PlayerRGB : BasePlugin, IPluginConfig<PlayerRGBConfig>
     bool enabled = rgbEnabled.TryGetValue(player.SteamID, out var val) ? !val : true;
     rgbEnabled[player.SteamID] = enabled;
 
+    lock (_saveLock)
+    {
+      if (enabled)
+        _savedEnabled.Add(player.SteamID);
+      else
+        _savedEnabled.Remove(player.SteamID);
+    }
+    SaveAsync();
+
     if (enabled)
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["playerrgb.enabled"]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["playerrgb.enabled"]}");
     }
     else
     {
@@ -58,12 +122,15 @@ public class PlayerRGB : BasePlugin, IPluginConfig<PlayerRGBConfig>
         pawn.Render = Color.FromArgb(255, 255, 255, 255);
         Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
       }
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["playerrgb.disabled"]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["playerrgb.disabled"]}");
     }
   }
 
   private void OnTickRGB()
   {
+    if (rgbEnabled.Count == 0 || !rgbEnabled.ContainsValue(true))
+      return;
+
     if (r1 > 0 && b1 == 0)
     {
       r1--;

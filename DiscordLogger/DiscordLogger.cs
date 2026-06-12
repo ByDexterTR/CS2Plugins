@@ -29,18 +29,31 @@ public class DiscordLoggerConfig : BasePluginConfig
 
   [JsonPropertyName("webhook_round")]
   public string WebhookRound { get; set; } = "";
+
+  [JsonPropertyName("command_blacklist")]
+  public List<string> CommandBlacklist { get; set; } = new()
+  {
+    "css_wp", "css_knife", "css_gloves", "css_agents", "css_music"
+  };
+
+  [JsonPropertyName("chat_blacklist")]
+  public List<string> ChatBlacklist { get; set; } = new()
+  {
+    "!wp", "!knife", "!gloves", "!agents", "!music"
+  };
 }
 
 public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 {
   public override string ModuleName => "DiscordLogger";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.3";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Discord logger";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
   public DiscordLoggerConfig Config { get; set; } = new DiscordLoggerConfig();
 
   private readonly Dictionary<string, StringBuilder> _messageBuffers = new();
+  private readonly object _bufferLock = new();
   private readonly HttpClient _httpClient = new();
   private readonly Dictionary<ulong, DateTime> _playerConnectTime = new();
   private const int MaxDiscordMessageLength = 2000;
@@ -88,7 +101,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     if (!string.IsNullOrEmpty(currentMap) && currentMap != _lastMapName)
     {
       _lastMapName = currentMap;
-      AddToBuffer(Config.WebhookMap, $"{GetTimestampPrefix()}``Yeni harita: {currentMap}``");
+      AddToBuffer(Config.WebhookMap, $"{GetTimestampPrefix()}``{Localizer["discord.map_changed", currentMap]}``");
     }
 
     return HookResult.Continue;
@@ -106,7 +119,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     _playerConnectTime[player.SteamID] = DateTime.UtcNow;
 
     var steamId = player.IsBot ? "BOT" : player.SteamID.ToString();
-    AddToBuffer(Config.WebhookConnect, $"{GetTimestampPrefix()}``{steamId} - {player.PlayerName} sunucuya bağlandı.``");
+    AddToBuffer(Config.WebhookConnect, $"{GetTimestampPrefix()}``{Localizer["discord.connected", steamId, player.PlayerName]}``");
 
     return HookResult.Continue;
   }
@@ -129,12 +142,12 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
       var totalSeconds = (int)duration.TotalSeconds;
       if (totalSeconds > 0)
       {
-        playTimeText = $", {FormatPlayTime(totalSeconds)} oynadı";
+        playTimeText = Localizer["discord.played_for", FormatPlayTime(totalSeconds)];
       }
       _playerConnectTime.Remove(player.SteamID);
     }
 
-    AddToBuffer(Config.WebhookConnect, $"{GetTimestampPrefix()}``{steamId} - {player.PlayerName} sunucudan ayrıldı{playTimeText}.``");
+    AddToBuffer(Config.WebhookConnect, $"{GetTimestampPrefix()}``{Localizer["discord.disconnected", steamId, player.PlayerName, playTimeText]}``");
 
     return HookResult.Continue;
   }
@@ -151,9 +164,13 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
     var args = commandInfo.ArgString;
 
+    var fullCommand = string.IsNullOrWhiteSpace(args) ? command : $"{command} {args}";
+    if (IsBlacklisted(fullCommand, Config.CommandBlacklist))
+      return HookResult.Continue;
+
     if (player == null)
     {
-      AddToBuffer(Config.WebhookCommand, $"{GetTimestampPrefix()}``CONSOLE: {command} {args}``");
+      AddToBuffer(Config.WebhookCommand, $"{GetTimestampPrefix()}``{Localizer["discord.console_command", command, args]}``");
       return HookResult.Continue;
     }
 
@@ -161,9 +178,23 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
       return HookResult.Continue;
 
     var steamId = player.SteamID.ToString();
-    AddToBuffer(Config.WebhookCommand, $"{GetTimestampPrefix()}``{steamId} - {player.PlayerName}: {command} {args}``");
+    AddToBuffer(Config.WebhookCommand, $"{GetTimestampPrefix()}``{Localizer["discord.player_command", steamId, player.PlayerName, command, args]}``");
 
     return HookResult.Continue;
+  }
+
+  private static bool IsBlacklisted(string text, List<string> blacklist)
+  {
+    if (blacklist.Count == 0)
+      return false;
+
+    foreach (var entry in blacklist)
+    {
+      if (!string.IsNullOrWhiteSpace(entry))
+        text = text.Replace(entry, "", StringComparison.OrdinalIgnoreCase);
+    }
+
+    return text.Trim().Length == 0;
   }
 
   private void OnPlayerChatListener(CCSPlayerController player, string text, bool teamChat)
@@ -177,9 +208,12 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     if (!player.IsValid || player.IsBot)
       return;
 
+    if (IsBlacklisted(text, Config.ChatBlacklist))
+      return;
+
     var steamId = player.SteamID.ToString();
-    var chatType = teamChat ? " (Takım)" : "";
-    AddToBuffer(Config.WebhookChat, $"{GetTimestampPrefix()}``{steamId} - {player.PlayerName}{chatType}: {text}``");
+    var chatType = teamChat ? Localizer["discord.team_chat_suffix"].Value : "";
+    AddToBuffer(Config.WebhookChat, $"{GetTimestampPrefix()}``{Localizer["discord.chat", steamId, player.PlayerName, chatType, text]}``");
   }
 
   private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
@@ -200,13 +234,13 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     {
       if (victim.IsValid)
       {
-        AddToBuffer(Config.WebhookKill, $"{GetTimestampPrefix()}``Ölen: {victimSteamId} - {victim.PlayerName} | İntihar etti.``");
+        AddToBuffer(Config.WebhookKill, $"{GetTimestampPrefix()}``{Localizer["discord.suicide", victimSteamId, victim.PlayerName]}``");
       }
     }
     else
     {
       var attackerSteamId = attacker.IsBot ? "BOT" : attacker.SteamID.ToString();
-      AddToBuffer(Config.WebhookKill, $"{GetTimestampPrefix()}``Ölen: {victimSteamId} - {victim.PlayerName} | Öldüren: {attackerSteamId} - {attacker.PlayerName} | Silah: {weapon}``");
+      AddToBuffer(Config.WebhookKill, $"{GetTimestampPrefix()}``{Localizer["discord.kill", victimSteamId, victim.PlayerName, attackerSteamId, attacker.PlayerName, weapon]}``");
     }
 
     return HookResult.Continue;
@@ -241,7 +275,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
     var roundNumber = gameRules?.GameRules?.TotalRoundsPlayed + 1 ?? 1;
 
-    AddToBuffer(Config.WebhookRound, $"{GetTimestampPrefix()}``{roundNumber}. Raunt başladı | Skor: {ctScore} CT - {tScore} T | Oyuncu: {playerCount} (Yetkili: {adminCount})``");
+    AddToBuffer(Config.WebhookRound, $"{GetTimestampPrefix()}``{Localizer["discord.round_start", roundNumber, ctScore, tScore, playerCount, adminCount]}``");
 
     return HookResult.Continue;
   }
@@ -263,12 +297,12 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     {
       2 => "T",
       3 => "CT",
-      _ => "Berabere"
+      _ => Localizer["discord.draw"].Value
     };
 
     var roundNumber = gameRules?.GameRules?.TotalRoundsPlayed ?? 1;
 
-    AddToBuffer(Config.WebhookRound, $"{GetTimestampPrefix()}``{roundNumber}. Raunt bitti | Raunt Süresi: {durationText} | Kazanan: {winner}``");
+    AddToBuffer(Config.WebhookRound, $"{GetTimestampPrefix()}``{Localizer["discord.round_end", roundNumber, durationText, winner]}``");
 
     return HookResult.Continue;
   }
@@ -278,25 +312,25 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     return AdminManager.PlayerHasPermissions(player, "@css/generic");
   }
 
-  private static string FormatPlayTime(int totalSeconds)
+  private string FormatPlayTime(int totalSeconds)
   {
     if (totalSeconds <= 0)
-      return "0 saniye";
+      return Localizer["discord.duration_seconds", 0];
 
     var parts = new List<string>();
 
     int hours = totalSeconds / 3600;
     totalSeconds %= 3600;
     if (hours > 0)
-      parts.Add($"{hours} saat");
+      parts.Add(Localizer["discord.duration_hours", hours]);
 
     int minutes = totalSeconds / 60;
     totalSeconds %= 60;
     if (minutes > 0)
-      parts.Add($"{minutes} dakika");
+      parts.Add(Localizer["discord.duration_minutes", minutes]);
 
     if (totalSeconds > 0)
-      parts.Add($"{totalSeconds} saniye");
+      parts.Add(Localizer["discord.duration_seconds", totalSeconds]);
 
     return string.Join(" ", parts);
   }
@@ -311,22 +345,28 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     if (string.IsNullOrEmpty(webhook))
       return;
 
-    if (!_messageBuffers.ContainsKey(webhook))
-    {
-      _messageBuffers[webhook] = new StringBuilder();
-    }
-
-    var buffer = _messageBuffers[webhook];
     var newContent = content + "\n";
+    string? messagesToSend = null;
 
-    if (buffer.Length > 0 && buffer.Length + newContent.Length > MaxDiscordMessageLength)
+    lock (_bufferLock)
     {
-      var messagesToSend = buffer.ToString().TrimEnd('\n');
-      buffer.Clear();
-      Task.Run(() => SendToDiscordAsync(webhook, messagesToSend));
+      if (!_messageBuffers.TryGetValue(webhook, out var buffer))
+      {
+        buffer = new StringBuilder();
+        _messageBuffers[webhook] = buffer;
+      }
+
+      if (buffer.Length > 0 && buffer.Length + newContent.Length > MaxDiscordMessageLength)
+      {
+        messagesToSend = buffer.ToString().TrimEnd('\n');
+        buffer.Clear();
+      }
+
+      buffer.Append(newContent);
     }
 
-    buffer.Append(newContent);
+    if (messagesToSend != null)
+      Task.Run(() => SendToDiscordAsync(webhook, messagesToSend));
   }
 
   private void ProcessMessageBuffers()
@@ -340,16 +380,23 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     {
       try
       {
-        foreach (var kvp in _messageBuffers.ToList())
-        {
-          if (kvp.Value.Length > 0)
-          {
-            var webhook = kvp.Key;
-            var messages = kvp.Value.ToString().TrimEnd('\n');
-            kvp.Value.Clear();
+        List<(string Webhook, string Messages)> pending = new();
 
-            await SendToDiscordAsync(webhook, messages);
+        lock (_bufferLock)
+        {
+          foreach (var kvp in _messageBuffers)
+          {
+            if (kvp.Value.Length > 0)
+            {
+              pending.Add((kvp.Key, kvp.Value.ToString().TrimEnd('\n')));
+              kvp.Value.Clear();
+            }
           }
+        }
+
+        foreach (var (webhook, messages) in pending)
+        {
+          await SendToDiscordAsync(webhook, messages);
         }
       }
       finally

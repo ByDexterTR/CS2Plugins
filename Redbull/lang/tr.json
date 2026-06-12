@@ -1,4 +1,5 @@
 {
+  "chat_prefix": "[ByDexter]",
   "redbull.wrong_team": "Bu takımda Red Bull içemezsin!",
   "redbull.already_active": "Red Bull etkileri zaten aktif!",
   "redbull.cooldown": "Red Bull bekleme süresi: {0} sn kaldı!",

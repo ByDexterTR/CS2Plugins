@@ -1,4 +1,5 @@
 {
+  "chat_prefix": "[ByDexter]",
   "ctban.usage_ban": "Kullanım: css_ctban <Hedef> <Süre> [Sebep]",
   "ctban.target_not_found": "Hedef bulunamadı",
   "ctban.invalid_duration": "Geçerli bir süre giriniz. (Örnek: 30m, 2h, 1d)",

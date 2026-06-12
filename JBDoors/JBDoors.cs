@@ -7,31 +7,20 @@ using CounterStrikeSharp.API.Modules.Admin;
 
 namespace JBDoors;
 
-public class JBDoorsConfig : BasePluginConfig
-{
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class JBDoors : BasePlugin, IPluginConfig<JBDoorsConfig>
+public class JBDoors : BasePlugin
 {
   public override string ModuleName => "JBDoors";
   public override string ModuleVersion => "1.0.0";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Kapıları aç/kapat";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-  public JBDoorsConfig Config { get; set; } = new();
-
-  public void OnConfigParsed(JBDoorsConfig config)
-  {
-    Config = config;
-  }
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   [ConsoleCommand("css_kapiac", "Tüm kapıları açar")]
   [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnConsoleOpen(CCSPlayerController? player, CommandInfo info)
   {
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbdoors.doors_opened", player?.PlayerName ?? ""]}");
+    Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbdoors.doors_opened", player?.PlayerName ?? ""]}");
     ForceEntInput("func_door", "Open");
     ForceEntInput("func_movelinear", "Open");
     ForceEntInput("func_door_rotating", "Open");
@@ -43,7 +32,7 @@ public class JBDoors : BasePlugin, IPluginConfig<JBDoorsConfig>
   [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnConsoleClose(CCSPlayerController? player, CommandInfo info)
   {
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["jbdoors.doors_closed", player?.PlayerName ?? ""]}");
+    Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbdoors.doors_closed", player?.PlayerName ?? ""]}");
     ForceEntInput("func_door", "Close");
     ForceEntInput("func_movelinear", "Close");
     ForceEntInput("func_door_rotating", "Close");

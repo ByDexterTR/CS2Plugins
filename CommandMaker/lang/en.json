@@ -6,5 +6,18 @@
   "commandmaker.player_not_found": "Player not found: {0}",
   "commandmaker.player_only": "This command can only be used by players.",
   "commandmaker.execute_undefined": "No command defined to execute.",
-  "commandmaker.announce": "{0} used command {1}."
+  "commandmaker.announce": "{0} used command {1}.",
+  "commandmaker.team_only": "Only the {0} team can use this command.",
+  "commandmaker.alive_only": "Only alive players can use this command.",
+  "commandmaker.dead_only": "Only dead players can use this command.",
+  "commandmaker.cooldown_wait": "You must wait {0} seconds before using this command again.",
+  "commandmaker.arg_number": "The argument must be a number.",
+  "commandmaker.arg_min": "The number must be at least {0}.",
+  "commandmaker.arg_max": "The number can be at most {0}.",
+  "commandmaker.arg_word_length": "The word can be at most {0} characters long.",
+  "commandmaker.group_all": "Everyone",
+  "commandmaker.group_ct": "CT Team",
+  "commandmaker.group_t": "T Team",
+  "commandmaker.group_alive": "Alive players",
+  "commandmaker.group_dead": "Dead players"
 }

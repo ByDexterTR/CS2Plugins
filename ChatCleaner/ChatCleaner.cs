@@ -7,25 +7,14 @@ using CounterStrikeSharp.API.Modules.Commands;
 
 namespace ChatCleaner;
 
-public class ChatCleanerConfig : BasePluginConfig
-{
-    [JsonPropertyName("chat_prefix")]
-    public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class ChatCleaner : BasePlugin, IPluginConfig<ChatCleanerConfig>
+public class ChatCleaner : BasePlugin
 {
     public override string ModuleName => "ChatCleaner";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.3";
     public override string ModuleAuthor => "ByDexter";
-    public override string ModuleDescription => "Deletes all chat messages";
-    public ChatCleanerConfig Config { get; set; } = new ChatCleanerConfig();
+    public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-    public void OnConfigParsed(ChatCleanerConfig config)
-    {
-        Config = config;
-    }
-
+  private string ChatPrefix => Localizer["chat_prefix"];
     [ConsoleCommand("css_selfcc", "css_selfcc")]
     public void OnSelfChatCleanCommand(CCSPlayerController? player, CommandInfo commandInfo)
     {
@@ -36,7 +25,7 @@ public class ChatCleaner : BasePlugin, IPluginConfig<ChatCleanerConfig>
             player.PrintToChat(" ");
         }
 
-        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["chatcleaner.selfcleaned"]}");
+        player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["chatcleaner.selfcleaned"]}");
     }
 
     [ConsoleCommand("css_cc", "css_cc")]
@@ -50,7 +39,7 @@ public class ChatCleaner : BasePlugin, IPluginConfig<ChatCleanerConfig>
             Server.PrintToChatAll(" ");
         }
 
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["chatcleaner.admincleaned"]} {CC.Gold}{player.PlayerName}");
+        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["chatcleaner.admincleaned"]} {CC.Gold}{player.PlayerName}");
     }
 }
 

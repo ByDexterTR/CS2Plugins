@@ -5,25 +5,14 @@ using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using System.Text.Json.Serialization;
 
-public class SilahsilConfig : BasePluginConfig
+public class Silahsil : BasePlugin
 {
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class Silahsil : BasePlugin, IPluginConfig<SilahsilConfig>
-{
-  public SilahsilConfig Config { get; set; } = new SilahsilConfig();
-
   public override string ModuleName => "Silahsil";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.4";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Yerdeki silahları siler";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-  public void OnConfigParsed(SilahsilConfig config)
-  {
-    Config = config;
-  }
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   [ConsoleCommand("css_silahsil", "css_silahsil")]
   [RequiresPermissions("@css/slay")]
@@ -33,14 +22,18 @@ public class Silahsil : BasePlugin, IPluginConfig<SilahsilConfig>
       return;
 
     int groundWpn = 0;
-    var weapons = Utilities.FindAllEntitiesByDesignerName<CCSWeaponBase>("weapon_");
-    foreach (var weapon in weapons.Where(weapon => weapon != null && weapon.IsValid && !weapon.OwnerEntity.IsValid))
+    var weapons = Utilities.GetAllEntities()
+      .Where(e => e != null && e.IsValid && e.DesignerName?.StartsWith("weapon_") == true)
+      .Select(e => e.As<CCSWeaponBase>())
+      .Where(weapon => weapon != null && weapon.IsValid && weapon.OwnerEntity?.IsValid != true);
+
+    foreach (var weapon in weapons)
     {
       weapon.Remove();
       groundWpn++;
     }
 
-    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["silahsil.removed", player.PlayerName, groundWpn]}");
+    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["silahsil.removed", player.PlayerName, groundWpn]}");
   }
 }
 

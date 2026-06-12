@@ -37,9 +37,6 @@ public class PlayerHourCheckConfig : BasePluginConfig
     { "password", "" }
   };
 
-  [JsonPropertyName("phc_chat_prefix")]
-  public string ChatPrefix { get; set; } = "{Orchid}[ByDexter]";
-
   [JsonPropertyName("phc_steam_api_key")]
   public string SteamApiKey { get; set; } = "";
 
@@ -82,9 +79,11 @@ public class PlayerHourCheckConfig : BasePluginConfig
 public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 {
   public override string ModuleName => "PlayerHourCheck";
-  public override string ModuleVersion => "1.0.3";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "Oyuncu saat kontrolü";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   private const int CS2AppId = 730;
 
@@ -166,6 +165,46 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
       {
         CheckExistingPlayer(player);
       }
+    }
+
+    AddCommand("css_phc_reload", "Konfigi yeniden yukler ve tum oyunculari yeniden kontrol eder", (player, info) =>
+    {
+      if (player != null && !AdminManager.PlayerHasPermissions(player, "@css/root"))
+      {
+        info.ReplyToCommand(Localizer["playerhourcheck.no_permission"]);
+        return;
+      }
+
+      ReloadConfigFromDisk();
+
+      int checkedCount = 0;
+      foreach (var p in Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot && !p.IsHLTV))
+      {
+        CheckExistingPlayer(p);
+        checkedCount++;
+      }
+
+      info.ReplyToCommand(Localizer["playerhourcheck.reloaded", checkedCount]);
+    });
+  }
+
+  private void ReloadConfigFromDisk()
+  {
+    try
+    {
+      var configPath = Path.GetFullPath(Path.Combine(
+        ModuleDirectory, "..", "..", "configs", "plugins", "PlayerHourCheck", "PlayerHourCheck.json"));
+
+      if (!File.Exists(configPath))
+        return;
+
+      var config = JsonSerializer.Deserialize<PlayerHourCheckConfig>(File.ReadAllText(configPath));
+      if (config != null)
+        OnConfigParsed(config);
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "[PlayerHourCheck] Config yeniden yüklenemedi.");
     }
   }
 
@@ -374,39 +413,58 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     var player = @event.Userid;
     if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return HookResult.Continue;
 
+    if (IsIgnored(player)) return HookResult.Continue;
+
+    BeginConnectCheck(player);
+
+    return HookResult.Continue;
+  }
+
+  private void BeginConnectCheck(CCSPlayerController player)
+  {
     var steamId = player.SteamID;
     var steamIdStr = steamId.ToString();
 
-    if (IsIgnored(player)) return HookResult.Continue;
-
-    var record = GetPlayerRecord(steamIdStr);
-    if (record.HasValue)
+    Task.Run(() =>
     {
-      var requiredHours = Config.RequiredPlaytime;
-      var playerHours = record.Value.Playtime;
+      var record = GetPlayerRecord(steamIdStr);
 
-      if (playerHours >= requiredHours)
+      _mainThreadActions.Enqueue(() =>
       {
-        return HookResult.Continue;
-      }
+        try
+        {
+          if (player == null || !player.IsValid) return;
 
-      var missingHours = requiredHours - playerHours;
-      var lastChecked = record.Value.CheckedAt;
-      var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-      var hoursSinceCheck = (currentTime - lastChecked) / 3600.0;
+          if (record.HasValue)
+          {
+            var requiredHours = Config.RequiredPlaytime;
+            var playerHours = record.Value.Playtime;
 
-      if (hoursSinceCheck < missingHours)
-      {
-        var penaltyCount = record.Value.PenaltyCount + 1;
-        SavePlayerRecord(steamIdStr, playerHours, penaltyCount);
-        ApplyPenalty(player, penaltyCount, playerHours);
-        return HookResult.Continue;
-      }
-    }
+            if (playerHours >= requiredHours)
+              return;
 
-    _pendingChecks[steamId] = AddTimer(2.0f, () => CheckPlayerAsync(player));
+            var missingHours = requiredHours - playerHours;
+            var lastChecked = record.Value.CheckedAt;
+            var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var hoursSinceCheck = (currentTime - lastChecked) / 3600.0;
 
-    return HookResult.Continue;
+            if (hoursSinceCheck < missingHours)
+            {
+              var penaltyCount = record.Value.PenaltyCount + 1;
+              SavePlayerRecord(steamIdStr, playerHours, penaltyCount);
+              ApplyPenalty(player, penaltyCount, playerHours);
+              return;
+            }
+          }
+
+          _pendingChecks[steamId] = AddTimer(2.0f, () => CheckPlayerAsync(player));
+        }
+        catch (Exception ex)
+        {
+          Logger.LogError(ex, "[PlayerHourCheck] connect check error on main thread");
+        }
+      });
+    });
   }
 
   private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
@@ -429,40 +487,12 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
   {
     if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return;
 
-    var steamId = player.SteamID;
-    var steamIdStr = steamId.ToString();
-
     if (IsIgnored(player))
     {
       return;
     }
 
-    var record = GetPlayerRecord(steamIdStr);
-    if (record.HasValue)
-    {
-      var requiredHours = Config.RequiredPlaytime;
-      var playerHours = record.Value.Playtime;
-
-      if (playerHours >= requiredHours)
-      {
-        return;
-      }
-
-      var missingHours = requiredHours - playerHours;
-      var lastChecked = record.Value.CheckedAt;
-      var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-      var hoursSinceCheck = (currentTime - lastChecked) / 3600.0;
-
-      if (hoursSinceCheck < missingHours)
-      {
-        var penaltyCount = record.Value.PenaltyCount + 1;
-        SavePlayerRecord(steamIdStr, playerHours, penaltyCount);
-        ApplyPenalty(player, penaltyCount, playerHours);
-        return;
-      }
-    }
-
-    _pendingChecks[steamId] = AddTimer(2.0f, () => CheckPlayerAsync(player));
+    BeginConnectCheck(player);
   }
 
   private async void CheckPlayerAsync(CCSPlayerController player)
@@ -527,27 +557,6 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     catch (Exception ex)
     {
       Logger.LogError(ex, "[PlayerHourCheck] Kontrol hatası.");
-    }
-  }
-
-  private void HandlePlaytimeResult(CCSPlayerController player, int hours)
-  {
-    var steamId = player.SteamID;
-    var steamIdStr = steamId.ToString();
-    var requiredHours = Config.RequiredPlaytime;
-
-    if (hours >= requiredHours)
-    {
-      SavePlayerRecord(steamIdStr, hours, 0);
-      _warnCounts.Remove(steamId);
-    }
-    else
-    {
-      var record = GetPlayerRecord(steamIdStr);
-      var penaltyCount = (record?.PenaltyCount ?? 0) + 1;
-
-      SavePlayerRecord(steamIdStr, hours, penaltyCount);
-      ApplyPenalty(player, penaltyCount, hours);
     }
   }
 
@@ -690,7 +699,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
   private void PrintPrefix(CCSPlayerController player, string message)
   {
-    var parsed = CC.Parse($"{Config.ChatPrefix} {message}");
+    var parsed = CC.Parse($"{ChatPrefix} {message}");
     player.PrintToChat($" {parsed}");
   }
 

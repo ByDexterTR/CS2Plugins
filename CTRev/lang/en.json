@@ -1,4 +1,5 @@
 {
+  "chat_prefix": "[ByDexter]",
   "ctrev.auto_revived": "Auto: {0} was revived. Remaining revives: {1}",
   "ctrev.rights_reset": "{0} reset the revive rights. Total rights: {1}",
   "ctrev.state_on": "ON",

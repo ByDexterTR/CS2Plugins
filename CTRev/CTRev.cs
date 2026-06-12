@@ -11,7 +11,6 @@ namespace CTRev;
 
 public class CTRevConfig : BasePluginConfig
 {
-  [JsonPropertyName("chat_prefix")] public string ChatPrefix { get; set; } = "[ByDexter]";
   [JsonPropertyName("cooldown")] public int RespawnCooldownSeconds { get; set; } = 15;
   [JsonPropertyName("revive_count")] public int MaxRespawnsPerRound { get; set; } = 3;
 }
@@ -19,9 +18,11 @@ public class CTRevConfig : BasePluginConfig
 public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 {
   public override string ModuleName => "CTRev";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "[JB] CT Revive Menü";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   public CTRevConfig Config { get; set; } = new();
 
@@ -87,7 +88,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
           p.Respawn();
           _ctDeathEligibleAt.Remove(p.SteamID);
           _remainingRespawns--;
-          Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.auto_revived", p.PlayerName, _remainingRespawns]}");
+          Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.auto_revived", p.PlayerName, _remainingRespawns]}");
         }
       }
     }
@@ -139,7 +140,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
       return;
 
     _remainingRespawns = Config.MaxRespawnsPerRound;
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.rights_reset", player?.PlayerName ?? "", _remainingRespawns]}");
+    Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.rights_reset", player?.PlayerName ?? "", _remainingRespawns]}");
   }
 
   private void ShowMainMenu(CCSPlayerController? player)
@@ -148,12 +149,12 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
       return;
 
     var now = DateTime.UtcNow;
-    var menu = new CenterHtmlMenu($"<font color='#d63f25' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/158/syringe_1f489.png&w=24&h=24&fit=cover'> CTRev (Hak: {_remainingRespawns}) <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/158/syringe_1f489.png&w=24&h=24&fit=cover'></font>", this);
+    var menu = new CenterHtmlMenu($"<font color='#d63f25' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/syringe.png'> CTRev (Hak: {_remainingRespawns}) <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/syringe.png'></font>", this);
 
     menu.AddMenuOption(Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]], (p, option) =>
     {
       _autoRespawnEnabled = !_autoRespawnEnabled;
-      p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]]}");
+      p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]]}");
     });
 
     var deadCts = Utilities.GetPlayers().Where(pl => pl != null && pl.IsValid && pl.TeamNum == 3 && !IsAlive(pl)).ToList();
@@ -183,7 +184,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
   {
     if (_remainingRespawns <= 0)
     {
-      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.no_rights"]}");
+      actor.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.no_rights"]}");
       return;
     }
 
@@ -194,7 +195,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 
     if (IsAlive(target))
     {
-      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.already_alive"]}");
+      actor.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.already_alive"]}");
       return;
     }
 
@@ -202,14 +203,14 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     if (_ctDeathEligibleAt.TryGetValue(target.SteamID, out var at) && now < at)
     {
       var remain = Math.Max(0, (int)Math.Ceiling((at - now).TotalSeconds));
-      actor.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.cooldown_wait", remain]}");
+      actor.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.cooldown_wait", remain]}");
       return;
     }
 
     target.Respawn();
     _ctDeathEligibleAt.Remove(target.SteamID);
     _remainingRespawns--;
-    Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctrev.revived", actor.PlayerName, target.PlayerName, _remainingRespawns]}");
+    Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.revived", actor.PlayerName, target.PlayerName, _remainingRespawns]}");
   }
 
   private static bool IsAlive(CCSPlayerController? player)

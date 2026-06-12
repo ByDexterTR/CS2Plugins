@@ -8,25 +8,14 @@ using CounterStrikeSharp.API.Modules.Utils;
 
 namespace CTKov;
 
-public class CTKovConfig : BasePluginConfig
-{
-    [JsonPropertyName("chat_prefix")]
-    public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class CTKov : BasePlugin, IPluginConfig<CTKovConfig>
+public class CTKov : BasePlugin
 {
     public override string ModuleName => "CTKov";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.2";
     public override string ModuleAuthor => "ByDexter";
-    public override string ModuleDescription => "CTKov";
+    public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-    public CTKovConfig Config { get; set; } = new CTKovConfig();
-
-    public void OnConfigParsed(CTKovConfig config)
-    {
-        Config = config;
-    }
+  private string ChatPrefix => Localizer["chat_prefix"];
 
     [ConsoleCommand("css_ctkov", "css_ctkov")]
     [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
@@ -63,11 +52,11 @@ public class CTKov : BasePlugin, IPluginConfig<CTKovConfig>
 
         if (kickedCount > 0)
         {
-            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkov.guards_moved", player.PlayerName, kickedCount]}");
+            Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkov.guards_moved", player.PlayerName, kickedCount]}");
         }
         else
         {
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkov.no_guards"]}");
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkov.no_guards"]}");
         }
     }
 }

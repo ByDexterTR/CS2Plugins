@@ -1,0 +1,5 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "speedometer.enabled": "Hız göstergesi {GREEN}açıldı{DEFAULT}.",
+  "speedometer.disabled": "Hız göstergesi {RED}kapatıldı{DEFAULT}."
+}

@@ -20,7 +20,8 @@ public class CommandMakerConfig : BasePluginConfig
 public class CommandDefinition
 {
     [JsonPropertyName("command")]
-    public string Command { get; set; } = "";
+    [JsonConverter(typeof(StringOrArrayConverter))]
+    public List<string> Command { get; set; } = new();
 
     [JsonPropertyName("type")]
     public string Type { get; set; } = "default";
@@ -65,7 +66,17 @@ public class CommandDefinition
     public int? Arg3WordLength { get; set; }
 
     [JsonPropertyName("flag")]
-    public string? Flag { get; set; }
+    [JsonConverter(typeof(StringOrArrayConverter))]
+    public List<string>? Flag { get; set; }
+
+    [JsonPropertyName("team_filter")]
+    public string? TeamFilter { get; set; }
+
+    [JsonPropertyName("alive_filter")]
+    public string? AliveFilter { get; set; }
+
+    [JsonPropertyName("cooldown")]
+    public float Cooldown { get; set; } = 0f;
 
     [JsonPropertyName("sethealth")]
     public string? SetHealth { get; set; }
@@ -140,7 +151,12 @@ public class CommandDefinition
     public string? PlaySound { get; set; }
 
     [JsonPropertyName("chat")]
-    public string? Chat { get; set; }
+    [JsonConverter(typeof(StringOrArrayConverter))]
+    public List<string>? Chat { get; set; }
+
+    [JsonPropertyName("console")]
+    [JsonConverter(typeof(StringOrArrayConverter))]
+    public List<string>? Console { get; set; }
 
     [JsonPropertyName("center")]
     public string? Center { get; set; }
@@ -149,16 +165,60 @@ public class CommandDefinition
     public float CenterTime { get; set; } = 5.0f;
 
     [JsonPropertyName("serverchat")]
-    public string? ServerChat { get; set; }
+    [JsonConverter(typeof(StringOrArrayConverter))]
+    public List<string>? ServerChat { get; set; }
 
     [JsonPropertyName("servercenter")]
     public string? ServerCenter { get; set; }
 
     [JsonPropertyName("execute")]
-    public string? Execute { get; set; }
+    [JsonConverter(typeof(StringOrArrayConverter))]
+    public List<string>? Execute { get; set; }
+
+    [JsonPropertyName("setcvar")]
+    [JsonConverter(typeof(StringOrArrayConverter))]
+    public List<string>? SetCvar { get; set; }
 
     [JsonPropertyName("announce")]
     public bool Announce { get; set; } = false;
+}
+
+public class StringOrArrayConverter : JsonConverter<List<string>>
+{
+    public override List<string>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var single = reader.GetString();
+            return string.IsNullOrEmpty(single) ? null : new List<string> { single };
+        }
+
+        if (reader.TokenType == JsonTokenType.StartArray)
+        {
+            var list = new List<string>();
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+            {
+                if (reader.TokenType == JsonTokenType.String)
+                {
+                    var item = reader.GetString();
+                    if (!string.IsNullOrEmpty(item))
+                        list.Add(item);
+                }
+            }
+            return list.Count > 0 ? list : null;
+        }
+
+        reader.Skip();
+        return null;
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<string> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartArray();
+        foreach (var item in value)
+            writer.WriteStringValue(item);
+        writer.WriteEndArray();
+    }
 }
 
 public class CommandsConfig
@@ -170,9 +230,9 @@ public class CommandsConfig
 public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 {
     public override string ModuleName => "CommandMaker";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.4";
     public override string ModuleAuthor => "ByDexter";
-    public override string ModuleDescription => "Komut oluşturucu";
+    public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
     public CommandMakerConfig Config { get; set; } = new();
     private CommandsConfig? _commandsConfig;
@@ -182,6 +242,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
     private readonly Dictionary<ulong, float> _playerSpeed = new();
     private readonly Dictionary<ulong, float> _playerGravity = new();
     private readonly Dictionary<ulong, (string Message, float EndTime)> _playerCenter = new();
+    private readonly Dictionary<(string Command, ulong SteamId), float> _cooldowns = new();
 
     public void OnConfigParsed(CommandMakerConfig config)
     {
@@ -199,17 +260,19 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
         RegisterListener<OnTick>(OnTick);
         RegisterListener<OnEntityTakeDamagePre>(OnEntityDamage);
+        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        RegisterListener<OnMapStart>(_ => _cooldowns.Clear());
 
         AddCommand("css_cm_reload", "Komutları yeniden yükle", (player, info) =>
         {
-            if (player != null && !HasAnyPermission(player, "@css/root"))
+            if (player != null && !HasAnyPermission(player, new List<string> { "@css/root" }))
             {
-                info.ReplyToCommand("Bu komutu kullanmak için yetkiniz yok.");
+                info.ReplyToCommand(Localizer["commandmaker.no_permission"]);
                 return;
             }
 
             LoadCommands();
-            info.ReplyToCommand($"CommandMaker: {_registeredCommands.Count} komut yüklendi.");
+            info.ReplyToCommand(Localizer["commandmaker.commands_loaded", _registeredCommands.Count]);
         });
     }
 
@@ -262,72 +325,135 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             {
                 new CommandDefinition
                 {
-                    Command = "css_hp;css_health",
+                    Command = new List<string> { "css_hp", "css_health" },
                     Type = "target",
                     Args = 1,
                     Arg1 = "number",
                     Arg1NumberMin = 1,
                     Arg1NumberMax = 500,
-                    Flag = "@css/slay;@css/cheats",
+                    Flag = new List<string> { "@css/slay", "@css/cheats" },
+                    Cooldown = 3f,
                     SetHealth = "[TARGET] [ARG1]",
-                    Chat = "[GOLD][TARGET] [DEFAULT]adlı oyuncunun canı [GOLD][ARG1] [DEFAULT]olarak ayarlandı.",
+                    Chat = new List<string> { "[GOLD][TARGET] [DEFAULT]adlı oyuncunun canı [GOLD][ARG1] [DEFAULT]olarak ayarlandı." },
                     Center = "<font color='green'>Can: [ARG1]</font>",
-                    CenterTime = 3.0f,
-                    Announce = false
+                    CenterTime = 3.0f
                 },
                 new CommandDefinition
                 {
-                    Command = "css_slap",
+                    Command = new List<string> { "css_slap" },
                     Type = "target",
                     Args = 1,
                     Arg1 = "number",
                     Arg1NumberMin = 0,
                     Arg1NumberMax = 100,
-                    Flag = "@css/slay",
+                    Flag = new List<string> { "@css/slay" },
                     SlapDamage = "[TARGET] [ARG1]",
                     Announce = true
                 },
                 new CommandDefinition
                 {
-                    Command = "css_money;css_setmoney",
+                    Command = new List<string> { "css_money", "css_setmoney" },
                     Type = "target",
                     Args = 1,
                     Arg1 = "number",
                     Arg1NumberMin = 0,
                     Arg1NumberMax = 65535,
-                    Flag = "@css/cheats",
+                    Flag = new List<string> { "@css/cheats" },
                     SetMoney = "[TARGET] [ARG1]"
                 },
                 new CommandDefinition
                 {
-                    Command = "css_team;css_changeteam",
+                    Command = new List<string> { "css_team", "css_changeteam" },
                     Type = "target",
                     Args = 1,
                     Arg1 = "number",
                     Arg1NumberMin = 0,
                     Arg1NumberMax = 3,
-                    Flag = "@css/kick",
+                    Flag = new List<string> { "@css/kick" },
                     ChangeTeam = "[TARGET] [ARG1]"
                 },
                 new CommandDefinition
                 {
-                    Command = "css_site",
+                    Command = new List<string> { "css_site" },
                     Type = "default",
-                    Flag = "",
-                    Chat = "[GOLD]Web Sitemiz: [DEFAULT]https://bydexter.net/"
+                    Chat = new List<string>
+                    {
+                        "[GOLD]Web Sitemiz: [DEFAULT]https://bydexter.net/",
+                        "[GOLD]Discord: [DEFAULT]discord.gg/bydexter"
+                    }
                 },
                 new CommandDefinition
                 {
-                    Command = "css_serverinfo",
+                    Command = new List<string> { "css_serverinfo" },
                     Type = "default",
-                    Flag = "",
-                    Chat = "[ORCHID]Sunucu: [GOLD][HOSTNAME] [DEFAULT]| IP: [GOLD][SERVERIP]:[SERVERPORT] [DEFAULT]| Harita: [GOLD][MAPNAME] [DEFAULT]| Oyuncu: [GOLD][PLAYERCOUNT]"
+                    Chat = new List<string>
+                    {
+                        "[ORCHID]Sunucu: [GOLD][HOSTNAME] [DEFAULT]| IP: [GOLD][SERVERIP]:[SERVERPORT] [DEFAULT]| Harita: [GOLD][MAPNAME] [DEFAULT]| Saat: [GOLD][TIME]",
+                        "[ORCHID]Raunt: [GOLD][ROUND] [DEFAULT]| Skor: [GOLD]CT [CTSCORE] [DEFAULT]- [GOLD][TSCORE] T",
+                        "[ORCHID]Oyuncu: [GOLD][PLAYERCOUNT] [DEFAULT](T: [GOLD][TCOUNT] [DEFAULT]CT: [GOLD][CTCOUNT] [DEFAULT]İzleyici: [GOLD][SPECCOUNT][DEFAULT]) | Canlı: [GOLD][ALIVECOUNT] [DEFAULT](T: [GOLD][ALIVET] [DEFAULT]CT: [GOLD][ALIVECT][DEFAULT])"
+                    }
+                },
+                new CommandDefinition
+                {
+                    Command = new List<string> { "css_my" },
+                    Type = "default",
+                    Chat = new List<string> { "[GOLD][PLAYER] [DEFAULT]| Can: [GOLD][PLAYERHEALTH] [DEFAULT]Zırh: [GOLD][PLAYERARMOR] [DEFAULT]Para: [GOLD][PLAYERMONEY] [DEFAULT]Takım: [GOLD][PLAYERTEAM] [DEFAULT]Silah: [GOLD][PLAYERWEAPON]" },
+                    Console = new List<string>
+                    {
+                        "SteamID64: [PLAYERSTEAMID]",
+                        "Sunucu: [HOSTNAME] | Harita: [MAPNAME]"
+                    }
+                },
+                new CommandDefinition
+                {
+                    Command = new List<string> { "css_target" },
+                    Type = "target",
+                    Flag = new List<string> { "@css/generic" },
+                    Chat = new List<string> { "[GOLD][TARGET] [DEFAULT]| Can: [GOLD][TARGETHEALTH] [DEFAULT]Zırh: [GOLD][TARGETARMOR] [DEFAULT]Para: [GOLD][TARGETMONEY] [DEFAULT]Takım: [GOLD][TARGETTEAM] [DEFAULT]Silah: [GOLD][TARGETWEAPON]" },
+                    Console = new List<string> { "Hedef SteamID64: [TARGETSTEAMID]" }
+                },
+                new CommandDefinition
+                {
+                    Command = new List<string> { "css_rastgele" },
+                    Type = "default",
+                    Flag = new List<string> { "@css/chat" },
+                    Cooldown = 10f,
+                    Chat = new List<string>
+                    {
+                        "[ORCHID]Rastgele: [GOLD][RANDOMPLAYER] [DEFAULT]| T: [GOLD][RANDOMT] [DEFAULT]| CT: [GOLD][RANDOMCT]",
+                        "[ORCHID]Canlı: [GOLD][RANDOMALIVE] [DEFAULT]| Ölü: [GOLD][RANDOMDEAD]",
+                        "[ORCHID]Canlı T: [GOLD][RANDOMTALIVE] [DEFAULT]| Ölü T: [GOLD][RANDOMTDEAD]",
+                        "[ORCHID]Canlı CT: [GOLD][RANDOMCTALIVE] [DEFAULT]| Ölü CT: [GOLD][RANDOMCTDEAD]"
+                    }
+                },
+                new CommandDefinition
+                {
+                    Command = new List<string> { "css_warmup" },
+                    Type = "default",
+                    Flag = new List<string> { "@css/root" },
+                    SetCvar = new List<string>
+                    {
+                        "mp_warmuptime 60",
+                        "mp_warmup_pausetimer 0"
+                    },
+                    Execute = new List<string> { "mp_warmup_start" },
+                    ServerChat = new List<string> { "[GOLD][PLAYER] [DEFAULT]ısınma turunu başlattı." }
+                },
+                new CommandDefinition
+                {
+                    Command = new List<string> { "css_can" },
+                    Type = "playertarget",
+                    TeamFilter = "T",
+                    AliveFilter = "alive",
+                    Cooldown = 30f,
+                    SetHealth = "[TARGET] 100",
+                    Chat = new List<string> { "[GREEN]Canın yenilendi. [DEFAULT](30 sn'de bir kullanılabilir)" }
                 }
             }
         };
 
-        var options = new JsonSerializerOptions 
-        { 
+        var options = new JsonSerializerOptions
+        {
             WriteIndented = true,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
@@ -337,33 +463,74 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
     private void RegisterDynamicCommand(CommandDefinition cmd)
     {
-        var commandNames = cmd.Command.Split(';');
-
-        foreach (var commandName in commandNames)
+        foreach (var entry in cmd.Command)
         {
-            var trimmedName = commandName.Trim();
-            if (string.IsNullOrEmpty(trimmedName)) continue;
-
-            _registeredCommands[trimmedName] = cmd;
-
-            CommandInfo.CommandCallback callback = (player, info) =>
+            foreach (var commandName in entry.Split(';'))
             {
-                HandleDynamicCommand(player, info, cmd);
-            };
+                var trimmedName = commandName.Trim();
+                if (string.IsNullOrEmpty(trimmedName)) continue;
 
-            _commandCallbacks[trimmedName] = callback;
-            AddCommand(trimmedName, $"Dynamic command: {trimmedName}", callback);
+                _registeredCommands[trimmedName] = cmd;
+
+                CommandInfo.CommandCallback callback = (player, info) =>
+                {
+                    HandleDynamicCommand(player, info, cmd);
+                };
+
+                _commandCallbacks[trimmedName] = callback;
+                AddCommand(trimmedName, $"Dynamic command: {trimmedName}", callback);
+            }
         }
     }
 
     private void HandleDynamicCommand(CCSPlayerController? player, CommandInfo info, CommandDefinition cmd)
     {
-        if (!string.IsNullOrEmpty(cmd.Flag) && player != null)
+        if (player != null)
         {
-            if (!HasAnyPermission(player, cmd.Flag))
+            if (cmd.Flag is { Count: > 0 } && !HasAnyPermission(player, cmd.Flag))
             {
                 info.ReplyToCommand(Localizer["commandmaker.no_permission"]);
                 return;
+            }
+
+            if (!string.IsNullOrEmpty(cmd.TeamFilter))
+            {
+                var required = cmd.TeamFilter.Equals("CT", StringComparison.OrdinalIgnoreCase)
+                    ? CsTeam.CounterTerrorist
+                    : CsTeam.Terrorist;
+
+                if (player.Team != required)
+                {
+                    info.ReplyToCommand(Localizer["commandmaker.team_only", cmd.TeamFilter.ToUpper()]);
+                    return;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(cmd.AliveFilter))
+            {
+                bool mustBeAlive = cmd.AliveFilter.Equals("alive", StringComparison.OrdinalIgnoreCase);
+                if (player.PawnIsAlive != mustBeAlive)
+                {
+                    info.ReplyToCommand(mustBeAlive
+                        ? Localizer["commandmaker.alive_only"]
+                        : Localizer["commandmaker.dead_only"]);
+                    return;
+                }
+            }
+
+            if (cmd.Cooldown > 0f)
+            {
+                var key = (info.GetArg(0).ToLower(), player.SteamID);
+                float now = Server.CurrentTime;
+
+                if (_cooldowns.TryGetValue(key, out float lastUse) && now < lastUse + cmd.Cooldown)
+                {
+                    int remain = (int)MathF.Ceiling(lastUse + cmd.Cooldown - now);
+                    info.ReplyToCommand(Localizer["commandmaker.cooldown_wait", remain]);
+                    return;
+                }
+
+                _cooldowns[key] = now;
             }
         }
 
@@ -389,43 +556,9 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
     private void HandleDefaultCommand(CCSPlayerController? player, CommandInfo info, CommandDefinition cmd)
     {
-        if (!string.IsNullOrEmpty(cmd.Chat))
-        {
-            var chatMessage = FormatMessage(cmd.Chat, player, null, null, null, null);
-            if (chatMessage.Length > 0 && chatMessage[0] != ' ')
-            {
-                chatMessage = " " + chatMessage;
-            }
-            if (player != null)
-            {
-                player.PrintToChat(chatMessage);
-            }
-        }
-
-        if (!string.IsNullOrEmpty(cmd.Center) && player != null)
-        {
-            var centerMessage = FormatMessage(cmd.Center, player, null, null, null, null);
-            _playerCenter[player.SteamID] = (centerMessage, Server.CurrentTime + cmd.CenterTime);
-        }
-
-        if (!string.IsNullOrEmpty(cmd.ServerChat))
-        {
-            var serverChatMessage = FormatMessage(cmd.ServerChat, player, null, null, null, null);
-            if (serverChatMessage.Length > 0 && serverChatMessage[0] != ' ')
-            {
-                serverChatMessage = " " + serverChatMessage;
-            }
-            Server.PrintToChatAll(serverChatMessage);
-        }
-
-        if (!string.IsNullOrEmpty(cmd.ServerCenter))
-        {
-            var message = FormatMessage(cmd.ServerCenter, player, null, null, null, null);
-            foreach (var p in Utilities.GetPlayers().Where(p => p.IsValid))
-            {
-                p.PrintToCenterHtml(message);
-            }
-        }
+        SendCommandMessages(player, null, cmd, null, null, null, null);
+        RunServerLines(cmd.Execute, player, null, null, null, null, null);
+        RunServerLines(cmd.SetCvar, player, null, null, null, null, null);
     }
 
     private void HandleTargetCommand(CCSPlayerController? player, CommandInfo info, CommandDefinition cmd)
@@ -437,9 +570,9 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         }
 
         var targetName = info.GetArg(1);
-        var target = FindTarget(targetName);
+        var targets = FindTargets(targetName, player, out var groupLabel);
 
-        if (target == null)
+        if (targets.Count == 0)
         {
             info.ReplyToCommand(Localizer["commandmaker.player_not_found", targetName]);
             return;
@@ -497,11 +630,16 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             }
         }
 
-        ExecuteCommandActions(player, target, cmd, arg1, arg2, arg3);
+        foreach (var target in targets)
+            ApplyCommandActions(player, target, cmd, arg1, arg2, arg3);
+
+        SendCommandMessages(player, targets[0], cmd, arg1, arg2, arg3, targets.Count == 1 ? null : groupLabel);
     }
+
     private void HandlePlayerTargetCommand(CCSPlayerController? player, CommandInfo info, CommandDefinition cmd)
     {
-        CCSPlayerController? target = player;
+        List<CCSPlayerController> targets;
+        string? groupLabel = null;
         string? arg1 = null;
         string? arg2 = null;
         string? arg3 = null;
@@ -509,9 +647,9 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         if (info.ArgCount >= 2)
         {
             var targetName = info.GetArg(1);
-            target = FindTarget(targetName);
+            targets = FindTargets(targetName, player, out groupLabel);
 
-            if (target == null)
+            if (targets.Count == 0)
             {
                 info.ReplyToCommand(Localizer["commandmaker.player_not_found", targetName]);
                 return;
@@ -521,42 +659,43 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             if (info.ArgCount >= 4) arg2 = info.GetArg(3);
             if (info.ArgCount >= 5) arg3 = info.GetArg(4);
         }
-        else if (info.ArgCount >= 2 && cmd.Arg1 != "optional")
+        else
         {
-            arg1 = info.GetArg(1);
-            if (info.ArgCount >= 3) arg2 = info.GetArg(2);
-            if (info.ArgCount >= 4) arg3 = info.GetArg(3);
+            if (player == null)
+            {
+                info.ReplyToCommand(Localizer["commandmaker.player_only"]);
+                return;
+            }
+
+            targets = new List<CCSPlayerController> { player };
         }
 
-        if (target == null)
-        {
-            info.ReplyToCommand(Localizer["commandmaker.player_only"]);
-            return;
-        }
+        foreach (var target in targets)
+            ApplyCommandActions(player, target, cmd, arg1, arg2, arg3);
 
-        ExecuteCommandActions(player, target, cmd, arg1, arg2, arg3);
+        SendCommandMessages(player, targets[0], cmd, arg1, arg2, arg3, targets.Count == 1 ? null : groupLabel);
     }
 
-    private bool HasAnyPermission(CCSPlayerController player, string flags)
+    private bool HasAnyPermission(CCSPlayerController player, List<string> flags)
     {
-        if (string.IsNullOrEmpty(flags)) return true;
+        bool anyFlag = false;
 
-        var flagList = flags.Split(';').Select(f => f.Trim()).Where(f => !string.IsNullOrEmpty(f)).ToList();
-
-        if (flagList.Count == 0) return true;
-
-        foreach (var flag in flagList)
+        foreach (var entry in flags)
         {
-            if (AdminManager.PlayerHasPermissions(player, flag))
-                return true;
+            foreach (var flag in entry.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                anyFlag = true;
+                if (AdminManager.PlayerHasPermissions(player, flag))
+                    return true;
+            }
         }
 
-        return false;
+        return !anyFlag;
     }
 
     private void HandleExecuteCommand(CCSPlayerController? player, CommandInfo info, CommandDefinition cmd)
     {
-        if (string.IsNullOrEmpty(cmd.Execute))
+        if (cmd.Execute is not { Count: > 0 } && cmd.SetCvar is not { Count: > 0 })
         {
             info.ReplyToCommand(Localizer["commandmaker.execute_undefined"]);
             return;
@@ -566,56 +705,74 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         string? arg2 = cmd.Args >= 2 && info.ArgCount >= 3 ? info.GetArg(2) : null;
         string? arg3 = cmd.Args >= 3 && info.ArgCount >= 4 ? info.GetArg(3) : null;
 
-        string executeCmd = FormatMessage(cmd.Execute, player, null, arg1, arg2, arg3);
-        Server.ExecuteCommand(executeCmd);
+        RunServerLines(cmd.Execute, player, null, arg1, arg2, arg3, null);
+        RunServerLines(cmd.SetCvar, player, null, arg1, arg2, arg3, null);
+        SendCommandMessages(player, null, cmd, arg1, arg2, arg3, null);
     }
 
-    private void ExecuteCommandActions(CCSPlayerController? player, CCSPlayerController target, CommandDefinition cmd, string? arg1, string? arg2, string? arg3)
+    private void SendCommandMessages(CCSPlayerController? player, CCSPlayerController? target, CommandDefinition cmd, string? arg1, string? arg2, string? arg3, string? targetLabel)
     {
         if (cmd.Announce && player != null)
         {
-            var commandName = cmd.Command.Split(';')[0];
+            var commandName = cmd.Command.FirstOrDefault()?.Split(';')[0] ?? "";
             Server.PrintToChatAll($" {Localizer["commandmaker.announce", $"{CC.Orchid}{player.PlayerName}{CC.Default}", $"{CC.Gold}{commandName}{CC.Default}"]}");
         }
 
-        if (!string.IsNullOrEmpty(cmd.Chat))
+        if (cmd.Chat is { Count: > 0 } && player != null)
         {
-            var chatMessage = FormatMessage(cmd.Chat, player, target, arg1, arg2, arg3);
-            if (chatMessage.Length > 0 && chatMessage[0] != ' ')
+            foreach (var line in cmd.Chat)
             {
-                chatMessage = " " + chatMessage;
-            }
-            if (player != null)
-            {
+                var chatMessage = FormatMessage(line, player, target, arg1, arg2, arg3, targetLabel);
+                if (chatMessage.Length > 0 && chatMessage[0] != ' ')
+                    chatMessage = " " + chatMessage;
                 player.PrintToChat(chatMessage);
             }
         }
 
+        if (cmd.Console is { Count: > 0 } && player != null)
+        {
+            foreach (var line in cmd.Console)
+                player.PrintToConsole(FormatMessage(line, player, target, arg1, arg2, arg3, targetLabel));
+        }
+
         if (!string.IsNullOrEmpty(cmd.Center) && player != null)
         {
-            var centerMessage = FormatMessage(cmd.Center, player, target, arg1, arg2, arg3);
+            var centerMessage = FormatMessage(cmd.Center, player, target, arg1, arg2, arg3, targetLabel);
             _playerCenter[player.SteamID] = (centerMessage, Server.CurrentTime + cmd.CenterTime);
         }
 
-        if (!string.IsNullOrEmpty(cmd.ServerChat))
+        if (cmd.ServerChat is { Count: > 0 })
         {
-            var serverChatMessage = FormatMessage(cmd.ServerChat, player, target, arg1, arg2, arg3);
-            if (serverChatMessage.Length > 0 && serverChatMessage[0] != ' ')
+            foreach (var line in cmd.ServerChat)
             {
-                serverChatMessage = " " + serverChatMessage;
+                var serverChatMessage = FormatMessage(line, player, target, arg1, arg2, arg3, targetLabel);
+                if (serverChatMessage.Length > 0 && serverChatMessage[0] != ' ')
+                    serverChatMessage = " " + serverChatMessage;
+                Server.PrintToChatAll(serverChatMessage);
             }
-            Server.PrintToChatAll(serverChatMessage);
         }
 
         if (!string.IsNullOrEmpty(cmd.ServerCenter))
         {
-            var message = FormatMessage(cmd.ServerCenter, player, target, arg1, arg2, arg3);
+            var message = FormatMessage(cmd.ServerCenter, player, target, arg1, arg2, arg3, targetLabel);
             foreach (var p in Utilities.GetPlayers().Where(p => p.IsValid))
             {
                 p.PrintToCenterHtml(message);
             }
         }
+    }
 
+    private void RunServerLines(List<string>? lines, CCSPlayerController? player, CCSPlayerController? target, string? arg1, string? arg2, string? arg3, string? targetLabel)
+    {
+        if (lines is not { Count: > 0 })
+            return;
+
+        foreach (var line in lines)
+            Server.ExecuteCommand(FormatMessage(line, player, target, arg1, arg2, arg3, targetLabel));
+    }
+
+    private void ApplyCommandActions(CCSPlayerController? player, CCSPlayerController target, CommandDefinition cmd, string? arg1, string? arg2, string? arg3)
+    {
         if (!string.IsNullOrEmpty(cmd.SetHealth))
         {
             string healthCmd = FormatMessage(cmd.SetHealth, player, target, arg1, arg2, arg3);
@@ -958,14 +1115,11 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         if (pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
             return;
 
-        var controller = pawn.Controller.Value?.As<CCSPlayerController>();
-
-        var random = new Random();
         var vel = new Vector(pawn.AbsVelocity.X, pawn.AbsVelocity.Y, pawn.AbsVelocity.Z);
 
-        vel.X += (random.Next(180) + 50) * (random.Next(2) == 1 ? -1 : 1);
-        vel.Y += (random.Next(180) + 50) * (random.Next(2) == 1 ? -1 : 1);
-        vel.Z += random.Next(200) + 100;
+        vel.X += (Random.Shared.Next(180) + 50) * (Random.Shared.Next(2) == 1 ? -1 : 1);
+        vel.Y += (Random.Shared.Next(180) + 50) * (Random.Shared.Next(2) == 1 ? -1 : 1);
+        vel.Z += Random.Shared.Next(200) + 100;
 
         pawn.AbsVelocity.X = vel.X;
         pawn.AbsVelocity.Y = vel.Y;
@@ -997,6 +1151,23 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         pawn.MoveType = moveType;
         Utilities.SetStateChanged(pawn, "CBaseEntity", "m_MoveType");
         Schema.GetRef<MoveType_t>(pawn.Handle, "CBaseEntity", "m_nActualMoveType") = moveType;
+    }
+
+    private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+    {
+        var player = @event.Userid;
+        if (player != null)
+        {
+            var steamId = player.SteamID;
+            _godmodePlayers.Remove(steamId);
+            _playerSpeed.Remove(steamId);
+            _playerGravity.Remove(steamId);
+            _playerCenter.Remove(steamId);
+
+            foreach (var key in _cooldowns.Keys.Where(k => k.SteamId == steamId).ToList())
+                _cooldowns.Remove(key);
+        }
+        return HookResult.Continue;
     }
 
     private void OnTick()
@@ -1073,19 +1244,19 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         {
             if (!int.TryParse(arg, out int value))
             {
-                errorMsg = "Argüman bir sayı olmalıdır.";
+                errorMsg = Localizer["commandmaker.arg_number"];
                 return false;
             }
 
             if (min.HasValue && value < min.Value)
             {
-                errorMsg = $"Sayı en az {min.Value} olmalıdır.";
+                errorMsg = Localizer["commandmaker.arg_min", min.Value];
                 return false;
             }
 
             if (max.HasValue && value > max.Value)
             {
-                errorMsg = $"Sayı en fazla {max.Value} olabilir.";
+                errorMsg = Localizer["commandmaker.arg_max", max.Value];
                 return false;
             }
         }
@@ -1093,7 +1264,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         {
             if (maxLength.HasValue && arg.Length > maxLength.Value)
             {
-                errorMsg = $"Kelime uzunluğu en fazla {maxLength.Value} karakter olabilir.";
+                errorMsg = Localizer["commandmaker.arg_word_length", maxLength.Value];
                 return false;
             }
         }
@@ -1101,54 +1272,156 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         return true;
     }
 
-    private CCSPlayerController? FindTarget(string search)
+    private List<CCSPlayerController> FindTargets(string search, CCSPlayerController? caller, out string? groupLabel)
     {
-        search = search.ToLower();
+        groupLabel = null;
+        var players = Utilities.GetPlayers().Where(p => p.IsValid && !p.IsHLTV).ToList();
+        var s = search.ToLower();
 
-        if (search.StartsWith("#"))
+        switch (s)
         {
-            if (int.TryParse(search.Substring(1), out int userid))
-            {
-                return Utilities.GetPlayerFromUserid(userid);
-            }
+            case "@all":
+                groupLabel = Localizer["commandmaker.group_all"];
+                return players;
+            case "@ct":
+                groupLabel = Localizer["commandmaker.group_ct"];
+                return players.Where(p => p.Team == CsTeam.CounterTerrorist).ToList();
+            case "@t":
+                groupLabel = Localizer["commandmaker.group_t"];
+                return players.Where(p => p.Team == CsTeam.Terrorist).ToList();
+            case "@alive":
+                groupLabel = Localizer["commandmaker.group_alive"];
+                return players.Where(p => p.PawnIsAlive).ToList();
+            case "@dead":
+                groupLabel = Localizer["commandmaker.group_dead"];
+                return players.Where(p => !p.PawnIsAlive).ToList();
+            case "@me":
+                return caller != null
+                    ? new List<CCSPlayerController> { caller }
+                    : new List<CCSPlayerController>();
+            case "@random":
+                {
+                    var pool = players.Where(p => !p.IsBot).ToList();
+                    return pool.Count == 0
+                        ? new List<CCSPlayerController>()
+                        : new List<CCSPlayerController> { pool[Random.Shared.Next(pool.Count)] };
+                }
         }
 
-        var players = Utilities.GetPlayers().Where(p => p.IsValid).ToList();
+        if (s.StartsWith("#") && int.TryParse(s[1..], out int userid))
+        {
+            var byId = Utilities.GetPlayerFromUserid(userid);
+            return byId != null && byId.IsValid
+                ? new List<CCSPlayerController> { byId }
+                : new List<CCSPlayerController>();
+        }
 
-        return players.FirstOrDefault(p => p.PlayerName.ToLower() == search) ?? players.FirstOrDefault(p => p.PlayerName.ToLower().Contains(search));
+        var byName = players.FirstOrDefault(p => p.PlayerName.ToLower() == s)
+                  ?? players.FirstOrDefault(p => p.PlayerName.ToLower().Contains(s));
+        return byName != null
+            ? new List<CCSPlayerController> { byName }
+            : new List<CCSPlayerController>();
     }
 
-    private string FormatMessage(string message, CCSPlayerController? player, CCSPlayerController? target, string? arg1, string? arg2, string? arg3)
+    private static string TeamName(CsTeam team) => team switch
     {
+        CsTeam.Terrorist => "T",
+        CsTeam.CounterTerrorist => "CT",
+        CsTeam.Spectator => "SPEC",
+        _ => "NONE"
+    };
+
+    private static string ActiveWeaponName(CCSPlayerController p)
+    {
+        var name = p.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value?.DesignerName;
+        if (string.IsNullOrEmpty(name)) return "-";
+        return name.StartsWith("weapon_") ? name[7..] : name;
+    }
+
+    private static string PickRandomName(IEnumerable<CCSPlayerController> pool)
+    {
+        var list = pool.ToList();
+        return list.Count == 0 ? "-" : list[Random.Shared.Next(list.Count)].PlayerName;
+    }
+
+    private string FormatMessage(string message, CCSPlayerController? player, CCSPlayerController? target, string? arg1, string? arg2, string? arg3, string? targetLabel = null)
+    {
+        if (!message.Contains('['))
+            return message;
+
         if (player != null)
         {
-            message = message.Replace("[PLAYER]", player.PlayerName);
-            message = message.Replace("[PLAYERNAME]", player.PlayerName);
-
-            if (player.PlayerPawn.Value?.AbsOrigin != null)
+            if (message.Contains("[PLAYERNAME]") || message.Contains("[PLAYER]"))
             {
-                var pos = player.PlayerPawn.Value.AbsOrigin;
+                var playerName = player.PlayerName;
+                message = message.Replace("[PLAYERNAME]", playerName);
+                message = message.Replace("[PLAYER]", playerName);
+            }
+
+            var playerPawn = player.PlayerPawn.Value;
+
+            if (message.Contains("[PLAYERHEALTH]"))
+                message = message.Replace("[PLAYERHEALTH]", (playerPawn?.Health ?? 0).ToString());
+
+            if (message.Contains("[PLAYERARMOR]"))
+                message = message.Replace("[PLAYERARMOR]", (playerPawn?.ArmorValue ?? 0).ToString());
+
+            if (message.Contains("[PLAYERMONEY]"))
+                message = message.Replace("[PLAYERMONEY]", (player.InGameMoneyServices?.Account ?? 0).ToString());
+
+            if (message.Contains("[PLAYERSTEAMID]"))
+                message = message.Replace("[PLAYERSTEAMID]", player.SteamID.ToString());
+
+            if (message.Contains("[PLAYERTEAM]"))
+                message = message.Replace("[PLAYERTEAM]", TeamName(player.Team));
+
+            if (message.Contains("[PLAYERWEAPON]"))
+                message = message.Replace("[PLAYERWEAPON]", ActiveWeaponName(player));
+
+            if (message.Contains("[PLAYERCOORDINATE]") && playerPawn?.AbsOrigin != null)
+            {
+                var pos = playerPawn.AbsOrigin;
                 message = message.Replace("[PLAYERCOORDINATE]", $"{pos.X} {pos.Y} {pos.Z}");
             }
         }
 
         if (target != null)
         {
-            message = message.Replace("[TARGET]", target.PlayerName);
-            message = message.Replace("[PLAYER/TARGET]", target.PlayerName);
-
-            if (target.PlayerPawn.Value != null)
+            if (message.Contains("[TARGET]") || message.Contains("[PLAYER/TARGET]"))
             {
-                message = message.Replace("[TARGETHEALTH]", target.PlayerPawn.Value.Health.ToString());
+                var targetName = targetLabel ?? target.PlayerName;
+                message = message.Replace("[PLAYER/TARGET]", targetName);
+                message = message.Replace("[TARGET]", targetName);
+            }
 
-                if (target.PlayerPawn.Value.AbsOrigin != null)
+            var targetPawn = target.PlayerPawn.Value;
+
+            if (targetPawn != null)
+            {
+                if (message.Contains("[TARGETHEALTH]"))
+                    message = message.Replace("[TARGETHEALTH]", targetPawn.Health.ToString());
+
+                if (message.Contains("[TARGETARMOR]"))
+                    message = message.Replace("[TARGETARMOR]", targetPawn.ArmorValue.ToString());
+
+                if (message.Contains("[TARGETCOORDINATE]") && targetPawn.AbsOrigin != null)
                 {
-                    var pos = target.PlayerPawn.Value.AbsOrigin;
+                    var pos = targetPawn.AbsOrigin;
                     message = message.Replace("[TARGETCOORDINATE]", $"{pos.X} {pos.Y} {pos.Z}");
                 }
             }
 
-            message = message.Replace("[TARGETTEAM]", target.TeamNum.ToString());
+            if (message.Contains("[TARGETMONEY]"))
+                message = message.Replace("[TARGETMONEY]", (target.InGameMoneyServices?.Account ?? 0).ToString());
+
+            if (message.Contains("[TARGETSTEAMID]"))
+                message = message.Replace("[TARGETSTEAMID]", target.SteamID.ToString());
+
+            if (message.Contains("[TARGETWEAPON]"))
+                message = message.Replace("[TARGETWEAPON]", ActiveWeaponName(target));
+
+            if (message.Contains("[TARGETTEAM]"))
+                message = message.Replace("[TARGETTEAM]", TeamName(target.Team));
         }
 
         if (arg1 != null)
@@ -1166,19 +1439,82 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             message = message.Replace("[ARG3]", arg3);
         }
 
-        var randomPlayer = Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot && p.PawnIsAlive).OrderBy(x => Random.Shared.Next()).FirstOrDefault();
-        if (randomPlayer != null)
+        bool needsRandom = message.Contains("[RANDOM");
+        bool needsCounts = message.Contains("[PLAYERCOUNT]") || message.Contains("[ALIVECOUNT]") ||
+                           message.Contains("[TCOUNT]") || message.Contains("[CTCOUNT]") || message.Contains("[SPECCOUNT]") ||
+                           message.Contains("[ALIVET]") || message.Contains("[ALIVECT]");
+
+        if (needsRandom || needsCounts)
         {
-            message = message.Replace("[RANDOMPLAYER]", randomPlayer.PlayerName);
+            var all = Utilities.GetPlayers().Where(p => p.IsValid && !p.IsHLTV).ToList();
+            var humans = all.Where(p => !p.IsBot).ToList();
+
+            if (needsCounts)
+            {
+                message = message.Replace("[PLAYERCOUNT]", humans.Count.ToString());
+                message = message.Replace("[ALIVECOUNT]", all.Count(p => p.PawnIsAlive).ToString());
+                message = message.Replace("[TCOUNT]", all.Count(p => p.Team == CsTeam.Terrorist).ToString());
+                message = message.Replace("[CTCOUNT]", all.Count(p => p.Team == CsTeam.CounterTerrorist).ToString());
+                message = message.Replace("[SPECCOUNT]", all.Count(p => p.Team == CsTeam.Spectator).ToString());
+                message = message.Replace("[ALIVET]", all.Count(p => p.Team == CsTeam.Terrorist && p.PawnIsAlive).ToString());
+                message = message.Replace("[ALIVECT]", all.Count(p => p.Team == CsTeam.CounterTerrorist && p.PawnIsAlive).ToString());
+            }
+
+            if (needsRandom)
+            {
+                if (message.Contains("[RANDOMPLAYER]"))
+                    message = message.Replace("[RANDOMPLAYER]", PickRandomName(humans.Where(p => p.PawnIsAlive)));
+                if (message.Contains("[RANDOMT]"))
+                    message = message.Replace("[RANDOMT]", PickRandomName(humans.Where(p => p.Team == CsTeam.Terrorist)));
+                if (message.Contains("[RANDOMCT]"))
+                    message = message.Replace("[RANDOMCT]", PickRandomName(humans.Where(p => p.Team == CsTeam.CounterTerrorist)));
+                if (message.Contains("[RANDOMALIVE]"))
+                    message = message.Replace("[RANDOMALIVE]", PickRandomName(humans.Where(p => p.PawnIsAlive)));
+                if (message.Contains("[RANDOMDEAD]"))
+                    message = message.Replace("[RANDOMDEAD]", PickRandomName(humans.Where(p => !p.PawnIsAlive)));
+                if (message.Contains("[RANDOMTALIVE]"))
+                    message = message.Replace("[RANDOMTALIVE]", PickRandomName(humans.Where(p => p.Team == CsTeam.Terrorist && p.PawnIsAlive)));
+                if (message.Contains("[RANDOMTDEAD]"))
+                    message = message.Replace("[RANDOMTDEAD]", PickRandomName(humans.Where(p => p.Team == CsTeam.Terrorist && !p.PawnIsAlive)));
+                if (message.Contains("[RANDOMCTALIVE]"))
+                    message = message.Replace("[RANDOMCTALIVE]", PickRandomName(humans.Where(p => p.Team == CsTeam.CounterTerrorist && p.PawnIsAlive)));
+                if (message.Contains("[RANDOMCTDEAD]"))
+                    message = message.Replace("[RANDOMCTDEAD]", PickRandomName(humans.Where(p => p.Team == CsTeam.CounterTerrorist && !p.PawnIsAlive)));
+            }
         }
 
-        message = message.Replace("[SERVERIP]", ConVar.Find("ip")?.StringValue ?? "unknown");
-        message = message.Replace("[SERVERPORT]", ConVar.Find("hostport")?.GetPrimitiveValue<int>().ToString() ?? "27015");
-        message = message.Replace("[HOSTNAME]", ConVar.Find("hostname")?.StringValue ?? "unknown");
-        message = message.Replace("[MAPNAME]", Server.MapName);
-        message = message.Replace("[PLAYERCOUNT]", Utilities.GetPlayers().Count(p => p.IsValid && !p.IsBot).ToString());
-        message = message.Replace("[ALIVECOUNT]", Utilities.GetPlayers().Count(p => p.IsValid && p.PawnIsAlive).ToString());
-        message = message.Replace("[TIME]", DateTime.Now.ToString("HH:mm:ss"));
+        if (message.Contains("[ROUND]"))
+        {
+            var gameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault()?.GameRules;
+            message = message.Replace("[ROUND]", ((gameRules?.TotalRoundsPlayed ?? 0) + 1).ToString());
+        }
+
+        if (message.Contains("[CTSCORE]") || message.Contains("[TSCORE]"))
+        {
+            int ctScore = 0, tScore = 0;
+            foreach (var team in Utilities.FindAllEntitiesByDesignerName<CTeam>("cs_team_manager"))
+            {
+                if (team.TeamNum == 3) ctScore = team.Score;
+                else if (team.TeamNum == 2) tScore = team.Score;
+            }
+            message = message.Replace("[CTSCORE]", ctScore.ToString());
+            message = message.Replace("[TSCORE]", tScore.ToString());
+        }
+
+        if (message.Contains("[SERVERIP]"))
+            message = message.Replace("[SERVERIP]", ConVar.Find("ip")?.StringValue ?? "unknown");
+
+        if (message.Contains("[SERVERPORT]"))
+            message = message.Replace("[SERVERPORT]", ConVar.Find("hostport")?.GetPrimitiveValue<int>().ToString() ?? "27015");
+
+        if (message.Contains("[HOSTNAME]"))
+            message = message.Replace("[HOSTNAME]", ConVar.Find("hostname")?.StringValue ?? "unknown");
+
+        if (message.Contains("[MAPNAME]"))
+            message = message.Replace("[MAPNAME]", Server.MapName);
+
+        if (message.Contains("[TIME]"))
+            message = message.Replace("[TIME]", DateTime.Now.ToString("HH:mm:ss"));
 
         message = message.Replace("[DEFAULT]", $"{CC.Default}");
         message = message.Replace("[RED]", $"{CC.Red}");

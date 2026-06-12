@@ -22,20 +22,15 @@ public class CTBanList
     public Dictionary<string, CTBanEntry> BannedPlayers { get; set; } = new();
 }
 
-public class CTBanConfig : BasePluginConfig
-{
-    [JsonPropertyName("chat_prefix")]
-    public string ChatPrefix { get; set; } = "[ByDexter]";
-}
-
-public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
+public class CTBan : BasePlugin
 {
     public override string ModuleName => "CTBan";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.4";
     public override string ModuleAuthor => "ByDexter";
-    public override string ModuleDescription => "CTBan";
+    public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-    public CTBanConfig Config { get; set; } = new CTBanConfig();
+    private string ChatPrefix => Localizer["chat_prefix"];
+
     private CTBanList BanList = new();
 
     private string BanListPath => Path.Combine(ModuleDirectory, "CTBanList.json");
@@ -48,11 +43,6 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         RegisterEventHandler<EventPlayerTeam>(OnSwitchTeam);
         AddCommandListener("jointeam", OnJoinTeam);
         LoadBanList();
-    }
-
-    public void OnConfigParsed(CTBanConfig config)
-    {
-        Config = config;
     }
 
     private void LoadBanList()
@@ -69,10 +59,24 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         }
     }
 
+    private readonly object _saveLock = new();
+
     private void SaveBanList()
     {
         var json = JsonSerializer.Serialize(BanList, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(BanListPath, json);
+        var path = BanListPath;
+
+        Task.Run(() =>
+        {
+            try
+            {
+                lock (_saveLock)
+                    File.WriteAllText(path, json);
+            }
+            catch
+            {
+            }
+        });
     }
 
     private static long ParseDuration(string input)
@@ -151,7 +155,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
 
         if (info.ArgCount < 3)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.usage_ban"]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.usage_ban"]}");
             return;
         }
 
@@ -159,7 +163,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         var target = FindPlayer(targetArg);
         if (target == null)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
             return;
         }
         var steamid = target.SteamID.ToString();
@@ -168,7 +172,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         var durationSec = ParseDuration(durationStr);
         if (durationSec <= 0)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.invalid_duration"]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.invalid_duration"]}");
             return;
         }
 
@@ -189,7 +193,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         }
 
         var adminName = player != null ? player.PlayerName : "unknown";
-        Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.banned", target.PlayerName, adminName, FormatTimeLeft(durationSec), reason]}");
+        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.banned", target.PlayerName, adminName, FormatTimeLeft(durationSec), reason]}");
     }
 
     [ConsoleCommand("css_ctunban", "css_ctunban <Hedef>")]
@@ -201,7 +205,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
 
         if (info.ArgCount < 2)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.usage_unban"]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.usage_unban"]}");
             return;
         }
 
@@ -209,7 +213,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         var target = FindPlayer(targetArg);
         if (target == null)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
             return;
         }
         var steamid = target.SteamID.ToString();
@@ -217,11 +221,11 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         if (BanList.BannedPlayers.Remove(steamid))
         {
             SaveBanList();
-            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.unbanned", target.PlayerName, player.PlayerName]}");
+            Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.unbanned", target.PlayerName, player.PlayerName]}");
         }
         else
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.unban_not_found", target.PlayerName]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.unban_not_found", target.PlayerName]}");
         }
     }
 
@@ -234,14 +238,14 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
 
         if (info.ArgCount < 3)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.usage_addban"]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.usage_addban"]}");
             return;
         }
 
         var steamid = info.GetArg(1);
         if (string.IsNullOrEmpty(steamid))
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.invalid_steamid"]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.invalid_steamid"]}");
             return;
         }
 
@@ -249,7 +253,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         var durationSec = ParseDuration(durationStr);
         if (durationSec <= 0)
         {
-            info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.invalid_duration"]}");
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.invalid_duration"]}");
             return;
         }
 
@@ -264,7 +268,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
         };
         SaveBanList();
 
-        info.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.addban_applied", steamid, FormatTimeLeft(durationSec), reason]}");
+        info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.addban_applied", steamid, FormatTimeLeft(durationSec), reason]}");
     }
 
     [ConsoleCommand("css_ctbanlist", "css_ctbanlist")]
@@ -274,24 +278,19 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
             return;
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var found = false;
+        var activeBans = BanList.BannedPlayers.Values.Where(b => b.BanTime > now).ToList();
 
-        foreach (var kvp in BanList.BannedPlayers)
+        if (activeBans.Count == 0)
         {
-            var steamid = kvp.Key;
-            var banEntry = kvp.Value;
-            if (banEntry.BanTime > now)
-            {
-                player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.banlist_header"]}");
-                var timeLeft = FormatTimeLeft(banEntry.BanTime - now);
-                player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.banlist_entry", banEntry.Nickname, timeLeft, banEntry.Reason]}");
-                found = true;
-            }
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.banlist_empty"]}");
+            return;
         }
 
-        if (!found)
+        player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.banlist_header"]}");
+        foreach (var banEntry in activeBans)
         {
-            player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.banlist_empty"]}");
+            var timeLeft = FormatTimeLeft(banEntry.BanTime - now);
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.banlist_entry", banEntry.Nickname, timeLeft, banEntry.Reason]}");
         }
     }
 
@@ -309,7 +308,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
                 var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 if (banEntry.BanTime > now)
                 {
-                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
+                    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
                     player.ChangeTeam(CsTeam.Terrorist);
                     return HookResult.Handled;
                 }
@@ -337,7 +336,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
                 var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 if (banEntry.BanTime > now)
                 {
-                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
+                    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
                     player.ChangeTeam(CsTeam.Terrorist);
                     return HookResult.Continue;
                 }
@@ -364,7 +363,7 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
                 var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 if (banEntry.BanTime > now)
                 {
-                    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
+                    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
                     player.ChangeTeam(CsTeam.Terrorist);
                     return HookResult.Handled;
                 }
@@ -400,14 +399,12 @@ public class CTBan : BasePlugin, IPluginConfig<CTBanConfig>
     {
         if (arg.StartsWith("#"))
         {
-            if (uint.TryParse(arg.Substring(1), out var id))
-                return Utilities.GetPlayers().FirstOrDefault(p => p.Index == id);
+            if (int.TryParse(arg.Substring(1), out var userid))
+                return Utilities.GetPlayerFromUserid(userid);
             return null;
         }
-        else
-        {
-            return Utilities.GetPlayers().FirstOrDefault(p => p.PlayerName.Equals(arg, StringComparison.OrdinalIgnoreCase));
-        }
+
+        return Utilities.GetPlayers().FirstOrDefault(p => p.PlayerName.Equals(arg, StringComparison.OrdinalIgnoreCase));
     }
 }
 

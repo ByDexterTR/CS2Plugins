@@ -6,6 +6,7 @@ using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.Utils;
+using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace CTPerk;
 
@@ -20,8 +21,6 @@ public class SelectionRight
 
 public class CTPerkConfig : BasePluginConfig
 {
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
   [JsonPropertyName("perk_hparmor_hp")]
   public int PerkHpArmorHp { get; set; } = 200;
 
@@ -74,9 +73,11 @@ public enum PerkType
 public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 {
   public override string ModuleName => "CTPerk";
-  public override string ModuleVersion => "1.0.2";
+  public override string ModuleVersion => "1.0.4";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "[JB] CT Perk System - Komutçu başlangıç özellikleri (tekil seçim)";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   public CTPerkConfig Config { get; set; } = new CTPerkConfig();
 
@@ -95,6 +96,32 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
     RegisterEventHandler<EventWeaponFire>(OnWeaponFire);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
+    RegisterListener<OnEntityTakeDamagePre>(OnEntityDamagePre);
+  }
+
+  private HookResult OnEntityDamagePre(CEntityInstance victimEnt, CTakeDamageInfo info)
+  {
+    if (!activePerks.Contains(PerkType.DamageBoost))
+      return HookResult.Continue;
+
+    if (victimEnt == null)
+      return HookResult.Continue;
+
+    var attackerPawn = info.Attacker.Value as CCSPlayerPawn;
+    var attackerController = attackerPawn?.OriginalController.Value;
+    if (attackerController == null || !attackerController.IsValid || attackerController.Team != CsTeam.CounterTerrorist)
+      return HookResult.Continue;
+
+    var victimPawn = victimEnt as CCSPlayerPawn ?? new CCSPlayerPawn(victimEnt.Handle);
+    var victimController = victimPawn?.OriginalController.Value;
+    if (victimController == null || !victimController.IsValid || victimController.Team == CsTeam.CounterTerrorist)
+      return HookResult.Continue;
+
+    float mult = Math.Max(1.0f, Config.PerkDamageBoostRatio);
+    if (mult > 1.0f)
+      info.Damage *= mult;
+
+    return HookResult.Continue;
   }
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
@@ -146,7 +173,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
   {
     if (player == null || !player.IsValid) return;
 
-    CenterHtmlMenu menu = new("<font color='#f7e882' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/lg/307/shield_1f6e1-fe0f.png&w=24&h=24&fit=cover'> CT Perk (" + usedSelections + "/" + allowedSelections + ") <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/lg/307/shield_1f6e1-fe0f.png&w=24&h=24&fit=cover'></font>", this);
+    CenterHtmlMenu menu = new("<font color='#f7e882' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/shield.png'> CT Perk (" + usedSelections + "/" + allowedSelections + ") <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/shield.png'></font>", this);
     int hp = Config.PerkHpArmorHp;
     int armor = Config.PerkHpArmorArmor;
     int lifestealPct = (int)(Config.PerkLifestealRatio * 100);
@@ -177,7 +204,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
       if (usedSelections >= allowedSelections)
       {
-        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctperk.no_rights"]}");
+        p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctperk.no_rights"]}");
         MenuManager.CloseActiveMenu(p);
         return;
       }
@@ -245,24 +272,34 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
   {
     foreach (var ct in Utilities.GetPlayers().Where(pl => pl?.IsValid == true && !pl.IsBot && pl.Team == CsTeam.CounterTerrorist))
     {
-      ct.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {message}");
+      ct.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {message}");
     }
   }
 
   private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
   {
-    if (!activePerks.Contains(PerkType.Health)) return HookResult.Continue;
-
     var player = @event.Userid;
     if (player?.IsValid != true || player.IsBot || player.Team != CsTeam.CounterTerrorist) return HookResult.Continue;
 
     var pawn = player.PlayerPawn?.Value;
     if (pawn?.IsValid != true || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE) return HookResult.Continue;
 
+    bool healthPerkActive = activePerks.Contains(PerkType.Health);
+
     Server.NextFrame(() =>
     {
       if (pawn?.IsValid != true) return;
-      ApplyHealthArmor(player, pawn);
+
+      if (healthPerkActive)
+      {
+        ApplyHealthArmor(player, pawn);
+      }
+      else if (pawn.MaxHealth > 100 || pawn.Health > 100)
+      {
+        pawn.Health = 100;
+        pawn.MaxHealth = 100;
+        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+      }
     });
 
     return HookResult.Continue;
@@ -329,7 +366,6 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     int dmgDealt = @event.DmgHealth;
     if (dmgDealt <= 0) return HookResult.Continue;
 
-    // Lifesteal: CT saldırgan verdiği hasarın bir kısmını can olarak geri alır
     if (activePerks.Contains(PerkType.Lifesteal) &&
         attacker?.IsValid == true && !attacker.IsBot &&
         attacker.UserId != victim.UserId &&
@@ -351,7 +387,6 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
       }
     }
 
-    // Hasar Azaltma: CT kurban aldığı hasarın bir kısmını geri iyileşir
     if (activePerks.Contains(PerkType.DamageReduction) && victim.Team == CsTeam.CounterTerrorist)
     {
       var victimPawn = victim.PlayerPawn?.Value;
@@ -369,27 +404,6 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
         }
       }
     }
-
-    // Hasar Arttırma: CT saldırgan CT olmayan hedefe ek hasar verir
-    if (activePerks.Contains(PerkType.DamageBoost) &&
-        attacker?.IsValid == true &&
-        attacker.Team == CsTeam.CounterTerrorist &&
-        victim.Team != CsTeam.CounterTerrorist)
-    {
-      var victimPawn = victim.PlayerPawn?.Value;
-      if (victimPawn?.IsValid == true && victimPawn.LifeState == (byte)LifeState_t.LIFE_ALIVE && victimPawn.Health > 0)
-      {
-        float mult = Math.Max(1.0f, Config.PerkDamageBoostRatio);
-        int extraDmg = (int)(dmgDealt * (mult - 1f));
-        if (extraDmg > 0)
-        {
-          int newHp = victimPawn.Health - extraDmg;
-          victimPawn.Health = Math.Max(0, newHp);
-          Utilities.SetStateChanged(victimPawn, "CBaseEntity", "m_iHealth");
-        }
-      }
-    }
-
     return HookResult.Continue;
   }
 

@@ -9,9 +9,6 @@ using static CounterStrikeSharp.API.Core.Listeners;
 
 public class RedbullConfig : BasePluginConfig
 {
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
-
   [JsonPropertyName("speed")]
   public float Speed { get; set; } = 2.0f;
 
@@ -34,9 +31,11 @@ public class RedbullConfig : BasePluginConfig
 public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 {
   public override string ModuleName => "Redbull";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.3";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Redbull hız efekti";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   public RedbullConfig Config { get; set; } = new RedbullConfig();
 
@@ -71,14 +70,14 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
     {
       if ((Config.FilterTeam == "CT" && player.Team != CsTeam.CounterTerrorist) || (Config.FilterTeam == "T" && player.Team != CsTeam.Terrorist))
       {
-        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.wrong_team"]}");
+        player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.wrong_team"]}");
         return;
       }
     }
 
     if (_redbullActive.ContainsKey(player.SteamID))
     {
-      player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.already_active"]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.already_active"]}");
       return;
     }
 
@@ -88,7 +87,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
       if (until > now)
       {
         var remain = (int)Math.Ceiling((until - now).TotalSeconds);
-        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.cooldown", remain]}");
+        player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.cooldown", remain]}");
         return;
       }
     }
@@ -99,18 +98,21 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
       var used = _roundUses.TryGetValue(player.SteamID, out var val) ? val : 0;
       if (used >= limit)
       {
-        player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.limit", limit]}");
+        player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.limit", limit]}");
         return;
       }
       _roundUses[player.SteamID] = used + 1;
     }
 
     _redbullActive[player.SteamID] = DateTime.Now.AddSeconds(Config.Duration);
-    player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.activated", Config.Duration]}");
+    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.activated", Config.Duration]}");
   }
 
   private void OnTickSpeed()
   {
+    if (_redbullActive.Count == 0)
+      return;
+
     var now = DateTime.Now;
     var expiredPlayers = new List<ulong>();
 
@@ -124,7 +126,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
         if (player != null && IsAlive(player))
         {
           ResetPlayer(player);
-          player.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["redbull.expired"]}");
+          player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.expired"]}");
           if (Config.Cooldown > 0)
           {
             _cooldownUntil[player.SteamID] = DateTime.Now.AddSeconds(Config.Cooldown);
@@ -145,9 +147,14 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
     var pawn = player.PlayerPawn.Value;
     if (pawn?.IsValid != true) return;
 
-    pawn.VelocityModifier = Config.Speed;
-    pawn.Render = _playerColor;
-    Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+    if (pawn.VelocityModifier < Config.Speed)
+      pawn.VelocityModifier = Config.Speed;
+
+    if (pawn.Render != _playerColor)
+    {
+      pawn.Render = _playerColor;
+      Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+    }
   }
 
   private void ResetPlayer(CCSPlayerController player)
@@ -169,6 +176,8 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
   {
     _roundUses.Clear();
+    _cooldownUntil.Clear();
+    _redbullActive.Clear();
     return HookResult.Continue;
   }
 

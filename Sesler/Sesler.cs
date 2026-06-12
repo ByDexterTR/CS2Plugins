@@ -29,9 +29,9 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.0.8";
+  public override string ModuleVersion => "1.1.1";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Oyuncu ses kontrolü - Bıçak, Silah, Ayak/Yürüme, Oyuncu/Hasar, MVP Müzik";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
   public SeslerConfig Config { get; set; } = new();
 
@@ -496,7 +496,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
   private void ShowMainMenu(CCSPlayerController player)
   {
     var pref = GetPref(player);
-    var menu = new CenterHtmlMenu("<font color='#8899a6' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'> Sesler <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'></font>", this);
+    var menu = new CenterHtmlMenu("<font color='#8899a6' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speaker.png'> Sesler <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speaker.png'></font>", this);
 
     var items = new (string Label, Func<Pref, MuteMode> Get, Action<Pref, MuteMode> Set, bool MvpOnly)[]
     {
@@ -522,7 +522,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
   private void ShowSubMenu(CCSPlayerController player, string label, Func<Pref, MuteMode> get, Action<Pref, MuteMode> set, bool mvpOnly = false)
   {
     var pref = GetPref(player);
-    var menu = new CenterHtmlMenu($"<font color='#8899a6' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'> {label} <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/twitter/408/speaker-high-volume_1f50a.png&w=24&h=24&fit=cover'></font>", this);
+    var menu = new CenterHtmlMenu($"<font color='#8899a6' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speaker.png'> {label} <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speaker.png'></font>", this);
 
     int maxOptions = mvpOnly ? 2 : 4;
     int step = mvpOnly ? 3 : 1;
@@ -585,10 +585,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       Logger.LogError(ex, "[Sesler] OnSound hook error");
       return HookResult.Continue;
     }
-    finally
-    {
-      msg?.Dispose();
-    }
   }
 
   private enum SoundType : byte { None, Knife, Foot, Player }
@@ -649,10 +645,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       Logger.LogError(ex, "[Sesler] OnWeaponSound hook error");
       return HookResult.Continue;
     }
-    finally
-    {
-      um?.Dispose();
-    }
   }
 
   private HookResult OnWeaponEvent(UserMessage um)
@@ -670,10 +662,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     {
       Logger.LogError(ex, "[Sesler] OnWeaponEvent hook error");
       return HookResult.Continue;
-    }
-    finally
-    {
-      um?.Dispose();
     }
   }
 

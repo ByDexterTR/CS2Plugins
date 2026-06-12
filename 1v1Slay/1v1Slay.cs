@@ -1,6 +1,9 @@
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Attributes.Registration;
+using CounterStrikeSharp.API.Modules.Admin;
+using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
@@ -9,25 +12,27 @@ namespace OneVOneSlay;
 
 public class OneVOneSlayConfig : BasePluginConfig
 {
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
-
   [JsonPropertyName("min_players")]
   public int MinPlayers { get; set; } = 3;
 
   [JsonPropertyName("countdown_time")]
   public int CountdownTime { get; set; } = 30;
 
-  [JsonPropertyName("enable_announcements")]
-  public bool EnableAnnouncements { get; set; } = true;
+  [JsonPropertyName("enable_chat_announce")]
+  public bool EnableChatAnnounce { get; set; } = true;
+
+  [JsonPropertyName("enable_hud_announce")]
+  public bool EnableHudAnnounce { get; set; } = true;
 }
 
 public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 {
   public override string ModuleName => "1v1Slay";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.4";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "1v1 durumunda geri sayımlı slay";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   public OneVOneSlayConfig Config { get; set; } = new OneVOneSlayConfig();
 
@@ -46,8 +51,28 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
   {
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
+    RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
     RegisterListener<OnTick>(OnTickHud);
+  }
+  private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
+  {
+    AddTimer(0.1f, () => CheckOneVsOne());
+    return HookResult.Continue;
+  }
+
+  [ConsoleCommand("css_stopslay", "css_stopslay")]
+  [RequiresPermissionsOr("@css/generic", "@css/slay")]
+  public void OnStopSlayCommand(CCSPlayerController? player, CommandInfo info)
+  {
+    if (!_isCountdownActive)
+    {
+      info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["onevsoneslay.not_active"]}");
+      return;
+    }
+
+    StopCountdown();
+    Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["onevsoneslay.stopped", player?.PlayerName ?? "CONSOLE"]}");
   }
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
@@ -70,7 +95,7 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 
   private void OnTickHud()
   {
-    if (_showHud && Config.EnableAnnouncements)
+    if (_showHud && Config.EnableHudAnnounce && _hudHtml.Length > 0)
     {
       foreach (var player in Utilities.GetPlayers())
       {
@@ -124,10 +149,15 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
     _isCountdownActive = true;
     _remainingTime = Config.CountdownTime;
 
-    if (Config.EnableAnnouncements)
+    if (Config.EnableChatAnnounce)
+    {
+      Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["onevsoneslay.countdown_warning", _remainingTime]}");
+    }
+
+    if (Config.EnableHudAnnounce)
     {
       _showHud = true;
-      Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["onevsoneslay.countdown_warning", _remainingTime]}");
+      _hudHtml = BuildHudHtml(_remainingTime);
     }
 
     _countdownTimer = AddTimer(1.0f, () =>
@@ -138,14 +168,14 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 
       if (_remainingTime > 0)
       {
-        if (Config.EnableAnnouncements)
+        if (Config.EnableHudAnnounce)
         {
-          _hudHtml = $"<font color='#ff0000' class='fontSize-m'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/facebook/355/skull_1f480.png&w=24&h=24&fit=cover'> 1v1 Ölüm sayacı: {_remainingTime} saniye</font>";
+          _hudHtml = BuildHudHtml(_remainingTime);
+        }
 
-          if (_remainingTime % 5 == 0 || _remainingTime < 5)
-          {
-            Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["onevsoneslay.countdown_warning", _remainingTime]}");
-          }
+        if (Config.EnableChatAnnounce && (_remainingTime % 5 == 0 || _remainingTime < 5))
+        {
+          Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["onevsoneslay.countdown_warning", _remainingTime]}");
         }
       }
       else
@@ -154,6 +184,11 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
         StopCountdown();
       }
     }, TimerFlags.REPEAT);
+  }
+
+  private static string BuildHudHtml(int remaining)
+  {
+    return $"<font color='#ff0000' class='fontSize-m'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/skull.png'> 1v1 Ölüm sayacı: {remaining} saniye</font>";
   }
 
   private void StopCountdown()
@@ -172,9 +207,9 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
                    (p.Team == CsTeam.Terrorist || p.Team == CsTeam.CounterTerrorist))
         .ToList();
 
-    if (Config.EnableAnnouncements)
+    if (Config.EnableChatAnnounce)
     {
-      Server.PrintToChatAll($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["onevsoneslay.time_up"]}");
+      Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["onevsoneslay.time_up"]}");
     }
 
     foreach (var player in alivePlayers)

@@ -1,4 +1,5 @@
 {
+  "chat_prefix": "[ByDexter]",
   "sustum.in_progress": "{0} is already running!",
   "sustum.started": "{0} started {1}!",
   "sustum.no_active": "No active sustum game!",

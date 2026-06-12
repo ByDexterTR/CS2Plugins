@@ -3,6 +3,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Attributes.Registration;
+using CounterStrikeSharp.API.Modules.Admin;
+using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 using static CounterStrikeSharp.API.Core.Listeners;
@@ -20,9 +24,11 @@ public class MapBlockConfig : BasePluginConfig
 public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 {
 	public override string ModuleName => "MapBlock";
-	public override string ModuleVersion => "1.0.1";
+	public override string ModuleVersion => "1.0.3";
 	public override string ModuleAuthor => "ByDexter";
-	public override string ModuleDescription => "Map Blok";
+	public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
 
 	private const string FenceName = "bydexter_mapblock";
 	private const string SaveFileName = "MapBlock.json";
@@ -65,13 +71,14 @@ public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 		public Vector3 Position { get; }
 		public QAngle Angles { get; }
 	}
-
 	public override void Load(bool hotReload)
 	{
 		LoadPersistedPlacements();
 		RegisterListener<OnServerPrecacheResources>(OnServerPrecacheResources);
+		RegisterListener<OnMapStart>(_ => LoadPersistedPlacements());
 		RegisterEventHandler<EventRoundStart>(OnRoundStart, HookMode.Post);
-		RegisterEventHandler<EventRoundEnd>(OnRoundEnd, HookMode.Post);
+
+		if (hotReload) ApplyPlacements();
 	}
 
 	public static void OnServerPrecacheResources(ResourceManifest resource)
@@ -84,16 +91,26 @@ public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 
 	private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
 	{
-		LoadPersistedPlacements();
-		RemoveActiveEntities();
-		if (ShouldSpawnThisRound()) SpawnSavedPlacementsForCurrentMap();
+		ApplyPlacements();
 		return HookResult.Continue;
 	}
 
-	private HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
+	private void ApplyPlacements()
 	{
 		RemoveActiveEntities();
-		return HookResult.Continue;
+		if (ShouldSpawnThisRound()) SpawnSavedPlacementsForCurrentMap();
+	}
+
+	[ConsoleCommand("css_mapblock_reload", "MapBlock konumlarını JSON'dan yeniden yükler")]
+	[RequiresPermissions("@css/root")]
+	public void OnReloadCommand(CCSPlayerController? player, CommandInfo info)
+	{
+		LoadPersistedPlacements();
+		ApplyPlacements();
+
+		var mapName = GetCurrentMapName();
+		var count = _persistedPlacements.TryGetValue(mapName, out var records) ? records?.Count ?? 0 : 0;
+		info.ReplyToCommand($"{ChatPrefix} {Localizer["mapblock.reloaded", mapName, count]}");
 	}
 
 	private bool ShouldSpawnThisRound()
@@ -168,8 +185,16 @@ public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 		{
 			if (!File.Exists(SaveFilePath))
 			{
-				_persistedPlacements = new Dictionary<string, List<FencePlacementRecord>>(StringComparer.OrdinalIgnoreCase);
-				return;
+				var examplePath = Path.Combine(ModuleDirectory, "MapBlock.example.json");
+				if (File.Exists(examplePath))
+				{
+					File.Copy(examplePath, SaveFilePath);
+				}
+				else
+				{
+					_persistedPlacements = new Dictionary<string, List<FencePlacementRecord>>(StringComparer.OrdinalIgnoreCase);
+					return;
+				}
 			}
 
 			var json = File.ReadAllText(SaveFilePath);

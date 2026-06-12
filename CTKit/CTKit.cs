@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
@@ -17,9 +18,6 @@ public class WeaponConfig
 
 public class CTKitConfig : BasePluginConfig
 {
-  [JsonPropertyName("chat_prefix")]
-  public string ChatPrefix { get; set; } = "[ByDexter]";
-
   [JsonPropertyName("default_primary_weapon")]
   public string DefaultPrimaryWeapon { get; set; } = "weapon_ak47";
 
@@ -52,9 +50,11 @@ public class CTKitConfig : BasePluginConfig
 public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
 {
   public override string ModuleName => "CTKit";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "[JB] CT Weapon Kit Menu";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   public CTKitConfig Config { get; set; } = new CTKitConfig();
 
@@ -69,16 +69,24 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
   public override void Load(bool hotReload)
   {
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
+    RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+  }
+
+  private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+  {
+    var player = @event.Userid;
+    if (player != null)
+    {
+      playerPrimaryWeapon.Remove(player.SteamID);
+      playerSecondaryWeapon.Remove(player.SteamID);
+    }
+    return HookResult.Continue;
   }
 
   private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
   {
     var player = @event.Userid;
     if (player == null || !player.IsValid || player.IsBot || player.TeamNum != 3)
-      return HookResult.Continue;
-
-    var pawn = player.PlayerPawn.Value;
-    if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
       return HookResult.Continue;
 
     var steamId = player.SteamID;
@@ -92,6 +100,10 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
         : Config.DefaultSecondaryWeapon;
 
     if (string.IsNullOrEmpty(primaryWeapon) && string.IsNullOrEmpty(secondaryWeapon))
+      return HookResult.Continue;
+
+    var pawn = player.PlayerPawn.Value;
+    if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
       return HookResult.Continue;
 
     var weaponServices = pawn.WeaponServices;
@@ -127,7 +139,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
 
     if (player.TeamNum != 3)
     {
-      commandInfo.ReplyToCommand($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkit.ct_only"]}");
+      commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.ct_only"]}");
       return;
     }
 
@@ -147,7 +159,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
         ? GetWeaponDisplayName(secondary, false)
         : Localizer["ctkit.not_selected"];
 
-    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'> CT Silah Menü <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'></font>", this);
+    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'> CT Silah Menü <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'></font>", this);
 
     menu.AddMenuOption(Localizer["ctkit.menu_primary", currentPrimary], (p, option) =>
     {
@@ -164,7 +176,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       var sid = p.SteamID;
       playerPrimaryWeapon.Remove(sid);
       playerSecondaryWeapon.Remove(sid);
-      p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkit.kit_reset"]}");
+      p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.kit_reset"]}");
       ShowMainMenu(p);
     });
 
@@ -176,7 +188,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid)
       return;
 
-    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'> CT Silah Menü <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'></font>", this);
+    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'> CT Silah Menü <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'></font>", this);
 
     foreach (var weapon in Config.PrimaryWeapons)
     {
@@ -184,7 +196,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       {
         var steamId = p.SteamID;
         playerPrimaryWeapon[steamId] = weapon.WeaponName;
-        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkit.weapon_set", weapon.DisplayName]}");
+        p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.weapon_set", weapon.DisplayName]}");
         ShowMainMenu(p);
       });
     }
@@ -197,7 +209,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid)
       return;
 
-    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'> CT Silah Menü <img src='https://images.weserv.nl/?url=em-content.zobj.net/source/emoji-one/64/pistol_1f52b.png&w=24&h=24&fit=cover'></font>", this);
+    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'> CT Silah Menü <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'></font>", this);
 
     foreach (var weapon in Config.SecondaryWeapons)
     {
@@ -205,7 +217,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       {
         var steamId = p.SteamID;
         playerSecondaryWeapon[steamId] = weapon.WeaponName;
-        p.PrintToChat($" {CC.Orchid}{Config.ChatPrefix}{CC.Default} {Localizer["ctkit.pistol_set", weapon.DisplayName]}");
+        p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.pistol_set", weapon.DisplayName]}");
         ShowMainMenu(p);
       });
     }

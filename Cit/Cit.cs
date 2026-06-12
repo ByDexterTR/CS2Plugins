@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
@@ -6,16 +7,15 @@ using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.Utils;
-using CS2TraceRay.Class;
-using CS2TraceRay.Struct;
-using CS2TraceRay.Enum;
 
 public class Cit : BasePlugin
 {
   public override string ModuleName => "Cit";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.7";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Çit";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private string ChatPrefix => Localizer["chat_prefix"];
 
   private enum FenceType
   {
@@ -114,19 +114,16 @@ public class Cit : BasePlugin
     if (pawn == null)
       return;
 
-    CGameTrace? trace = TraceRay.TraceShape(
-        player.GetEyePosition()!,
-        pawn.EyeAngles,
-        TraceMask.MaskShot,
-        player
-    );
-
-    if (trace == null || !trace.HasValue || trace.Value.Position.Length() == 0)
+    var hit = NativeTrace.TraceFromEyes(pawn);
+    if (hit == null || hit.Value.Length() == 0)
     {
+      player.PrintToChat(NativeTrace.LastError != null
+        ? $" \x0E{ChatPrefix}\x01 {Localizer["cit.trace_unavailable", NativeTrace.LastError]}"
+        : $" \x0E{ChatPrefix}\x01 {Localizer["cit.no_hit"]}");
       return;
     }
 
-    var spawnPos = trace.Value.Position;
+    var spawnPos = hit.Value;
     var angles = pawn.EyeAngles;
     angles.X = 0;
     angles.Z = 0;
@@ -169,19 +166,13 @@ public class Cit : BasePlugin
     if (pawn == null)
       return;
 
-    CGameTrace? trace = TraceRay.TraceShape(
-        player.GetEyePosition()!,
-        pawn.EyeAngles,
-        TraceMask.MaskShot,
-        player
-    );
-
-    if (trace == null || !trace.HasValue)
+    var hit = NativeTrace.TraceFromEyes(pawn);
+    if (hit == null)
     {
       return;
     }
 
-    var hitPos = trace.Value.Position;
+    var hitPos = hit.Value;
 
     float bestDist2 = float.MaxValue;
     CPhysicsPropOverride? best = null;

@@ -1,0 +1,18 @@
+{
+  "discord.map_changed": "Yeni harita: {0}",
+  "discord.connected": "{0} - {1} sunucuya bağlandı.",
+  "discord.disconnected": "{0} - {1} sunucudan ayrıldı{2}.",
+  "discord.played_for": ", {0} oynadı",
+  "discord.console_command": "CONSOLE: {0} {1}",
+  "discord.player_command": "{0} - {1}: {2} {3}",
+  "discord.team_chat_suffix": " (Takım)",
+  "discord.chat": "{0} - {1}{2}: {3}",
+  "discord.suicide": "Ölen: {0} - {1} | İntihar etti.",
+  "discord.kill": "Ölen: {0} - {1} | Öldüren: {2} - {3} | Silah: {4}",
+  "discord.round_start": "{0}. Raunt başladı | Skor: {1} CT - {2} T | Oyuncu: {3} (Yetkili: {4})",
+  "discord.round_end": "{0}. Raunt bitti | Raunt Süresi: {1} | Kazanan: {2}",
+  "discord.draw": "Berabere",
+  "discord.duration_hours": "{0} saat",
+  "discord.duration_minutes": "{0} dakika",
+  "discord.duration_seconds": "{0} saniye"
+}
