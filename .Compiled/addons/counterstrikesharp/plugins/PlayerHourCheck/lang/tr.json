@@ -1,0 +1,6 @@
+{
+  "chat_prefix": "{Orchid}[ByDexter]",
+  "playerhourcheck.fallback_kick": "Yetersiz oyun saati ({0}/{1} saat).",
+  "playerhourcheck.no_permission": "Bu komutu kullanmak için yetkiniz yok.",
+  "playerhourcheck.reloaded": "PlayerHourCheck: Config yeniden yüklendi, {0} oyuncu yeniden kontrol ediliyor."
+}

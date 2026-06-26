@@ -1,0 +1,23 @@
+{
+  "commandmaker.no_permission": "Bu komutu kullanmak için yetkiniz yok.",
+  "commandmaker.commands_loaded": "CommandMaker: {0} komut yüklendi.",
+  "commandmaker.unknown_type": "Bilinmeyen komut tipi: {0}",
+  "commandmaker.usage_player": "Kullanım: {0} <oyuncu>",
+  "commandmaker.player_not_found": "Oyuncu bulunamadı: {0}",
+  "commandmaker.player_only": "Bu komut sadece oyuncular tarafından kullanılabilir.",
+  "commandmaker.execute_undefined": "Çalıştırılacak komut tanımlanmamış.",
+  "commandmaker.announce": "{0}, {1} komutunu kullandı.",
+  "commandmaker.team_only": "Bu komutu yalnızca {0} takımı kullanabilir.",
+  "commandmaker.alive_only": "Bu komutu yalnızca canlı oyuncular kullanabilir.",
+  "commandmaker.dead_only": "Bu komutu yalnızca ölü oyuncular kullanabilir.",
+  "commandmaker.cooldown_wait": "Bu komutu tekrar kullanmak için {0} saniye beklemelisin.",
+  "commandmaker.arg_number": "Argüman bir sayı olmalıdır.",
+  "commandmaker.arg_min": "Sayı en az {0} olmalıdır.",
+  "commandmaker.arg_max": "Sayı en fazla {0} olabilir.",
+  "commandmaker.arg_word_length": "Kelime uzunluğu en fazla {0} karakter olabilir.",
+  "commandmaker.group_all": "Herkes",
+  "commandmaker.group_ct": "CT Takımı",
+  "commandmaker.group_t": "T Takımı",
+  "commandmaker.group_alive": "Canlılar",
+  "commandmaker.group_dead": "Ölüler"
+}

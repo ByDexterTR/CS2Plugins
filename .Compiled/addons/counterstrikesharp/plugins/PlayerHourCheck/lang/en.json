@@ -1,0 +1,6 @@
+{
+  "chat_prefix": "{Orchid}[ByDexter]",
+  "playerhourcheck.fallback_kick": "Insufficient playtime ({0}/{1} hours).",
+  "playerhourcheck.no_permission": "You do not have permission to use this command.",
+  "playerhourcheck.reloaded": "PlayerHourCheck: Config reloaded, rechecking {0} players."
+}
