@@ -1,12 +1,9 @@
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
-using CounterStrikeSharp.API.Core.Capabilities;
 using CounterStrikeSharp.API.Modules.Commands;
-using MenuManager;
 using static CounterStrikeSharp.API.Core.Listeners;
 using CoreMenuManager = CounterStrikeSharp.API.Modules.Menu.MenuManager;
 
@@ -15,9 +12,9 @@ namespace Speedometer;
 public class Speedometer : BasePlugin
 {
     public override string ModuleName => "Speedometer";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.1";
     public override string ModuleAuthor => "ByDexter";
-    public override string ModuleDescription => "Oyuncunun hizini HUD'da gosterir (!hiz ile ac/kapat)";
+    public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
     private string ChatPrefix => Localizer["chat_prefix"];
 
@@ -37,34 +34,8 @@ public class Speedometer : BasePlugin
     private readonly HashSet<ulong> _savedDisabled = new();
     private readonly object _saveLock = new();
     private bool _lateInitDone;
-    private IMenuApi? _menuApi;
-    private bool _menuBridgeBroken;
 
     private string SavePath => Path.Combine(ModuleDirectory, "Speedometer.json");
-
-    public override void OnAllPluginsLoaded(bool hotReload)
-    {
-        try
-        {
-            InitExternalMenuApi();
-        }
-        catch
-        {
-            _menuBridgeBroken = true;
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private void InitExternalMenuApi()
-    {
-        _menuApi = new PluginCapability<IMenuApi?>("menu:nfcore").Get();
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private bool ExternalMenuOpen(CCSPlayerController player)
-    {
-        return _menuApi != null && _menuApi.HasOpenedMenu(player);
-    }
 
     public override void Load(bool hotReload)
     {
@@ -214,19 +185,6 @@ public class Speedometer : BasePlugin
 
             if (CoreMenuManager.GetActiveMenu(player) != null)
                 continue;
-
-            if (!_menuBridgeBroken)
-            {
-                try
-                {
-                    if (ExternalMenuOpen(player))
-                        continue;
-                }
-                catch
-                {
-                    _menuBridgeBroken = true;
-                }
-            }
 
             var targetPawn = GetDisplayPawn(player);
             if (targetPawn == null)

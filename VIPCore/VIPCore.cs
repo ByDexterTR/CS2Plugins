@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.1";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -51,6 +51,9 @@ public partial class VIPCore : BasePlugin
         {
             if (IsModuleEnabled("PlayerTrail") || IsModuleEnabled("GrenadeTrail") || IsModuleEnabled("BulletTrail"))
                 m.AddResource(TrailBeam.Sprite);
+
+            if (IsModuleEnabled("Thirdperson"))
+                m.AddResource("models/sprays/spray_plane.vmdl");
         });
         RegisterCommands();
     }
@@ -232,11 +235,12 @@ public partial class VIPCore : BasePlugin
     private void PurgeExpired()
     {
         long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        List<ulong> expired;
         lock (_lock)
-        {
-            foreach (var id in _vips.Where(kv => kv.Value.Expires != 0 && kv.Value.Expires <= now).Select(kv => kv.Key).ToList())
-                _vips.Remove(id);
-        }
+            expired = _vips.Where(kv => kv.Value.Expires != 0 && kv.Value.Expires <= now).Select(kv => kv.Key).ToList();
+
+        foreach (var id in expired)
+            RemoveVip(id);
     }
 
     public IEnumerable<VipModule> EnabledModules()

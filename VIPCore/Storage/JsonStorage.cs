@@ -76,6 +76,10 @@ public class JsonStorage : IVipStorage
             var all = LoadVipsUnlocked();
             if (all.Remove(steamId.ToString()))
                 WriteVips(all);
+
+            var settings = LoadSettingsUnlocked();
+            if (settings.Remove(steamId.ToString()))
+                File.WriteAllText(_settingsPath, JsonSerializer.Serialize(settings, Opts));
         }
     }
 

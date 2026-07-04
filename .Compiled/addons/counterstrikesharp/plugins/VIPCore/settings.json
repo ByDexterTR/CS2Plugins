@@ -1,0 +1,22 @@
+{
+  "storage": "json",
+  "menu_type": "wasd",
+  "admin_flag": "@css/root",
+  "commands": {
+    "menu": "css_vip,css_vipmenu",
+    "list_online": "css_vips,css_onlinevip",
+    "list_all": "css_viplist",
+    "addvip": "css_addvip,css_vipadd",
+    "removevip": "css_removevip,css_delvip",
+    "reload": "css_reloadvip,css_vipreload",
+    "tp": "css_tp,css_thirdperson"
+  },
+  "mysql": {
+    "host": "",
+    "port": 3306,
+    "database": "",
+    "user": "",
+    "password": "",
+    "table_prefix": "vip_"
+  }
+}

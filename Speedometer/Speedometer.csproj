@@ -13,10 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Priv\MenuManagerApi\MenuManagerApi.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

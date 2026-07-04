@@ -79,9 +79,9 @@ public class PlayerHourCheckConfig : BasePluginConfig
 public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 {
   public override string ModuleName => "PlayerHourCheck";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
-  public override string ModuleDescription => "Oyuncu saat kontrolü";
+  public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
   private string ChatPrefix => Localizer["chat_prefix"];
 

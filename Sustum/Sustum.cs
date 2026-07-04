@@ -13,7 +13,7 @@ using static CounterStrikeSharp.API.Core.Listeners;
 public class Sustum : BasePlugin
 {
     public override string ModuleName => "Sustum";
-    public override string ModuleVersion => "1.0.5";
+    public override string ModuleVersion => "1.0.6";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -31,7 +31,7 @@ public class Sustum : BasePlugin
 
     public override void Load(bool hotReload)
     {
-        var jsonPath = Path.Combine(ModuleDirectory, "sustum.json");
+        var jsonPath = Path.Combine(ModuleDirectory, "Sustum.json");
         if (File.Exists(jsonPath))
         {
             var json = File.ReadAllText(jsonPath);

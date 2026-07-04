@@ -8,8 +8,7 @@
     ".NETCoreApp,Version=v10.0": {
       "Speedometer/1.0.0": {
         "dependencies": {
-          "CounterStrikeSharp.API": "1.0.369",
-          "MenuManagerApi": "1.0.0"
+          "CounterStrikeSharp.API": "1.0.369"
         },
         "runtime": {
           "Speedometer.dll": {}
@@ -523,17 +522,6 @@
             "fileVersion": "0.19.0.0"
           }
         }
-      },
-      "MenuManagerApi/1.0.0": {
-        "dependencies": {
-          "CounterStrikeSharp.API": "1.0.369"
-        },
-        "runtime": {
-          "MenuManagerApi.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
       }
     }
   },
@@ -822,11 +810,6 @@
       "sha512": "sha512-GlI2o8R8jbZIaE+YX6uA/VoAOH7zIxYeqxDm7jHW2hqUhuB+q19oKold35FkMuv8IZDoCqsTMolaBv2eBLBmrQ==",
       "path": "tomlyn/0.19.0",
       "hashPath": "tomlyn.0.19.0.nupkg.sha512"
-    },
-    "MenuManagerApi/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
     }
   }
 }

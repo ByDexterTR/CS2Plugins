@@ -1,0 +1,7 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "thirdperson.enabled": "Third person view enabled.",
+  "thirdperson.disabled": "Third person view disabled.",
+  "thirdperson.no_permission": "You don't have permission for this command.",
+  "thirdperson.alive_only": "You can only use this command while alive."
+}

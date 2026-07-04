@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
@@ -9,6 +11,20 @@ using CounterStrikeSharp.API.Modules.Timers;
 using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace DiscordLogger;
+
+public enum LogCategory
+{
+  Map,
+  Connect,
+  Command,
+  Chat,
+  Kill,
+  Round,
+  Damage,
+  Grenade,
+  Bomb,
+  Activity
+}
 
 public class DiscordLoggerConfig : BasePluginConfig
 {
@@ -30,6 +46,21 @@ public class DiscordLoggerConfig : BasePluginConfig
   [JsonPropertyName("webhook_round")]
   public string WebhookRound { get; set; } = "";
 
+  [JsonPropertyName("webhook_damage")]
+  public string WebhookDamage { get; set; } = "";
+
+  [JsonPropertyName("webhook_grenade")]
+  public string WebhookGrenade { get; set; } = "";
+
+  [JsonPropertyName("webhook_bomb")]
+  public string WebhookBomb { get; set; } = "";
+
+  [JsonPropertyName("webhook_activity")]
+  public string WebhookActivity { get; set; } = "";
+
+  [JsonPropertyName("log_to_file")]
+  public bool LogToFile { get; set; } = false;
+
   [JsonPropertyName("command_blacklist")]
   public List<string> CommandBlacklist { get; set; } = new()
   {
@@ -46,7 +77,7 @@ public class DiscordLoggerConfig : BasePluginConfig
 public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 {
   public override string ModuleName => "DiscordLogger";
-  public override string ModuleVersion => "1.0.3";
+  public override string ModuleVersion => "1.0.4";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -54,12 +85,15 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
   private readonly Dictionary<string, StringBuilder> _messageBuffers = new();
   private readonly object _bufferLock = new();
+  private readonly List<string> _fileLines = new();
+  private readonly object _fileLock = new();
   private readonly HttpClient _httpClient = new();
   private readonly Dictionary<ulong, DateTime> _playerConnectTime = new();
   private const int MaxDiscordMessageLength = 2000;
   private bool _isSending = false;
   private DateTime _roundStartTime;
   private string _lastMapName = "";
+  private string? _lastMvpRef;
 
   public void OnConfigParsed(DiscordLoggerConfig config) => Config = config;
 
@@ -67,21 +101,110 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
   {
     _httpClient.Timeout = TimeSpan.FromSeconds(10);
 
-    RegisterEventHandler<EventRoundAnnounceMatchStart>(OnMatchStart);
-    RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnect);
-    RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
-    RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
-    RegisterEventHandler<EventRoundStart>(OnRoundStart);
-    RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+    RegisterHandlers();
 
-    RegisterListener<OnPlayerChat>(OnPlayerChatListener);
-
-    AddCommandListener(null, OnCommand, HookMode.Post);
-
-    AddTimer(3.0f, ProcessMessageBuffers, TimerFlags.REPEAT);
+    AddTimer(3.0f, ProcessBuffers, TimerFlags.REPEAT);
 
     _lastMapName = Server.MapName;
     AddTimer(1.0f, InitializePlayerTimes);
+  }
+
+  private string? WebhookFor(LogCategory category) => category switch
+  {
+    LogCategory.Map => Config.WebhookMap,
+    LogCategory.Connect => Config.WebhookConnect,
+    LogCategory.Command => Config.WebhookCommand,
+    LogCategory.Chat => Config.WebhookChat,
+    LogCategory.Kill => Config.WebhookKill,
+    LogCategory.Round => Config.WebhookRound,
+    LogCategory.Damage => Config.WebhookDamage,
+    LogCategory.Grenade => Config.WebhookGrenade,
+    LogCategory.Bomb => Config.WebhookBomb,
+    LogCategory.Activity => Config.WebhookActivity,
+    _ => null
+  };
+
+  private bool IsActive(LogCategory category) =>
+    !string.IsNullOrEmpty(WebhookFor(category)) || Config.LogToFile;
+
+  private void Send(LogCategory category, string message, string? fileOnlySuffix = null)
+  {
+    var webhook = WebhookFor(category);
+    if (!string.IsNullOrEmpty(webhook))
+      AddToBuffer(webhook, message);
+
+    if (Config.LogToFile)
+    {
+      var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{category}] {StripMarkdown(message + (fileOnlySuffix ?? ""))}";
+      lock (_fileLock)
+        _fileLines.Add(line);
+    }
+  }
+
+  private static string StripMarkdown(string message)
+  {
+    message = Regex.Replace(message, @"\[([^\]]+)\]\(<([^)>]+)>\)", "$1 ($2)");
+    return Regex.Replace(message, "[*`]", "");
+  }
+
+  private void RegisterHandlers()
+  {
+    if (IsActive(LogCategory.Map))
+      RegisterEventHandler<EventRoundAnnounceMatchStart>(OnMatchStart);
+
+    if (IsActive(LogCategory.Connect))
+    {
+      RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnect);
+      RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+      RegisterEventHandler<EventPlayerChangename>(OnPlayerChangename);
+    }
+
+    if (IsActive(LogCategory.Command))
+      AddCommandListener(null, OnCommand, HookMode.Post);
+
+    if (IsActive(LogCategory.Chat))
+      RegisterListener<OnPlayerChat>(OnPlayerChatListener);
+
+    if (IsActive(LogCategory.Kill))
+      RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
+
+    if (IsActive(LogCategory.Round))
+    {
+      RegisterEventHandler<EventRoundStart>(OnRoundStart);
+      RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+      RegisterEventHandler<EventRoundMvp>(OnRoundMvp);
+    }
+
+    if (IsActive(LogCategory.Damage))
+      RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
+
+    if (IsActive(LogCategory.Grenade))
+    {
+      RegisterEventHandler<EventGrenadeThrown>(OnGrenadeThrown);
+      RegisterEventHandler<EventHegrenadeDetonate>(OnHegrenadeDetonate);
+      RegisterEventHandler<EventFlashbangDetonate>(OnFlashbangDetonate);
+      RegisterEventHandler<EventPlayerBlind>(OnPlayerBlind);
+      RegisterEventHandler<EventSmokegrenadeDetonate>(OnSmokegrenadeDetonate);
+      RegisterEventHandler<EventSmokegrenadeExpired>(OnSmokegrenadeExpired);
+      RegisterEventHandler<EventMolotovDetonate>(OnMolotovDetonate);
+      RegisterEventHandler<EventDecoyDetonate>(OnDecoyDetonate);
+    }
+
+    if (IsActive(LogCategory.Bomb))
+    {
+      RegisterEventHandler<EventBombPlanted>(OnBombPlanted);
+      RegisterEventHandler<EventBombDefused>(OnBombDefused);
+      RegisterEventHandler<EventBombExploded>(OnBombExploded);
+      RegisterEventHandler<EventBombDropped>(OnBombDropped);
+      RegisterEventHandler<EventBombPickup>(OnBombPickup);
+    }
+
+    if (IsActive(LogCategory.Activity))
+    {
+      RegisterEventHandler<EventPlayerPing>(OnPlayerPing);
+      RegisterEventHandler<EventWeaponZoom>(OnWeaponZoom);
+      RegisterEventHandler<EventItemPurchase>(OnItemPurchase);
+    }
   }
 
   private void InitializePlayerTimes()
@@ -92,16 +215,64 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     }
   }
 
+  private static bool IsRealPlayer(CCSPlayerController? player) =>
+    player != null && player.IsValid && !player.IsBot && !player.IsHLTV;
+
+  private static string PlayerRef(CCSPlayerController? player)
+  {
+    if (player == null || !player.IsValid)
+      return "-";
+
+    if (player.IsBot)
+      return $"**{player.PlayerName} (BOT)**";
+
+    return $"[**{player.PlayerName}**](<https://steamcommunity.com/profiles/{player.SteamID}>)";
+  }
+
+  private static string CleanWeapon(string? weapon)
+  {
+    if (string.IsNullOrEmpty(weapon))
+      return "-";
+    return weapon.StartsWith("weapon_") ? weapon[7..] : weapon;
+  }
+
+  private static string Coord(float x, float y, float z) =>
+    string.Create(CultureInfo.InvariantCulture, $"({x:F0}, {y:F0}, {z:F0})");
+
+  private string HitgroupName(int hitgroup) => hitgroup switch
+  {
+    1 => Localizer["discord.hitgroup_head"],
+    2 => Localizer["discord.hitgroup_chest"],
+    3 => Localizer["discord.hitgroup_stomach"],
+    4 => Localizer["discord.hitgroup_leftarm"],
+    5 => Localizer["discord.hitgroup_rightarm"],
+    6 => Localizer["discord.hitgroup_leftleg"],
+    7 => Localizer["discord.hitgroup_rightleg"],
+    8 => Localizer["discord.hitgroup_neck"],
+    10 => Localizer["discord.hitgroup_gear"],
+    _ => Localizer["discord.hitgroup_generic"]
+  };
+
+  private string RoundEndReason(int reason, string message)
+  {
+    string key = $"discord.round_reason_{reason}";
+    string localized = Localizer[key];
+    if (localized != key)
+      return localized;
+
+    return string.IsNullOrEmpty(message) ? reason.ToString() : message.Replace("#SFUI_Notice_", "");
+  }
+
   private HookResult OnMatchStart(EventRoundAnnounceMatchStart @event, GameEventInfo info)
   {
-    if (string.IsNullOrEmpty(Config.WebhookMap))
+    if (!IsActive(LogCategory.Map))
       return HookResult.Continue;
 
     var currentMap = Server.MapName;
     if (!string.IsNullOrEmpty(currentMap) && currentMap != _lastMapName)
     {
       _lastMapName = currentMap;
-      AddToBuffer(Config.WebhookMap, $"{GetTimestampPrefix()}``{Localizer["discord.map_changed", currentMap]}``");
+      Send(LogCategory.Map, Localizer["discord.map_changed", currentMap]);
     }
 
     return HookResult.Continue;
@@ -109,52 +280,58 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
   private HookResult OnPlayerConnect(EventPlayerConnectFull @event, GameEventInfo info)
   {
-    if (string.IsNullOrEmpty(Config.WebhookConnect))
+    if (!IsActive(LogCategory.Connect))
       return HookResult.Continue;
 
     var player = @event.Userid;
-    if (player == null || !player.IsValid || player.IsBot)
+    if (!IsRealPlayer(player))
       return HookResult.Continue;
 
-    _playerConnectTime[player.SteamID] = DateTime.UtcNow;
-
-    var steamId = player.IsBot ? "BOT" : player.SteamID.ToString();
-    AddToBuffer(Config.WebhookConnect, $"{GetTimestampPrefix()}``{Localizer["discord.connected", steamId, player.PlayerName]}``");
+    _playerConnectTime[player!.SteamID] = DateTime.UtcNow;
+    Send(LogCategory.Connect, Localizer["discord.connected", PlayerRef(player)]);
 
     return HookResult.Continue;
   }
 
   private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
   {
-    if (string.IsNullOrEmpty(Config.WebhookConnect))
+    if (!IsActive(LogCategory.Connect))
       return HookResult.Continue;
 
     var player = @event.Userid;
-    if (player == null || !player.IsValid || player.IsBot)
+    if (!IsRealPlayer(player))
       return HookResult.Continue;
 
-    var steamId = player.IsBot ? "BOT" : player.SteamID.ToString();
-
-    var playTimeText = "";
-    if (_playerConnectTime.TryGetValue(player.SteamID, out var connectTime))
+    string? playTimeSuffix = null;
+    if (_playerConnectTime.TryGetValue(player!.SteamID, out var connectTime))
     {
-      var duration = DateTime.UtcNow - connectTime;
-      var totalSeconds = (int)duration.TotalSeconds;
+      var totalSeconds = (int)(DateTime.UtcNow - connectTime).TotalSeconds;
       if (totalSeconds > 0)
-      {
-        playTimeText = Localizer["discord.played_for", FormatPlayTime(totalSeconds)];
-      }
+        playTimeSuffix = Localizer["discord.played_for", FormatPlayTime(totalSeconds)];
       _playerConnectTime.Remove(player.SteamID);
     }
 
-    AddToBuffer(Config.WebhookConnect, $"{GetTimestampPrefix()}``{Localizer["discord.disconnected", steamId, player.PlayerName, playTimeText]}``");
+    Send(LogCategory.Connect, Localizer["discord.disconnected", PlayerRef(player)], playTimeSuffix);
 
+    return HookResult.Continue;
+  }
+
+  private HookResult OnPlayerChangename(EventPlayerChangename @event, GameEventInfo info)
+  {
+    if (!IsActive(LogCategory.Connect))
+      return HookResult.Continue;
+
+    var player = @event.Userid;
+    if (!IsRealPlayer(player))
+      return HookResult.Continue;
+
+    Send(LogCategory.Connect, Localizer["discord.name_changed", PlayerRef(player), @event.Oldname, @event.Newname]);
     return HookResult.Continue;
   }
 
   private HookResult OnCommand(CCSPlayerController? player, CommandInfo commandInfo)
   {
-    if (string.IsNullOrEmpty(Config.WebhookCommand))
+    if (!IsActive(LogCategory.Command))
       return HookResult.Continue;
 
     var command = commandInfo.GetArg(0);
@@ -170,15 +347,14 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
     if (player == null)
     {
-      AddToBuffer(Config.WebhookCommand, $"{GetTimestampPrefix()}``{Localizer["discord.console_command", command, args]}``");
+      Send(LogCategory.Command, Localizer["discord.console_command", command, args]);
       return HookResult.Continue;
     }
 
     if (!player.IsValid || player.IsBot)
       return HookResult.Continue;
 
-    var steamId = player.SteamID.ToString();
-    AddToBuffer(Config.WebhookCommand, $"{GetTimestampPrefix()}``{Localizer["discord.player_command", steamId, player.PlayerName, command, args]}``");
+    Send(LogCategory.Command, Localizer["discord.player_command", PlayerRef(player), command, args]);
 
     return HookResult.Continue;
   }
@@ -199,56 +375,227 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
   private void OnPlayerChatListener(CCSPlayerController player, string text, bool teamChat)
   {
-    if (string.IsNullOrEmpty(Config.WebhookChat))
+    if (!IsActive(LogCategory.Chat))
       return;
 
-    if (string.IsNullOrEmpty(text))
-      return;
-
-    if (!player.IsValid || player.IsBot)
+    if (string.IsNullOrEmpty(text) || !player.IsValid || player.IsBot)
       return;
 
     if (IsBlacklisted(text, Config.ChatBlacklist))
       return;
 
-    var steamId = player.SteamID.ToString();
     var chatType = teamChat ? Localizer["discord.team_chat_suffix"].Value : "";
-    AddToBuffer(Config.WebhookChat, $"{GetTimestampPrefix()}``{Localizer["discord.chat", steamId, player.PlayerName, chatType, text]}``");
+    Send(LogCategory.Chat, Localizer["discord.chat", PlayerRef(player), chatType, text]);
   }
 
   private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
   {
-    if (string.IsNullOrEmpty(Config.WebhookKill))
+    if (!IsActive(LogCategory.Kill))
       return HookResult.Continue;
 
     var victim = @event.Userid;
     var attacker = @event.Attacker;
-    var weapon = @event.Weapon;
 
     if (victim == null || !victim.IsValid)
       return HookResult.Continue;
 
-    var victimSteamId = victim.IsBot ? "BOT" : victim.SteamID.ToString();
-
-    if (attacker == null || !attacker.IsValid || attacker.SteamID == victim.SteamID)
+    if (attacker == null || !attacker.IsValid || attacker.Slot == victim.Slot)
     {
-      if (victim.IsValid)
-      {
-        AddToBuffer(Config.WebhookKill, $"{GetTimestampPrefix()}``{Localizer["discord.suicide", victimSteamId, victim.PlayerName]}``");
-      }
-    }
-    else
-    {
-      var attackerSteamId = attacker.IsBot ? "BOT" : attacker.SteamID.ToString();
-      AddToBuffer(Config.WebhookKill, $"{GetTimestampPrefix()}``{Localizer["discord.kill", victimSteamId, victim.PlayerName, attackerSteamId, attacker.PlayerName, weapon]}``");
+      Send(LogCategory.Kill, Localizer["discord.suicide", PlayerRef(victim)]);
+      return HookResult.Continue;
     }
 
+    var sb = new StringBuilder();
+    sb.Append(Localizer["discord.kill", PlayerRef(victim), PlayerRef(attacker), CleanWeapon(@event.Weapon)].Value);
+
+    sb.Append(Localizer["discord.kill_hitgroup", HitgroupName(@event.Hitgroup)].Value);
+    sb.Append(Localizer["discord.kill_damage", @event.DmgHealth, @event.DmgArmor].Value);
+    sb.Append(Localizer["discord.kill_distance", @event.Distance.ToString("F1", CultureInfo.InvariantCulture)].Value);
+
+    var tags = new List<string>();
+    if (@event.Headshot)
+      tags.Add(Localizer["discord.tag_headshot"]);
+    if (@event.Noscope)
+      tags.Add(Localizer["discord.tag_noscope"]);
+    if (@event.Thrusmoke)
+      tags.Add(Localizer["discord.tag_thrusmoke"]);
+    if (@event.Attackerblind)
+      tags.Add(Localizer["discord.tag_attackerblind"]);
+    if (@event.Attackerinair)
+      tags.Add(Localizer["discord.tag_attackerinair"]);
+    if (@event.Penetrated > 0)
+      tags.Add(Localizer["discord.tag_penetrated", @event.Penetrated]);
+
+    if (tags.Count > 0)
+      sb.Append(Localizer["discord.kill_tags", string.Join(", ", tags)].Value);
+
+    var assister = @event.Assister;
+    if (assister != null && assister.IsValid)
+    {
+      var flashSuffix = @event.Assistedflash ? Localizer["discord.kill_assist_flash"].Value : "";
+      sb.Append(Localizer["discord.kill_assist", PlayerRef(assister), flashSuffix].Value);
+    }
+
+    Send(LogCategory.Kill, sb.ToString());
+
+    return HookResult.Continue;
+  }
+
+  private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
+  {
+    if (!IsActive(LogCategory.Damage))
+      return HookResult.Continue;
+
+    var victim = @event.Userid;
+    var attacker = @event.Attacker;
+
+    if (victim == null || !victim.IsValid)
+      return HookResult.Continue;
+
+    if (attacker == null || !attacker.IsValid || attacker.Slot == victim.Slot)
+      return HookResult.Continue;
+
+    Send(LogCategory.Damage, Localizer["discord.hurt",
+      PlayerRef(victim), PlayerRef(attacker), CleanWeapon(@event.Weapon), HitgroupName(@event.Hitgroup),
+      @event.DmgHealth, @event.DmgArmor, @event.Health, @event.Armor]);
+
+    return HookResult.Continue;
+  }
+
+  private HookResult OnPlayerBlind(EventPlayerBlind @event, GameEventInfo info)
+  {
+    if (!IsActive(LogCategory.Grenade))
+      return HookResult.Continue;
+
+    var victim = @event.Userid;
+    if (victim == null || !victim.IsValid)
+      return HookResult.Continue;
+
+    if (@event.BlindDuration <= 0f)
+      return HookResult.Continue;
+
+    var duration = @event.BlindDuration.ToString("F1", CultureInfo.InvariantCulture);
+    Send(LogCategory.Grenade, Localizer["discord.blind", PlayerRef(victim), PlayerRef(@event.Attacker), duration]);
+
+    return HookResult.Continue;
+  }
+
+  private HookResult OnGrenadeThrown(EventGrenadeThrown @event, GameEventInfo info)
+  {
+    if (!IsActive(LogCategory.Grenade))
+      return HookResult.Continue;
+
+    var player = @event.Userid;
+    if (player == null || !player.IsValid)
+      return HookResult.Continue;
+
+    Send(LogCategory.Grenade, Localizer["discord.grenade_thrown", PlayerRef(player), CleanWeapon(@event.Weapon)]);
+    return HookResult.Continue;
+  }
+
+  private HookResult OnHegrenadeDetonate(EventHegrenadeDetonate @event, GameEventInfo info) =>
+    LogDetonate("discord.he_detonate", @event.Userid, @event.X, @event.Y, @event.Z);
+
+  private HookResult OnFlashbangDetonate(EventFlashbangDetonate @event, GameEventInfo info) =>
+    LogDetonate("discord.flash_detonate", @event.Userid, @event.X, @event.Y, @event.Z);
+
+  private HookResult OnSmokegrenadeDetonate(EventSmokegrenadeDetonate @event, GameEventInfo info) =>
+    LogDetonate("discord.smoke_detonate", @event.Userid, @event.X, @event.Y, @event.Z);
+
+  private HookResult OnSmokegrenadeExpired(EventSmokegrenadeExpired @event, GameEventInfo info) =>
+    LogDetonate("discord.smoke_expired", @event.Userid, @event.X, @event.Y, @event.Z);
+
+  private HookResult OnMolotovDetonate(EventMolotovDetonate @event, GameEventInfo info) =>
+    LogDetonate("discord.molotov_detonate", @event.Userid, @event.X, @event.Y, @event.Z);
+
+  private HookResult OnDecoyDetonate(EventDecoyDetonate @event, GameEventInfo info) =>
+    LogDetonate("discord.decoy_detonate", @event.Userid, @event.X, @event.Y, @event.Z);
+
+  private HookResult LogDetonate(string key, CCSPlayerController? player, float x, float y, float z)
+  {
+    if (!IsActive(LogCategory.Grenade))
+      return HookResult.Continue;
+
+    Send(LogCategory.Grenade, Localizer[key, PlayerRef(player), Coord(x, y, z)]);
+    return HookResult.Continue;
+  }
+
+  private HookResult OnBombPlanted(EventBombPlanted @event, GameEventInfo info) =>
+    LogBomb("discord.bomb_planted", @event.Userid);
+
+  private HookResult OnBombDefused(EventBombDefused @event, GameEventInfo info) =>
+    LogBomb("discord.bomb_defused", @event.Userid);
+
+  private HookResult OnBombExploded(EventBombExploded @event, GameEventInfo info) =>
+    LogBomb("discord.bomb_exploded", @event.Userid);
+
+  private HookResult OnBombDropped(EventBombDropped @event, GameEventInfo info) =>
+    LogBomb("discord.bomb_dropped", @event.Userid);
+
+  private HookResult OnBombPickup(EventBombPickup @event, GameEventInfo info) =>
+    LogBomb("discord.bomb_pickup", @event.Userid);
+
+  private HookResult LogBomb(string key, CCSPlayerController? player)
+  {
+    if (!IsActive(LogCategory.Bomb))
+      return HookResult.Continue;
+
+    Send(LogCategory.Bomb, Localizer[key, PlayerRef(player)]);
+    return HookResult.Continue;
+  }
+
+  private HookResult OnPlayerPing(EventPlayerPing @event, GameEventInfo info)
+  {
+    if (!IsActive(LogCategory.Activity))
+      return HookResult.Continue;
+
+    var player = @event.Userid;
+    if (player == null || !player.IsValid)
+      return HookResult.Continue;
+
+    Send(LogCategory.Activity, Localizer["discord.player_ping", PlayerRef(player), Coord(@event.X, @event.Y, @event.Z)]);
+    return HookResult.Continue;
+  }
+
+  private HookResult OnWeaponZoom(EventWeaponZoom @event, GameEventInfo info)
+  {
+    if (!IsActive(LogCategory.Activity))
+      return HookResult.Continue;
+
+    var player = @event.Userid;
+    if (player == null || !player.IsValid || player.IsBot)
+      return HookResult.Continue;
+
+    Send(LogCategory.Activity, Localizer["discord.weapon_zoom", PlayerRef(player)]);
+    return HookResult.Continue;
+  }
+
+  private HookResult OnItemPurchase(EventItemPurchase @event, GameEventInfo info)
+  {
+    if (!IsActive(LogCategory.Activity))
+      return HookResult.Continue;
+
+    var player = @event.Userid;
+    if (player == null || !player.IsValid)
+      return HookResult.Continue;
+
+    Send(LogCategory.Activity, Localizer["discord.item_purchase", PlayerRef(player), CleanWeapon(@event.Weapon)]);
+    return HookResult.Continue;
+  }
+
+  private HookResult OnRoundMvp(EventRoundMvp @event, GameEventInfo info)
+  {
+    var mvp = @event.Userid;
+    if (mvp != null && mvp.IsValid)
+      _lastMvpRef = PlayerRef(mvp);
     return HookResult.Continue;
   }
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
   {
-    if (string.IsNullOrEmpty(Config.WebhookRound))
+    _lastMvpRef = null;
+
+    if (!IsActive(LogCategory.Round))
       return HookResult.Continue;
 
     var gameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
@@ -264,8 +611,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     var ctScore = 0;
     var tScore = 0;
 
-    var teams = Utilities.FindAllEntitiesByDesignerName<CTeam>("cs_team_manager");
-    foreach (var team in teams)
+    foreach (var team in Utilities.FindAllEntitiesByDesignerName<CTeam>("cs_team_manager"))
     {
       if (team.TeamNum == 3)
         ctScore = team.Score;
@@ -275,23 +621,21 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
     var roundNumber = gameRules?.GameRules?.TotalRoundsPlayed + 1 ?? 1;
 
-    AddToBuffer(Config.WebhookRound, $"{GetTimestampPrefix()}``{Localizer["discord.round_start", roundNumber, ctScore, tScore, playerCount, adminCount]}``");
+    Send(LogCategory.Round, Localizer["discord.round_start", roundNumber, ctScore, tScore, playerCount, adminCount]);
 
     return HookResult.Continue;
   }
 
   private HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
   {
-    if (string.IsNullOrEmpty(Config.WebhookRound))
+    if (!IsActive(LogCategory.Round))
       return HookResult.Continue;
 
     var gameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
     if (gameRules?.GameRules?.WarmupPeriod == true)
       return HookResult.Continue;
 
-    var duration = DateTime.UtcNow - _roundStartTime;
-    var totalSeconds = (int)duration.TotalSeconds;
-    var durationText = FormatPlayTime(totalSeconds);
+    var durationText = FormatPlayTime((int)(DateTime.UtcNow - _roundStartTime).TotalSeconds);
 
     var winner = @event.Winner switch
     {
@@ -301,8 +645,12 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     };
 
     var roundNumber = gameRules?.GameRules?.TotalRoundsPlayed ?? 1;
+    var mvp = _lastMvpRef ?? "-";
+    var reason = RoundEndReason(@event.Reason, @event.Message);
 
-    AddToBuffer(Config.WebhookRound, $"{GetTimestampPrefix()}``{Localizer["discord.round_end", roundNumber, durationText, winner]}``");
+    Send(LogCategory.Round,
+      Localizer["discord.round_end", roundNumber, winner, reason, mvp, @event.PlayerCount],
+      Localizer["discord.round_duration", durationText]);
 
     return HookResult.Continue;
   }
@@ -335,11 +683,6 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     return string.Join(" ", parts);
   }
 
-  private static string GetTimestampPrefix()
-  {
-    return $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:f> ";
-  }
-
   private void AddToBuffer(string webhook, string content)
   {
     if (string.IsNullOrEmpty(webhook))
@@ -369,8 +712,10 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
       Task.Run(() => SendToDiscordAsync(webhook, messagesToSend));
   }
 
-  private void ProcessMessageBuffers()
+  private void ProcessBuffers()
   {
+    FlushFileLines();
+
     if (_isSending)
       return;
 
@@ -406,6 +751,34 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     });
   }
 
+  private void FlushFileLines()
+  {
+    List<string> lines;
+    lock (_fileLock)
+    {
+      if (_fileLines.Count == 0)
+        return;
+      lines = new List<string>(_fileLines);
+      _fileLines.Clear();
+    }
+
+    var logDir = Path.Combine(ModuleDirectory, "logs");
+    var logFile = Path.Combine(logDir, $"DiscordLogger-{DateTime.Now:yyyy-MM-dd}.log");
+
+    Task.Run(() =>
+    {
+      try
+      {
+        Directory.CreateDirectory(logDir);
+        File.AppendAllLines(logFile, lines);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[DiscordLogger] Dosya logu yazılamadı: {ex.Message}");
+      }
+    });
+  }
+
   private async Task SendToDiscordAsync(string webhook, string content)
   {
     try
@@ -432,6 +805,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
   public override void Unload(bool hotReload)
   {
+    FlushFileLines();
     _httpClient.Dispose();
   }
 }

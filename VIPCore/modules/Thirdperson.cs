@@ -32,9 +32,24 @@ public class Thirdperson : VipModule
                 Disable(slot);
             return HookResult.Continue;
         });
+        Core.RegisterEventHandler<EventRoundStart>((_, _) =>
+        {
+            DisableAll();
+            return HookResult.Continue;
+        });
+        Core.RegisterEventHandler<EventRoundEnd>((_, _) =>
+        {
+            DisableAll();
+            return HookResult.Continue;
+        });
     }
 
     public override void OnUnload()
+    {
+        DisableAll();
+    }
+
+    private void DisableAll()
     {
         for (int slot = 0; slot < 64; slot++)
             if (_cameras[slot] != null)
@@ -122,6 +137,12 @@ public class Thirdperson : VipModule
             var player = Utilities.GetPlayerFromSlot(slot);
             var pawn = player?.PlayerPawn.Value;
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+            {
+                Disable(slot);
+                continue;
+            }
+
+            if (!Granted(player))
             {
                 Disable(slot);
                 continue;
