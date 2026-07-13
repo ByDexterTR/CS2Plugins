@@ -6,26 +6,26 @@ namespace VIPCore;
 
 public class BuyTeamWeapon : VipModule
 {
-    private static readonly Dictionary<string, (string Entity, int Team)> Weapons = new()
+    private static readonly Dictionary<string, (string Entity, int Team, int Price)> Weapons = new()
     {
-        ["galil"] = ("weapon_galilar", 3),
-        ["ak47"] = ("weapon_ak47", 3),
-        ["sg553"] = ("weapon_sg556", 3),
-        ["glock"] = ("weapon_glock", 3),
-        ["mac10"] = ("weapon_mac10", 3),
-        ["tec9"] = ("weapon_tec9", 3),
-        ["sawedoff"] = ("weapon_sawedoff", 3),
-        ["g3sg1"] = ("weapon_g3sg1", 3),
-        ["p2000"] = ("weapon_hkp2000", 2),
-        ["mag7"] = ("weapon_mag7", 2),
-        ["fiveseven"] = ("weapon_fiveseven", 2),
-        ["famas"] = ("weapon_famas", 2),
-        ["m4a1"] = ("weapon_m4a1_silencer", 2),
-        ["m4a4"] = ("weapon_m4a1", 2),
-        ["aug"] = ("weapon_aug", 2),
-        ["scar20"] = ("weapon_scar20", 2),
-        ["mp9"] = ("weapon_mp9", 2),
-        ["usp"] = ("weapon_usp_silencer", 2)
+        ["galil"] = ("weapon_galilar", 3, 1800),
+        ["ak47"] = ("weapon_ak47", 3, 2700),
+        ["sg553"] = ("weapon_sg556", 3, 3000),
+        ["glock"] = ("weapon_glock", 3, 200),
+        ["mac10"] = ("weapon_mac10", 3, 1050),
+        ["tec9"] = ("weapon_tec9", 3, 500),
+        ["sawedoff"] = ("weapon_sawedoff", 3, 1100),
+        ["g3sg1"] = ("weapon_g3sg1", 3, 5000),
+        ["p2000"] = ("weapon_hkp2000", 2, 200),
+        ["mag7"] = ("weapon_mag7", 2, 1300),
+        ["fiveseven"] = ("weapon_fiveseven", 2, 500),
+        ["famas"] = ("weapon_famas", 2, 1950),
+        ["m4a1"] = ("weapon_m4a1_silencer", 2, 2900),
+        ["m4a4"] = ("weapon_m4a1", 2, 2900),
+        ["aug"] = ("weapon_aug", 2, 3300),
+        ["scar20"] = ("weapon_scar20", 2, 5000),
+        ["mp9"] = ("weapon_mp9", 2, 1250),
+        ["usp"] = ("weapon_usp_silencer", 2, 200)
     };
 
     public override string Name => "BuyTeamWeapon";
@@ -37,7 +37,7 @@ public class BuyTeamWeapon : VipModule
         foreach (var key in Weapons.Keys)
         {
             string cmd = key;
-            Core.AddCommand($"css_{cmd}", "Karsi takim silahi alir", (player, info) => Buy(player, cmd, info));
+            Core.RegisterAliasedCommand(Core.BuyCommandNames(cmd), (player, info) => Buy(player, cmd, info));
         }
     }
 
@@ -52,7 +52,7 @@ public class BuyTeamWeapon : VipModule
             return;
         }
 
-        var (entity, team) = Weapons[cmd];
+        var (entity, team, price) = Weapons[cmd];
         if (player.TeamNum != team)
         {
             Reply(info, Core.Localizer["vip.buy_wrong_team"]);
@@ -74,8 +74,21 @@ public class BuyTeamWeapon : VipModule
         if (!IsAlive(player))
             return;
 
+        var money = player.InGameMoneyServices;
+        if (money == null)
+            return;
+
+        if (money.Account < price)
+        {
+            Reply(info, Core.Localizer["vip.buy_no_money", price]);
+            return;
+        }
+
+        money.Account -= price;
+        Utilities.SetStateChanged(player, "CCSPlayerController", "m_pInGameMoneyServices");
+
         player.GiveNamedItem(entity);
-        Reply(info, Core.Localizer["vip.buy_given", cmd]);
+        Reply(info, Core.Localizer["vip.buy_given", cmd, price]);
     }
 
     private void Reply(CommandInfo info, string message) =>

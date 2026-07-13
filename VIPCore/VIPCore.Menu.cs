@@ -64,8 +64,8 @@ public partial class VIPCore
         foreach (var option in options)
         {
             var opt = option;
-            string mark = opt.Value == current ? " *" : "";
-            items.Add(($"{opt.Display}{mark}", p =>
+            string mark = opt.Value == current ? $"{CC.Green}{opt.Display} *{CC.Default}" : opt.Display;
+            items.Add((mark, p =>
             {
                 SetSetting(p, module.Name, opt.Value);
                 module.OnSelect(p, opt.Value);
@@ -89,7 +89,7 @@ public partial class VIPCore
             return Localizer["vip.option_on"];
 
         var match = module.SelectOptions(player).FirstOrDefault(o => o.Value == value);
-        return match?.Display ?? value;
+        return $"{CC.Green}{match?.Display ?? value}{CC.Default}";
     }
 
     private void OpenMenu(CCSPlayerController player, string title,

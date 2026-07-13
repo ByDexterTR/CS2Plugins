@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
@@ -6,9 +7,7 @@ using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API;
 using Microsoft.Extensions.Logging;
-using Microsoft.Data.Sqlite;
 using MySqlConnector;
-using Dapper;
 using System.Collections.Concurrent;
 
 public enum MuteMode : byte { None, Enemy, Team, All }
@@ -17,7 +16,7 @@ public class SeslerConfig : BasePluginConfig
 {
   public Dictionary<string, string> Database { get; set; } = new Dictionary<string, string>()
   {
-    { "provider", "sqlite" }, // "mysql" - "sqlite"
+    { "provider", "json" }, // "mysql" - "json"
     { "host", "localhost" },
     { "name", "bydexter_sesler" },
     { "port", "3306" },
@@ -29,7 +28,7 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.1.1";
+  public override string ModuleVersion => "1.1.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -37,10 +36,10 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   private readonly ConcurrentDictionary<ulong, Pref> _prefs = new();
   private string _dbConnectionString = "";
-  private bool _usingSqlite = false;
-  private bool _databaseInitialized = false;
-  private readonly object _dbLock = new();
-  private readonly List<Task> _pendingSaves = new();
+  private bool _useMySql = false;
+  private readonly object _ioLock = new();
+  private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
+  private string JsonPath => Path.Combine(ModuleDirectory, "players.json");
 
   private static readonly string[] ModeColors = { "green", "orange", "lightblue", "red" };
 
@@ -60,32 +59,16 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   public override void Load(bool hotReload)
   {
-    var provider = Config.Database.TryGetValue("provider", out var p) ? p.ToLower() : "sqlite";
+    var provider = Config.Database.TryGetValue("provider", out var p) ? p.ToLower() : "json";
 
-    if (provider == "mysql")
-    {
-      if (!TryLoadMySQL())
-      {
-        Logger.LogWarning("[Sesler] MySQL yüklenemedi, SQLite'a geçiliyor");
-        if (!TryLoadSQLite())
-        {
-          throw new Exception("[Sesler] Hiçbir veritabanı yüklenemedi! Eklenti çalışamıyor.");
-        }
-      }
-    }
+    _useMySql = provider == "mysql" && TryInitMySql();
+    if (provider == "mysql" && !_useMySql)
+      Logger.LogWarning("[Sesler] MySQL baglantisi basarisiz, JSON'a dusuluyor.");
+
+    if (_useMySql)
+      LoadAllFromMySql();
     else
-    {
-      if (!TryLoadSQLite())
-      {
-        Logger.LogWarning("[Sesler] SQLite yüklenemedi, MySQL'e geçiliyor");
-        if (!TryLoadMySQL())
-        {
-          throw new Exception("[Sesler] Hiçbir veritabanı yüklenemedi! Eklenti çalışamıyor.");
-        }
-      }
-    }
-
-    InitializeDatabase();
+      LoadJsonPrefs();
 
     HookUserMessage(208, OnSound, HookMode.Pre);
     HookUserMessage(369, OnWeaponSound, HookMode.Pre);
@@ -95,20 +78,59 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
   }
 
-  private bool TryLoadMySQL()
+  public override void Unload(bool hotReload)
+  {
+    UnhookUserMessage(208, OnSound, HookMode.Pre);
+    UnhookUserMessage(369, OnWeaponSound, HookMode.Pre);
+    UnhookUserMessage(452, OnWeaponEvent, HookMode.Pre);
+
+    if (_useMySql)
+    {
+      var tasks = _prefs.Select(kvp => SaveToMySqlAsync(kvp.Key, kvp.Value)).ToArray();
+      Task.WaitAll(tasks, TimeSpan.FromSeconds(10));
+    }
+    else
+    {
+      WriteJsonPrefs();
+    }
+  }
+
+  private bool TryInitMySql()
   {
     try
     {
-      _usingSqlite = false;
+      var dbName = Config.Database["name"];
       var builder = new MySqlConnectionStringBuilder
       {
         Server = Config.Database["host"],
-        Database = Config.Database["name"],
+        Database = dbName,
         UserID = Config.Database["user"],
         Password = Config.Database["password"],
-        Port = uint.Parse(Config.Database["port"])
+        Port = uint.Parse(Config.Database["port"]),
+        Pooling = true
       };
       _dbConnectionString = builder.ToString();
+
+      var builderWithoutDb = new MySqlConnectionStringBuilder(_dbConnectionString) { Database = "" };
+      using (var conn = new MySqlConnection(builderWithoutDb.ToString()))
+      {
+        conn.Open();
+        Exec(conn, $"CREATE DATABASE IF NOT EXISTS `{dbName}`");
+      }
+
+      using (var conn = new MySqlConnection(_dbConnectionString))
+      {
+        conn.Open();
+        Exec(conn, @"CREATE TABLE IF NOT EXISTS `player_preferences` (
+          `steamid` VARCHAR(20) PRIMARY KEY,
+          `knife` TINYINT NOT NULL DEFAULT 0,
+          `weapon` TINYINT NOT NULL DEFAULT 0,
+          `foot` TINYINT NOT NULL DEFAULT 0,
+          `player` TINYINT NOT NULL DEFAULT 0,
+          `mvp` TINYINT NOT NULL DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+      }
+
       return true;
     }
     catch (Exception ex)
@@ -118,190 +140,34 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     }
   }
 
-  private bool TryLoadSQLite()
+  private static void Exec(MySqlConnection conn, string sql)
+  {
+    using var cmd = new MySqlCommand(sql, conn);
+    cmd.ExecuteNonQuery();
+  }
+
+  private void LoadAllFromMySql()
   {
     try
     {
-      _usingSqlite = true;
-      var fullPath = Path.Combine(ModuleDirectory, "Sesler.sqlite");
-      _dbConnectionString = $"Data Source={fullPath}";
-      return true;
-    }
-    catch (Exception ex)
-    {
-      Logger.LogWarning(ex, "[Sesler] SQLite yükleme hatası");
-      return false;
-    }
-  }
+      using var conn = new MySqlConnection(_dbConnectionString);
+      conn.Open();
 
-  private async Task EnsurePlayerPreferencesTableAsync()
-  {
-    try
-    {
-      using var conn = new SqliteConnection(_dbConnectionString);
-      await conn.OpenAsync();
-      var sql = @"CREATE TABLE IF NOT EXISTS player_preferences (
-            steamid TEXT PRIMARY KEY,
-            knife INTEGER NOT NULL DEFAULT 0,
-            weapon INTEGER NOT NULL DEFAULT 0,
-            foot INTEGER NOT NULL DEFAULT 0,
-            player INTEGER NOT NULL DEFAULT 0,
-            mvp INTEGER NOT NULL DEFAULT 0
-          )";
-      await conn.ExecuteAsync(sql);
-    }
-    catch (Exception ex)
-    {
-      Logger.LogError(ex, "[Sesler] EnsurePlayerPreferencesTableAsync failed");
-      throw;
-    }
-  }
-
-  public override void Unload(bool hotReload)
-  {
-    UnhookUserMessage(208, OnSound, HookMode.Pre);
-    UnhookUserMessage(369, OnWeaponSound, HookMode.Pre);
-    UnhookUserMessage(452, OnWeaponEvent, HookMode.Pre);
-
-    var saveTasks = new List<Task>();
-    foreach (var kvp in _prefs)
-    {
-      saveTasks.Add(SavePreferenceToDatabaseAsync(kvp.Key, kvp.Value));
-    }
-
-    saveTasks.AddRange(_pendingSaves);
-    Task.WaitAll(saveTasks.ToArray(), TimeSpan.FromSeconds(10));
-  }
-
-  private void InitializeDatabase()
-  {
-    lock (_dbLock)
-    {
-      if (_databaseInitialized) return;
-
-      try
+      using var cmd = new MySqlCommand("SELECT steamid, knife, weapon, foot, player, mvp FROM `player_preferences`", conn);
+      using var reader = cmd.ExecuteReader();
+      while (reader.Read())
       {
-        if (string.IsNullOrEmpty(_dbConnectionString))
-          throw new Exception("Database connection string boş!");
+        if (!ulong.TryParse(reader.GetString(0), out var steamId))
+          continue;
 
-        if (_usingSqlite)
+        _prefs[steamId] = new Pref
         {
-          using var conn = new SqliteConnection(_dbConnectionString);
-          conn.Open();
-
-          conn.Execute(@"CREATE TABLE IF NOT EXISTS player_preferences (
-            steamid TEXT PRIMARY KEY,
-            knife INTEGER NOT NULL DEFAULT 0,
-            weapon INTEGER NOT NULL DEFAULT 0,
-            foot INTEGER NOT NULL DEFAULT 0,
-            player INTEGER NOT NULL DEFAULT 0,
-            mvp INTEGER NOT NULL DEFAULT 0
-          )");
-        }
-        else
-        {
-          var dbName = Config.Database["name"];
-          var builderWithoutDb = new MySqlConnectionStringBuilder
-          {
-            Server = Config.Database["host"],
-            UserID = Config.Database["user"],
-            Password = Config.Database["password"],
-            Port = uint.Parse(Config.Database["port"])
-          };
-
-          using (var conn = new MySqlConnection(builderWithoutDb.ToString()))
-          {
-            conn.Open();
-            conn.Execute($"CREATE DATABASE IF NOT EXISTS `{dbName}`");
-          }
-
-          using var connWithDb = new MySqlConnection(_dbConnectionString);
-          connWithDb.Open();
-
-          connWithDb.Execute(@"CREATE TABLE IF NOT EXISTS `player_preferences` (
-            `steamid` VARCHAR(20) PRIMARY KEY,
-            `knife` TINYINT NOT NULL DEFAULT 0,
-            `weapon` TINYINT NOT NULL DEFAULT 0,
-            `foot` TINYINT NOT NULL DEFAULT 0,
-            `player` TINYINT NOT NULL DEFAULT 0,
-            `mvp` TINYINT NOT NULL DEFAULT 0
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-        }
-
-        _databaseInitialized = true;
-        LoadPreferencesFromDatabase();
-      }
-      catch (Exception ex)
-      {
-        Logger.LogError(ex, "[Sesler] Veritabanı başlatma hatası");
-        throw;
-      }
-    }
-  }
-
-  private void LoadPreferencesFromDatabase()
-  {
-    try
-    {
-      if (_usingSqlite)
-      {
-        using var conn = new SqliteConnection(_dbConnectionString);
-        conn.Open();
-
-        IEnumerable<dynamic> rows;
-        try
-        {
-          rows = conn.Query("SELECT * FROM player_preferences");
-        }
-        catch (SqliteException sex) when (sex.Message?.Contains("no such table") == true)
-        {
-          Logger.LogWarning(sex, "[Sesler] player_preferences table missing, attempting to create it and retry load");
-          EnsurePlayerPreferencesTableAsync().Wait();
-          rows = conn.Query("SELECT * FROM player_preferences");
-        }
-
-        foreach (var row in rows)
-        {
-          string steamId = row.steamid;
-          if (ulong.TryParse(steamId, out ulong steamIdNum))
-          {
-            var pref = new Pref
-            {
-              Knife = (MuteMode)(int)row.knife,
-              Weapon = (MuteMode)(int)row.weapon,
-              Foot = (MuteMode)(int)row.foot,
-              Player = (MuteMode)(int)row.player,
-              Mvp = (MuteMode)(int)row.mvp
-            };
-
-            _prefs[steamIdNum] = pref;
-          }
-        }
-      }
-      else
-      {
-        using var conn = new MySqlConnection(_dbConnectionString);
-        conn.Open();
-
-        var rows = conn.Query("SELECT * FROM player_preferences");
-
-        foreach (var row in rows)
-        {
-          string steamId = row.steamid;
-          if (ulong.TryParse(steamId, out ulong steamIdNum))
-          {
-            var pref = new Pref
-            {
-              Knife = (MuteMode)(byte)row.knife,
-              Weapon = (MuteMode)(byte)row.weapon,
-              Foot = (MuteMode)(byte)row.foot,
-              Player = (MuteMode)(byte)row.player,
-              Mvp = (MuteMode)(byte)row.mvp
-            };
-
-            _prefs[steamIdNum] = pref;
-          }
-        }
+          Knife = (MuteMode)reader.GetByte(1),
+          Weapon = (MuteMode)reader.GetByte(2),
+          Foot = (MuteMode)reader.GetByte(3),
+          Player = (MuteMode)reader.GetByte(4),
+          Mvp = (MuteMode)reader.GetByte(5)
+        };
       }
     }
     catch (Exception ex)
@@ -310,90 +176,77 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     }
   }
 
-  private async Task SavePreferenceToDatabaseAsync(ulong steamId, Pref pref)
+  private void LoadJsonPrefs()
+  {
+    lock (_ioLock)
+    {
+      try
+      {
+        if (!File.Exists(JsonPath))
+          return;
+
+        var raw = JsonSerializer.Deserialize<Dictionary<string, Pref>>(File.ReadAllText(JsonPath));
+        if (raw == null)
+          return;
+
+        foreach (var (key, value) in raw)
+          if (ulong.TryParse(key, out var steamId))
+            _prefs[steamId] = value;
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, "[Sesler] players.json okunamadı");
+      }
+    }
+  }
+
+  private void WriteJsonPrefs()
   {
     try
     {
-      if (_usingSqlite)
-      {
-        using var conn = new SqliteConnection(_dbConnectionString);
-        await conn.OpenAsync();
-
-        var sql = @"INSERT OR REPLACE INTO player_preferences (steamid, knife, weapon, foot, player, mvp)
-          VALUES (@steamid, @knife, @weapon, @foot, @player, @mvp)";
-
-        var rowsAffected = await conn.ExecuteAsync(sql, new
-        {
-          steamid = steamId.ToString(),
-          knife = (byte)pref.Knife,
-          weapon = (byte)pref.Weapon,
-          foot = (byte)pref.Foot,
-          player = (byte)pref.Player,
-          mvp = (byte)pref.Mvp
-        });
-      }
-      else
-      {
-        using var conn = new MySqlConnection(_dbConnectionString);
-        await conn.OpenAsync();
-
-        var sql = @"INSERT INTO player_preferences (steamid, knife, weapon, foot, player, mvp)
-          VALUES (@steamid, @knife, @weapon, @foot, @player, @mvp)
-          ON DUPLICATE KEY UPDATE knife=@knife, weapon=@weapon, foot=@foot, player=@player, mvp=@mvp";
-
-        var rowsAffected = await conn.ExecuteAsync(sql, new
-        {
-          steamid = steamId.ToString(),
-          knife = (byte)pref.Knife,
-          weapon = (byte)pref.Weapon,
-          foot = (byte)pref.Foot,
-          player = (byte)pref.Player,
-          mvp = (byte)pref.Mvp
-        });
-      }
+      var snapshot = _prefs.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value);
+      lock (_ioLock)
+        File.WriteAllText(JsonPath, JsonSerializer.Serialize(snapshot, JsonOpts));
     }
     catch (Exception ex)
     {
-      if (_usingSqlite && ex is SqliteException sqlex && sqlex.Message?.Contains("no such table") == true)
-      {
-        try
-        {
-          await EnsurePlayerPreferencesTableAsync();
-          using var conn = new SqliteConnection(_dbConnectionString);
-          await conn.OpenAsync();
+      Logger.LogError(ex, "[Sesler] players.json yazılamadı");
+    }
+  }
 
-          var sql = @"INSERT OR REPLACE INTO player_preferences (steamid, knife, weapon, foot, player, mvp)
-            VALUES (@steamid, @knife, @weapon, @foot, @player, @mvp)";
+  private async Task SaveToMySqlAsync(ulong steamId, Pref pref)
+  {
+    try
+    {
+      using var conn = new MySqlConnection(_dbConnectionString);
+      await conn.OpenAsync();
 
-          await conn.ExecuteAsync(sql, new
-          {
-            steamid = steamId.ToString(),
-            knife = (byte)pref.Knife,
-            weapon = (byte)pref.Weapon,
-            foot = (byte)pref.Foot,
-            player = (byte)pref.Player,
-            mvp = (byte)pref.Mvp
-          });
-
-          return;
-        }
-        catch (Exception rex)
-        {
-          Logger.LogError(rex, $"[Sesler] Tercih kaydedilemedi after recreate - SteamID: {steamId}");
-          return;
-        }
-      }
-
+      using var cmd = new MySqlCommand(@"INSERT INTO `player_preferences` (steamid, knife, weapon, foot, player, mvp)
+        VALUES (@s, @k, @w, @f, @p, @m)
+        ON DUPLICATE KEY UPDATE knife=@k, weapon=@w, foot=@f, player=@p, mvp=@m", conn);
+      cmd.Parameters.AddWithValue("@s", steamId.ToString());
+      cmd.Parameters.AddWithValue("@k", (byte)pref.Knife);
+      cmd.Parameters.AddWithValue("@w", (byte)pref.Weapon);
+      cmd.Parameters.AddWithValue("@f", (byte)pref.Foot);
+      cmd.Parameters.AddWithValue("@p", (byte)pref.Player);
+      cmd.Parameters.AddWithValue("@m", (byte)pref.Mvp);
+      await cmd.ExecuteNonQueryAsync();
+    }
+    catch (Exception ex)
+    {
       Logger.LogError(ex, $"[Sesler] Tercih kaydedilemedi - SteamID: {steamId}");
     }
   }
 
-  private void SavePreferenceToDatabase(ulong steamId, Pref pref)
+  private void SavePreference(ulong steamId, Pref pref)
   {
-    var task = SavePreferenceToDatabaseAsync(steamId, pref);
-    _pendingSaves.Add(task);
+    if (_useMySql)
+    {
+      _ = SaveToMySqlAsync(steamId, pref);
+      return;
+    }
 
-    _pendingSaves.RemoveAll(t => t.IsCompleted);
+    Task.Run(WriteJsonPrefs);
   }
 
   private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
@@ -401,56 +254,31 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     var player = @event.Userid;
     if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0) return HookResult.Continue;
 
+    if (!_useMySql)
+      return HookResult.Continue;
+
     var steamId = player.SteamID;
-    var steamIdString = steamId.ToString();
 
     Task.Run(async () =>
     {
       try
       {
-        if (_usingSqlite)
+        using var conn = new MySqlConnection(_dbConnectionString);
+        await conn.OpenAsync();
+
+        using var cmd = new MySqlCommand("SELECT knife, weapon, foot, player, mvp FROM `player_preferences` WHERE steamid = @s", conn);
+        cmd.Parameters.AddWithValue("@s", steamId.ToString());
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
         {
-          using var conn = new SqliteConnection(_dbConnectionString);
-          await conn.OpenAsync();
-
-          var row = await conn.QueryFirstOrDefaultAsync("SELECT * FROM player_preferences WHERE steamid = @steamid",
-            new { steamid = steamIdString });
-
-          if (row != null)
+          _prefs[steamId] = new Pref
           {
-            var pref = new Pref
-            {
-              Knife = (MuteMode)(int)row.knife,
-              Weapon = (MuteMode)(int)row.weapon,
-              Foot = (MuteMode)(int)row.foot,
-              Player = (MuteMode)(int)row.player,
-              Mvp = (MuteMode)(int)row.mvp
-            };
-
-            _prefs[steamId] = pref;
-          }
-        }
-        else
-        {
-          using var conn = new MySqlConnection(_dbConnectionString);
-          await conn.OpenAsync();
-
-          var row = await conn.QueryFirstOrDefaultAsync("SELECT * FROM player_preferences WHERE steamid = @steamid",
-            new { steamid = steamIdString });
-
-          if (row != null)
-          {
-            var pref = new Pref
-            {
-              Knife = (MuteMode)(byte)row.knife,
-              Weapon = (MuteMode)(byte)row.weapon,
-              Foot = (MuteMode)(byte)row.foot,
-              Player = (MuteMode)(byte)row.player,
-              Mvp = (MuteMode)(byte)row.mvp
-            };
-
-            _prefs[steamId] = pref;
-          }
+            Knife = (MuteMode)reader.GetByte(0),
+            Weapon = (MuteMode)reader.GetByte(1),
+            Foot = (MuteMode)reader.GetByte(2),
+            Player = (MuteMode)reader.GetByte(3),
+            Mvp = (MuteMode)reader.GetByte(4)
+          };
         }
       }
       catch (Exception ex)
@@ -467,7 +295,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     var player = @event.Userid;
     if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0) return HookResult.Continue;
 
-    if (_prefs.TryGetValue(player.SteamID, out var pref)) SavePreferenceToDatabase(player.SteamID, pref);
+    if (_prefs.TryGetValue(player.SteamID, out var pref)) SavePreference(player.SteamID, pref);
 
     return HookResult.Continue;
   }
@@ -539,6 +367,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       menu.AddMenuOption($"{prefix}<font color='{color}'>{labelText}</font>", (p, o) =>
       {
         set(pref, mode);
+        SavePreference(player.SteamID, pref);
         ShowMainMenu(player);
       });
     }
@@ -563,7 +392,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     try
     {
       var hash = msg.ReadUInt("soundevent_hash");
-      
+
       var soundType = GetSoundType(hash);
       if (soundType == SoundType.None) return HookResult.Continue;
 
@@ -725,9 +554,9 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
 public class Pref
 {
-  public MuteMode Knife;
-  public MuteMode Foot;
-  public MuteMode Player;
-  public MuteMode Weapon;
-  public MuteMode Mvp;
+  public MuteMode Knife { get; set; }
+  public MuteMode Foot { get; set; }
+  public MuteMode Player { get; set; }
+  public MuteMode Weapon { get; set; }
+  public MuteMode Mvp { get; set; }
 }

@@ -5,7 +5,7 @@ Sunucuya bağlanan oyuncuların CS2 oynama saatini kontrol eder; yetersiz saati 
 ## Özellikler
 
 - 3 aşamalı oynama saati sorgusu: **Steam Web API** → **DecAPI** → **ByDexter API** (ilk başarılı sonuç kullanılır)
-- **MySQL veya SQLite** veritabanı desteği (biri başarısız olursa diğerine otomatik geçer)
+- **JSON (varsayılan) veya MySQL** depolama; MySQL bağlantısı başarısız olursa JSON'a düşer
 - Sonuçlar veritabanında önbelleğe alınır — eksik saat dolmadan tekrar API sorgusu yapılmaz
 - Profili gizli oyunculara yapılandırılabilir sayıda **uyarı**, ardından ceza
 - İhlal sayısına göre **kademeli ceza sistemi** (ör. 1. ihlal kick, 3. ihlal 1 saat ban, 5. ihlal 1 gün ban)
@@ -16,7 +16,7 @@ Sunucuya bağlanan oyuncuların CS2 oynama saatini kontrol eder; yetersiz saati 
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 - Ceza uygulamak için `css_kick` ve `css_ban` komutlarını sağlayan bir admin eklentisi (ör. CS2-SimpleAdmin)
 - (Önerilen) [Steam Web API anahtarı](https://steamcommunity.com/dev/apikey)
 - (MySQL kullanılacaksa) MySQL 8+ sunucusu
@@ -44,7 +44,7 @@ csgo/addons/counterstrikesharp/configs/plugins/PlayerHourCheck/PlayerHourCheck.j
 
 | Ayar | Tip | Varsayılan | Açıklama |
 | --- | --- | --- | --- |
-| `phc_db` | nesne | sqlite | Veritabanı ayarları (aşağıda) |
+| `phc_db` | nesne | json | Depolama ayarları (aşağıda) |
 | `phc_steam_api_key` | string | `""` | Steam Web API anahtarı (boşsa doğrudan DecAPI'ye geçilir) |
 | `phc_required_playtime` | int | `100` | Gereken minimum CS2 saati |
 | `phc_warn_enabled` | int | `1` | Gizli profil uyarı sistemi (1: açık, 0: direkt ceza) |
@@ -61,7 +61,7 @@ csgo/addons/counterstrikesharp/configs/plugins/PlayerHourCheck/PlayerHourCheck.j
 
 ```json
 "phc_db": {
-  "provider": "sqlite",
+  "provider": "json",
   "host": "localhost",
   "name": "cs2_playerhourcheck",
   "port": "3306",
@@ -70,7 +70,7 @@ csgo/addons/counterstrikesharp/configs/plugins/PlayerHourCheck/PlayerHourCheck.j
 }
 ```
 
-- `provider`: `"sqlite"` (varsayılan, eklenti klasöründe `PlayerHourCheck.sqlite`) veya `"mysql"`
+- `provider`: `"json"` (varsayılan, eklenti klasöründe `players.json`) veya `"mysql"`
 - MySQL seçiliyse veritabanı ve tablo otomatik oluşturulur.
 
 ### `phc_penalty`

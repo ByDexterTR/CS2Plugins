@@ -1,0 +1,203 @@
+{
+  "Commands": [
+    {
+      "command": [
+        "css_hp",
+        "css_health"
+      ],
+      "type": "target",
+      "args": 1,
+      "arg1": "number",
+      "arg1_number_min": 1,
+      "arg1_number_max": 500,
+      "flag": [
+        "@css/slay",
+        "@css/cheats"
+      ],
+      "cooldown": 3,
+      "sethealth": "[TARGET] [ARG1]",
+      "chat": [
+        "[GOLD][TARGET] [DEFAULT]adl\u0131 oyuncunun can\u0131 [GOLD][ARG1] [DEFAULT]olarak ayarland\u0131."
+      ],
+      "center": "\u003Cfont color=\u0027green\u0027\u003ECan: [ARG1]\u003C/font\u003E",
+      "centertime": 3,
+      "announce": false
+    },
+    {
+      "command": [
+        "css_slap"
+      ],
+      "type": "target",
+      "args": 1,
+      "arg1": "number",
+      "arg1_number_min": 0,
+      "arg1_number_max": 100,
+      "flag": [
+        "@css/slay"
+      ],
+      "cooldown": 0,
+      "slapdamage": "[TARGET] [ARG1]",
+      "centertime": 5,
+      "announce": true
+    },
+    {
+      "command": [
+        "css_money",
+        "css_setmoney"
+      ],
+      "type": "target",
+      "args": 1,
+      "arg1": "number",
+      "arg1_number_min": 0,
+      "arg1_number_max": 65535,
+      "flag": [
+        "@css/cheats"
+      ],
+      "cooldown": 0,
+      "setmoney": "[TARGET] [ARG1]",
+      "centertime": 5,
+      "announce": false
+    },
+    {
+      "command": [
+        "css_team",
+        "css_changeteam"
+      ],
+      "type": "target",
+      "args": 1,
+      "arg1": "number",
+      "arg1_number_min": 0,
+      "arg1_number_max": 3,
+      "flag": [
+        "@css/kick"
+      ],
+      "cooldown": 0,
+      "changeteam": "[TARGET] [ARG1]",
+      "centertime": 5,
+      "announce": false
+    },
+    {
+      "command": [
+        "css_site"
+      ],
+      "type": "default",
+      "args": 0,
+      "cooldown": 0,
+      "chat": [
+        "[GOLD]Web Sitemiz: [DEFAULT]https://bydexter.net/",
+        "[GOLD]Discord: [DEFAULT]discord.gg/bydexter"
+      ],
+      "centertime": 5,
+      "announce": false
+    },
+    {
+      "command": [
+        "css_serverinfo"
+      ],
+      "type": "default",
+      "args": 0,
+      "cooldown": 0,
+      "chat": [
+        "[ORCHID]Sunucu: [GOLD][HOSTNAME] [DEFAULT]| IP: [GOLD][SERVERIP]:[SERVERPORT] [DEFAULT]| Harita: [GOLD][MAPNAME] [DEFAULT]| Saat: [GOLD][TIME]",
+        "[ORCHID]Raunt: [GOLD][ROUND] [DEFAULT]| Skor: [GOLD]CT [CTSCORE] [DEFAULT]- [GOLD][TSCORE] T",
+        "[ORCHID]Oyuncu: [GOLD][PLAYERCOUNT] [DEFAULT](T: [GOLD][TCOUNT] [DEFAULT]CT: [GOLD][CTCOUNT] [DEFAULT]\u0130zleyici: [GOLD][SPECCOUNT][DEFAULT]) | Canl\u0131: [GOLD][ALIVECOUNT] [DEFAULT](T: [GOLD][ALIVET] [DEFAULT]CT: [GOLD][ALIVECT][DEFAULT])"
+      ],
+      "centertime": 5,
+      "announce": false
+    },
+    {
+      "command": [
+        "css_my"
+      ],
+      "type": "default",
+      "args": 0,
+      "cooldown": 0,
+      "chat": [
+        "[GOLD][PLAYER] [DEFAULT]| Can: [GOLD][PLAYERHEALTH] [DEFAULT]Z\u0131rh: [GOLD][PLAYERARMOR] [DEFAULT]Para: [GOLD][PLAYERMONEY] [DEFAULT]Tak\u0131m: [GOLD][PLAYERTEAM] [DEFAULT]Silah: [GOLD][PLAYERWEAPON]"
+      ],
+      "console": [
+        "SteamID64: [PLAYERSTEAMID]",
+        "Sunucu: [HOSTNAME] | Harita: [MAPNAME]"
+      ],
+      "centertime": 5,
+      "announce": false
+    },
+    {
+      "command": [
+        "css_target"
+      ],
+      "type": "target",
+      "args": 0,
+      "flag": [
+        "@css/generic"
+      ],
+      "cooldown": 0,
+      "chat": [
+        "[GOLD][TARGET] [DEFAULT]| Can: [GOLD][TARGETHEALTH] [DEFAULT]Z\u0131rh: [GOLD][TARGETARMOR] [DEFAULT]Para: [GOLD][TARGETMONEY] [DEFAULT]Tak\u0131m: [GOLD][TARGETTEAM] [DEFAULT]Silah: [GOLD][TARGETWEAPON]"
+      ],
+      "console": [
+        "Hedef SteamID64: [TARGETSTEAMID]"
+      ],
+      "centertime": 5,
+      "announce": false
+    },
+    {
+      "command": [
+        "css_rastgele"
+      ],
+      "type": "default",
+      "args": 0,
+      "flag": [
+        "@css/chat"
+      ],
+      "cooldown": 10,
+      "chat": [
+        "[ORCHID]Rastgele: [GOLD][RANDOMPLAYER] [DEFAULT]| T: [GOLD][RANDOMT] [DEFAULT]| CT: [GOLD][RANDOMCT]",
+        "[ORCHID]Canl\u0131: [GOLD][RANDOMALIVE] [DEFAULT]| \u00D6l\u00FC: [GOLD][RANDOMDEAD]",
+        "[ORCHID]Canl\u0131 T: [GOLD][RANDOMTALIVE] [DEFAULT]| \u00D6l\u00FC T: [GOLD][RANDOMTDEAD]",
+        "[ORCHID]Canl\u0131 CT: [GOLD][RANDOMCTALIVE] [DEFAULT]| \u00D6l\u00FC CT: [GOLD][RANDOMCTDEAD]"
+      ],
+      "centertime": 5,
+      "announce": false
+    },
+    {
+      "command": [
+        "css_warmup"
+      ],
+      "type": "default",
+      "args": 0,
+      "flag": [
+        "@css/root"
+      ],
+      "cooldown": 0,
+      "centertime": 5,
+      "serverchat": [
+        "[GOLD][PLAYER] [DEFAULT]\u0131s\u0131nma turunu ba\u015Flatt\u0131."
+      ],
+      "execute": [
+        "mp_warmup_start"
+      ],
+      "setcvar": [
+        "mp_warmuptime 60",
+        "mp_warmup_pausetimer 0"
+      ],
+      "announce": false
+    },
+    {
+      "command": [
+        "css_can"
+      ],
+      "type": "playertarget",
+      "args": 0,
+      "team_filter": "T",
+      "alive_filter": "alive",
+      "cooldown": 30,
+      "sethealth": "[TARGET] 100",
+      "chat": [
+        "[GREEN]Can\u0131n yenilendi. [DEFAULT](30 sn\u0027de bir kullan\u0131labilir)"
+      ],
+      "centertime": 5,
+      "announce": false
+    }
+  ]
+}

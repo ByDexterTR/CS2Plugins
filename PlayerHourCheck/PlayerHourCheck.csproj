@@ -10,19 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.369">
-      <PrivateAssets>none</PrivateAssets>
-      <ExcludeAssets>runtime</ExcludeAssets>
-      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="MySqlConnector" Version="2.5.0" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.8" />
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
-    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.371" ExcludeAssets="runtime" />
+    <PackageReference Include="MySqlConnector" Version="2.6.1" />
   </ItemGroup>
-
 
   <ItemGroup>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
 </Project>

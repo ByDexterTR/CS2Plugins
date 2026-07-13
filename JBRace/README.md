@@ -15,7 +15,7 @@ Jailbreak sunucuları için yarış etkinliği. Warden başlangıç ve bitiş no
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

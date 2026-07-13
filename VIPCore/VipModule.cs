@@ -26,8 +26,18 @@ public abstract class VipModule
     protected static bool IsAlive(CCSPlayerController? p) =>
         p != null && p.IsValid && p.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
 
-    protected static string? ActiveWeaponName(CCSPlayerController p) =>
-        p.PlayerPawn.Value?.WeaponServices?.ActiveWeapon?.Value?.DesignerName;
+    protected static string? ActiveWeaponName(CCSPlayerController p)
+    {
+        var weapon = p.PlayerPawn.Value?.WeaponServices?.ActiveWeapon?.Value;
+        if (weapon == null || !weapon.IsValid || string.IsNullOrEmpty(weapon.DesignerName))
+            return null;
+
+        int itemDef = 0;
+        try { itemDef = weapon.AttributeManager.Item.ItemDefinitionIndex; }
+        catch { }
+
+        return WeaponUtil.NormalizeWeaponName(weapon.DesignerName, itemDef);
+    }
 
     protected static bool HasWeapon(CCSPlayerController? p, string designerName) =>
         CountWeapon(p, designerName) > 0;

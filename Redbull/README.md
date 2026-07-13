@@ -14,7 +14,7 @@ Komut kullanan oyuncuya kısa süreli hız artışı verir ("Redbull kanatlandı
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

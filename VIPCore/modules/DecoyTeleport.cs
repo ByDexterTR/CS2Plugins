@@ -36,7 +36,7 @@ public class DecoyTeleport : VipModule
         if (pawn == null || !pawn.IsValid)
             return HookResult.Continue;
 
-        pawn.Teleport(new Vector(ev.X, ev.Y, ev.Z), pawn.AbsRotation ?? new QAngle(), new Vector(0, 0, 0));
+        pawn.Teleport(new Vector(ev.X, ev.Y, ev.Z + 10f), pawn.EyeAngles, new Vector(0, 0, 0));
         _used[slot]++;
         return HookResult.Continue;
     }

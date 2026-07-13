@@ -24,6 +24,9 @@ public class Bhop : VipModule
 
     private void OnTick()
     {
+        if (Core.IsFreezeTime())
+            return;
+
         foreach (var player in Utilities.GetPlayers())
         {
             if (player == null || !player.IsValid || player.IsBot || !Active(player))

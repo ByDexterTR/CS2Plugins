@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Timers;
 using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
@@ -24,7 +25,32 @@ public class SpawnProtection : VipModule
         if (slot < 0 || slot >= 64)
             return HookResult.Continue;
 
-        _until[slot] = Active(player) ? Server.CurrentTime + GroupValue<float>(player!) : 0f;
+        if (!Active(player))
+        {
+            _until[slot] = 0f;
+            return HookResult.Continue;
+        }
+
+        float seconds = GroupValue<float>(player!);
+        float until = Server.CurrentTime + seconds;
+        _until[slot] = until;
+
+        if (seconds <= 0f || player!.IsBot)
+            return HookResult.Continue;
+
+        player.PrintToChat($" {CC.Orchid}{Core.Localizer["chat_prefix"]}{CC.Default} {Core.Localizer["vip.spawnprot.start", (int)seconds]}");
+
+        Core.AddTimer(seconds, () =>
+        {
+            var p = Utilities.GetPlayerFromSlot(slot);
+            if (p == null || !p.IsValid || p.IsBot || !IsAlive(p))
+                return;
+            if (Math.Abs(_until[slot] - until) > 0.01f)
+                return;
+
+            p.PrintToChat($" {CC.Orchid}{Core.Localizer["chat_prefix"]}{CC.Default} {Core.Localizer["vip.spawnprot.end"]}");
+        }, TimerFlags.STOP_ON_MAPCHANGE);
+
         return HookResult.Continue;
     }
 

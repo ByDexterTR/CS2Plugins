@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.0.1";
+    public override string ModuleVersion => "1.0.2";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -37,6 +37,16 @@ public partial class VIPCore : BasePlugin
 
     private string GroupsPath => Path.Combine(ModuleDirectory, "vipgroups.json");
 
+    private CCSGameRulesProxy? _gameRulesProxy;
+
+    public bool IsFreezeTime()
+    {
+        if (_gameRulesProxy == null || !_gameRulesProxy.IsValid)
+            _gameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
+
+        return _gameRulesProxy?.GameRules?.FreezePeriod == true;
+    }
+
     public override void Load(bool hotReload)
     {
         LoadConfig();
@@ -47,6 +57,7 @@ public partial class VIPCore : BasePlugin
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterListener<OnMapStart>(_ => PurgeExpired());
+        AddTimer(60f, PurgeExpired, CounterStrikeSharp.API.Modules.Timers.TimerFlags.REPEAT);
         RegisterListener<OnServerPrecacheResources>(m =>
         {
             if (IsModuleEnabled("PlayerTrail") || IsModuleEnabled("GrenadeTrail") || IsModuleEnabled("BulletTrail"))

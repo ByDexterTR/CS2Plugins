@@ -12,7 +12,7 @@ CT oyuncularına spawn olduktan sonra kısa süreli hasar koruması verir. Jailb
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

@@ -1,11 +1,14 @@
 using System.Globalization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
 public class Gravity : VipModule
 {
+    private readonly bool[] _applied = new bool[64];
+
     public override string Name => "Gravity";
     public override string DisplayName => Core.Localizer["vip.module.gravity"];
     public override VipFeatureType MenuType => VipFeatureType.Select;
@@ -20,28 +23,62 @@ public class Gravity : VipModule
         }).ToList();
     }
 
-    public override void OnLoad() => Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
+    public override void OnLoad() => Core.RegisterListener<OnTick>(OnTick);
 
-    public override void OnSelect(CCSPlayerController player, string value) => Apply(player, value);
-
-    private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)
+    public override void OnUnload()
     {
-        var player = ev.Userid;
-        if (!Active(player))
-            return HookResult.Continue;
-
-        string value = Setting(player!);
-        Server.NextFrame(() => Apply(player!, value));
-        return HookResult.Continue;
+        for (int slot = 0; slot < 64; slot++)
+            if (_applied[slot])
+                Reset(slot);
     }
 
-    private static void Apply(CCSPlayerController player, string value)
+    private void OnTick()
     {
-        var pawn = player.PlayerPawn.Value;
+        foreach (var player in Utilities.GetPlayers())
+        {
+            if (player == null || !player.IsValid || player.IsBot)
+                continue;
+
+            int slot = player.Slot;
+            float gravity = 1f;
+            bool wants = false;
+
+            if (IsAlive(player) && Active(player))
+            {
+                string value = Setting(player);
+                if (value != "off" && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var g) && g > 0)
+                {
+                    gravity = (float)g;
+                    wants = true;
+                }
+            }
+
+            if (!wants)
+            {
+                if (_applied[slot])
+                {
+                    _applied[slot] = false;
+                    Reset(slot);
+                }
+                continue;
+            }
+
+            var pawn = player.PlayerPawn.Value;
+            if (pawn == null || !pawn.IsValid)
+                continue;
+
+            _applied[slot] = true;
+            if (Math.Abs(pawn.ActualGravityScale - gravity) > 0.001f)
+                pawn.ActualGravityScale = gravity;
+        }
+    }
+
+    private static void Reset(int slot)
+    {
+        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
         if (pawn == null || !pawn.IsValid)
             return;
 
-        double gravity = value != "off" && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var g) ? g : 1.0;
-        pawn.GravityScale = (float)gravity;
+        pawn.ActualGravityScale = 1f;
     }
 }

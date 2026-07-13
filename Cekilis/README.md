@@ -11,7 +11,7 @@ Sunucudaki oyuncular arasından filtreli rastgele çekiliş yapar. Jailbreak etk
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

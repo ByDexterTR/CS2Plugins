@@ -6,7 +6,7 @@
     "Bhop": { "autostrafe": false, "max_speed": 350, "jump_boost": 1.05, "jump_velocity": 300 },
     "ChatTag": { "tag": "{BlueGrey}[LITE]", "name_color": "bluegrey", "chat_color": "default" },
     "ColoredModel": ["Rainbow rainbow", "Mavi #0000FF", "Yesil #00FF00"],
-    "DamageResist": { "percent": 15, "only_with_weapon": "" },
+    "DamageResist": { "percent": 15, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true },
     "DecoyTeleport": { "limit": 3 },
     "DefuseKit": true,
     "ExtraHP": 110,
@@ -23,7 +23,7 @@
     "SmokeColor": ["Beyaz #FFFFFF", "Kirmizi #FF0000"],
     "SpawnProtection": 2,
     "VIPChat": true,
-    "Zeus": true
+    "GiveZeus": true
   },
   "#Plus": {
     "AdminFlags": ["@css/reservation", "@css/vip"],
@@ -31,14 +31,14 @@
     "AntiHS": { "percent": 0, "only_with_weapon": "" },
     "Armor": { "value": 100, "helmet": true },
     "ArmorRegen": { "armor_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2, "max_armor": 100, "give_helmet_when_full": true },
-    "AutoHS": { "multiplier": 4, "only_with_weapon": "" },
+    "AutoHS": { "multiplier": 4, "only_with_weapon": "", "ignore_teammates": true },
     "Bhop": { "autostrafe": true, "max_speed": 500, "jump_boost": 1.1, "jump_velocity": 300 },
     "BulletTrail": { "width": 1.5, "lifetime": 0.6, "only_with_weapon": "", "colors": ["Rainbow rainbow", "Kirmizi #FF0000", "Mavi #0000FF", "Yesil #00FF00"] },
     "BuyTeamWeapon": { "galil": true, "ak47": true, "sg553": true, "glock": true, "mac10": true, "tec9": true, "sawedoff": true, "g3sg1": true, "p2000": true, "mag7": true, "fiveseven": true, "famas": true, "m4a1": true, "m4a4": true, "aug": true, "scar20": true, "mp9": true, "usp": true },
     "ChatTag": { "tag": "{Gold}[PLUS]", "name_color": "gold", "chat_color": "default" },
     "ColoredModel": ["Rainbow rainbow", "Kirmizi #FF0000", "Yesil #00FF00", "Mavi #0000FF", "Sari #FFFF00", "Mor #A020F0"],
-    "DamageDealt": { "percent": 50, "only_with_weapon": "" },
-    "DamageResist": { "percent": 40, "only_with_weapon": "" },
+    "DamageDealt": { "percent": 50, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true },
+    "DamageResist": { "percent": 40, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true },
     "DecoyTeleport": { "limit": 0 },
     "DefuseKit": true,
     "ExtraHP": 150,
@@ -61,12 +61,32 @@
     "OneShot": { "weapons": "weapon_awp,weapon_ssg08" },
     "PlayerGlow": { "range": 300, "team": -1, "colors": ["Rainbow rainbow", "Kirmizi #FF0000", "Mavi #0000FF", "Yesil #00FF00", "Sari #FFFF00", "Mor #A020F0"] },
     "PlayerTrail": { "width": 1.5, "lifetime": 2.5, "colors": ["Rainbow rainbow", "Kirmizi #FF0000", "Mavi #0000FF", "Yesil #00FF00", "Sari #FFFF00", "Mor #A020F0"] },
-    "ReflectDamage": { "reflect_percent": 50, "max_per_shot": 100, "only_with_weapon": "" },
+    "ReflectDamage": { "reflect_percent": 50, "max_per_shot": 100, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true },
     "SmokeColor": ["Beyaz #FFFFFF", "Kirmizi #FF0000", "Yesil #00FF00", "Mavi #0000FF", "Sari #FFFF00", "Mor #A020F0"],
     "SpawnProtection": 4,
     "Thirdperson": { "distance": 120 },
-    "Vampire": { "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120 },
+    "Vampire": { "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120, "ignore_teammates": true },
     "VIPChat": true,
-    "Zeus": true
+    "GiveZeus": true,
+    "WeaponAmmo": [
+      { "weapon_name": "weapon_ak47", "ammo": 30, "reserve": 3 },
+      { "weapon_name": "weapon_deagle", "ammo": 7, "reserve": 3 }
+    ],
+    "FastReload": { "only_with_weapon": "" },
+    "GrenadeKit": { "flash": 2, "smoke": 1, "he": 3, "molotov": 1, "decoy": 0 },
+    "TeamHeal": { "minhp": 5, "maxhp": 100, "percent": 50, "only_with_weapon": "" },
+    "SmokeEffect": {
+      "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 1750, "smokecolor": [255, 0, 255], "ignore_teammates": true, "ignore_self": true, "limit": 0 },
+      "heal": { "maxhp": 100, "heal": 2, "tick": 0.5, "radius": 1750, "smokecolor": [0, 255, 0], "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true, "limit": 0 },
+      "slow": { "percent": 30, "minspeed": 100, "radius": 1750, "smokecolor": [0, 0, 255], "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false, "limit": 0 }
+    },
+    "RadarHack": true,
+    "Invisibility": { "only_stopped": true, "dmg_after_invis": 2.0, "only_with_weapon": "" },
+    "PoisonBullet": { "minhp": 10, "damage": 2, "damagetick": 1.0, "only_with_weapon": "", "ignore_teammates": true },
+    "GlueGrenade": { "only_grenades": "flashbang,hegrenade" },
+    "Spy": true,
+    "GrenadeResist": { "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true },
+    "Silent": { "only_with_weapon": "" },
+    "ZeusCooldown": { "cooldown": 5, "limit": 0 }
   }
 }

@@ -10,6 +10,7 @@ public class Vampire : VipModule
         public int HealPercent { get; set; } = 50;
         public string OnlyWithWeapon { get; set; } = "";
         public int MaxOverheal { get; set; } = 100;
+        public bool IgnoreTeammates { get; set; } = true;
     }
 
     public override string Name => "Vampire";
@@ -20,15 +21,22 @@ public class Vampire : VipModule
     private HookResult OnHurt(EventPlayerHurt ev, GameEventInfo info)
     {
         var attacker = ev.Attacker;
-        if (!Active(attacker) || attacker == ev.Userid)
+        if (!Active(attacker))
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(attacker!) ?? new Cfg();
+        var victim = ev.Userid;
+        if (victim == null || !victim.IsValid || victim.Slot == attacker!.Slot)
+            return HookResult.Continue;
+
+        var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
+        if (cfg.IgnoreTeammates && victim.Team == attacker.Team)
+            return HookResult.Continue;
+
         var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
             return HookResult.Continue;
 
-        var pawn = attacker!.PlayerPawn.Value;
+        var pawn = attacker.PlayerPawn.Value;
         if (pawn == null || !pawn.IsValid)
             return HookResult.Continue;
 

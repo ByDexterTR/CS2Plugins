@@ -11,7 +11,7 @@ Yerdeki sahipsiz silahları tek komutla temizler. Jailbreak'te hücre açılış
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

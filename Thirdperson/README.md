@@ -15,7 +15,7 @@ Oyuncunun kamerasını üçüncü şahıs (omuz arkası) görünüme alan bağı
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

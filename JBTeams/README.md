@@ -15,7 +15,7 @@ Hayattaki T oyuncularını renkli takımlara bölen etkinlik eklentisi. Aynı ta
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

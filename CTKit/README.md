@@ -14,7 +14,7 @@ CT oyuncularının her spawn'da otomatik alacağı birincil ve ikincil silahı m
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

@@ -38,6 +38,9 @@ public class SmokeColor : VipModule
             if (!Active(controller))
                 return;
 
+            if (Core.IsActive(controller!, "SmokeEffect"))
+                return;
+
             if (!TryParseHex(Setting(controller!), out int r, out int g, out int b))
                 return;
 

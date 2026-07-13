@@ -16,6 +16,7 @@ public partial class VIPCore
         Register(Config.Commands.AddVip, OnAddVipCommand);
         Register(Config.Commands.RemoveVip, OnRemoveVipCommand);
         Register(Config.Commands.Reload, OnVipReloadCommand);
+        Register(Config.Commands.UpdateUser, OnUpdateVipCommand);
     }
 
     private void Register(string names, CommandInfo.CommandCallback handler)
@@ -27,6 +28,11 @@ public partial class VIPCore
     public void RegisterAliasedCommand(string names, CommandInfo.CommandCallback handler) => Register(names, handler);
 
     public string TpCommands => Config.Commands.Tp;
+
+    public string BuyCommandNames(string key) =>
+        Config.BuyCommands.TryGetValue(key, out var names) && !string.IsNullOrWhiteSpace(names)
+            ? names
+            : $"css_{key}";
 
     public void OnVipsCommand(CCSPlayerController? player, CommandInfo info)
     {
@@ -203,6 +209,40 @@ public partial class VIPCore
         ReloadData();
         ActivateModules();
         info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.reloaded"]}");
+    }
+
+    public void OnUpdateVipCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        if (!HasAdmin(player))
+        {
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.no_permission"]}");
+            return;
+        }
+
+        if (info.ArgCount < 2 || !ulong.TryParse(info.GetArg(1), out var steamId))
+        {
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.usage_updatevip"]}");
+            return;
+        }
+
+        VipEntry? entry;
+        try { entry = _storage.LoadVip(steamId); }
+        catch { entry = null; }
+
+        lock (_lock)
+        {
+            if (entry != null)
+                _vips[steamId] = entry;
+            else
+                _vips.Remove(steamId);
+        }
+
+        PurgeIfExpired(steamId);
+
+        if (entry == null)
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.not_found", steamId.ToString()]}");
+        else
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.updated", steamId.ToString(), entry.Group]}");
     }
 
     private void SetVip(ulong steamId, string group, long expires)

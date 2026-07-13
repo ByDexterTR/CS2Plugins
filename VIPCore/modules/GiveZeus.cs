@@ -3,10 +3,10 @@ using CounterStrikeSharp.API.Core;
 
 namespace VIPCore;
 
-public class Zeus : VipModule
+public class GiveZeus : VipModule
 {
-    public override string Name => "Zeus";
-    public override string DisplayName => Core.Localizer["vip.module.zeus"];
+    public override string Name => "GiveZeus";
+    public override string DisplayName => Core.Localizer["vip.module.givezeus"];
 
     public override void OnLoad() => Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
 

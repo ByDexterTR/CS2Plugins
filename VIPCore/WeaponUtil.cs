@@ -20,4 +20,19 @@ public static class WeaponUtil
         string.IsNullOrWhiteSpace(csv)
             ? new()
             : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+    public static string NormalizeWeaponName(string designerName, int itemDef)
+    {
+        if (designerName.Contains("bayonet") || designerName.Contains("knife"))
+            return "weapon_knife";
+
+        return (designerName, itemDef) switch
+        {
+            ("weapon_m4a1", 60) => "weapon_m4a1_silencer",
+            ("weapon_hkp2000", 61) => "weapon_usp_silencer",
+            ("weapon_deagle", 64) => "weapon_revolver",
+            ("weapon_mp7", 23) => "weapon_mp5sd",
+            _ => designerName
+        };
+    }
 }

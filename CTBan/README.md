@@ -14,7 +14,7 @@ Oyuncuların CT (gardiyan) takımına geçişini süreli olarak yasaklar. Jailbr
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 

@@ -9,6 +9,8 @@ public class DamageResist : VipModule
     {
         public int Percent { get; set; } = 0;
         public string OnlyWithWeapon { get; set; } = "";
+        public bool IgnoreTeammates { get; set; } = true;
+        public bool IgnoreSelf { get; set; } = true;
     }
 
     public override string Name => "DamageResist";
@@ -25,6 +27,15 @@ public class DamageResist : VipModule
         var cfg = GroupValue<Cfg>(victim!) ?? new Cfg();
         if (cfg.Percent <= 0)
             return HookResult.Continue;
+
+        var attacker = PawnController(info.Attacker?.Value);
+        if (attacker != null)
+        {
+            if (cfg.IgnoreSelf && attacker.Slot == victim!.Slot)
+                return HookResult.Continue;
+            if (cfg.IgnoreTeammates && attacker.Slot != victim!.Slot && attacker.Team == victim.Team)
+                return HookResult.Continue;
+        }
 
         var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(victim!)))

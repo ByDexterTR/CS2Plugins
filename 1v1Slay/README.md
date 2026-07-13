@@ -13,7 +13,7 @@ Rauntta her iki takımdan da yalnızca **1'er canlı oyuncu** kaldığında otom
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.369+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
 ## Kurulum
 
