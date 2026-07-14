@@ -43,7 +43,7 @@ Baktığınız noktaya çit (tel örgü) veya kapalı panel modeli yerleştirmen
 
 ## Yapılandırma
 
-Config dosyası yoktur. Model yolları ve boyutlar kaynak kodda `FenceOptions` sözlüğünde tanımlıdır.
+Model yolları ve boyutlar kaynak kodda `FenceOptions` sözlüğünde tanımlıdır.
 
 ## Notlar
 

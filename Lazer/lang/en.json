@@ -1,0 +1,5 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "lazer.enabled": "Laser enabled. While dead you will see where alive players are looking.",
+  "lazer.disabled": "Laser disabled."
+}

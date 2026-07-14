@@ -1,0 +1,8 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "admins.title": "Online Admins:",
+  "admins.none": "No admins online right now.",
+  "admins.no_permission": "You don't have permission for this command.",
+  "admins.reloaded": "AdminList config reloaded.",
+  "admins.reload_failed": "Failed to load config, check console logs."
+}

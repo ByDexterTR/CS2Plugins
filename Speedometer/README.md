@@ -32,7 +32,7 @@ Oyuncunun anlık hızını (u/s) ekran ortasında gösterir. Hız arttıkça gö
 
 ## Yapılandırma
 
-Config dosyası yoktur. Göstergeyi **kapatan** oyuncuların SteamID64 listesi eklenti klasöründeki `Speedometer.json` dosyasında tutulur (varsayılan davranış: herkes için açık).
+Göstergeyi **kapatan** oyuncuların SteamID64 listesi eklenti klasöründeki `Speedometer.json` dosyasında tutulur (varsayılan davranış: herkes için açık).
 
 ## Notlar
 

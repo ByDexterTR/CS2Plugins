@@ -41,10 +41,6 @@ Jailbreak sunucuları için yarış etkinliği. Warden başlangıç ve bitiş no
 | Kazanan Sayısı (N) | Sohbete sayı yazmanızı ister; ilk N kişi kazanır |
 | İşaretçileri Temizle | Bitiş modelini/ışınını kaldırır |
 
-## Yapılandırma
-
-Config dosyası yoktur. Bitiş yarıçapı (64 birim) ve geri sayım süresi (3 sn) kaynak kodda tanımlıdır.
-
 ## Kullanım Örneği
 
 1. Warden bitiş çizgisine gider → `!race` → "Bitiş Noktası".

@@ -87,15 +87,6 @@ Anahtar = ihlal sayısı, değer = ceza. `type`: `"kick"` veya `"ban"`, `time`: 
 
 > Aradaki ihlallerde bir alt eşiğin cezası uygulanır (ör. 4. ihlal → "3" kaydı).
 
-## Çalışma Mantığı
-
-1. Oyuncu bağlanır → muafiyet kontrolü → veritabanı kaydına bakılır.
-2. Kayıtlı saat yeterliyse hiçbir şey yapılmaz; eksikse ve "eksik saat kadar zaman" henüz geçmemişse doğrudan ceza uygulanır (API sorgusu yapılmaz).
-3. Aksi hâlde ~2 saniye sonra API'lerden güncel saat çekilir:
-   - Saat yeterli → kayıt güncellenir, ihlal sayacı sıfırlanır.
-   - Saat yetersiz → ihlal sayacı artar, kademeli ceza uygulanır.
-   - Profil gizli → uyarı döngüsü başlar; uyarılar bitince ceza uygulanır.
-
 ## Notlar
 
 - Cezalar `css_kick` / `css_ban` konsol komutlarıyla uygulanır; bu komutlar sunucuda tanımlı değilse ceza gerçekleşmez.

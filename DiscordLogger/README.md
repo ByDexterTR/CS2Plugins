@@ -31,7 +31,7 @@ Sunucu olaylarını Discord webhook'larına iletir ve istenirse günlük dosya l
 
 ## Komutlar
 
-Bu eklentinin oyun içi komutu yoktur. Config değişikliği sonrası `css_plugins reload DiscordLogger` yeterlidir.
+Config değişikliği sonrası `css_plugins reload DiscordLogger` yeterlidir.
 
 ## Kategoriler ve Olaylar
 

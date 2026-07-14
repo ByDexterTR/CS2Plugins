@@ -21,24 +21,6 @@ Takım arkadaşlarının attığı flash bombalarının kör etme etkisini iptal
    ```
 2. Sunucuyu yeniden başlatın veya `css_plugins load AntiTeamFlash` komutunu çalıştırın.
 
-## Komutlar
-
-Bu eklentinin komutu yoktur; yüklendiği anda otomatik çalışır.
-
-## Yapılandırma
-
-Config dosyası yoktur.
-
-## Çalışma Mantığı
-
-1. `EventPlayerBlind` (Post) yakalanır.
-2. Flash'ı atan oyuncu **farklı takımdan** ise körlük değerleri (başlangıç/bitiş zamanı, süre, alpha) kaydedilir — bu "meşru körlük"tür.
-3. Flash'ı atan **aynı takımdan** ise:
-   - Meşru körlük hâlâ sürüyorsa eski değerler geri yüklenir,
-   - Sürmüyorsa körlük tamamen sıfırlanır (`FlashDuration = 0`).
-4. Raunt başında ve oyuncu ayrıldığında durum temizlenir.
-
 ## Notlar
 
 - Kendi attığınız flash sizi etkilemeye devam eder (yalnızca *takım arkadaşının* flash'ı engellenir).
-- Eklentinin dil dosyası yoktur; oyunculara mesaj göndermez.

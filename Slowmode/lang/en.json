@@ -1,0 +1,7 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "slowmode.enabled": "Slow mode enabled! You must wait {0} seconds between messages.",
+  "slowmode.disabled": "Slow mode disabled.",
+  "slowmode.wait": "Slow mode is active! You must wait {0} more seconds.",
+  "slowmode.usage": "Usage: !slowmode <seconds ({0}-{1})> | !slowmode off"
+}

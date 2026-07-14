@@ -29,7 +29,7 @@ Yerdeki sahipsiz silahları tek komutla temizler. Jailbreak'te hücre açılış
 
 ## Yapılandırma
 
-Config dosyası yoktur. Mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Kullanım Örneği
 

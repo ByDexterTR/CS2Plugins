@@ -34,7 +34,7 @@ Hayattaki T oyuncularını renkli takımlara bölen etkinlik eklentisi. Aynı ta
 
 ## Yapılandırma
 
-Config dosyası yoktur. Takım renkleri ve isimleri kaynak kodda tanımlıdır; mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Takım renkleri ve isimleri kaynak kodda tanımlıdır; mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Kullanım Örneği
 

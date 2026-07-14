@@ -32,10 +32,13 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 | [BhopDoorFix](BhopDoorFix/README.md) | Bhop/KZ haritalarındaki kapıları dondurur |
 | [ChatCleaner](ChatCleaner/README.md) | Kendi ekranını veya tüm sunucu sohbetini temizleme |
 | [CommandMaker](CommandMaker/README.md) | JSON ile kod yazmadan özel sunucu komutları oluşturma |
+| [FortniteArmor](FortniteArmor/README.md) | Hasar önce zırhtan düşer, zırh bitmeden can azalmaz |
+| [Lazer](Lazer/README.md) | Ölü oyunculara canlıların baktığı yeri lazerle gösterir |
 | [MapBlock](MapBlock/README.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır |
 | [PlayerRGB](PlayerRGB/README.md) | Oyuncu modeline RGB (gökkuşağı) efekti |
 | [Redbull](Redbull/README.md) | Süreli hız artışı; limit ve cooldown destekli |
 | [Sesler](Sesler/README.md) | Bıçak/silah/ayak/oyuncu/MVP seslerini kategori bazında susturma |
+| [Slowmode](Slowmode/README.md) | Sohbete genel yavaş mod; mesajlar arasına saniye sınırı koyar |
 | [SpawnkillProtection](SpawnkillProtection/README.md) | Flag ve takım bazlı, renk geçişli spawn koruması |
 | [Speedometer](Speedometer/README.md) | HUD'da renk geçişli anlık hız göstergesi (u/s) |
 | [Thirdperson](Thirdperson/README.md) | Üçüncü şahıs kamera; duvar engelleme ve yetki desteği |
@@ -44,6 +47,7 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 
 | Eklenti | Açıklama |
 | --- | --- |
+| [AdminList](AdminList/README.md) | Çevrimiçi yetkilileri grup etiketi ve renkleriyle listeler; gruplar config'ten |
 | [DiscordLogger](DiscordLogger/README.md) | 35+ sunucu olayını 10 Discord webhook kanalına ve günlük dosyaya loglar |
 | [PlayerHourCheck](PlayerHourCheck/README.md) | CS2 oynama saati kontrolü; kademeli kick/ban cezaları |
 | [VIPCore](VIPCore/README.md) | 50+ modüllü, grup tabanlı, JSON/MySQL destekli VIP sistemi |

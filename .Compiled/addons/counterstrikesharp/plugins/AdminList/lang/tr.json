@@ -1,0 +1,8 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "admins.title": "Çevrimiçi Yetkililer:",
+  "admins.none": "Şu anda çevrimiçi yetkili yok.",
+  "admins.no_permission": "Bu komut için yetkiniz yok.",
+  "admins.reloaded": "AdminList ayarları yeniden yüklendi.",
+  "admins.reload_failed": "Config yüklenemedi, konsol loglarını kontrol edin."
+}

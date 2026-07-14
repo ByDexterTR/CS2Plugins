@@ -23,10 +23,6 @@ CT oyuncularına spawn olduktan sonra kısa süreli hasar koruması verir. Jailb
 2. Sunucuyu yeniden başlatın veya `css_plugins load CTSpawnKill` komutunu çalıştırın.
 3. İlk yüklemede config dosyası otomatik oluşturulur.
 
-## Komutlar
-
-Bu eklentinin komutu yoktur; CT spawn'ında otomatik devreye girer.
-
 ## Yapılandırma
 
 ```

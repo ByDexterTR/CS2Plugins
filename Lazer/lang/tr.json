@@ -1,0 +1,5 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "lazer.enabled": "Lazer açıldı. Ölüyken canlı oyuncuların baktığı yönü göreceksin.",
+  "lazer.disabled": "Lazer kapatıldı."
+}

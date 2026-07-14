@@ -44,7 +44,7 @@ Sunucudaki oyuncular arasından filtreli rastgele çekiliş yapar. Jailbreak etk
 
 ## Yapılandırma
 
-Config dosyası yoktur. Mesajlar ve sohbet ön eki `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Mesajlar ve sohbet ön eki `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Kullanım Örneği
 

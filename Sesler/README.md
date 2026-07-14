@@ -62,13 +62,6 @@ csgo/addons/counterstrikesharp/configs/plugins/Sesler/Sesler.json
 }
 ```
 
-## Çalışma Mantığı
-
-- Bıçak / ayak / oyuncu sesleri: `SoundEvent` UserMessage'ı (208) yakalanır, ses hash'i bilinen kategorilerle eşleştirilir ve susturması açık oyuncular alıcı listesinden çıkarılır.
-- Silah sesleri: UserMessage 369 (`sound` alanı `weapons/` içerenler) ve 452 üzerinden filtrelenir.
-- "Düşmanı/Takımı Sustur" modları ses kaynağının takımına göre karar verir.
-- Tercihler bellekte tutulur; oyuncu ayrılırken ve eklenti kapanırken veritabanına yazılır.
-
 ## Notlar
 
 - Ses hash listeleri oyun güncellemeleriyle değişebilir; yeni sesler duyulmaya başlarsa hash listelerinin güncellenmesi gerekir.

@@ -30,7 +30,7 @@ Oyuncu modelini akıcı bir RGB (gökkuşağı) döngüsüyle renklendirir. Komu
 
 ## Yapılandırma
 
-Config dosyası yoktur. Açık durumdaki oyuncuların SteamID64 listesi eklenti klasöründeki `PlayerRGB.json` dosyasında tutulur:
+Açık durumdaki oyuncuların SteamID64 listesi eklenti klasöründeki `PlayerRGB.json` dosyasında tutulur:
 
 ```json
 [

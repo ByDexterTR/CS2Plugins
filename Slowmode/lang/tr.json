@@ -1,0 +1,7 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "slowmode.enabled": "Yavaş mod açıldı! Mesajlar arasında {0} saniye beklemelisin.",
+  "slowmode.disabled": "Yavaş mod kapatıldı.",
+  "slowmode.wait": "Yavaş mod aktif! {0} saniye daha beklemelisin.",
+  "slowmode.usage": "Kullanım: !slowmode <saniye ({0}-{1})> | !slowmode off"
+}

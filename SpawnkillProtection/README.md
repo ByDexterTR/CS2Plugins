@@ -25,10 +25,6 @@ Spawn olan oyunculara yapılandırılabilir süreli hasar koruması verir. [CTSp
 2. Sunucuyu yeniden başlatın veya `css_plugins load SpawnkillProtection` komutunu çalıştırın.
 3. İlk yüklemede config dosyası otomatik oluşturulur.
 
-## Komutlar
-
-Bu eklentinin komutu yoktur; spawn'da otomatik devreye girer.
-
 ## Yapılandırma
 
 ```
@@ -60,12 +56,6 @@ csgo/addons/counterstrikesharp/configs/plugins/SpawnkillProtection/SpawnkillProt
 ```
 
 Bu örnekte: root yetkili 10 sn mor, VIP 8 sn altın, diğer T'ler 5 sn kırmızı, diğer CT'ler 5 sn mavi korumayla doğar.
-
-## Çalışma Mantığı
-
-1. Oyuncu spawn olur → önce `flag_protections` listesi sırayla denenir; eşleşme yoksa takım ayarına bakılır.
-2. Koruma boyunca oyuncuya gelen tüm hasar sıfırlanır.
-3. Oyuncunun rengi koruma renginde başlar ve süre ilerledikçe **doğrusal olarak beyaza (normale) yaklaşır** — süre bittiğinde renk tamamen normaldir ve "koruma sona erdi" mesajı gönderilir.
 
 ## Notlar
 

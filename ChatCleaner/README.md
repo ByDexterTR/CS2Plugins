@@ -30,7 +30,7 @@ Sohbet temizleme aracı. Oyuncular kendi ekranını, adminler tüm sunucunun soh
 
 ## Yapılandırma
 
-Config dosyası yoktur. Mesajlar ve sohbet ön eki `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Mesajlar ve sohbet ön eki `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Kullanım Örneği
 
