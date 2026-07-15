@@ -14,6 +14,7 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 | [CTPerk](CTPerk/README.md) | T sayısına göre hak tanınan raunt bazlı CT güçlendirmeleri |
 | [CTRev](CTRev/README.md) | Ölen CT'leri menüden/otomatik canlandırma; raunt başına hak sistemi |
 | [CTSpawnKill](CTSpawnKill/README.md) | CT'lere spawn sonrası kısa süreli hasar koruması |
+| [GoBhop](GoBhop/README.md) | Ölü T'leri gizli bhop noktasına ışınlar; TAB'da ölü gözükür, son T kalınca kapanır |
 | [JBDoors](JBDoors/README.md) | Tüm hücre kapılarını tek komutla açar/kapatır |
 | [JBRace](JBRace/README.md) | Başlangıç/bitiş noktalı yarış etkinliği; kazanan sayısı ayarlanabilir |
 | [JBTeams](JBTeams/README.md) | Canlı T'leri renkli takımlara böler; takım içi hasar kapalı |
