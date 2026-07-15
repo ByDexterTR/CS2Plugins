@@ -1,0 +1,5 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "screentext.enabled": "Ekran yazıları açıldı.",
+  "screentext.disabled": "Ekran yazıları gizlendi."
+}

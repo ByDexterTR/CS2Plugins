@@ -38,6 +38,7 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 | [MapBlock](MapBlock/README.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır |
 | [PlayerRGB](PlayerRGB/README.md) | Oyuncu modeline RGB (gökkuşağı) efekti |
 | [Redbull](Redbull/README.md) | Süreli hız artışı; limit ve cooldown destekli |
+| [ScreenText](ScreenText/README.md) | Ekranın istenen noktasına JSON'dan tanımlı kalıcı yazılar; herkes yalnızca kendi yazısını görür |
 | [Sesler](Sesler/README.md) | Bıçak/silah/ayak/oyuncu/MVP seslerini kategori bazında susturma |
 | [Slowmode](Slowmode/README.md) | Sohbete genel yavaş mod; mesajlar arasına saniye sınırı koyar |
 | [SpawnkillProtection](SpawnkillProtection/README.md) | Flag ve takım bazlı, renk geçişli spawn koruması |
