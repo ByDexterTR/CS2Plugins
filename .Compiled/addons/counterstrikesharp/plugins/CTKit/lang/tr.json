@@ -7,5 +7,11 @@
   "ctkit.not_selected": "Seçilmedi",
   "ctkit.menu_primary": "Silah: {0}",
   "ctkit.menu_secondary": "Pistol: {0}",
-  "ctkit.menu_reset": "Kitini Sıfırla"
+  "ctkit.menu_reset": "Kitini Sıfırla",
+  "ctkit.menu_title": "CT Silah Menü",
+  "ctkit.menu_primary_title": "Silah Seç",
+  "ctkit.menu_secondary_title": "Pistol Seç",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
 }

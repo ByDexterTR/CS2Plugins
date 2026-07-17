@@ -12,5 +12,8 @@
   "cit.size_medium": "Medium",
   "cit.size_large": "Large",
   "cit.trace_unavailable": "Trace system unavailable: {0}",
-  "cit.no_hit": "Could not find the aimed point, try again."
+  "cit.no_hit": "Could not find the aimed point, try again.",
+  "menu.scroll": "Scroll",
+  "menu.select": "Select",
+  "menu.exit": "Exit"
 }

@@ -47,7 +47,7 @@ public class AdminListConfig : BasePluginConfig
 public class AdminList : BasePlugin, IPluginConfig<AdminListConfig>
 {
   public override string ModuleName => "AdminList";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -163,10 +163,4 @@ public static class ChatColor
 
   public static char Get(string? name) =>
     name != null && Colors.TryGetValue(name.Trim(), out var c) ? c : '\x01';
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Orchid => '\x0E';
 }

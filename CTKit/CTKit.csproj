@@ -12,6 +12,10 @@
     <PackageReference Include="CounterStrikeSharp.API" Version="1.0.371" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Compile Include="..\.Shared\WasdMenu.cs" Link=".Shared\WasdMenu.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />

@@ -15,5 +15,13 @@
   "jbrace.menu_cancel_race": "Cancel Race",
   "jbrace.menu_set_start": "Set Start",
   "jbrace.menu_set_finish": "Set Finish",
-  "jbrace.menu_clear_markers": "Clear Markers"
+  "jbrace.menu_clear_markers": "Clear Markers",
+  "jbrace.no_terrorists": "No terrorists found for the race!",
+  "jbrace.countdown": "Race starting in {0} seconds...",
+  "jbrace.hud_countdown": "Race starting: {0}",
+  "jbrace.race_started": "Race started!",
+  "jbrace.menu_title": "Race",
+  "menu.scroll": "Scroll",
+  "menu.select": "Select",
+  "menu.exit": "Exit"
 }

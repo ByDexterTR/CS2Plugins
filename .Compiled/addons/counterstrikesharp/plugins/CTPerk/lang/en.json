@@ -12,5 +12,9 @@
   "ctperk.perk_active_infammo": "Perk: Infinite Ammo active",
   "ctperk.perk_active_dmgreduction": "Perk: Damage Reduction {0}% active",
   "ctperk.perk_active_dmgboost": "Perk: Damage Boost {0}% active",
-  "ctperk.perk_active_generic": "Perk: Active"
+  "ctperk.perk_active_generic": "Perk: Active",
+  "ctperk.menu_title": "CT Perk ({0}/{1})",
+  "menu.scroll": "Scroll",
+  "menu.select": "Select",
+  "menu.exit": "Exit"
 }

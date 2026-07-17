@@ -1,0 +1,16 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "no_permission": "You don't have permission for this command.",
+  "must_alive": "You must be alive to use this command.",
+  "not_found": "Target not found.",
+  "immunity": "{0} has higher immunity than you.",
+  "bring.usage": "Usage: css_bring <player/@t/@ct/@all>",
+  "bring.done": "{0} has been teleported to you.",
+  "bring.done_multi": "{0} players have been teleported to you.",
+  "bring.notify": "{0} teleported you to them.",
+  "goto.usage": "Usage: css_goto <player>",
+  "goto.multiple": "Multiple players matched, specify a single target.",
+  "goto.self": "You can't teleport to yourself.",
+  "goto.done": "You teleported to {0}.",
+  "goto.notify": "{0} teleported to you."
+}

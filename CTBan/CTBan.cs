@@ -25,7 +25,7 @@ public class CTBanList
 public class CTBan : BasePlugin
 {
     public override string ModuleName => "CTBan";
-    public override string ModuleVersion => "1.0.4";
+    public override string ModuleVersion => "1.0.5";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -39,10 +39,30 @@ public class CTBan : BasePlugin
     public override void Load(bool hotReload)
     {
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnect);
-        RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
         RegisterEventHandler<EventPlayerTeam>(OnSwitchTeam);
         AddCommandListener("jointeam", OnJoinTeam);
         LoadBanList();
+    }
+
+    private CTBanEntry? GetActiveBan(CCSPlayerController player)
+    {
+        var steamid = player.SteamID.ToString();
+        if (!BanList.BannedPlayers.TryGetValue(steamid, out var banEntry))
+            return null;
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (banEntry.BanTime > now)
+            return banEntry;
+
+        BanList.BannedPlayers.Remove(steamid);
+        SaveBanList();
+        return null;
+    }
+
+    private void NotifyBlocked(CCSPlayerController player, CTBanEntry banEntry)
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
     }
 
     private void LoadBanList()
@@ -103,45 +123,30 @@ public class CTBan : BasePlugin
         }
     }
 
-    private static string FormatTimeLeft(long seconds)
+    private string FormatTimeLeft(long seconds)
     {
         if (seconds <= 0)
-            return $"{CC.Green}0{CC.Default} saniye";
+            return $"{CC.Green}0{CC.Default} {Localizer["ctban.unit_second"]}";
+
+        var units = new (long Seconds, string Key)[]
+        {
+            (31536000, "ctban.unit_year"),
+            (2592000, "ctban.unit_month"),
+            (604800, "ctban.unit_week"),
+            (86400, "ctban.unit_day"),
+            (3600, "ctban.unit_hour"),
+            (60, "ctban.unit_minute"),
+            (1, "ctban.unit_second")
+        };
 
         var parts = new List<string>();
-
-        long years = seconds / 31536000;
-        seconds %= 31536000;
-        if (years > 0)
-            parts.Add($"{CC.Green}{years}{CC.Default} yıl");
-
-        long months = seconds / 2592000;
-        seconds %= 2592000;
-        if (months > 0)
-            parts.Add($"{CC.Green}{months}{CC.Default} ay");
-
-        long weeks = seconds / 604800;
-        seconds %= 604800;
-        if (weeks > 0)
-            parts.Add($"{CC.Green}{weeks}{CC.Default} hafta");
-
-        long days = seconds / 86400;
-        seconds %= 86400;
-        if (days > 0)
-            parts.Add($"{CC.Green}{days}{CC.Default} gün");
-
-        long hours = seconds / 3600;
-        seconds %= 3600;
-        if (hours > 0)
-            parts.Add($"{CC.Green}{hours}{CC.Default} saat");
-
-        long minutes = seconds / 60;
-        seconds %= 60;
-        if (minutes > 0)
-            parts.Add($"{CC.Green}{minutes}{CC.Default} dakika");
-
-        if (seconds > 0)
-            parts.Add($"{CC.Green}{seconds}{CC.Default} saniye");
+        foreach (var (unitSeconds, key) in units)
+        {
+            long value = seconds / unitSeconds;
+            seconds %= unitSeconds;
+            if (value > 0)
+                parts.Add($"{CC.Green}{value}{CC.Default} {Localizer[key]}");
+        }
 
         return string.Join(" ", parts);
     }
@@ -176,7 +181,7 @@ public class CTBan : BasePlugin
             return;
         }
 
-        var reason = info.ArgCount > 3 ? string.Join(" ", Enumerable.Range(3, info.ArgCount - 3).Select(i => info.GetArg(i))) : "Sebepsiz";
+        var reason = info.ArgCount > 3 ? string.Join(" ", Enumerable.Range(3, info.ArgCount - 3).Select(i => info.GetArg(i))) : Localizer["ctban.no_reason"].ToString();
         var adminSteamId = player?.SteamID.ToString() ?? "unknown";
         BanList.BannedPlayers[steamid] = new CTBanEntry
         {
@@ -257,7 +262,7 @@ public class CTBan : BasePlugin
             return;
         }
 
-        var reason = info.ArgCount > 3 ? string.Join(" ", Enumerable.Range(3, info.ArgCount - 3).Select(i => info.GetArg(i))) : "Sebepsiz";
+        var reason = info.ArgCount > 3 ? string.Join(" ", Enumerable.Range(3, info.ArgCount - 3).Select(i => info.GetArg(i))) : Localizer["ctban.no_reason"].ToString();
         var adminSteamId = player?.SteamID.ToString() ?? "unknown";
         BanList.BannedPlayers[steamid] = new CTBanEntry
         {
@@ -297,56 +302,22 @@ public class CTBan : BasePlugin
     public HookResult OnSwitchTeam(EventPlayerTeam @event, GameEventInfo info)
     {
         CCSPlayerController? player = @event.Userid;
-        if (player == null || !player.IsValid)
+        if (player == null || !player.IsValid || player.IsBot)
             return HookResult.Continue;
 
-        if (@event.Team == (int)CsTeam.CounterTerrorist)
-        {
-            var steamid = player.SteamID.ToString();
-            if (BanList.BannedPlayers.TryGetValue(steamid, out var banEntry))
-            {
-                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                if (banEntry.BanTime > now)
-                {
-                    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
-                    player.ChangeTeam(CsTeam.Terrorist);
-                    return HookResult.Handled;
-                }
-                else
-                {
-                    BanList.BannedPlayers.Remove(steamid);
-                    SaveBanList();
-                }
-            }
-        }
-        return HookResult.Continue;
-    }
-
-    public HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
-    {
-        CCSPlayerController? player = @event.Userid;
-        if (player == null || !player.IsValid)
+        if (@event.Team != (int)CsTeam.CounterTerrorist)
             return HookResult.Continue;
 
-        if (player.Team == CsTeam.CounterTerrorist)
+        var banEntry = GetActiveBan(player);
+        if (banEntry == null)
+            return HookResult.Continue;
+
+        NotifyBlocked(player, banEntry);
+        Server.NextFrame(() =>
         {
-            var steamid = player.SteamID.ToString();
-            if (BanList.BannedPlayers.TryGetValue(steamid, out var banEntry))
-            {
-                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                if (banEntry.BanTime > now)
-                {
-                    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
-                    player.ChangeTeam(CsTeam.Terrorist);
-                    return HookResult.Continue;
-                }
-                else
-                {
-                    BanList.BannedPlayers.Remove(steamid);
-                    SaveBanList();
-                }
-            }
-        }
+            if (player.IsValid && player.Team == CsTeam.CounterTerrorist)
+                player.ChangeTeam(CsTeam.Terrorist);
+        });
         return HookResult.Continue;
     }
 
@@ -355,26 +326,15 @@ public class CTBan : BasePlugin
         if (player == null || !player.IsValid || player.IsBot)
             return HookResult.Continue;
 
-        if (player.Team == CsTeam.CounterTerrorist)
-        {
-            var steamid = player.SteamID.ToString();
-            if (BanList.BannedPlayers.TryGetValue(steamid, out var banEntry))
-            {
-                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                if (banEntry.BanTime > now)
-                {
-                    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.join_blocked", FormatTimeLeft(banEntry.BanTime - now), banEntry.Reason]}");
-                    player.ChangeTeam(CsTeam.Terrorist);
-                    return HookResult.Handled;
-                }
-                else
-                {
-                    BanList.BannedPlayers.Remove(steamid);
-                    SaveBanList();
-                }
-            }
-        }
-        return HookResult.Continue;
+        if (!int.TryParse(info.GetArg(1), out var targetTeam) || targetTeam != (int)CsTeam.CounterTerrorist)
+            return HookResult.Continue;
+
+        var banEntry = GetActiveBan(player);
+        if (banEntry == null)
+            return HookResult.Continue;
+
+        NotifyBlocked(player, banEntry);
+        return HookResult.Handled;
     }
 
     public HookResult OnPlayerConnect(EventPlayerConnectFull @event, GameEventInfo info)
@@ -406,24 +366,4 @@ public class CTBan : BasePlugin
 
         return Utilities.GetPlayers().FirstOrDefault(p => p.PlayerName.Equals(arg, StringComparison.OrdinalIgnoreCase));
     }
-}
-
-public static class CC
-{
-    public static char Default => '\x01';
-    public static char Red => '\x07';
-    public static char LightRed => '\x0F';
-    public static char DarkRed => '\x02';
-    public static char BlueGrey => '\x0A';
-    public static char Blue => '\x0B';
-    public static char DarkBlue => '\x0C';
-    public static char Purple => '\x0C';
-    public static char Orchid => '\x0E';
-    public static char Yellow => '\x09';
-    public static char Gold => '\x10';
-    public static char LightGreen => '\x05';
-    public static char Green => '\x04';
-    public static char Lime => '\x06';
-    public static char Grey => '\x08';
-    public static char Grey2 => '\x0D';
 }

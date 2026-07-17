@@ -1,6 +1,7 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Timers;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace VIPCore;
 
@@ -27,6 +28,9 @@ public class GrenadeKit : VipModule
     };
 
     private readonly Dictionary<string, int>?[] _remaining = new Dictionary<string, int>?[64];
+
+    private static string GiveName(GrenadeDef def, CCSPlayerController player) =>
+        def.ThrowName == "molotov" && player.Team == CsTeam.CounterTerrorist ? "weapon_incgrenade" : def.GiveWeapon;
 
     public override string Name => "GrenadeKit";
     public override string DisplayName => Core.Localizer["vip.module.grenadekit"];
@@ -69,7 +73,7 @@ public class GrenadeKit : VipModule
                     remaining[def.ThrowName] = c;
 
                 if (!def.DesignerNames.Any(n => HasWeapon(player, n)))
-                    player!.GiveNamedItem(def.GiveWeapon);
+                    player!.GiveNamedItem(GiveName(def, player));
                 else if (c > 1)
                     UpdateCount(player!, def.DesignerNames, c);
             }
@@ -98,7 +102,7 @@ public class GrenadeKit : VipModule
 
         int next = pending - 1;
         remaining[def.ThrowName] = next;
-        player!.GiveNamedItem(def.GiveWeapon);
+        player!.GiveNamedItem(GiveName(def, player));
         if (next > 1)
             UpdateCount(player, def.DesignerNames, next);
 

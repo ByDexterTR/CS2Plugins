@@ -5,6 +5,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
+using ByDexter.Shared;
 
 namespace Lazer;
 
@@ -32,7 +33,7 @@ public class LazerConfig : BasePluginConfig
 public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
 {
   public override string ModuleName => "Lazer";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -278,24 +279,4 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
 
     return Color.White;
   }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

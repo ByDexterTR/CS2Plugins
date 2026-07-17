@@ -69,7 +69,7 @@
   "vip.module.killscreen": "Kill Screen",
   "vip.module.joinmessage": "Join Message",
   "vip.module.vipchat": "VIP Chat",
-  "vip.module.chattag": "Chat Tag",
+  "vip.module.tag": "Tag (Chat + TAB)",
   "vip.chat.all": "ALL",
   "vip.chat.t": "T",
   "vip.chat.ct": "CT",

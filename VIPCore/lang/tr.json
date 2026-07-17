@@ -69,7 +69,7 @@
   "vip.module.killscreen": "Öldürme Efekti",
   "vip.module.joinmessage": "Katılma Mesajı",
   "vip.module.vipchat": "VIP Sohbeti",
-  "vip.module.chattag": "Sohbet Tag'ı",
+  "vip.module.tag": "Tag (Sohbet + TAB)",
   "vip.chat.all": "HERKES",
   "vip.chat.t": "T",
   "vip.chat.ct": "AT",

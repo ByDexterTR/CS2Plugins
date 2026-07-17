@@ -5,5 +5,10 @@
   "sustum.no_active": "No active sustum game!",
   "sustum.cancelled": "{0} cancelled the sustum game!",
   "sustum.winner": "{0} won!",
-  "sustum.loser": "{0} lost!"
+  "sustum.loser": "{0} lost!",
+  "sustum.hud_won": "{0} won!",
+  "sustum.hud_lost": "{0} lost!",
+  "sustum.hud_started": "{0} started {1}",
+  "sustum.hud_countdown": "{0} seconds: the word will appear here",
+  "sustum.hud_someone": "Someone"
 }

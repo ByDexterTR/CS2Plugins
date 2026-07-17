@@ -14,6 +14,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\.Shared\NativeTrace.cs" Link=".Shared\NativeTrace.cs" />
+    <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

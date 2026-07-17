@@ -12,7 +12,7 @@ namespace Speedometer;
 public class Speedometer : BasePlugin
 {
     public override string ModuleName => "Speedometer";
-    public override string ModuleVersion => "1.0.1";
+    public override string ModuleVersion => "1.0.2";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -235,12 +235,4 @@ public class Speedometer : BasePlugin
 
         return "#FFFFFF";
     }
-}
-
-public static class CC
-{
-    public static char Default => '\x01';
-    public static char Red => '\x07';
-    public static char Orchid => '\x0E';
-    public static char Green => '\x04';
 }

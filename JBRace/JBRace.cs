@@ -6,17 +6,31 @@ using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Memory;
-using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace JBRace;
 
-public class JBRace : BasePlugin
+public class JBRaceConfig : BasePluginConfig
+{
+  [JsonPropertyName("race_cmd")]
+  public string RaceCommands { get; set; } = "css_race,css_yaris";
+
+  [JsonPropertyName("race_flag")]
+  public string RaceFlag { get; set; } = "@jailbreak/warden,@css/generic";
+
+  [JsonPropertyName("race_model")]
+  public string RaceModel { get; set; } = "models/coop/challenge_coin.vmdl";
+
+  [JsonPropertyName("race_countdown")]
+  public int RaceCountdown { get; set; } = 3;
+}
+
+public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 {
   public override string ModuleName => "JBRace";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -28,7 +42,7 @@ public class JBRace : BasePlugin
   private readonly float _finishRadius = 64f;
   private int _winnerTarget = 1;
   private bool _raceActive = false;
-  private bool _waitingForWinnerInput = false;
+  private ulong _winnerInputSteamId = 0;
 
   private CDynamicProp? _finishModel;
   private CBeam? _finishBeam;
@@ -41,23 +55,45 @@ public class JBRace : BasePlugin
 
   private bool _coinModelPrecached;
 
+  public JBRaceConfig Config { get; set; } = new();
+
+  private WasdMenuManager _menus = null!;
+
+  public void OnConfigParsed(JBRaceConfig config)
+  {
+    Config = config;
+    if (config.RaceCountdown < 1)
+      config.RaceCountdown = 1;
+  }
+
   public override void Load(bool hotReload)
   {
+    _menus = new WasdMenuManager(this,
+      () => Localizer["menu.scroll"],
+      () => Localizer["menu.select"],
+      () => Localizer["menu.exit"]);
     RegisterListener<OnTick>(OnTickCheckFinish);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterListener<OnServerPrecacheResources>(OnServerPrecacheResources);
     AddCommandListener("say", OnPlayerChatHandler);
     AddCommandListener("say_team", OnPlayerChatHandler);
+
+    foreach (var name in Util.Split(Config.RaceCommands))
+      AddCommand(name, "Yaris menusunu acar", OnRaceCommand);
   }
 
   public override void Unload(bool hotReload)
   {
+    _menus.Clear();
     ResetRace();
   }
 
   private void OnServerPrecacheResources(ResourceManifest res)
   {
-    res.AddResource("models/coop/challenge_coin.vmdl");
+    if (string.IsNullOrWhiteSpace(Config.RaceModel))
+      return;
+
+    res.AddResource(Config.RaceModel);
     _coinModelPrecached = true;
   }
 
@@ -67,11 +103,12 @@ public class JBRace : BasePlugin
     return HookResult.Continue;
   }
 
-  [ConsoleCommand("css_race", "Yarış menüsü")]
-  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnRaceCommand(CCSPlayerController? player, CommandInfo info)
   {
     if (player == null || !player.IsValid)
+      return;
+
+    if (!Util.HasAccess(player, Config.RaceFlag))
       return;
 
     ShowRaceMenu(player);
@@ -79,14 +116,14 @@ public class JBRace : BasePlugin
 
   public HookResult OnPlayerChatHandler(CCSPlayerController? player, CommandInfo message)
   {
-    if (player == null || !player.IsValid || !_waitingForWinnerInput)
+    if (player == null || !player.IsValid || _winnerInputSteamId == 0 || player.SteamID != _winnerInputSteamId)
       return HookResult.Continue;
 
     var text = message.ArgString.Trim().Trim('"');
     if (int.TryParse(text, out var n) && n >= 1)
     {
       _winnerTarget = n;
-      _waitingForWinnerInput = false;
+      _winnerInputSteamId = 0;
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.winner_count_set", _winnerTarget]}");
       Server.NextFrame(() => ShowRaceMenu(player));
       return HookResult.Handled;
@@ -96,74 +133,93 @@ public class JBRace : BasePlugin
 
   private void ShowRaceMenu(CCSPlayerController player)
   {
-    var menu = new CenterHtmlMenu($"<font color='#bab9be' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/flag.png'> Race <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/flag.png'></font>", this);
+    var items = new List<WasdItem>();
 
     if (!_raceActive)
     {
-      menu.AddMenuOption(Localizer["jbrace.menu_start_race"], (p, o) =>
+      items.Add(new WasdItem
       {
-        if (!ValidateCanStart(p))
+        Text = Localizer["jbrace.menu_start_race"],
+        OnSelect = p =>
         {
-          ShowRaceMenu(player);
-          return;
+          if (!ValidateCanStart(p))
+            return;
+
+          _winners.Clear();
+          _menus.Close(p);
+          StartRaceCountdown();
+          Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.started", p.PlayerName]}");
         }
-        _winners.Clear();
-        MenuManager.CloseActiveMenu(p!);
-        StartRaceCountdown();
-        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.started", player?.PlayerName ?? ""]}");
       });
     }
     else
     {
-      menu.AddMenuOption(Localizer["jbrace.menu_cancel_race"], (p, o) =>
+      items.Add(new WasdItem
       {
-        ResetRace();
-        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.cancelled", player?.PlayerName ?? ""]}");
-        MenuManager.CloseActiveMenu(p!);
+        Text = Localizer["jbrace.menu_cancel_race"],
+        OnSelect = p =>
+        {
+          ResetRace();
+          Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.cancelled", p.PlayerName]}");
+          _menus.Close(p);
+        }
       });
     }
 
-    menu.AddMenuOption(Localizer["jbrace.menu_set_start"], (p, o) =>
+    items.Add(new WasdItem
     {
-      var pos = p?.PlayerPawn.Value?.AbsOrigin;
-      var ang = p?.PlayerPawn.Value?.EyeAngles ?? new QAngle(0, 0, 0);
-      if (pos != null)
+      Text = Localizer["jbrace.menu_set_start"],
+      OnSelect = p =>
       {
-        _startPos = new Vector(pos.X, pos.Y, pos.Z);
-        _startAngle = new QAngle(0, ang.Y, 0);
-        p!.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.start_set"]}");
+        var pos = p.PlayerPawn.Value?.AbsOrigin;
+        var ang = p.PlayerPawn.Value?.EyeAngles ?? new QAngle(0, 0, 0);
+        if (pos != null)
+        {
+          _startPos = new Vector(pos.X, pos.Y, pos.Z);
+          _startAngle = new QAngle(0, ang.Y, 0);
+          p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.start_set"]}");
+        }
       }
-      ShowRaceMenu(player);
     });
 
-    menu.AddMenuOption(Localizer["jbrace.menu_set_finish"], (p, o) =>
+    items.Add(new WasdItem
     {
-      var pos = p?.PlayerPawn.Value?.AbsOrigin;
-      if (pos != null)
+      Text = Localizer["jbrace.menu_set_finish"],
+      OnSelect = p =>
       {
-        _finishPos = new Vector(pos.X, pos.Y, pos.Z);
-        SpawnFinishMarker();
-        p!.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.finish_set"]}");
+        var pos = p.PlayerPawn.Value?.AbsOrigin;
+        if (pos != null)
+        {
+          _finishPos = new Vector(pos.X, pos.Y, pos.Z);
+          SpawnFinishMarker();
+          p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.finish_set"]}");
+        }
       }
-      ShowRaceMenu(player);
     });
 
-    menu.AddMenuOption(Localizer["jbrace.winner_count", _winnerTarget], (p, o) =>
+    items.Add(new WasdItem
     {
-      _waitingForWinnerInput = true;
-      p!.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.enter_winner_count"]}");
-      MenuManager.CloseActiveMenu(p);
+      Text = Localizer["jbrace.winner_count", _winnerTarget],
+      OnSelect = p =>
+      {
+        _winnerInputSteamId = p.SteamID;
+        p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.enter_winner_count"]}");
+        _menus.Close(p);
+      }
     });
 
-    menu.AddMenuOption(Localizer["jbrace.menu_clear_markers"], (p, o) =>
+    items.Add(new WasdItem
     {
-      RemoveFinishMarker();
-      _finishPos = null;
-      p!.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.markers_cleared"]}");
-      ShowRaceMenu(player);
+      Text = Localizer["jbrace.menu_clear_markers"],
+      OnSelect = p =>
+      {
+        RemoveFinishMarker();
+        _finishPos = null;
+        p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.markers_cleared"]}");
+      }
     });
 
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    _menus.Open(player, Localizer["jbrace.menu_title"], items);
   }
 
   private bool ValidateCanStart(CCSPlayerController? player)
@@ -196,7 +252,7 @@ public class JBRace : BasePlugin
 
     if (tPlayers.Count == 0)
     {
-      Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} Yarış için {CC.Gold}T{CC.Default} bulunamadı!");
+      Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.no_terrorists"]}");
       return;
     }
 
@@ -208,15 +264,15 @@ public class JBRace : BasePlugin
       Freeze(pawn);
     }
 
-    int countdown = 3;
+    int countdown = Config.RaceCountdown;
     _countdownTimer?.Kill();
     _countdownTimer = AddTimer(1.0f, () =>
     {
       if (countdown > 0)
       {
-        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} Yarış {CC.Gold}{countdown}{CC.Default} saniye sonra başlıyor...");
+        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.countdown", countdown]}");
         _showHud = true;
-        _hudHtml = $"<font color='#bab9be' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/flag.png'> Yarış başlıyor: {countdown}</font>";
+        _hudHtml = $"<font color='#bab9be' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/flag.png'> {Localizer["jbrace.hud_countdown", countdown]}</font>";
         countdown--;
       }
       else
@@ -237,13 +293,13 @@ public class JBRace : BasePlugin
           }
         }
 
-        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} Yarış {CC.Green}başladı{CC.Default}!");
+        Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.race_started"]}");
         _showHud = false;
 
         _countdownTimer?.Kill();
         _countdownTimer = null;
       }
-    }, TimerFlags.REPEAT);
+    }, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
   }
 
   private void OnTickCheckFinish()
@@ -317,7 +373,7 @@ public class JBRace : BasePlugin
       {
         var pos = new Vector(_finishPos.X, _finishPos.Y, _finishPos.Z + 48f);
         model.DispatchSpawn();
-        model.SetModel("models/coop/challenge_coin.vmdl");
+        model.SetModel(Config.RaceModel);
         Server.NextWorldUpdate(() => model.AcceptInput("SetAnimation", value: "challenge_coin_idle"));
         model.Teleport(pos, new QAngle(0, 0, 0), Vector.Zero);
         _finishModel = model;
@@ -357,7 +413,7 @@ public class JBRace : BasePlugin
   {
     _raceActive = false;
     _winners.Clear();
-    _waitingForWinnerInput = false;
+    _winnerInputSteamId = 0;
     _countdownTimer?.Kill();
     _countdownTimer = null;
     _raceStartTime = null;
@@ -393,24 +449,3 @@ public class JBRace : BasePlugin
     Utilities.SetStateChanged(pawn, "CBaseEntity", "m_MoveType");
   }
 }
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
-}
-

@@ -1,0 +1,14 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "pm.usage": "Usage: !pm <player> <message>",
+  "pm.not_found": "No player named '{0}' found.",
+  "pm.multiple": "Multiple players matched '{0}', be more specific.",
+  "pm.self": "You can't message yourself.",
+  "pm.target_off": "{0} has private messages disabled.",
+  "pm.self_off": "Your private messages are disabled, enable them first with !pmon.",
+  "pm.sent": "Message sent to {0}.",
+  "pm.off": "Private messages disabled.",
+  "pm.on": "Private messages enabled.",
+  "pm.sound_on": "Private message sound enabled.",
+  "pm.sound_off": "Private message sound disabled."
+}

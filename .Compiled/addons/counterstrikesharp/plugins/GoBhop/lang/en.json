@@ -20,5 +20,8 @@
   "gobhop.point_not_found": "GoBhop point not found: {0}",
   "gobhop.set_usage": "Usage: {0} <name>",
   "gobhop.menu_title": "GoBhop",
-  "gobhop.menu_exit": "Exit"
+  "gobhop.menu_exit": "Leave GoBhop",
+  "menu.scroll": "Scroll",
+  "menu.select": "Select",
+  "menu.exit": "Exit"
 }

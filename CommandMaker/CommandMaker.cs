@@ -230,7 +230,7 @@ public class CommandsConfig
 public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 {
     public override string ModuleName => "CommandMaker";
-    public override string ModuleVersion => "1.0.4";
+    public override string ModuleVersion => "1.0.5";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -252,6 +252,24 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
     public override void Unload(bool hotReload)
     {
+        ResetTrackedPlayers();
+    }
+
+    private void ResetTrackedPlayers()
+    {
+        foreach (var steamId in _playerSpeed.Keys.Concat(_playerGravity.Keys).Distinct().ToList())
+        {
+            var pawn = Utilities.GetPlayerFromSteamId(steamId)?.PlayerPawn.Value;
+            if (pawn == null || !pawn.IsValid)
+                continue;
+            pawn.VelocityModifier = 1.0f;
+            pawn.GravityScale = 1.0f;
+        }
+
+        _godmodePlayers.Clear();
+        _playerSpeed.Clear();
+        _playerGravity.Clear();
+        _playerCenter.Clear();
     }
 
     public override void Load(bool hotReload)
@@ -261,7 +279,11 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         RegisterListener<OnTick>(OnTick);
         RegisterListener<OnEntityTakeDamagePre>(OnEntityDamage);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
-        RegisterListener<OnMapStart>(_ => _cooldowns.Clear());
+        RegisterListener<OnMapStart>(_ =>
+        {
+            _cooldowns.Clear();
+            ResetTrackedPlayers();
+        });
 
         AddCommand("css_cm_reload", "Komutları yeniden yükle", (player, info) =>
         {
@@ -1176,41 +1198,38 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             return;
 
         var currentTime = Server.CurrentTime;
-        var toRemove = new List<ulong>();
+        var affected = new HashSet<ulong>(_playerSpeed.Keys);
+        affected.UnionWith(_playerGravity.Keys);
+        affected.UnionWith(_playerCenter.Keys);
 
-        foreach (var player in Utilities.GetPlayers())
+        List<ulong>? toRemove = null;
+
+        foreach (var steamId in affected)
         {
-            if (player?.IsValid != true || player.PlayerPawn.Value == null)
+            var player = Utilities.GetPlayerFromSteamId(steamId);
+            var pawn = player?.PlayerPawn.Value;
+            if (player?.IsValid != true || pawn == null)
                 continue;
 
-            var steamId = player.SteamID;
-
             if (_playerSpeed.TryGetValue(steamId, out float speed))
-            {
-                player.PlayerPawn.Value.VelocityModifier = speed / 250f;
-            }
+                pawn.VelocityModifier = speed / 250f;
 
             if (_playerGravity.TryGetValue(steamId, out float gravity))
-            {
-                player.PlayerPawn.Value.GravityScale = gravity;
-            }
+                pawn.GravityScale = gravity;
 
             if (_playerCenter.TryGetValue(steamId, out var centerData))
             {
                 if (currentTime < centerData.EndTime)
-                {
                     player.PrintToCenterHtml(centerData.Message);
-                }
                 else
-                {
-                    toRemove.Add(steamId);
-                }
+                    (toRemove ??= new List<ulong>()).Add(steamId);
             }
         }
 
-        foreach (var steamId in toRemove)
+        if (toRemove != null)
         {
-            _playerCenter.Remove(steamId);
+            foreach (var steamId in toRemove)
+                _playerCenter.Remove(steamId);
         }
     }
 
@@ -1535,24 +1554,4 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
         return message;
     }
-}
-
-public static class CC
-{
-    public static char Default => '\x01';
-    public static char Red => '\x07';
-    public static char LightRed => '\x0F';
-    public static char DarkRed => '\x02';
-    public static char BlueGrey => '\x0A';
-    public static char Blue => '\x0B';
-    public static char DarkBlue => '\x0C';
-    public static char Purple => '\x0C';
-    public static char Orchid => '\x0E';
-    public static char Yellow => '\x09';
-    public static char Gold => '\x10';
-    public static char LightGreen => '\x05';
-    public static char Green => '\x04';
-    public static char Lime => '\x06';
-    public static char Grey => '\x08';
-    public static char Grey2 => '\x0D';
 }

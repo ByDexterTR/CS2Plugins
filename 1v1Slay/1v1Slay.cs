@@ -28,7 +28,7 @@ public class OneVOneSlayConfig : BasePluginConfig
 public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 {
   public override string ModuleName => "1v1Slay";
-  public override string ModuleVersion => "1.0.4";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -54,6 +54,11 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
     RegisterListener<OnTick>(OnTickHud);
+  }
+
+  public override void Unload(bool hotReload)
+  {
+    StopCountdown();
   }
   private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
   {
@@ -183,12 +188,12 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
         SlayRemainingPlayers();
         StopCountdown();
       }
-    }, TimerFlags.REPEAT);
+    }, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
   }
 
-  private static string BuildHudHtml(int remaining)
+  private string BuildHudHtml(int remaining)
   {
-    return $"<font color='#ff0000' class='fontSize-m'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/skull.png'> 1v1 Ölüm sayacı: {remaining} saniye</font>";
+    return $"<font color='#ff0000' class='fontSize-m'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/skull.png'> {Localizer["onevsoneslay.hud_countdown", remaining]}</font>";
   }
 
   private void StopCountdown()
@@ -217,24 +222,4 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
       player.PlayerPawn.Value?.CommitSuicide(false, true);
     }
   }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

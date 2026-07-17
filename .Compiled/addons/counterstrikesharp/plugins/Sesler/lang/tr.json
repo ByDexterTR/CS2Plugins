@@ -9,5 +9,8 @@
   "sesler.mode_mute_enemy": "Düşmanı Sustur",
   "sesler.mode_mute_team": "Takımı Sustur",
   "sesler.mode_closed": "Kapalı",
-  "sesler.back": "Geri"
+  "sesler.back": "← Geri",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
 }

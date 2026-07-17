@@ -3,7 +3,8 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Menu;
+using CounterStrikeSharp.API.Modules.Utils;
+using ByDexter.Shared;
 
 namespace CTKit;
 
@@ -50,7 +51,7 @@ public class CTKitConfig : BasePluginConfig
 public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
 {
   public override string ModuleName => "CTKit";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -61,6 +62,8 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
   private Dictionary<ulong, string> playerPrimaryWeapon = new();
   private Dictionary<ulong, string> playerSecondaryWeapon = new();
 
+  private WasdMenuManager _menus = null!;
+
   public void OnConfigParsed(CTKitConfig config)
   {
     Config = config;
@@ -68,8 +71,17 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
 
   public override void Load(bool hotReload)
   {
+    _menus = new WasdMenuManager(this,
+      () => Localizer["menu.scroll"],
+      () => Localizer["menu.select"],
+      () => Localizer["menu.exit"]);
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+  }
+
+  public override void Unload(bool hotReload)
+  {
+    _menus.Clear();
   }
 
   private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
@@ -86,7 +98,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
   private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player == null || !player.IsValid || player.IsBot || player.TeamNum != 3)
+    if (player == null || !player.IsValid || player.IsBot || player.Team != CsTeam.CounterTerrorist)
       return HookResult.Continue;
 
     var steamId = player.SteamID;
@@ -137,7 +149,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid || player.IsBot)
       return;
 
-    if (player.TeamNum != 3)
+    if (player.Team != CsTeam.CounterTerrorist)
     {
       commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.ct_only"]}");
       return;
@@ -154,33 +166,30 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     var steamId = player.SteamID;
     var currentPrimary = playerPrimaryWeapon.TryGetValue(steamId, out var primary)
         ? GetWeaponDisplayName(primary, true)
-        : Localizer["ctkit.not_selected"];
+        : Localizer["ctkit.not_selected"].ToString();
     var currentSecondary = playerSecondaryWeapon.TryGetValue(steamId, out var secondary)
         ? GetWeaponDisplayName(secondary, false)
-        : Localizer["ctkit.not_selected"];
+        : Localizer["ctkit.not_selected"].ToString();
 
-    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'> CT Silah Menü <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'></font>", this);
-
-    menu.AddMenuOption(Localizer["ctkit.menu_primary", currentPrimary], (p, option) =>
+    var items = new List<WasdItem>
     {
-      ShowPrimaryWeaponMenu(p);
-    });
+      new() { Text = Localizer["ctkit.menu_primary", currentPrimary], OnSelect = p => ShowPrimaryWeaponMenu(p) },
+      new() { Text = Localizer["ctkit.menu_secondary", currentSecondary], OnSelect = p => ShowSecondaryWeaponMenu(p) },
+      new()
+      {
+        Text = Localizer["ctkit.menu_reset"],
+        OnSelect = p =>
+        {
+          var sid = p.SteamID;
+          playerPrimaryWeapon.Remove(sid);
+          playerSecondaryWeapon.Remove(sid);
+          p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.kit_reset"]}");
+          ShowMainMenu(p);
+        }
+      }
+    };
 
-    menu.AddMenuOption(Localizer["ctkit.menu_secondary", currentSecondary], (p, option) =>
-    {
-      ShowSecondaryWeaponMenu(p);
-    });
-
-    menu.AddMenuOption(Localizer["ctkit.menu_reset"], (p, option) =>
-    {
-      var sid = p.SteamID;
-      playerPrimaryWeapon.Remove(sid);
-      playerSecondaryWeapon.Remove(sid);
-      p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.kit_reset"]}");
-      ShowMainMenu(p);
-    });
-
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    _menus.Open(player, Localizer["ctkit.menu_title"], items);
   }
 
   private void ShowPrimaryWeaponMenu(CCSPlayerController player)
@@ -188,20 +197,18 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid)
       return;
 
-    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'> CT Silah Menü <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'></font>", this);
-
-    foreach (var weapon in Config.PrimaryWeapons)
+    var items = Config.PrimaryWeapons.Select(weapon => new WasdItem
     {
-      menu.AddMenuOption($"{CC.Green}{weapon.DisplayName}{CC.Default}", (p, option) =>
+      Text = weapon.DisplayName,
+      OnSelect = p =>
       {
-        var steamId = p.SteamID;
-        playerPrimaryWeapon[steamId] = weapon.WeaponName;
+        playerPrimaryWeapon[p.SteamID] = weapon.WeaponName;
         p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.weapon_set", weapon.DisplayName]}");
         ShowMainMenu(p);
-      });
-    }
+      }
+    }).ToList();
 
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    _menus.Open(player, Localizer["ctkit.menu_primary_title"], items);
   }
 
   private void ShowSecondaryWeaponMenu(CCSPlayerController player)
@@ -209,20 +216,18 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid)
       return;
 
-    var menu = new CenterHtmlMenu("<font color='#6f8083' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'> CT Silah Menü <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/pistol.png'></font>", this);
-
-    foreach (var weapon in Config.SecondaryWeapons)
+    var items = Config.SecondaryWeapons.Select(weapon => new WasdItem
     {
-      menu.AddMenuOption($"{CC.Green}{weapon.DisplayName}{CC.Default}", (p, option) =>
+      Text = weapon.DisplayName,
+      OnSelect = p =>
       {
-        var steamId = p.SteamID;
-        playerSecondaryWeapon[steamId] = weapon.WeaponName;
+        playerSecondaryWeapon[p.SteamID] = weapon.WeaponName;
         p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.pistol_set", weapon.DisplayName]}");
         ShowMainMenu(p);
-      });
-    }
+      }
+    }).ToList();
 
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    _menus.Open(player, Localizer["ctkit.menu_secondary_title"], items);
   }
 
   private string GetWeaponDisplayName(string weaponName, bool isPrimary)
@@ -230,24 +235,4 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     var weaponList = isPrimary ? Config.PrimaryWeapons : Config.SecondaryWeapons;
     return weaponList.FirstOrDefault(w => w.WeaponName == weaponName)?.DisplayName ?? weaponName;
   }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

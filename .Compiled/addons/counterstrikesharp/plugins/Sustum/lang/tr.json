@@ -5,5 +5,10 @@
   "sustum.no_active": "Aktif bir sustum oyunu yok!",
   "sustum.cancelled": "{0} sustum oyununu iptal etti!",
   "sustum.winner": "{0} Kazandı!",
-  "sustum.loser": "{0} Kaybetti!"
+  "sustum.loser": "{0} Kaybetti!",
+  "sustum.hud_won": "{0} kazandı!",
+  "sustum.hud_lost": "{0} kaybetti!",
+  "sustum.hud_started": "{0} {1} başlattı",
+  "sustum.hud_countdown": "{0} saniye: kelime burada gözükecek",
+  "sustum.hud_someone": "Birisi"
 }

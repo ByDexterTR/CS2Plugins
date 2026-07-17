@@ -16,4 +16,9 @@
   <ItemGroup>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Using Include="ByDexter.Shared" />
+  </ItemGroup>
+
 </Project>

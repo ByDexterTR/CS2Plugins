@@ -1,37 +1,72 @@
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Admin;
 
 namespace JBDoors;
 
-public class JBDoors : BasePlugin
+public class JBDoorsConfig : BasePluginConfig
+{
+  [JsonPropertyName("dooropen_cmd")]
+  public string DoorOpenCommands { get; set; } = "css_kapiac,css_dooropen";
+
+  [JsonPropertyName("dooropen_flag")]
+  public string DoorOpenFlag { get; set; } = "@jailbreak/warden,@css/generic";
+
+  [JsonPropertyName("doorclose_cmd")]
+  public string DoorCloseCommands { get; set; } = "css_kapikapat,css_doorclose";
+
+  [JsonPropertyName("doorclose_flag")]
+  public string DoorCloseFlag { get; set; } = "@jailbreak/warden,@css/generic";
+
+  [JsonPropertyName("doorbreak")]
+  public bool DoorBreak { get; set; } = true;
+}
+
+public class JBDoors : BasePlugin, IPluginConfig<JBDoorsConfig>
 {
   public override string ModuleName => "JBDoors";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
   private string ChatPrefix => Localizer["chat_prefix"];
 
-  [ConsoleCommand("css_kapiac", "Tüm kapıları açar")]
-  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
+  public JBDoorsConfig Config { get; set; } = new();
+
+  public void OnConfigParsed(JBDoorsConfig config)
+  {
+    Config = config;
+  }
+
+  public override void Load(bool hotReload)
+  {
+    foreach (var name in Util.Split(Config.DoorOpenCommands))
+      AddCommand(name, "Tum kapilari acar", OnConsoleOpen);
+
+    foreach (var name in Util.Split(Config.DoorCloseCommands))
+      AddCommand(name, "Tum kapilari kapatir", OnConsoleClose);
+  }
+
   public void OnConsoleOpen(CCSPlayerController? player, CommandInfo info)
   {
+    if (!Util.HasAccess(player, Config.DoorOpenFlag))
+      return;
+
     Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbdoors.doors_opened", player?.PlayerName ?? ""]}");
     ForceEntInput("func_door", "Open");
     ForceEntInput("func_movelinear", "Open");
     ForceEntInput("func_door_rotating", "Open");
     ForceEntInput("prop_door_rotating", "Open");
-    ForceEntInput("func_breakable", "Break");
+    if (Config.DoorBreak)
+      ForceEntInput("func_breakable", "Break");
   }
 
-  [ConsoleCommand("css_kapikapat", "Tüm kapıları kapatır")]
-  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnConsoleClose(CCSPlayerController? player, CommandInfo info)
   {
+    if (!Util.HasAccess(player, Config.DoorCloseFlag))
+      return;
+
     Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbdoors.doors_closed", player?.PlayerName ?? ""]}");
     ForceEntInput("func_door", "Close");
     ForceEntInput("func_movelinear", "Close");
@@ -54,24 +89,4 @@ public class JBDoors : BasePlugin
       catch { }
     }
   }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

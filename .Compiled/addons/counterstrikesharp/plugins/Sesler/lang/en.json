@@ -9,5 +9,8 @@
   "sesler.mode_mute_enemy": "Mute Enemy",
   "sesler.mode_mute_team": "Mute Team",
   "sesler.mode_closed": "Closed",
-  "sesler.back": "Back"
+  "sesler.back": "← Back",
+  "menu.scroll": "Scroll",
+  "menu.select": "Select",
+  "menu.exit": "Exit"
 }

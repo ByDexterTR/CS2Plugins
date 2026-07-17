@@ -1,9 +1,11 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Timers;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace Meslekmenu;
 
@@ -33,12 +35,13 @@ public class MeslekmenuConfig : BasePluginConfig
   [JsonPropertyName("zeus_recharge_taser")] public int ZeusRechargeTaser { get; set; } = 30;
   [JsonPropertyName("zeus_drop_taser")] public bool ZeusDropTaser { get; set; } = true;
 
+  [JsonPropertyName("meslek_cmd")] public string MeslekCommands { get; set; } = "css_meslekmenu,css_meslek,css_job,css_jobmenu";
 }
 
 public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
 {
   public override string ModuleName => "Meslekmenu";
-  public override string ModuleVersion => "1.0.6";
+  public override string ModuleVersion => "1.0.7";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -47,6 +50,8 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
 
   private Dictionary<ulong, bool> meslekAktif = new();
 
+  private WasdMenuManager _menus = null!;
+
   public void OnConfigParsed(MeslekmenuConfig config)
   {
     Config = config;
@@ -54,7 +59,19 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
 
   public override void Load(bool hotReload)
   {
+    _menus = new WasdMenuManager(this,
+      () => Localizer["menu.scroll"],
+      () => Localizer["menu.select"],
+      () => Localizer["menu.exit"]);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
+
+    foreach (var name in Util.Split(Config.MeslekCommands))
+      AddCommand(name, "Meslek menusunu acar", OnMeslekCommand);
+  }
+
+  public override void Unload(bool hotReload)
+  {
+    _menus.Clear();
   }
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
@@ -79,89 +96,122 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
     return HookResult.Continue;
   }
 
-  [ConsoleCommand("css_meslek", "css_meslek")]
   public void OnMeslekCommand(CCSPlayerController? player, CommandInfo commandInfo)
   {
     if (player == null || !player.IsValid)
       return;
 
-    if (commandInfo.ArgCount < 2)
+    if (!CanSelect(player))
+      return;
+
+    if (commandInfo.ArgCount >= 2)
     {
-      var helpLines = new List<string>();
-
-      if (Config.DoktorEnabled)
-        helpLines.Add(Localizer["meslekmenu.usage_doktor", Config.DoktorRegen].ToString());
-      if (Config.FlashEnabled)
-        helpLines.Add(Localizer["meslekmenu.usage_flash", Config.FlashDuration, Config.FlashSpeed].ToString());
-      if (Config.BombaciEnabled && (Config.BombaciGiveSmoke || Config.BombaciGiveGrenade || Config.BombaciGiveFlashbang || Config.BombaciGiveMolotov))
-        helpLines.Add(Localizer["meslekmenu.usage_bombaci", GetBombaciNades()].ToString());
-      if (Config.RamboEnabled)
-        helpLines.Add(Localizer["meslekmenu.usage_rambo", Config.RamboHp, Config.RamboArmor].ToString());
-      if (Config.ZeusEnabled)
-        helpLines.Add(Localizer["meslekmenu.usage_zeus"].ToString());
-
-
-      if (helpLines.Count == 0)
-        helpLines.Add($"{CC.Gold}Hiçbir meslek aktif değil!{CC.Default}");
-
-      foreach (var line in helpLines)
-      {
-        commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {line}");
-      }
+      TryApplyProfession(player, commandInfo.GetArg(1).ToLower());
       return;
     }
 
+    ShowMeslekMenu(player);
+  }
+
+  private bool CanSelect(CCSPlayerController player)
+  {
     if (!IsAlive(player))
     {
-      commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.alive_only"]}");
-      return;
+      PrintPrefix(player, Localizer["meslekmenu.alive_only"]);
+      return false;
     }
 
-    if (player.TeamNum != 2)
+    if (player.Team != CsTeam.Terrorist)
     {
-      commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.t_only"]}");
-      return;
+      PrintPrefix(player, Localizer["meslekmenu.t_only"]);
+      return false;
     }
 
     if (meslekAktif.TryGetValue(player.SteamID, out bool secildi) && secildi)
     {
-      commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.already_selected"]}");
+      PrintPrefix(player, Localizer["meslekmenu.already_selected"]);
+      return false;
+    }
+
+    return true;
+  }
+
+  private void ShowMeslekMenu(CCSPlayerController player)
+  {
+    var items = new List<WasdItem>();
+
+    if (Config.DoktorEnabled)
+      items.Add(BuildItem("doktor", Localizer["meslekmenu.item_doktor", Config.DoktorRegen]));
+    if (Config.FlashEnabled)
+      items.Add(BuildItem("flash", Localizer["meslekmenu.item_flash", Config.FlashDuration, Config.FlashSpeed]));
+    if (Config.BombaciEnabled && (Config.BombaciGiveSmoke || Config.BombaciGiveGrenade || Config.BombaciGiveFlashbang || Config.BombaciGiveMolotov))
+      items.Add(BuildItem("bombaci", Localizer["meslekmenu.item_bombaci", GetBombaciNades()]));
+    if (Config.RamboEnabled)
+      items.Add(BuildItem("rambo", Localizer["meslekmenu.item_rambo", Config.RamboHp, Config.RamboArmor]));
+    if (Config.ZeusEnabled)
+      items.Add(BuildItem("zeus", Localizer["meslekmenu.item_zeus"]));
+
+    if (items.Count == 0)
+    {
+      PrintPrefix(player, Localizer["meslekmenu.no_active"]);
       return;
     }
 
-    string meslek = commandInfo.GetArg(1).ToLower();
+    _menus.Open(player, Localizer["meslekmenu.menu_title"], items);
+  }
 
+  private WasdItem BuildItem(string key, string text)
+  {
+    return new WasdItem
+    {
+      Text = text,
+      OnSelect = p =>
+      {
+        if (!CanSelect(p))
+        {
+          _menus.Close(p);
+          return;
+        }
+
+        if (TryApplyProfession(p, key))
+          _menus.Close(p);
+      }
+    };
+  }
+
+  private bool TryApplyProfession(CCSPlayerController player, string meslek)
+  {
     switch (meslek)
     {
       case "doktor":
       case "doctor":
         if (!Config.DoktorEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Doktor"]}");
-          return;
+          PrintPrefix(player, Localizer["meslekmenu.disabled", Localizer["meslekmenu.prof_doktor"]]);
+          return false;
         }
         player.GiveNamedItem("weapon_healthshot");
-        commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Doktor"]}");
+        PrintPrefix(player, Localizer["meslekmenu.profession_changed", Localizer["meslekmenu.prof_doktor"]]);
         break;
 
       case "flash":
         if (!Config.FlashEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Flash"]}");
-          return;
+          PrintPrefix(player, Localizer["meslekmenu.disabled", Localizer["meslekmenu.prof_flash"]]);
+          return false;
         }
         var pawn = player.PlayerPawn.Value as CCSPlayerPawn;
-        if (pawn != null)
+        if (pawn == null)
+          return false;
+
+        float normalSpeed = pawn.VelocityModifier;
+        pawn.VelocityModifier = Config.FlashSpeed;
+        PrintPrefix(player, Localizer["meslekmenu.profession_changed", Localizer["meslekmenu.prof_flash"]]);
+        AddTimer(Config.FlashDuration, () =>
         {
-          float normalSpeed = pawn.VelocityModifier;
-          pawn.VelocityModifier = Config.FlashSpeed;
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Flash"]}");
-          AddTimer(Config.FlashDuration, () =>
-          {
-            if (pawn.IsValid)
-              pawn.VelocityModifier = normalSpeed;
-          }, TimerFlags.STOP_ON_MAPCHANGE);
-        }
+          if (pawn.IsValid)
+            pawn.VelocityModifier = normalSpeed;
+        }, TimerFlags.STOP_ON_MAPCHANGE);
         break;
 
       case "bombacı":
@@ -169,8 +219,8 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
       case "bomber":
         if (!Config.BombaciEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Bombacı"]}");
-          return;
+          PrintPrefix(player, Localizer["meslekmenu.disabled", Localizer["meslekmenu.prof_bombaci"]]);
+          return false;
         }
         var bombs = new List<string>();
         if (Config.BombaciGiveSmoke) bombs.Add("weapon_smokegrenade");
@@ -179,58 +229,63 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
         if (Config.BombaciGiveMolotov) bombs.Add("weapon_molotov");
         if (bombs.Count == 0)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Bombacı"]}");
-          return;
+          PrintPrefix(player, Localizer["meslekmenu.disabled", Localizer["meslekmenu.prof_bombaci"]]);
+          return false;
         }
         var randomBomb = bombs[Random.Shared.Next(bombs.Count)];
         player.GiveNamedItem(randomBomb);
-        commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Bombacı"]}");
+        PrintPrefix(player, Localizer["meslekmenu.profession_changed", Localizer["meslekmenu.prof_bombaci"]]);
         break;
 
       case "rambo":
         if (!Config.RamboEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Rambo"]}");
-          return;
+          PrintPrefix(player, Localizer["meslekmenu.disabled", Localizer["meslekmenu.prof_rambo"]]);
+          return false;
         }
         var ramboPawn = player.PlayerPawn.Value as CCSPlayerPawn;
-        if (ramboPawn != null)
-        {
-          if (Config.RamboFix && ramboPawn.Health < 100)
-          {
-            commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.rambo_low_hp"]}");
-            return;
-          }
-          ramboPawn.Health = Config.RamboHp;
-          ramboPawn.MaxHealth = Config.RamboHp;
-          ramboPawn.ArmorValue = Config.RamboArmor;
-          if (Config.RamboHelmet)
-            player.GiveNamedItem("item_kevlar");
+        if (ramboPawn == null)
+          return false;
 
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Rambo"]}");
+        if (Config.RamboFix && ramboPawn.Health < 100)
+        {
+          PrintPrefix(player, Localizer["meslekmenu.rambo_low_hp"]);
+          return false;
         }
+        ramboPawn.Health = Config.RamboHp;
+        ramboPawn.MaxHealth = Config.RamboHp;
+        ramboPawn.ArmorValue = Config.RamboArmor;
+        Utilities.SetStateChanged(ramboPawn, "CBaseEntity", "m_iHealth");
+        Utilities.SetStateChanged(ramboPawn, "CBaseEntity", "m_iMaxHealth");
+        Utilities.SetStateChanged(ramboPawn, "CCSPlayerPawn", "m_ArmorValue");
+        if (Config.RamboHelmet)
+          player.GiveNamedItem("item_assaultsuit");
+
+        PrintPrefix(player, Localizer["meslekmenu.profession_changed", Localizer["meslekmenu.prof_rambo"]]);
         break;
 
       case "zeus":
         if (!Config.ZeusEnabled)
         {
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.disabled", "Zeus"]}");
-          return;
+          PrintPrefix(player, Localizer["meslekmenu.disabled", Localizer["meslekmenu.prof_zeus"]]);
+          return false;
         }
-        var zeusPawn = player.PlayerPawn.Value as CCSPlayerPawn;
-        if (zeusPawn != null)
-        {
-          player.GiveNamedItem("weapon_taser");
-          commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.profession_changed", "Zeus"]}");
-        }
+        player.GiveNamedItem("weapon_taser");
+        PrintPrefix(player, Localizer["meslekmenu.profession_changed", Localizer["meslekmenu.prof_zeus"]]);
         break;
 
       default:
-        commandInfo.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["meslekmenu.unknown"]}");
-        return;
+        PrintPrefix(player, Localizer["meslekmenu.unknown"]);
+        return false;
     }
 
     meslekAktif[player.SteamID] = true;
+    return true;
+  }
+
+  private void PrintPrefix(CCSPlayerController player, string message)
+  {
+    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {message}");
   }
 
   private string GetBombaciNades()
@@ -241,31 +296,11 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
     if (Config.BombaciGiveFlashbang) nades.Add("Flash");
     if (Config.BombaciGiveMolotov) nades.Add("Molotov");
 
-    return nades.Count > 0 ? string.Join(", ", nades) : "Yok";
+    return nades.Count > 0 ? string.Join(", ", nades) : Localizer["meslekmenu.none"].ToString();
   }
 
   static bool IsAlive(CCSPlayerController? player)
   {
     return player?.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
   }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

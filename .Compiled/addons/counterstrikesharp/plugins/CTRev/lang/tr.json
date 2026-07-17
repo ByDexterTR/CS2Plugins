@@ -8,5 +8,10 @@
   "ctrev.already_alive": "Gardiyan zaten canlı.",
   "ctrev.cooldown_wait": "Bekleme süresi: {0}sn.",
   "ctrev.revived": "{0}: {1} canlandırıldı. Kalan hak: {2}",
-  "ctrev.menu_auto_rev": "Oto Rev: {0}"
+  "ctrev.menu_auto_rev": "Oto Rev: {0}",
+  "ctrev.menu_title": "CTRev (Hak: {0})",
+  "ctrev.menu_cooldown": "{0} ({1} sn)",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
 }

@@ -2,13 +2,13 @@ using System.Text.Json;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using System.Collections.Concurrent;
+using ByDexter.Shared;
 
 public enum MuteMode : byte { None, Enemy, Team, All }
 
@@ -28,7 +28,7 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.1.2";
+  public override string ModuleVersion => "1.1.3";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -57,8 +57,15 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     Config = config;
   }
 
+  private WasdMenuManager _menus = null!;
+
   public override void Load(bool hotReload)
   {
+    _menus = new WasdMenuManager(this,
+      () => Localizer["menu.scroll"],
+      () => Localizer["menu.select"],
+      () => Localizer["menu.exit"]);
+
     var provider = Config.Database.TryGetValue("provider", out var p) ? p.ToLower() : "json";
 
     _useMySql = provider == "mysql" && TryInitMySql();
@@ -80,19 +87,13 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 
   public override void Unload(bool hotReload)
   {
+    _menus.Clear();
     UnhookUserMessage(208, OnSound, HookMode.Pre);
     UnhookUserMessage(369, OnWeaponSound, HookMode.Pre);
     UnhookUserMessage(452, OnWeaponEvent, HookMode.Pre);
 
-    if (_useMySql)
-    {
-      var tasks = _prefs.Select(kvp => SaveToMySqlAsync(kvp.Key, kvp.Value)).ToArray();
-      Task.WaitAll(tasks, TimeSpan.FromSeconds(10));
-    }
-    else
-    {
+    if (!_useMySql)
       WriteJsonPrefs();
-    }
   }
 
   private bool TryInitMySql()
@@ -324,9 +325,8 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
   private void ShowMainMenu(CCSPlayerController player)
   {
     var pref = GetPref(player);
-    var menu = new CenterHtmlMenu("<font color='#8899a6' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speaker.png'> Sesler <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speaker.png'></font>", this);
 
-    var items = new (string Label, Func<Pref, MuteMode> Get, Action<Pref, MuteMode> Set, bool MvpOnly)[]
+    var categories = new (string Label, Func<Pref, MuteMode> Get, Action<Pref, MuteMode> Set, bool MvpOnly)[]
     {
       (Localizer["sesler.category_knife"], p => p.Knife, (p, m) => p.Knife = m, false),
       (Localizer["sesler.category_weapon"], p => p.Weapon, (p, m) => p.Weapon = m, false),
@@ -335,26 +335,28 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       (Localizer["sesler.category_mvp"], p => p.Mvp, (p, m) => p.Mvp = m, true)
     };
 
-    foreach (var item in items)
+    var items = new List<WasdItem>();
+    foreach (var category in categories)
     {
-      var current = item.Get(pref);
-      menu.AddMenuOption($"{item.Label}: {StateLabel(current, item.MvpOnly)}", (p, o) =>
+      var current = category.Get(pref);
+      items.Add(new WasdItem
       {
-        ShowSubMenu(player, item.Label, item.Get, item.Set, item.MvpOnly);
+        Text = $"{category.Label}: {StateLabel(current, category.MvpOnly)}",
+        OnSelect = p => ShowSubMenu(p, category.Label, category.Get, category.Set, category.MvpOnly)
       });
     }
 
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    _menus.Open(player, Localizer["sesler.menu_title"], items);
   }
 
   private void ShowSubMenu(CCSPlayerController player, string label, Func<Pref, MuteMode> get, Action<Pref, MuteMode> set, bool mvpOnly = false)
   {
     var pref = GetPref(player);
-    var menu = new CenterHtmlMenu($"<font color='#8899a6' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speaker.png'> {label} <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speaker.png'></font>", this);
 
     int maxOptions = mvpOnly ? 2 : 4;
     int step = mvpOnly ? 3 : 1;
 
+    var items = new List<WasdItem>();
     for (int i = 0; i < maxOptions; i++)
     {
       var modeIndex = mvpOnly ? i * step : i;
@@ -364,26 +366,29 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
       var color = ModeColors[modeIndex];
       var labelText = GetModeLabel(modeIndex);
 
-      menu.AddMenuOption($"{prefix}<font color='{color}'>{labelText}</font>", (p, o) =>
+      items.Add(new WasdItem
       {
-        set(pref, mode);
-        SavePreference(player.SteamID, pref);
-        ShowMainMenu(player);
+        Text = $"{prefix}<font color='{color}'>{labelText}</font>",
+        OnSelect = p =>
+        {
+          set(pref, mode);
+          SavePreference(p.SteamID, pref);
+          ShowMainMenu(p);
+        }
       });
     }
 
-    menu.AddMenuOption(Localizer["sesler.back"], (p, o) => ShowMainMenu(player));
-    menu.ExitButton = false;
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    items.Add(new WasdItem { Text = Localizer["sesler.back"], OnSelect = p => ShowMainMenu(p) });
+
+    _menus.Open(player, label, items);
   }
 
   private string StateLabel(MuteMode mode, bool mvpOnly = false)
   {
-    var idx = (int)mode;
     if (mvpOnly && mode != MuteMode.None && mode != MuteMode.All)
       mode = MuteMode.All;
 
-    idx = (int)mode;
+    var idx = (int)mode;
     return $"<font color='{ModeColors[idx]}'>{GetModeLabel(idx)}</font>";
   }
 

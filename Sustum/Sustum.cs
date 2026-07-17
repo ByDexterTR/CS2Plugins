@@ -3,17 +3,49 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
 
-public class Sustum : BasePlugin
+public class SustumConfig : BasePluginConfig
+{
+    [JsonPropertyName("stop_cmd")]
+    public string StopCommands { get; set; } = "css_ctsustum0,css_dsustum0,css_tsustum0,css_olusustum0,css_sustum0";
+
+    [JsonPropertyName("stop_flag")]
+    public string StopFlag { get; set; } = "@jailbreak/warden,@css/generic";
+
+    [JsonPropertyName("ctsustum_cmd")]
+    public string CtSustumCommands { get; set; } = "css_ctsustum";
+
+    [JsonPropertyName("ctsustum_flag")]
+    public string CtSustumFlag { get; set; } = "@jailbreak/warden,@css/generic";
+
+    [JsonPropertyName("tsustum_cmd")]
+    public string TSustumCommands { get; set; } = "css_tsustum";
+
+    [JsonPropertyName("tsustum_flag")]
+    public string TSustumFlag { get; set; } = "@jailbreak/warden,@css/generic";
+
+    [JsonPropertyName("dsustum_cmd")]
+    public string DSustumCommands { get; set; } = "css_dsustum";
+
+    [JsonPropertyName("dsustum_flag")]
+    public string DSustumFlag { get; set; } = "@jailbreak/warden,@css/generic";
+
+    [JsonPropertyName("olusustum_cmd")]
+    public string OluSustumCommands { get; set; } = "css_olusustum";
+
+    [JsonPropertyName("olusustum_flag")]
+    public string OluSustumFlag { get; set; } = "@jailbreak/warden,@css/generic";
+}
+
+public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 {
     public override string ModuleName => "Sustum";
-    public override string ModuleVersion => "1.0.6";
+    public override string ModuleVersion => "1.0.7";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -29,6 +61,13 @@ public class Sustum : BasePlugin
     private HashSet<ulong> CTSustumPlayers = new();
     private Dictionary<ulong, bool> DSustumWin = new();
 
+    public SustumConfig Config { get; set; } = new();
+
+    public void OnConfigParsed(SustumConfig config)
+    {
+        Config = config;
+    }
+
     public override void Load(bool hotReload)
     {
         var jsonPath = Path.Combine(ModuleDirectory, "Sustum.json");
@@ -42,6 +81,17 @@ public class Sustum : BasePlugin
         RegisterEventHandler<EventWeaponFire>(OnWeaponFire, HookMode.Post);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         RegisterListener<OnTick>(OnTickHud);
+
+        foreach (var name in Util.Split(Config.CtSustumCommands))
+            AddCommand(name, "CTSustum baslatir", OnCTSustumCommand);
+        foreach (var name in Util.Split(Config.TSustumCommands))
+            AddCommand(name, "TSustum baslatir", OnTSustumCommand);
+        foreach (var name in Util.Split(Config.DSustumCommands))
+            AddCommand(name, "DSustum baslatir", OnDSustumCommand);
+        foreach (var name in Util.Split(Config.OluSustumCommands))
+            AddCommand(name, "OluSustum baslatir", OnOluSustumCommand);
+        foreach (var name in Util.Split(Config.StopCommands))
+            AddCommand(name, "Sustum oyununu durdurur", OnSustumCancelCommand);
     }
 
     private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
@@ -122,7 +172,7 @@ public class Sustum : BasePlugin
 
         if (DSustumWin.TryGetValue(player.SteamID, out bool win) && win)
         {
-            var activeWeapon = player.PlayerPawn.Value!.WeaponServices!.ActiveWeapon.Get();
+            var activeWeapon = player.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Get();
             if (activeWeapon != null && activeWeapon.DesignerName == "weapon_deagle")
             {
                 activeWeapon.Remove();
@@ -160,7 +210,7 @@ public class Sustum : BasePlugin
     private void ShowWinnerHud(string winnerName)
     {
         PrintPrefixAll(SustumType == "CTSustum" ? Localizer["sustum.loser", winnerName].ToString() : Localizer["sustum.winner", winnerName].ToString());
-        _hudHtml = SustumType == "CTSustum" ? $"<font color='#FF0000'>{winnerName} kaybetti!</font>" : $"<font color='#AAFF00'>{winnerName} kazandı!</font>";
+        _hudHtml = SustumType == "CTSustum" ? $"<font color='#FF0000'>{Localizer["sustum.hud_lost", winnerName]}</font>" : $"<font color='#AAFF00'>{Localizer["sustum.hud_won", winnerName]}</font>";
         _showHud = true;
 
         AddTimer(2.0f, HideHud);
@@ -208,21 +258,18 @@ public class Sustum : BasePlugin
         int countdown = 3;
         _sustumTimer?.Kill();
 
-        string adminName = admin?.PlayerName ?? "Birisi";
+        string adminName = admin?.PlayerName ?? Localizer["sustum.hud_someone"];
+        string startedLine = $"<font color='#FFA500'>{Localizer["sustum.hud_started", adminName, SustumType]}</font><br>";
 
         _showHud = true;
-        _hudHtml =
-            $"<font color='#FFA500'>{adminName} {SustumType} başlattı</font><br>"
-            + $"{countdown} saniye: kelime burada gözükecek";
+        _hudHtml = startedLine + Localizer["sustum.hud_countdown", countdown];
 
         _sustumTimer = AddTimer(1.0f, () =>
             {
                 if (countdown > 1)
                 {
                     countdown--;
-                    _hudHtml =
-                        $"<font color='#FFA500'>{adminName} {SustumType} başlattı</font><br>"
-                        + $"{countdown} saniye: kelime burada gözükecek";
+                    _hudHtml = startedLine + Localizer["sustum.hud_countdown", countdown];
                 }
                 else
                 {
@@ -233,20 +280,16 @@ public class Sustum : BasePlugin
                         kelimeler.Add(SustumWords[Random.Shared.Next(SustumWords.Count)]);
                     }
                     CurrentWord = string.Join(" ", kelimeler);
-                    _hudHtml =
-                        $"<font color='#FFA500'>{adminName} {SustumType} başlattı</font><br>"
-                        + $"<font class='fontSize-l'>{CurrentWord}</font>";
+                    _hudHtml = startedLine + $"<font class='fontSize-l'>{CurrentWord}</font>";
                     _showHud = true;
                     _sustumTimer?.Kill();
                 }
             }, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
     }
 
-    [ConsoleCommand("css_ctsustum", "css_ctsustum")]
-    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnCTSustumCommand(CCSPlayerController? player, CommandInfo info)
     {
-        if (player == null || !player.IsValid)
+        if (player == null || !player.IsValid || !Util.HasAccess(player, Config.CtSustumFlag))
             return;
 
         if (!string.IsNullOrEmpty(SustumType))
@@ -259,11 +302,9 @@ public class Sustum : BasePlugin
         StartSustumRound("CTSustum", player);
     }
 
-    [ConsoleCommand("css_tsustum", "css_tsustum")]
-    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnTSustumCommand(CCSPlayerController? player, CommandInfo info)
     {
-        if (player == null || !player.IsValid)
+        if (player == null || !player.IsValid || !Util.HasAccess(player, Config.TSustumFlag))
             return;
 
         if (!string.IsNullOrEmpty(SustumType))
@@ -275,11 +316,9 @@ public class Sustum : BasePlugin
         StartSustumRound("TSustum", player);
     }
 
-    [ConsoleCommand("css_dsustum", "css_dsustum")]
-    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnDSustumCommand(CCSPlayerController? player, CommandInfo info)
     {
-        if (player == null || !player.IsValid)
+        if (player == null || !player.IsValid || !Util.HasAccess(player, Config.DSustumFlag))
             return;
 
         if (!string.IsNullOrEmpty(SustumType))
@@ -291,11 +330,9 @@ public class Sustum : BasePlugin
         StartSustumRound("DSustum", player);
     }
 
-    [ConsoleCommand("css_olusustum", "css_olusustum")]
-    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnOluSustumCommand(CCSPlayerController? player, CommandInfo info)
     {
-        if (player == null || !player.IsValid)
+        if (player == null || !player.IsValid || !Util.HasAccess(player, Config.OluSustumFlag))
             return;
 
         if (!string.IsNullOrEmpty(SustumType))
@@ -307,15 +344,9 @@ public class Sustum : BasePlugin
         StartSustumRound("ÖlüSustum", player);
     }
 
-    [ConsoleCommand("css_ctsustum0", "css_ctsustum0")]
-    [ConsoleCommand("css_dsustum0", "css_dsustum0")]
-    [ConsoleCommand("css_tsustum0", "css_tsustum0")]
-    [ConsoleCommand("css_olusustum0", "css_olusustum0")]
-    [ConsoleCommand("css_sustum0", "css_sustum0")]
-    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
     public void OnSustumCancelCommand(CCSPlayerController? player, CommandInfo info)
     {
-        if (player == null || !player.IsValid)
+        if (player == null || !player.IsValid || !Util.HasAccess(player, Config.StopFlag))
             return;
 
         if (string.IsNullOrEmpty(SustumType))
@@ -345,24 +376,4 @@ public class Sustum : BasePlugin
     {
         return player?.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
     }
-}
-
-public static class CC
-{
-    public static char Default => '\x01';
-    public static char Red => '\x07';
-    public static char LightRed => '\x0F';
-    public static char DarkRed => '\x02';
-    public static char BlueGrey => '\x0A';
-    public static char Blue => '\x0B';
-    public static char DarkBlue => '\x0C';
-    public static char Purple => '\x0C';
-    public static char Orchid => '\x0E';
-    public static char Yellow => '\x09';
-    public static char Gold => '\x10';
-    public static char LightGreen => '\x05';
-    public static char Green => '\x04';
-    public static char Lime => '\x06';
-    public static char Grey => '\x08';
-    public static char Grey2 => '\x0D';
 }

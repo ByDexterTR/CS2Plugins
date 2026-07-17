@@ -13,5 +13,13 @@
   "ctban.banlist_header": "CT Ban Listesi:",
   "ctban.banlist_entry": "{0}, (Kalan Süre: {1}) Sebep: {2}",
   "ctban.banlist_empty": "CTBanlı oyuncu yok.",
-  "ctban.join_blocked": "CT takımdan banlısın! (Kalan Süre: {0}) Sebep: {1}"
+  "ctban.join_blocked": "CT takımdan banlısın! (Kalan Süre: {0}) Sebep: {1}",
+  "ctban.no_reason": "Sebepsiz",
+  "ctban.unit_year": "yıl",
+  "ctban.unit_month": "ay",
+  "ctban.unit_week": "hafta",
+  "ctban.unit_day": "gün",
+  "ctban.unit_hour": "saat",
+  "ctban.unit_minute": "dakika",
+  "ctban.unit_second": "saniye"
 }

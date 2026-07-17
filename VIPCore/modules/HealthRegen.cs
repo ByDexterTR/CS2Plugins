@@ -12,7 +12,6 @@ public class HealthRegen : VipModule
         public int HpPerTick { get; set; } = 5;
         public float Interval { get; set; } = 1.0f;
         public float DelayAfterDmg { get; set; } = 3.0f;
-        public int MaxHp { get; set; } = 100;
     }
 
     private readonly Timer?[] _timers = new Timer?[64];
@@ -64,10 +63,14 @@ public class HealthRegen : VipModule
             return;
 
         var pawn = player!.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid || pawn.Health >= cfg.MaxHp)
+        if (pawn == null || !pawn.IsValid)
             return;
 
-        pawn.Health = Math.Min(pawn.Health + cfg.HpPerTick, cfg.MaxHp);
+        int maxHp = pawn.MaxHealth > 0 ? pawn.MaxHealth : 100;
+        if (pawn.Health >= maxHp)
+            return;
+
+        pawn.Health = Math.Min(pawn.Health + cfg.HpPerTick, maxHp);
         Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
     }
 }

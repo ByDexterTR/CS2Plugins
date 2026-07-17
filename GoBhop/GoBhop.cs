@@ -4,7 +4,6 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
@@ -56,7 +55,7 @@ public class GoBhopConfig : BasePluginConfig
 public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
 {
   public override string ModuleName => "GoBhop";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -82,8 +81,14 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     Config = config;
   }
 
+  private WasdMenuManager _menus = null!;
+
   public override void Load(bool hotReload)
   {
+    _menus = new WasdMenuManager(this,
+      () => Localizer["menu.scroll"],
+      () => Localizer["menu.select"],
+      () => Localizer["menu.exit"]);
     LoadPoints();
 
     foreach (var name in Split(Config.Commands))
@@ -133,6 +138,7 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
 
   public override void Unload(bool hotReload)
   {
+    _menus.Clear();
     UnhookUserMessage(208, OnSoundEvent, HookMode.Pre);
     RemoveAll(slay: true);
   }
@@ -166,30 +172,41 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
       return;
     }
 
-    var menu = new CenterHtmlMenu($"<font color='#bab9be'>{Localizer["gobhop.menu_title"]}</font>", this);
+    var items = new List<WasdItem>();
 
     if (inBhop)
-      menu.AddMenuOption(Localizer["gobhop.menu_exit"], (p, _) =>
+      items.Add(new WasdItem
       {
-        MenuManager.CloseActiveMenu(p!);
-        if (p != null && p.IsValid && InBhop(p.Slot))
-          ExitBhop(p, slay: true);
+        Text = Localizer["gobhop.menu_exit"],
+        OnSelect = p =>
+        {
+          _menus.Close(p);
+          if (p.IsValid && InBhop(p.Slot))
+            ExitBhop(p, slay: true);
+        }
       });
 
     foreach (var kv in mapPoints)
-      menu.AddMenuOption(kv.Key, (p, _) =>
+    {
+      var point = kv.Value;
+      items.Add(new WasdItem
       {
-        MenuManager.CloseActiveMenu(p!);
-        if (p == null || !p.IsValid)
-          return;
+        Text = kv.Key,
+        OnSelect = p =>
+        {
+          _menus.Close(p);
+          if (!p.IsValid)
+            return;
 
-        if (InBhop(p.Slot))
-          TeleportInBhop(p, kv.Value);
-        else
-          TryEnterBhop(p, kv.Value);
+          if (InBhop(p.Slot))
+            TeleportInBhop(p, point);
+          else
+            TryEnterBhop(p, point);
+        }
       });
+    }
 
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    _menus.Open(player, Localizer["gobhop.menu_title"], items);
   }
 
   private void TeleportInBhop(CCSPlayerController player, GoBhopPoint point)
@@ -704,24 +721,4 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     {
     }
   }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

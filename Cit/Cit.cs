@@ -1,17 +1,24 @@
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes.Registration;
 using static CounterStrikeSharp.API.Core.Listeners;
-using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.Utils;
+using ByDexter.Shared;
 
-public class Cit : BasePlugin
+public class CitConfig : BasePluginConfig
+{
+  [JsonPropertyName("menu_cmd")]
+  public string MenuCommands { get; set; } = "css_cit,css_barikat";
+
+  [JsonPropertyName("menu_flag")]
+  public string MenuFlag { get; set; } = "@jailbreak/warden,@css/generic";
+}
+
+public class Cit : BasePlugin, IPluginConfig<CitConfig>
 {
   public override string ModuleName => "Cit";
-  public override string ModuleVersion => "1.0.7";
+  public override string ModuleVersion => "1.0.8";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -35,9 +42,32 @@ public class Cit : BasePlugin
   private string SelectedFenceSize = "128x128";
   private const string FenceName = "bydexter_pluginfence";
 
+  public CitConfig Config { get; set; } = new();
+
+  private WasdMenuManager _menus = null!;
+
+  public void OnConfigParsed(CitConfig config)
+  {
+    Config = config;
+  }
+
   public override void Load(bool hotReload)
   {
+    _menus = new WasdMenuManager(this,
+      () => Localizer["menu.scroll"],
+      () => Localizer["menu.select"],
+      () => Localizer["menu.exit"]);
     RegisterListener<OnServerPrecacheResources>(OnServerPrecacheResources);
+    RegisterListener<OnMapEnd>(RemoveAllModel);
+
+    foreach (var name in Util.Split(Config.MenuCommands))
+      AddCommand(name, "Cit menusunu acar", OnCitCommand);
+  }
+
+  public override void Unload(bool hotReload)
+  {
+    _menus.Clear();
+    RemoveAllModel();
   }
 
   public static void OnServerPrecacheResources(ResourceManifest resource)
@@ -49,11 +79,12 @@ public class Cit : BasePlugin
     }
   }
 
-  [ConsoleCommand("css_cit", "css_cit")]
-  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnCitCommand(CCSPlayerController? player, CommandInfo info)
   {
     if (player == null || !player.IsValid || !IsAlive(player))
+      return;
+
+    if (!Util.HasAccess(player, Config.MenuFlag))
       return;
 
     ShowFenceMenu(player);
@@ -65,44 +96,48 @@ public class Cit : BasePlugin
       return;
 
     var keys = FenceOptions.Keys.ToList();
-    CenterHtmlMenu menu = new(Localizer["cit.menu_title"].ToString(), this);
 
     var sizeLabel = SelectedFenceSize == "64x128" ? Localizer["cit.size_small"].ToString()
                     : SelectedFenceSize == "256x128" ? Localizer["cit.size_large"].ToString()
                     : Localizer["cit.size_medium"].ToString();
     var typeLabel = SelectedFenceType == FenceType.Fence ? Localizer["cit.type_fence"].ToString() : Localizer["cit.type_cover"].ToString();
 
-    menu.AddMenuOption(Localizer["cit.create", sizeLabel, typeLabel].ToString(), (player, option) =>
+    var items = new List<WasdItem>
     {
-      var modelPath = SelectedFenceType == FenceType.Fence ? FenceOptions[SelectedFenceSize].FenceModel : FenceOptions[SelectedFenceSize].CoverModel;
-      CreateModel(player, modelPath);
-    });
+      new()
+      {
+        Text = Localizer["cit.create", sizeLabel, typeLabel],
+        OnSelect = p =>
+        {
+          var modelPath = SelectedFenceType == FenceType.Fence ? FenceOptions[SelectedFenceSize].FenceModel : FenceOptions[SelectedFenceSize].CoverModel;
+          CreateModel(p, modelPath);
+        }
+      },
+      new()
+      {
+        Text = Localizer["cit.change_type"],
+        OnSelect = p =>
+        {
+          SelectedFenceType = SelectedFenceType == FenceType.Fence ? FenceType.Cover : FenceType.Fence;
+          ShowFenceMenu(p);
+        }
+      },
+      new()
+      {
+        Text = Localizer["cit.change_size"],
+        OnSelect = p =>
+        {
+          int idx = keys.IndexOf(SelectedFenceSize);
+          idx = (idx + 1) % keys.Count;
+          SelectedFenceSize = keys[idx];
+          ShowFenceMenu(p);
+        }
+      },
+      new() { Text = Localizer["cit.delete_aimed"], OnSelect = p => RemoveAimModel(p) },
+      new() { Text = Localizer["cit.delete_all"], OnSelect = _ => RemoveAllModel() }
+    };
 
-    menu.AddMenuOption(Localizer["cit.change_type"].ToString(), (player, option) =>
-    {
-      SelectedFenceType = SelectedFenceType == FenceType.Fence ? FenceType.Cover : FenceType.Fence;
-      ShowFenceMenu(player);
-    });
-
-    menu.AddMenuOption(Localizer["cit.change_size"].ToString(), (player, option) =>
-    {
-      int idx = keys.IndexOf(SelectedFenceSize);
-      idx = (idx + 1) % keys.Count;
-      SelectedFenceSize = keys[idx];
-      ShowFenceMenu(player);
-    });
-
-    menu.AddMenuOption(Localizer["cit.delete_aimed"].ToString(), (player, option) =>
-    {
-      RemoveAimModel(player);
-    });
-
-    menu.AddMenuOption(Localizer["cit.delete_all"].ToString(), (player, option) =>
-    {
-      RemoveAllModel();
-    });
-
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    _menus.Open(player, Localizer["cit.menu_title"], items);
   }
 
   private void CreateModel(CCSPlayerController? player, string modelpath)

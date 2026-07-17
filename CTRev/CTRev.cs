@@ -4,8 +4,9 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Menu;
+using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Timers;
+using ByDexter.Shared;
 
 namespace CTRev;
 
@@ -13,12 +14,16 @@ public class CTRevConfig : BasePluginConfig
 {
   [JsonPropertyName("cooldown")] public int RespawnCooldownSeconds { get; set; } = 15;
   [JsonPropertyName("revive_count")] public int MaxRespawnsPerRound { get; set; } = 3;
+  [JsonPropertyName("ctrev_cmd")] public string CtrevCommands { get; set; } = "css_ctrev,css_ctr,css_ctrevmenu";
+  [JsonPropertyName("ctrev_flag")] public string CtrevFlag { get; set; } = "@jailbreak/warden,@css/generic";
+  [JsonPropertyName("haksifirla_cmd")] public string HakResetCommands { get; set; } = "css_hak0,css_haksifir,css_hakreset";
+  [JsonPropertyName("hak_flag")] public string HakFlag { get; set; } = "@jailbreak/warden,@css/generic";
 }
 
 public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 {
   public override string ModuleName => "CTRev";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -31,6 +36,8 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
   private readonly Dictionary<ulong, DateTime> _ctDeathEligibleAt = new();
   private readonly HashSet<ulong> _playersWithMenuOpen = new();
 
+  private WasdMenuManager _menus = null!;
+
   public void OnConfigParsed(CTRevConfig config)
   {
     Config = config;
@@ -38,11 +45,26 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 
   public override void Load(bool hotReload)
   {
+    _menus = new WasdMenuManager(this,
+      () => Localizer["menu.scroll"],
+      () => Localizer["menu.select"],
+      () => Localizer["menu.exit"]);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
 
+    foreach (var name in Util.Split(Config.CtrevCommands))
+      AddCommand(name, "CT canlandirma menusu", OnCtrMenu);
+
+    foreach (var name in Util.Split(Config.HakResetCommands))
+      AddCommand(name, "Canlandirma haklarini sifirlar", OnHakSifirla);
+
     AddTimer(1.0f, OnTimerTick, TimerFlags.REPEAT);
+  }
+
+  public override void Unload(bool hotReload)
+  {
+    _menus.Clear();
   }
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
@@ -56,7 +78,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
   private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
   {
     var victim = @event.Userid;
-    if (victim == null || !victim.IsValid || victim.TeamNum != 3)
+    if (victim == null || !victim.IsValid || victim.Team != CsTeam.CounterTerrorist)
       return HookResult.Continue;
 
     _ctDeathEligibleAt[victim.SteamID] = DateTime.UtcNow.AddSeconds(Config.RespawnCooldownSeconds);
@@ -80,7 +102,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
       var now = DateTime.UtcNow;
       foreach (var p in Utilities.GetPlayers())
       {
-        if (p == null || !p.IsValid || p.TeamNum != 3 || IsAlive(p) || _remainingRespawns <= 0)
+        if (p == null || !p.IsValid || p.Team != CsTeam.CounterTerrorist || IsAlive(p) || _remainingRespawns <= 0)
           continue;
 
         if (_ctDeathEligibleAt.TryGetValue(p.SteamID, out var eligibleAt) && now >= eligibleAt)
@@ -104,39 +126,32 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
           continue;
         }
 
-        if (MenuManager.GetActiveMenu(player) != null)
-        {
-          MenuManager.CloseActiveMenu(player);
+        if (_menus.IsOpen(player))
           ShowMainMenu(player);
-        }
         else
-        {
           _playersWithMenuOpen.Remove(steamId);
-        }
       }
     }
   }
 
-  [ConsoleCommand("css_ctr", "CT respawn menu")]
-  [ConsoleCommand("css_ctrev", "CT respawn menu")]
-  [ConsoleCommand("css_ctrevmenu", "CT respawn menu")]
-  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnCtrMenu(CCSPlayerController? player, CommandInfo command)
   {
     if (player == null || !player.IsValid)
+      return;
+
+    if (!Util.HasAccess(player, Config.CtrevFlag))
       return;
 
     _playersWithMenuOpen.Add(player.SteamID);
     ShowMainMenu(player);
   }
 
-  [ConsoleCommand("css_hak0", "Hakları sıfırla")]
-  [ConsoleCommand("css_haksifir", "Hakları sıfırla")]
-  [ConsoleCommand("css_haksifirla", "Hakları sıfırla")]
-  [RequiresPermissions("@css/generic")]
   public void OnHakSifirla(CCSPlayerController? player, CommandInfo command)
   {
     if (player == null || !player.IsValid)
+      return;
+
+    if (!Util.HasAccess(player, Config.HakFlag))
       return;
 
     _remainingRespawns = Config.MaxRespawnsPerRound;
@@ -149,35 +164,44 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
       return;
 
     var now = DateTime.UtcNow;
-    var menu = new CenterHtmlMenu($"<font color='#d63f25' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/syringe.png'> CTRev (Hak: {_remainingRespawns}) <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/syringe.png'></font>", this);
-
-    menu.AddMenuOption(Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]], (p, option) =>
+    var items = new List<WasdItem>
     {
-      _autoRespawnEnabled = !_autoRespawnEnabled;
-      p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]]}");
-    });
-
-    var deadCts = Utilities.GetPlayers().Where(pl => pl != null && pl.IsValid && pl.TeamNum == 3 && !IsAlive(pl)).ToList();
-
-    if (deadCts.Count != 0)
-    {
-      foreach (var ct in deadCts)
+      new()
       {
-        var remain = _ctDeathEligibleAt.TryGetValue(ct.SteamID, out var at) ? Math.Max(0, (int)Math.Ceiling((at - now).TotalSeconds)) : 0;
-        if (remain == 0)
+        Text = Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]],
+        OnSelect = p =>
         {
-          var label = $"<font color='green'>{ct.PlayerName}</font>";
-          menu.AddMenuOption(label, (p, option) => { TryRespawn(p, ct); });
+          _autoRespawnEnabled = !_autoRespawnEnabled;
+          p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.menu_auto_rev", _autoRespawnEnabled ? Localizer["ctrev.state_on"] : Localizer["ctrev.state_off"]]}");
+          ShowMainMenu(p);
         }
-        else
+      }
+    };
+
+    var deadCts = Utilities.GetPlayers().Where(pl => pl != null && pl.IsValid && pl.Team == CsTeam.CounterTerrorist && !IsAlive(pl)).ToList();
+
+    foreach (var ct in deadCts)
+    {
+      var remain = _ctDeathEligibleAt.TryGetValue(ct.SteamID, out var at) ? Math.Max(0, (int)Math.Ceiling((at - now).TotalSeconds)) : 0;
+      if (remain == 0)
+      {
+        items.Add(new WasdItem
         {
-          var label = $"<font color='grey'>{ct.PlayerName} ({remain} sn)</font>";
-          menu.AddMenuOption(label, (p, option) => { }, true);
-        }
+          Text = $"<font color='#76C97A'>{ct.PlayerName}</font>",
+          OnSelect = p => TryRespawn(p, ct)
+        });
+      }
+      else
+      {
+        items.Add(new WasdItem
+        {
+          Text = Localizer["ctrev.menu_cooldown", ct.PlayerName, remain],
+          Enabled = false
+        });
       }
     }
 
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    _menus.Open(player, Localizer["ctrev.menu_title", _remainingRespawns], items);
   }
 
   private void TryRespawn(CCSPlayerController actor, CCSPlayerController target)
@@ -188,7 +212,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
       return;
     }
 
-    if (target == null || !target.IsValid || target.TeamNum != 3)
+    if (target == null || !target.IsValid || target.Team != CsTeam.CounterTerrorist)
     {
       return;
     }
@@ -217,24 +241,4 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
   {
     return player?.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
   }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

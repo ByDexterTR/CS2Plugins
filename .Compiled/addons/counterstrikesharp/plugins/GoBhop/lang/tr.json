@@ -20,5 +20,8 @@
   "gobhop.point_not_found": "GoBhop noktası bulunamadı: {0}",
   "gobhop.set_usage": "Kullanım: {0} <isim>",
   "gobhop.menu_title": "GoBhop",
-  "gobhop.menu_exit": "Çık"
+  "gobhop.menu_exit": "GoBhop'tan Çık",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
 }

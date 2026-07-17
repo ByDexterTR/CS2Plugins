@@ -24,7 +24,7 @@ public class MapBlockConfig : BasePluginConfig
 public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 {
 	public override string ModuleName => "MapBlock";
-	public override string ModuleVersion => "1.0.3";
+	public override string ModuleVersion => "1.0.4";
 	public override string ModuleAuthor => "ByDexter";
 	public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -79,6 +79,11 @@ public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 		RegisterEventHandler<EventRoundStart>(OnRoundStart, HookMode.Post);
 
 		if (hotReload) ApplyPlacements();
+	}
+
+	public override void Unload(bool hotReload)
+	{
+		RemoveActiveEntities();
 	}
 
 	public static void OnServerPrecacheResources(ResourceManifest resource)

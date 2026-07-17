@@ -1,10 +1,11 @@
 {
   "chat_prefix": "[ByDexter]",
-  "meslekmenu.usage_doktor": "!meslek Doctor » {0} HP healthshot (weapon_healthshot)",
-  "meslekmenu.usage_flash": "!meslek Flash » {0}s flash effect (Speed x{1})",
-  "meslekmenu.usage_bombaci": "!meslek Bomber » Random {0} given.",
-  "meslekmenu.usage_rambo": "!meslek Rambo » {0} HP, {1} armor.",
-  "meslekmenu.usage_zeus": "!meslek Zeus » Receives taser.",
+  "meslekmenu.menu_title": "Profession Menu",
+  "meslekmenu.item_doktor": "Doctor ({0} HP healthshot)",
+  "meslekmenu.item_flash": "Flash ({0}s, Speed x{1})",
+  "meslekmenu.item_bombaci": "Bomber (Random: {0})",
+  "meslekmenu.item_rambo": "Rambo ({0} HP, {1} armor)",
+  "meslekmenu.item_zeus": "Zeus (Taser)",
   "meslekmenu.no_active": "No professions are active!",
   "meslekmenu.alive_only": "Only alive players can use this command!",
   "meslekmenu.t_only": "Only the Terrorist team can use this command!",
@@ -12,5 +13,14 @@
   "meslekmenu.disabled": "{0} profession is disabled.",
   "meslekmenu.profession_changed": "Your profession changed to: {0}",
   "meslekmenu.rambo_low_hp": "Cannot select Rambo: Your HP is below 100!",
-  "meslekmenu.unknown": "Unknown profession! Type !meslek for help."
+  "meslekmenu.unknown": "Unknown profession! Type !meslek for the menu.",
+  "meslekmenu.prof_doktor": "Doctor",
+  "meslekmenu.prof_flash": "Flash",
+  "meslekmenu.prof_bombaci": "Bomber",
+  "meslekmenu.prof_rambo": "Rambo",
+  "meslekmenu.prof_zeus": "Zeus",
+  "meslekmenu.none": "None",
+  "menu.scroll": "Scroll",
+  "menu.select": "Select",
+  "menu.exit": "Exit"
 }

@@ -1,0 +1,14 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "pm.usage": "Kullanım: !pm <oyuncu> <mesaj>",
+  "pm.not_found": "'{0}' adında oyuncu bulunamadı.",
+  "pm.multiple": "'{0}' ile birden fazla oyuncu eşleşti, daha belirgin yazın.",
+  "pm.self": "Kendinize mesaj gönderemezsiniz.",
+  "pm.target_off": "{0} özel mesajlara kapalı.",
+  "pm.self_off": "Özel mesajlarınız kapalı, göndermek için önce !pmon ile açın.",
+  "pm.sent": "Mesaj {0} kullanıcısına gönderildi.",
+  "pm.off": "Özel mesajlar kapatıldı.",
+  "pm.on": "Özel mesajlar açıldı.",
+  "pm.sound_on": "Özel mesaj sesi açıldı.",
+  "pm.sound_off": "Özel mesaj sesi kapatıldı."
+}

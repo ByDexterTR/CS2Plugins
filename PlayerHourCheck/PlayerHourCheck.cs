@@ -77,7 +77,7 @@ public class PlayerHourCheckConfig : BasePluginConfig
 public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 {
   public override string ModuleName => "PlayerHourCheck";
-  public override string ModuleVersion => "1.0.7";
+  public override string ModuleVersion => "1.0.8";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -601,12 +601,22 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
   private void ApplyPrivatePenalty(CCSPlayerController player)
   {
     var steamIdStr = player.SteamID.ToString();
-    var record = GetPlayerRecord(steamIdStr);
-    var penaltyCount = (record?.PenaltyCount ?? 0) + 1;
-    var playerHours = record?.Playtime ?? 0;
 
-    SavePlayerRecord(steamIdStr, playerHours, penaltyCount);
-    ApplyPenalty(player, penaltyCount, playerHours);
+    Task.Run(() =>
+    {
+      var record = GetPlayerRecord(steamIdStr);
+
+      _mainThreadActions.Enqueue(() =>
+      {
+        if (player == null || !player.IsValid) return;
+
+        var penaltyCount = (record?.PenaltyCount ?? 0) + 1;
+        var playerHours = record?.Playtime ?? 0;
+
+        SavePlayerRecord(steamIdStr, playerHours, penaltyCount);
+        ApplyPenalty(player, penaltyCount, playerHours);
+      });
+    });
   }
 
   private bool IsIgnored(CCSPlayerController player)
@@ -779,47 +789,5 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     {
       return new PlaytimeResult(PlaytimeStatus.Error);
     }
-  }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
-  public static char White => '\x01';
-  public static char Orange => '\x10';
-
-  private static readonly Dictionary<string, char> ColorMap = new(StringComparer.OrdinalIgnoreCase)
-  {
-    { "Default", '\x01' }, { "White", '\x01' },
-    { "Red", '\x07' }, { "LightRed", '\x0F' }, { "DarkRed", '\x02' },
-    { "BlueGrey", '\x0A' }, { "Blue", '\x0B' }, { "DarkBlue", '\x0C' },
-    { "Purple", '\x0C' }, { "Orchid", '\x0E' },
-    { "Yellow", '\x09' }, { "Gold", '\x10' }, { "Orange", '\x10' },
-    { "LightGreen", '\x05' }, { "Green", '\x04' }, { "Lime", '\x06' },
-    { "Grey", '\x08' }, { "Gray", '\x08' }, { "Grey2", '\x0D' }
-  };
-
-  public static string Parse(string message)
-  {
-    return Regex.Replace(message, @"\{(\w+)\}", match =>
-    {
-      var colorName = match.Groups[1].Value;
-      return ColorMap.TryGetValue(colorName, out var color) ? color.ToString() : match.Value;
-    });
   }
 }

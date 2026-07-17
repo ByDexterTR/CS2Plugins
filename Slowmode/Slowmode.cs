@@ -22,7 +22,7 @@ public class SlowmodeConfig : BasePluginConfig
 public class Slowmode : BasePlugin, IPluginConfig<SlowmodeConfig>
 {
     public override string ModuleName => "Slowmode";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.1";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -102,11 +102,4 @@ public class Slowmode : BasePlugin, IPluginConfig<SlowmodeConfig>
         _lastMessage[player.SteamID] = now;
         return HookResult.Continue;
     }
-}
-
-public static class CC
-{
-    public static char Default => '\x01';
-    public static char Orchid => '\x0E';
-    public static char Gold => '\x10';
 }

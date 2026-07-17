@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.0.2";
+    public override string ModuleVersion => "1.0.3";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -394,13 +394,4 @@ public partial class VIPCore : BasePlugin
             catch { }
         });
     }
-}
-
-public static class CC
-{
-    public static char Default => '\x01';
-    public static char Red => '\x07';
-    public static char Orchid => '\x0E';
-    public static char Green => '\x04';
-    public static char Gold => '\x10';
 }

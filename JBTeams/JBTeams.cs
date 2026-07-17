@@ -2,43 +2,73 @@ using System.Drawing;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes.Registration;
-using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace JBTeams;
 
-public class JBTeams : BasePlugin
+public class TeamEntry
+{
+  [JsonPropertyName("name")]
+  public string Name { get; set; } = "";
+
+  [JsonPropertyName("color")]
+  public int[] TeamColor { get; set; } = [255, 255, 255];
+}
+
+public class JBTeamsConfig : BasePluginConfig
+{
+  [JsonPropertyName("teams_cmd")]
+  public string TeamsCommands { get; set; } = "css_takim,css_team";
+
+  [JsonPropertyName("teams_flag")]
+  public string TeamsFlag { get; set; } = "@jailbreak/warden,@css/generic";
+
+  [JsonPropertyName("teams")]
+  public List<TeamEntry> Teams { get; set; } =
+  [
+    new TeamEntry { Name = "Ember", TeamColor = [255, 42, 42] },
+    new TeamEntry { Name = "Abyss", TeamColor = [15, 82, 186] },
+    new TeamEntry { Name = "Spark", TeamColor = [255, 215, 0] },
+    new TeamEntry { Name = "Grove", TeamColor = [27, 138, 90] },
+    new TeamEntry { Name = "Nebula", TeamColor = [106, 13, 173] }
+  ];
+
+  [JsonPropertyName("force_balance")]
+  public bool ForceBalance { get; set; } = true;
+}
+
+public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 {
   public override string ModuleName => "JBTeams";
-  public override string ModuleVersion => "1.0.4";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
   private string ChatPrefix => Localizer["chat_prefix"];
 
+  public JBTeamsConfig Config { get; set; } = new();
+
   private int activeTeams = 0;
   private readonly Dictionary<ulong, int> playerTeams = new();
 
-  private readonly Color[] teamColors = new[]
-  {
-    Color.FromArgb(255, 255, 0, 0),
-    Color.FromArgb(255, 0, 255, 0),
-    Color.FromArgb(255, 0, 0, 255),
-    Color.FromArgb(255, 255, 255, 0),
-    Color.FromArgb(255, 255, 0, 255)
-  };
+  private static readonly char[] ChatPalette =
+  [
+    '\x07', '\x0B', '\x10', '\x04', '\x0E', '\x09', '\x06', '\x0A'
+  ];
 
-  private readonly string[] teamNames = new[]
+  public void OnConfigParsed(JBTeamsConfig config)
   {
-    "Kırmızı",
-    "Yeşil",
-    "Mavi",
-    "Sarı",
-    "Magenta"
-  };
+    config.Teams.RemoveAll(t => string.IsNullOrWhiteSpace(t.Name) || t.TeamColor.Length != 3);
+    Config = config;
+  }
+
+  private Color TeamRenderColor(int teamIndex)
+  {
+    var c = Config.Teams[teamIndex].TeamColor;
+    return Color.FromArgb(255, c[0], c[1], c[2]);
+  }
 
   public override void Load(bool hotReload)
   {
@@ -47,6 +77,19 @@ public class JBTeams : BasePlugin
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+
+    foreach (var name in Util.Split(Config.TeamsCommands))
+      AddCommand(name, "Takim sistemi", OnTakimCommand);
+  }
+
+  public override void Unload(bool hotReload)
+  {
+    if (activeTeams > 0)
+    {
+      activeTeams = 0;
+      playerTeams.Clear();
+      ResetAllTerroristColors();
+    }
   }
 
   private HookResult HandleEntityDamage(CEntityInstance victimEnt, CTakeDamageInfo info)
@@ -79,22 +122,25 @@ public class JBTeams : BasePlugin
     return HookResult.Continue;
   }
 
-  [ConsoleCommand("css_takim", "Takım sistemi")]
-  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnTakimCommand(CCSPlayerController? player, CommandInfo info)
   {
     if (player == null || !player.IsValid)
       return;
 
+    if (!Util.HasAccess(player, Config.TeamsFlag))
+      return;
+
+    int maxTeams = Config.Teams.Count;
+
     if (info.ArgCount < 2)
     {
-      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.usage"]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.usage", maxTeams]}");
       return;
     }
 
-    if (!int.TryParse(info.ArgByIndex(1), out int teamCount) || teamCount < 0 || teamCount > 5)
+    if (!int.TryParse(info.ArgByIndex(1), out int teamCount) || teamCount < 0 || teamCount > maxTeams)
     {
-      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.invalid_input"]}");
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.invalid_input", maxTeams]}");
       return;
     }
 
@@ -105,7 +151,7 @@ public class JBTeams : BasePlugin
     }
 
     var terrorists = Utilities.GetPlayers()
-      .Where(p => p != null && p.IsValid && p.TeamNum == (int)CsTeam.Terrorist && IsAlive(p))
+      .Where(p => p != null && p.IsValid && p.Team == CsTeam.Terrorist && IsAlive(p))
       .ToList();
 
     if (terrorists.Count == 0)
@@ -114,7 +160,7 @@ public class JBTeams : BasePlugin
       return;
     }
 
-    if (terrorists.Count % teamCount != 0)
+    if (!Config.ForceBalance && terrorists.Count % teamCount != 0)
     {
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.uneven", terrorists.Count, teamCount]}");
       return;
@@ -130,17 +176,14 @@ public class JBTeams : BasePlugin
 
     var shuffled = terrorists.OrderBy(x => Random.Shared.Next()).ToList();
 
-    int playersPerTeam = shuffled.Count / teamCount;
-
     for (int i = 0; i < shuffled.Count; i++)
     {
-      int teamIndex = i / playersPerTeam;
-      if (teamIndex >= teamCount) teamIndex = teamCount - 1;
+      int teamIndex = i % teamCount;
 
       var p = shuffled[i];
       playerTeams[p.SteamID] = teamIndex;
       ApplyTeamColor(p, teamIndex);
-      p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.team_assigned", teamNames[teamIndex]]}");
+      p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.team_assigned", GetColoredTeamName(teamIndex)]}");
     }
 
     Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.teams_created", admin.PlayerName, teamCount]}");
@@ -164,13 +207,13 @@ public class JBTeams : BasePlugin
 
   private void ApplyTeamColor(CCSPlayerController player, int teamIndex)
   {
-    if (!player.IsValid || teamIndex < 0 || teamIndex >= teamColors.Length)
+    if (!player.IsValid || teamIndex < 0 || teamIndex >= Config.Teams.Count)
       return;
 
     var pawn = player.PlayerPawn.Value;
     if (pawn != null && pawn.IsValid)
     {
-      pawn.Render = teamColors[teamIndex];
+      pawn.Render = TeamRenderColor(teamIndex);
       Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
     }
   }
@@ -190,15 +233,11 @@ public class JBTeams : BasePlugin
 
   private string GetColoredTeamName(int teamIndex)
   {
-    return teamIndex switch
-    {
-      0 => $"{CC.Red}{teamNames[0]}{CC.Default}",
-      1 => $"{CC.Green}{teamNames[1]}{CC.Default}",
-      2 => $"{CC.Blue}{teamNames[2]}{CC.Default}",
-      3 => $"{CC.Yellow}{teamNames[3]}{CC.Default}",
-      4 => $"{CC.Orchid}{teamNames[4]}{CC.Default}",
-      _ => teamNames[teamIndex]
-    };
+    if (teamIndex < 0 || teamIndex >= Config.Teams.Count)
+      return "";
+
+    var chatColor = ChatPalette[teamIndex % ChatPalette.Length];
+    return $"{chatColor}{Config.Teams[teamIndex].Name}{CC.Default}";
   }
 
   private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
@@ -225,7 +264,7 @@ public class JBTeams : BasePlugin
     if (remainingTeams.Count == 1)
     {
       int winningTeam = remainingTeams[0];
-      Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {GetColoredTeamName(winningTeam)} kazandı.");
+      Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.team_won", GetColoredTeamName(winningTeam)]}");
 
       activeTeams = 0;
       playerTeams.Clear();
@@ -286,24 +325,4 @@ public class JBTeams : BasePlugin
   {
     return player?.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
   }
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

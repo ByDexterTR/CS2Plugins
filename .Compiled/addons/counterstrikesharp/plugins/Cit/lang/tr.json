@@ -12,5 +12,8 @@
   "cit.size_medium": "Orta",
   "cit.size_large": "Büyük",
   "cit.trace_unavailable": "Trace sistemi kullanılamıyor: {0}",
-  "cit.no_hit": "Bakılan nokta bulunamadı, tekrar deneyin."
+  "cit.no_hit": "Bakılan nokta bulunamadı, tekrar deneyin.",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
 }

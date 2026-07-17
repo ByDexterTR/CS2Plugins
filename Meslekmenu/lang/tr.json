@@ -1,10 +1,11 @@
 {
   "chat_prefix": "[ByDexter]",
-  "meslekmenu.usage_doktor": "!meslek Doktor » {0} sağlık aşısı (weapon_healthshot)",
-  "meslekmenu.usage_flash": "!meslek Flash » {0} saniye flash efekti (Hız x{1})",
-  "meslekmenu.usage_bombaci": "!meslek Bombacı » Rastgele {0} verilir.",
-  "meslekmenu.usage_rambo": "!meslek Rambo » {0} can, {1} armor.",
-  "meslekmenu.usage_zeus": "!meslek Zeus » Taser alır.",
+  "meslekmenu.menu_title": "Meslek Menüsü",
+  "meslekmenu.item_doktor": "Doktor ({0} sağlık aşısı)",
+  "meslekmenu.item_flash": "Flash ({0} sn, Hız x{1})",
+  "meslekmenu.item_bombaci": "Bombacı (Rastgele: {0})",
+  "meslekmenu.item_rambo": "Rambo ({0} can, {1} armor)",
+  "meslekmenu.item_zeus": "Zeus (Taser)",
   "meslekmenu.no_active": "Hiçbir meslek aktif değil!",
   "meslekmenu.alive_only": "Bu komutu sadece canlı oyuncular kullanabilir!",
   "meslekmenu.t_only": "Bu komutu sadece Terörist takımı kullanabilir!",
@@ -12,5 +13,14 @@
   "meslekmenu.disabled": "{0} mesleği kapalı.",
   "meslekmenu.profession_changed": "Mesleğin değiştirildi: {0}",
   "meslekmenu.rambo_low_hp": "Rambo mesleğini seçemezsin: Canın 100ün altında!",
-  "meslekmenu.unknown": "Bilinmeyen meslek! Yardım için !meslek yazınız."
+  "meslekmenu.unknown": "Bilinmeyen meslek! Menü için !meslek yazınız.",
+  "meslekmenu.prof_doktor": "Doktor",
+  "meslekmenu.prof_flash": "Flash",
+  "meslekmenu.prof_bombaci": "Bombacı",
+  "meslekmenu.prof_rambo": "Rambo",
+  "meslekmenu.prof_zeus": "Zeus",
+  "meslekmenu.none": "Yok",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
 }

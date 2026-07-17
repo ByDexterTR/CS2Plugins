@@ -3,5 +3,6 @@
   "onevsoneslay.countdown_warning": "{0} saniye içinde oyuncular öldürülecek!",
   "onevsoneslay.time_up": "Süre doldu! Kalan oyuncular öldürülüyor!",
   "onevsoneslay.stopped": "1v1 sayacı {0} tarafından durduruldu.",
-  "onevsoneslay.not_active": "Şu anda aktif bir 1v1 sayacı yok."
+  "onevsoneslay.not_active": "Şu anda aktif bir 1v1 sayacı yok.",
+  "onevsoneslay.hud_countdown": "1v1 Ölüm sayacı: {0} saniye"
 }

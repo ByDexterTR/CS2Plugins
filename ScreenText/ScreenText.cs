@@ -61,7 +61,7 @@ public class ScreenTextConfig : BasePluginConfig
 public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
 {
     public override string ModuleName => "ScreenText";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.1";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -441,10 +441,4 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
 
         return Color.White;
     }
-}
-
-public static class CC
-{
-    public static char Default => '\x01';
-    public static char Orchid => '\x0E';
 }

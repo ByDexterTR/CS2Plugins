@@ -8,5 +8,10 @@
   "ctrev.already_alive": "Guard is already alive.",
   "ctrev.cooldown_wait": "Cooldown: {0}s.",
   "ctrev.revived": "{0}: {1} was revived. Remaining revives: {2}",
-  "ctrev.menu_auto_rev": "Auto Rev: {0}"
+  "ctrev.menu_auto_rev": "Auto Rev: {0}",
+  "ctrev.menu_title": "CTRev (Rights: {0})",
+  "ctrev.menu_cooldown": "{0} ({1}s)",
+  "menu.scroll": "Scroll",
+  "menu.select": "Select",
+  "menu.exit": "Exit"
 }

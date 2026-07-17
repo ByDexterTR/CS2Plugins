@@ -15,4 +15,10 @@
   <ItemGroup>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Compile Include="..\.Shared\WasdMenu.cs" Link=".Shared\WasdMenu.cs" />
+    <Using Include="ByDexter.Shared" />
+  </ItemGroup>
+
 </Project>

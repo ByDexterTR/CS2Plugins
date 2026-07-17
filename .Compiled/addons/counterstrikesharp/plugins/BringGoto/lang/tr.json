@@ -1,0 +1,16 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "no_permission": "Bu komut için yetkiniz yok.",
+  "must_alive": "Bu komutu kullanmak için hayatta olmalısın.",
+  "not_found": "Hedef bulunamadı.",
+  "immunity": "{0} dokunulmazlığı senden yüksek.",
+  "bring.usage": "Kullanım: css_bring <oyuncu/@t/@ct/@all>",
+  "bring.done": "{0} yanına ışınlandı.",
+  "bring.done_multi": "{0} oyuncu yanına ışınlandı.",
+  "bring.notify": "{0} seni yanına ışınladı.",
+  "goto.usage": "Kullanım: css_goto <oyuncu>",
+  "goto.multiple": "Birden fazla oyuncu eşleşti, tek hedef belirt.",
+  "goto.self": "Kendine ışınlanamazsın.",
+  "goto.done": "{0} oyuncusuna ışınlandın.",
+  "goto.notify": "{0} sana ışınlandı."
+}

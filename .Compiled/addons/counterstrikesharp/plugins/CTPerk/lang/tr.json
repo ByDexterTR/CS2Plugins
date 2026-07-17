@@ -12,5 +12,9 @@
   "ctperk.perk_active_infammo": "Perk: Sınırsız Mermi aktif",
   "ctperk.perk_active_dmgreduction": "Perk: Hasar Azaltma %{0} aktif",
   "ctperk.perk_active_dmgboost": "Perk: Hasar Arttırma %{0} aktif",
-  "ctperk.perk_active_generic": "Perk: Aktif"
+  "ctperk.perk_active_generic": "Perk: Aktif",
+  "ctperk.menu_title": "CT Perk ({0}/{1})",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
 }

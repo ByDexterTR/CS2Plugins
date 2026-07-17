@@ -1,27 +1,49 @@
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
 
 namespace CTKov;
 
-public class CTKov : BasePlugin
+public class CTKovConfig : BasePluginConfig
+{
+    [JsonPropertyName("ctkov_cmd")]
+    public string CtkovCommands { get; set; } = "css_ctkov,css_kovct";
+
+    [JsonPropertyName("ctkov_flag")]
+    public string CtkovFlag { get; set; } = "@jailbreak/warden,@css/generic";
+}
+
+public class CTKov : BasePlugin, IPluginConfig<CTKovConfig>
 {
     public override string ModuleName => "CTKov";
-    public override string ModuleVersion => "1.0.2";
+    public override string ModuleVersion => "1.0.3";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
-  private string ChatPrefix => Localizer["chat_prefix"];
+    private string ChatPrefix => Localizer["chat_prefix"];
 
-    [ConsoleCommand("css_ctkov", "css_ctkov")]
-    [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
+    public CTKovConfig Config { get; set; } = new();
+
+    public void OnConfigParsed(CTKovConfig config)
+    {
+        Config = config;
+    }
+
+    public override void Load(bool hotReload)
+    {
+        foreach (var name in Util.Split(Config.CtkovCommands))
+            AddCommand(name, "Warden olmayan CTleri T takimina tasir", OnCTKovCommand);
+    }
+
     public void OnCTKovCommand(CCSPlayerController? player, CommandInfo commandInfo)
     {
         if (player == null || !player.IsValid)
+            return;
+
+        if (!Util.HasAccess(player, Config.CtkovFlag))
             return;
 
         int kickedCount = 0;
@@ -32,7 +54,7 @@ public class CTKov : BasePlugin
             if (target == null || !target.IsValid || target.IsBot)
                 continue;
 
-            if (target.TeamNum != 3)
+            if (target.Team != CsTeam.CounterTerrorist)
                 continue;
 
             if (AdminManager.PlayerHasPermissions(target, "@jailbreak/warden"))
@@ -59,24 +81,4 @@ public class CTKov : BasePlugin
             player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkov.no_guards"]}");
         }
     }
-}
-
-public static class CC
-{
-    public static char Default => '\x01';
-    public static char Red => '\x07';
-    public static char LightRed => '\x0F';
-    public static char DarkRed => '\x02';
-    public static char BlueGrey => '\x0A';
-    public static char Blue => '\x0B';
-    public static char DarkBlue => '\x0C';
-    public static char Purple => '\x0C';
-    public static char Orchid => '\x0E';
-    public static char Yellow => '\x09';
-    public static char Gold => '\x10';
-    public static char LightGreen => '\x05';
-    public static char Green => '\x04';
-    public static char Lime => '\x06';
-    public static char Grey => '\x08';
-    public static char Grey2 => '\x0D';
 }

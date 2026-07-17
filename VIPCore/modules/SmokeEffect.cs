@@ -24,8 +24,6 @@ public class SmokeEffect : VipModule
 
     private class HealCfg
     {
-        [JsonPropertyName("maxhp")]
-        public int MaxHp { get; set; } = 100;
         public int Heal { get; set; } = 2;
         public float Tick { get; set; } = 0.5f;
         [JsonPropertyName("smokecolor")]
@@ -218,9 +216,10 @@ public class SmokeEffect : VipModule
                     smoke.NextTick = now + Math.Max(cfg.Heal.Tick, 0.05f);
                     Apply(smoke, owner!, cfg.Heal.Radius, cfg.Heal.IgnoreTeammates, cfg.Heal.IgnoreSelf, cfg.Heal.IgnoreEnemy, pawn =>
                     {
-                        if (pawn.Health >= cfg.Heal.MaxHp)
+                        int maxHp = pawn.MaxHealth > 0 ? pawn.MaxHealth : 100;
+                        if (pawn.Health >= maxHp)
                             return;
-                        pawn.Health = Math.Min(pawn.Health + cfg.Heal.Heal, cfg.Heal.MaxHp);
+                        pawn.Health = Math.Min(pawn.Health + cfg.Heal.Heal, maxHp);
                         Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
                         pawn.Controller.Value?.As<CCSPlayerController>()?.EmitSound("Healthshot.Success");
                     });

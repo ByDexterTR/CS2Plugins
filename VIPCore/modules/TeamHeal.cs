@@ -11,8 +11,6 @@ public class TeamHeal : VipModule
     {
         [JsonPropertyName("minhp")]
         public int MinHp { get; set; } = 1;
-        [JsonPropertyName("maxhp")]
-        public int MaxHp { get; set; } = 100;
         public int Percent { get; set; } = 50;
         public string OnlyWithWeapon { get; set; } = "";
     }
@@ -44,8 +42,9 @@ public class TeamHeal : VipModule
         if (victimPawn == null || !victimPawn.IsValid || victimPawn.Health <= 0)
             return HookResult.Continue;
 
+        int maxHp = victimPawn.MaxHealth > 0 ? victimPawn.MaxHealth : 100;
         int heal = Math.Max((int)(info.Damage * cfg.Percent / 100f), cfg.MinHp);
-        int newHp = Math.Min(victimPawn.Health + heal, cfg.MaxHp);
+        int newHp = Math.Min(victimPawn.Health + heal, maxHp);
 
         info.Damage = 0;
 

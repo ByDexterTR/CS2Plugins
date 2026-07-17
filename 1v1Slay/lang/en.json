@@ -3,5 +3,6 @@
   "onevsoneslay.countdown_warning": "Players will be slayed in {0} seconds!",
   "onevsoneslay.time_up": "Time's up! Remaining players are being slayed!",
   "onevsoneslay.stopped": "1v1 countdown stopped by {0}.",
-  "onevsoneslay.not_active": "There is no active 1v1 countdown right now."
+  "onevsoneslay.not_active": "There is no active 1v1 countdown right now.",
+  "onevsoneslay.hud_countdown": "1v1 death timer: {0} seconds"
 }

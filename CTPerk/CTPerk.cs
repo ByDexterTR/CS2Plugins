@@ -4,7 +4,6 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
 
@@ -58,6 +57,12 @@ public class CTPerkConfig : BasePluginConfig
     new SelectionRight { TCount = 9, Hak = 2 },
     new SelectionRight { TCount = 20, Hak = 3 }
   };
+
+  [JsonPropertyName("ctperk_cmd")]
+  public string CtperkCommands { get; set; } = "css_ctperk,css_ctp";
+
+  [JsonPropertyName("ctperk_flag")]
+  public string CtperkFlag { get; set; } = "@jailbreak/warden,@css/generic";
 }
 
 
@@ -73,7 +78,7 @@ public enum PerkType
 public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 {
   public override string ModuleName => "CTPerk";
-  public override string ModuleVersion => "1.0.4";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -85,6 +90,8 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
   private int allowedSelections = 1;
   private int usedSelections = 0;
 
+  private WasdMenuManager _menus = null!;
+
   public void OnConfigParsed(CTPerkConfig config)
   {
     Config = config;
@@ -92,11 +99,23 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
   public override void Load(bool hotReload)
   {
+    _menus = new WasdMenuManager(this,
+      () => Localizer["menu.scroll"],
+      () => Localizer["menu.select"],
+      () => Localizer["menu.exit"]);
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
     RegisterEventHandler<EventWeaponFire>(OnWeaponFire);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterListener<OnEntityTakeDamagePre>(OnEntityDamagePre);
+
+    foreach (var name in Util.Split(Config.CtperkCommands))
+      AddCommand(name, "CT Perk secim menusu", OnCTPerkCommand);
+  }
+
+  public override void Unload(bool hotReload)
+  {
+    _menus.Clear();
   }
 
   private HookResult OnEntityDamagePre(CEntityInstance victimEnt, CTakeDamageInfo info)
@@ -151,11 +170,10 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     return HookResult.Continue;
   }
 
-  [ConsoleCommand("css_ctperk", "CT Perk seçim menüsü")]
-  [RequiresPermissionsOr("@css/generic", "@jailbreak/warden")]
   public void OnCTPerkCommand(CCSPlayerController? player, CommandInfo commandInfo)
   {
     if (player == null || !player.IsValid || player.IsBot) return;
+    if (!Util.HasAccess(player, Config.CtperkFlag)) return;
     ShowPerkMenu(player);
   }
 
@@ -173,53 +191,51 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
   {
     if (player == null || !player.IsValid) return;
 
-    CenterHtmlMenu menu = new("<font color='#f7e882' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/shield.png'> CT Perk (" + usedSelections + "/" + allowedSelections + ") <img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/shield.png'></font>", this);
     int hp = Config.PerkHpArmorHp;
     int armor = Config.PerkHpArmorArmor;
     int lifestealPct = (int)(Config.PerkLifestealRatio * 100);
     int dmgRedPct = (int)(Config.PerkDamageReductionRatio * 100);
     int dmgBoostPct = (int)((Config.PerkDamageBoostRatio - 1f) * 100);
-    if (Config.EnabledPerkHpArmor)
-      AddPerkOption(menu, PerkType.Health, Localizer["ctperk.perk_hp_armor", hp, armor], () => ActivatePerk(PerkType.Health));
-    if (Config.EnabledPerkLifesteal)
-      AddPerkOption(menu, PerkType.Lifesteal, Localizer["ctperk.perk_lifesteal", lifestealPct], () => ActivatePerk(PerkType.Lifesteal));
-    if (Config.EnabledPerkInfAmmo)
-      AddPerkOption(menu, PerkType.InfiniteAmmo, Localizer["ctperk.perk_infinite_ammo"], () => ActivatePerk(PerkType.InfiniteAmmo));
-    if (Config.EnabledPerkDamageReduction)
-      AddPerkOption(menu, PerkType.DamageReduction, Localizer["ctperk.perk_damage_reduction", dmgRedPct], () => ActivatePerk(PerkType.DamageReduction));
-    if (Config.EnabledPerkDamageBoost)
-      AddPerkOption(menu, PerkType.DamageBoost, Localizer["ctperk.perk_damage_boost", dmgBoostPct], () => ActivatePerk(PerkType.DamageBoost));
 
-    MenuManager.OpenCenterHtmlMenu(this, player, menu);
+    var items = new List<WasdItem>();
+    if (Config.EnabledPerkHpArmor)
+      items.Add(BuildPerkItem(PerkType.Health, Localizer["ctperk.perk_hp_armor", hp, armor], () => ActivatePerk(PerkType.Health)));
+    if (Config.EnabledPerkLifesteal)
+      items.Add(BuildPerkItem(PerkType.Lifesteal, Localizer["ctperk.perk_lifesteal", lifestealPct], () => ActivatePerk(PerkType.Lifesteal)));
+    if (Config.EnabledPerkInfAmmo)
+      items.Add(BuildPerkItem(PerkType.InfiniteAmmo, Localizer["ctperk.perk_infinite_ammo"], () => ActivatePerk(PerkType.InfiniteAmmo)));
+    if (Config.EnabledPerkDamageReduction)
+      items.Add(BuildPerkItem(PerkType.DamageReduction, Localizer["ctperk.perk_damage_reduction", dmgRedPct], () => ActivatePerk(PerkType.DamageReduction)));
+    if (Config.EnabledPerkDamageBoost)
+      items.Add(BuildPerkItem(PerkType.DamageBoost, Localizer["ctperk.perk_damage_boost", dmgBoostPct], () => ActivatePerk(PerkType.DamageBoost)));
+
+    _menus.Open(player, Localizer["ctperk.menu_title", usedSelections, allowedSelections], items);
   }
 
-  private void AddPerkOption(CenterHtmlMenu menu, PerkType type, string display, Action action)
+  private WasdItem BuildPerkItem(PerkType type, string display, Action action)
   {
     bool already = activePerks.Contains(type);
-    string label = already ? $"<font color='green'>{display} ✔</font>" : display;
-    menu.AddMenuOption(label, (p, o) =>
+    return new WasdItem
     {
-      if (already) return;
-
-
-      if (usedSelections >= allowedSelections)
+      Text = already ? $"<font color='#76C97A'>{display} ✔</font>" : display,
+      Enabled = !already,
+      OnSelect = p =>
       {
-        p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctperk.no_rights"]}");
-        MenuManager.CloseActiveMenu(p);
-        return;
+        if (usedSelections >= allowedSelections)
+        {
+          p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctperk.no_rights"]}");
+          _menus.Close(p);
+          return;
+        }
+        action();
+        usedSelections++;
+        AnnouncePerk(type);
+        if (usedSelections < allowedSelections)
+          ShowPerkMenu(p);
+        else
+          _menus.Close(p);
       }
-      action();
-      usedSelections++;
-      AnnouncePerk(type);
-      if (usedSelections < allowedSelections)
-      {
-        ShowPerkMenu(p);
-      }
-      else
-      {
-        MenuManager.CloseActiveMenu(p);
-      }
-    }, already);
+    };
   }
 
   private void ActivatePerk(PerkType type)
@@ -407,24 +423,4 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     return HookResult.Continue;
   }
 
-}
-
-public static class CC
-{
-  public static char Default => '\x01';
-  public static char Red => '\x07';
-  public static char LightRed => '\x0F';
-  public static char DarkRed => '\x02';
-  public static char BlueGrey => '\x0A';
-  public static char Blue => '\x0B';
-  public static char DarkBlue => '\x0C';
-  public static char Purple => '\x0C';
-  public static char Orchid => '\x0E';
-  public static char Yellow => '\x09';
-  public static char Gold => '\x10';
-  public static char LightGreen => '\x05';
-  public static char Green => '\x04';
-  public static char Lime => '\x06';
-  public static char Grey => '\x08';
-  public static char Grey2 => '\x0D';
 }

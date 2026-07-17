@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\.Shared\WasdMenu.cs" Link=".Shared\WasdMenu.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

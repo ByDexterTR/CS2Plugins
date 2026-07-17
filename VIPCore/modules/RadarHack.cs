@@ -6,6 +6,12 @@ namespace VIPCore;
 
 public class RadarHack : VipModule
 {
+    private class Cfg
+    {
+        public float DurationOn { get; set; } = 1f;
+        public float DurationOff { get; set; } = 0f;
+    }
+
     public override string Name => "RadarHack";
     public override string DisplayName => Core.Localizer["vip.module.radarhack"];
 
@@ -21,6 +27,14 @@ public class RadarHack : VipModule
 
         foreach (var player in vips)
         {
+            var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+            if (cfg.DurationOff > 0)
+            {
+                float on = Math.Max(cfg.DurationOn, 1f);
+                if (Server.CurrentTime % (on + cfg.DurationOff) >= on)
+                    continue;
+            }
+
             int slot = player.Slot;
 
             foreach (var enemy in Utilities.GetPlayers())

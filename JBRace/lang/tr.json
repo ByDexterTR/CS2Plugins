@@ -15,5 +15,13 @@
   "jbrace.menu_cancel_race": "Yarışı İptal Et",
   "jbrace.menu_set_start": "Başlangıç Ayarla",
   "jbrace.menu_set_finish": "Bitiş Ayarla",
-  "jbrace.menu_clear_markers": "İşaretleri Temizle"
+  "jbrace.menu_clear_markers": "İşaretleri Temizle",
+  "jbrace.no_terrorists": "Yarış için T bulunamadı!",
+  "jbrace.countdown": "Yarış {0} saniye sonra başlıyor...",
+  "jbrace.hud_countdown": "Yarış başlıyor: {0}",
+  "jbrace.race_started": "Yarış başladı!",
+  "jbrace.menu_title": "Yarış",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
 }

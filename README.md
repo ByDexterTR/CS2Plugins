@@ -8,16 +8,16 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 
 | Eklenti | Açıklama |
 | --- | --- |
-| [CTBan](CTBan/README.md) | Oyunculara süreli CT (gardiyan) yasağı verir; kalıcı JSON kayıt |
-| [CTKit](CTKit/README.md) | CT'lere spawn'da otomatik verilen silah kiti; menüden seçim |
+| [CTBan](CTBan/README.md) | Oyunculara süreli CT (gardiyan) yasağı verir |
+| [CTKit](CTKit/README.md) | CT'lere spawn'da otomatik verilen silah kiti |
 | [CTKov](CTKov/README.md) | Warden olmayan tüm CT'leri tek komutla T'ye taşır |
 | [CTPerk](CTPerk/README.md) | T sayısına göre hak tanınan raunt bazlı CT güçlendirmeleri |
-| [CTRev](CTRev/README.md) | Ölen CT'leri menüden/otomatik canlandırma; raunt başına hak sistemi |
+| [CTRev](CTRev/README.md) | Ölen CT'leri menüden/otomatik canlandırma |
 | [CTSpawnKill](CTSpawnKill/README.md) | CT'lere spawn sonrası kısa süreli hasar koruması |
-| [GoBhop](GoBhop/README.md) | Ölü T'leri gizli bhop noktasına ışınlar; TAB'da ölü gözükür, son T kalınca kapanır |
+| [GoBhop](GoBhop/README.md) | Ölü T'leri gizli bhop noktasına ışınlar |
 | [JBDoors](JBDoors/README.md) | Tüm hücre kapılarını tek komutla açar/kapatır |
-| [JBRace](JBRace/README.md) | Başlangıç/bitiş noktalı yarış etkinliği; kazanan sayısı ayarlanabilir |
-| [JBTeams](JBTeams/README.md) | Canlı T'leri renkli takımlara böler; takım içi hasar kapalı |
+| [JBRace](JBRace/README.md) | Başlangıç/bitiş noktalı yarış etkinliği |
+| [JBTeams](JBTeams/README.md) | Canlı T'leri renkli takımlara böler |
 | [Meslekmenu](Meslekmenu/README.md) | T'lere raunt başına bir meslek: Doktor, Flash, Bombacı, Rambo, Zeus |
 | [Sustum](Sustum/README.md) | Kelime yazma etkinliği; 4 mod (CTSustum, TSustum, DSustum, ÖlüSustum) |
 | [Cit](Cit/README.md) | Baktığın noktaya çit/barikat modeli yerleştirme menüsü |
@@ -37,19 +37,21 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 | [Lazer](Lazer/README.md) | Ölü oyunculara canlıların baktığı yeri lazerle gösterir |
 | [MapBlock](MapBlock/README.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır |
 | [PlayerRGB](PlayerRGB/README.md) | Oyuncu modeline RGB (gökkuşağı) efekti |
+| [PrivateMessage](PrivateMessage/README.md) | Oyuncular arası özel mesaj (!pm) |
 | [Redbull](Redbull/README.md) | Süreli hız artışı; limit ve cooldown destekli |
-| [ScreenText](ScreenText/README.md) | Ekranın istenen noktasına JSON'dan tanımlı kalıcı yazılar; herkes yalnızca kendi yazısını görür |
+| [ScreenText](ScreenText/README.md) | Ekranın istenen noktasına JSON'dan tanımlı kalıcı yazılar |
 | [Sesler](Sesler/README.md) | Bıçak/silah/ayak/oyuncu/MVP seslerini kategori bazında susturma |
 | [Slowmode](Slowmode/README.md) | Sohbete genel yavaş mod; mesajlar arasına saniye sınırı koyar |
 | [SpawnkillProtection](SpawnkillProtection/README.md) | Flag ve takım bazlı, renk geçişli spawn koruması |
 | [Speedometer](Speedometer/README.md) | HUD'da renk geçişli anlık hız göstergesi (u/s) |
-| [Thirdperson](Thirdperson/README.md) | Üçüncü şahıs kamera; duvar engelleme ve yetki desteği |
+| [Thirdperson](Thirdperson/README.md) | Üçüncü şahıs kamera; duvar engelleme |
 
 ### 🛡️ Altyapı / Yönetim
 
 | Eklenti | Açıklama |
 | --- | --- |
 | [AdminList](AdminList/README.md) | Çevrimiçi yetkilileri grup etiketi ve renkleriyle listeler; gruplar config'ten |
+| [BringGoto](BringGoto/README.md) | Oyuncuları ışınlama (bring) ve oyuncuya ışınlanma (goto) |
 | [DiscordLogger](DiscordLogger/README.md) | 35+ sunucu olayını 10 Discord webhook kanalına ve günlük dosyaya loglar |
 | [PlayerHourCheck](PlayerHourCheck/README.md) | CS2 oynama saati kontrolü; kademeli kick/ban cezaları |
 | [VIPCore](VIPCore/README.md) | 50+ modüllü, grup tabanlı, JSON/MySQL destekli VIP sistemi |
