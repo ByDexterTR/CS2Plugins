@@ -13,6 +13,8 @@ public abstract class VipModule
     public virtual VipFeatureType MenuType => VipFeatureType.Toggle;
     public virtual bool ShowInMenu => true;
     public virtual List<VipFeatureOption> SelectOptions(CCSPlayerController player) => new();
+    public virtual List<VipFeatureOption> SelectCategories(CCSPlayerController player) => new();
+    public virtual List<VipFeatureOption> CategoryOptions(CCSPlayerController player, string category) => new();
 
     public abstract void OnLoad();
     public virtual void OnUnload() { }
@@ -21,6 +23,7 @@ public abstract class VipModule
     protected bool Active(CCSPlayerController? player) => player != null && Core.IsActive(player, Name);
     protected bool Granted(CCSPlayerController? player) => player != null && Core.IsGranted(player, Name);
     protected string Setting(CCSPlayerController player) => Core.GetSetting(player.SteamID, Name);
+    protected string CategorySetting(CCSPlayerController player, string category) => Core.GetSetting(player.SteamID, $"{Name}@{category}");
     protected T? GroupValue<T>(CCSPlayerController player) => Core.GetGroupValue<T>(player, Name);
 
     protected static bool IsAlive(CCSPlayerController? p) =>

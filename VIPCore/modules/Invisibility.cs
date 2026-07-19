@@ -130,7 +130,8 @@ public class Invisibility : VipModule
         if (pawn == null || !pawn.IsValid)
             return;
 
-        pawn.Render = Color.FromArgb(255, 255, 255, 255);
+        int alpha = PlayerModel.LegsHidden(slot) ? 254 : 255;
+        pawn.Render = Color.FromArgb(alpha, 255, 255, 255);
         Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
     }
 

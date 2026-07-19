@@ -105,7 +105,7 @@ public class Tag : VipModule
         string name = $"{ChatColorUtil.Char(cfg.NameColor)}{author.PlayerName}";
         string body = $"{ChatColorUtil.Char(cfg.ChatColor)}{message}";
 
-        string line = $" {Prefix(token)}{tagPart}{name}\x01{Suffix(token)}: {body}";
+        string line = $" \x01{Prefix(token)}{tagPart}{name}\x01{Suffix(token)}\x01: {body}";
 
         um.SetString("param1", name);
         um.SetString("param2", body);

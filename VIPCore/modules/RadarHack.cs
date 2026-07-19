@@ -19,7 +19,7 @@ public class RadarHack : VipModule
 
     private void OnTick()
     {
-        var vips = Utilities.GetPlayers().Where(p => p != null && p.IsValid && IsAlive(p) && Active(p)).ToList();
+        var vips = Core.Players.Where(p => p != null && p.IsValid && IsAlive(p) && Active(p)).ToList();
         if (vips.Count == 0)
             return;
 
@@ -37,7 +37,7 @@ public class RadarHack : VipModule
 
             int slot = player.Slot;
 
-            foreach (var enemy in Utilities.GetPlayers())
+            foreach (var enemy in Core.Players)
             {
                 if (enemy == null || !enemy.IsValid || enemy.Team == player.Team || !IsAlive(enemy))
                     continue;

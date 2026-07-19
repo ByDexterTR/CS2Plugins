@@ -10,10 +10,26 @@ public class InfiniteAmmo : VipModule
         public string OnlyWeapon { get; set; } = "";
     }
 
+    private static InfiniteAmmo? _instance;
+
+    public static bool Covers(CCSPlayerController player, string? weaponName)
+    {
+        var self = _instance;
+        if (self == null || !self.Active(player))
+            return false;
+
+        var allow = WeaponUtil.ParseCsv((self.GroupValue<Cfg>(player) ?? new Cfg()).OnlyWeapon);
+        return allow.Count == 0 || (weaponName != null && WeaponUtil.MatchesAny(allow, weaponName));
+    }
+
     public override string Name => "InfiniteAmmo";
     public override string DisplayName => Core.Localizer["vip.module.infiniteammo"];
 
-    public override void OnLoad() => Core.RegisterEventHandler<EventWeaponFire>(OnFire);
+    public override void OnLoad()
+    {
+        _instance = this;
+        Core.RegisterEventHandler<EventWeaponFire>(OnFire);
+    }
 
     private HookResult OnFire(EventWeaponFire ev, GameEventInfo info)
     {

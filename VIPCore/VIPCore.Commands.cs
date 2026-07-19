@@ -19,10 +19,13 @@ public partial class VIPCore
         Register(Config.Commands.UpdateUser, OnUpdateVipCommand);
     }
 
+    private readonly HashSet<string> _registeredCommands = new(StringComparer.OrdinalIgnoreCase);
+
     private void Register(string names, CommandInfo.CommandCallback handler)
     {
         foreach (var name in names.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            AddCommand(name, "VIPCore", handler);
+            if (_registeredCommands.Add(name))
+                AddCommand(name, "VIPCore", handler);
     }
 
     public void RegisterAliasedCommand(string names, CommandInfo.CommandCallback handler) => Register(names, handler);
@@ -265,6 +268,7 @@ public partial class VIPCore
         {
             _vips.Remove(steamId);
             _settings.Remove(steamId);
+            _pendingSettings.Remove(steamId);
         }
 
         var storage = _storage;
@@ -272,6 +276,21 @@ public partial class VIPCore
         {
             try { storage.DeleteVip(steamId); }
             catch { }
+        });
+
+        Server.NextFrame(() =>
+        {
+            var p = Utilities.GetPlayers().FirstOrDefault(x => x != null && x.IsValid && !x.IsBot && x.SteamID == steamId);
+            if (p == null)
+                return;
+
+            foreach (var module in _modules)
+            {
+                if (!_loaded.Contains(module.Name))
+                    continue;
+                try { module.OnSelect(p, "off"); }
+                catch { }
+            }
         });
     }
 
@@ -289,13 +308,12 @@ public partial class VIPCore
 
     public long GetClientTimeLeft(ulong steamId)
     {
-        if (!IsSteamIdVip(steamId))
-            return -1;
-
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         lock (_lock)
         {
-            long expires = _vips[steamId].Expires;
-            return expires == 0 ? long.MaxValue : expires - DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (!_vips.TryGetValue(steamId, out var entry) || (entry.Expires != 0 && entry.Expires <= now))
+                return -1;
+            return entry.Expires == 0 ? long.MaxValue : entry.Expires - now;
         }
     }
 

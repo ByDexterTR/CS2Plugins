@@ -85,10 +85,11 @@ public class WeaponAmmo : VipModule
         if (weapon == null || !weapon.IsValid)
             return HookResult.Continue;
 
-        if (_states.TryGetValue(weapon.Index, out var state) && state.ManageClip && state.Clip > 0)
+        if (_states.TryGetValue(weapon.Index, out var state) && state.ManageClip && state.Clip > 0
+            && !InfiniteAmmo.Covers(player!, weapon.DesignerName))
         {
             state.Clip--;
-            TryInstantRefill(player, weapon, state);
+            TryInstantRefill(player!, weapon, state);
         }
 
         return HookResult.Continue;
@@ -169,6 +170,12 @@ public class WeaponAmmo : VipModule
             if (entry == null)
                 continue;
 
+            if (InfiniteAmmo.Covers(player, weapon.DesignerName))
+            {
+                _states.Remove(weapon.Index);
+                continue;
+            }
+
             var state = new State
             {
                 ManageClip = entry.Ammo > 0,
@@ -193,52 +200,59 @@ public class WeaponAmmo : VipModule
         }
     }
 
+    private readonly List<uint> _deadStates = new();
+
     private void OnTick()
     {
         if (_states.Count == 0)
             return;
 
-        foreach (var player in Utilities.GetPlayers())
+        _deadStates.Clear();
+
+        foreach (var (index, state) in _states)
         {
-            if (player == null || !player.IsValid || player.IsBot || !IsAlive(player) || !Active(player))
-                continue;
-
-            var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
-            if (weapons == null)
-                continue;
-
-            foreach (var handle in weapons)
+            var weapon = Utilities.GetEntityFromIndex<CBasePlayerWeapon>((int)index);
+            if (weapon == null || !weapon.IsValid)
             {
-                var weapon = handle.Value;
-                if (weapon == null || !weapon.IsValid || !_states.TryGetValue(weapon.Index, out var state))
-                    continue;
+                _deadStates.Add(index);
+                continue;
+            }
 
-                bool inReload = weapon.As<CCSWeaponBase>().InReload;
+            var owner = PawnController(weapon.OwnerEntity.Value);
+            if (owner == null || owner.IsBot || !IsAlive(owner) || !Active(owner))
+                continue;
 
-                if (state.WasReloading && !inReload && state.ManageClip && state.Clip < state.FullClip)
+            if (InfiniteAmmo.Covers(owner, weapon.DesignerName))
+                continue;
+
+            bool inReload = weapon.As<CCSWeaponBase>().InReload;
+
+            if (state.WasReloading && !inReload && state.ManageClip && state.Clip < state.FullClip)
+            {
+                if (!state.ManageReserve || state.Reserve > 0)
                 {
-                    if (!state.ManageReserve || state.Reserve > 0)
-                    {
-                        state.Clip = state.FullClip;
-                        if (state.ManageReserve)
-                            state.Reserve--;
-                    }
-                }
-                state.WasReloading = inReload;
-
-                if (!inReload && state.ManageClip && weapon.Clip1 != state.Clip)
-                {
-                    weapon.Clip1 = state.Clip;
-                    Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
-                }
-
-                if (state.ManageReserve && weapon.ReserveAmmo.Length > 0 && weapon.ReserveAmmo[0] != state.Reserve)
-                {
-                    weapon.ReserveAmmo[0] = state.Reserve;
-                    Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+                    state.Clip = state.FullClip;
+                    if (state.ManageReserve)
+                        state.Reserve--;
                 }
             }
+            state.WasReloading = inReload;
+
+            if (!inReload && state.ManageClip && weapon.Clip1 != state.Clip)
+            {
+                weapon.Clip1 = state.Clip;
+                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+            }
+
+            if (state.ManageReserve && weapon.ReserveAmmo.Length > 0 && weapon.ReserveAmmo[0] != state.Reserve)
+            {
+                weapon.ReserveAmmo[0] = state.Reserve;
+                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+            }
         }
+
+        foreach (var index in _deadStates)
+            _states.Remove(index);
     }
 
     private void ResetPlayer(CCSPlayerController? player)

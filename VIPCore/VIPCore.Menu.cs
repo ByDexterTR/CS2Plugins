@@ -48,6 +48,13 @@ public partial class VIPCore
 
     private void OpenFeatureMenu(CCSPlayerController player, VipModule module)
     {
+        var cats = module.SelectCategories(player);
+        if (cats.Count > 0)
+        {
+            OpenCategoryList(player, module, cats);
+            return;
+        }
+
         var options = new List<VipFeatureOption>
         {
             new(Localizer["vip.option_off"], "off")
@@ -79,6 +86,70 @@ public partial class VIPCore
         OpenMenu(player, module.DisplayName, items);
     }
 
+    private void OpenCategoryList(CCSPlayerController player, VipModule module, List<VipFeatureOption> cats)
+    {
+        string state = GetSetting(player.SteamID, module.Name);
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>();
+
+        string offLabel = Localizer["vip.option_off"];
+        items.Add((state == "off" ? $"{CC.Green}{offLabel} *{CC.Default}" : offLabel, p =>
+        {
+            SetSetting(p, module.Name, "off");
+            module.OnSelect(p, "off");
+            p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.setting_changed", module.DisplayName, offLabel]}");
+            OpenMainMenu(p);
+        }));
+
+        string onLabel = Localizer["vip.option_on"];
+        items.Add((state != "off" ? $"{CC.Green}{onLabel} *{CC.Default}" : onLabel, p =>
+        {
+            SetSetting(p, module.Name, "on");
+            module.OnSelect(p, "on");
+            p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.setting_changed", module.DisplayName, onLabel]}");
+            OpenMainMenu(p);
+        }));
+
+        foreach (var category in cats)
+        {
+            var cat = category;
+            string current = GetSetting(player.SteamID, $"{module.Name}@{cat.Value}");
+            var curOpt = module.CategoryOptions(player, cat.Value).FirstOrDefault(o => o.Value == current);
+            string label = curOpt != null ? $"{CC.Green}{curOpt.Display}{CC.Default}" : Localizer["vip.option_off"];
+            items.Add(($"{cat.Display}: {label}", p => OpenCategoryOptions(p, module, cat)));
+        }
+
+        items.Add((Localizer["vip.menu_back"], OpenMainMenu));
+        OpenMenu(player, module.DisplayName, items);
+    }
+
+    private void OpenCategoryOptions(CCSPlayerController player, VipModule module, VipFeatureOption cat)
+    {
+        string key = $"{module.Name}@{cat.Value}";
+        string current = GetSetting(player.SteamID, key);
+
+        var options = new List<VipFeatureOption> { new(Localizer["vip.option_off"], "off") };
+        options.AddRange(module.CategoryOptions(player, cat.Value));
+
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>();
+        foreach (var option in options)
+        {
+            var opt = option;
+            string mark = opt.Value == current ? $"{CC.Green}{opt.Display} *{CC.Default}" : opt.Display;
+            items.Add((mark, p =>
+            {
+                SetSetting(p, key, opt.Value);
+                if (opt.Value != "off")
+                    SetSetting(p, module.Name, "on");
+                module.OnSelect(p, opt.Value);
+                p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.setting_changed", $"{module.DisplayName} - {cat.Display}", opt.Display]}");
+                OpenFeatureMenu(p, module);
+            }));
+        }
+
+        items.Add((Localizer["vip.menu_back"], p => OpenFeatureMenu(p, module)));
+        OpenMenu(player, $"{module.DisplayName} - {cat.Display}", items);
+    }
+
     private string CurrentLabel(CCSPlayerController player, VipModule module)
     {
         string value = GetSetting(player.SteamID, module.Name);
@@ -87,6 +158,8 @@ public partial class VIPCore
             return Localizer["vip.option_off"];
         if (module.MenuType == VipFeatureType.Toggle)
             return Localizer["vip.option_on"];
+        if (module.SelectCategories(player).Count > 0)
+            return $"{CC.Green}{Localizer["vip.option_on"]}{CC.Default}";
 
         var match = module.SelectOptions(player).FirstOrDefault(o => o.Value == value);
         return $"{CC.Green}{match?.Display ?? value}{CC.Default}";

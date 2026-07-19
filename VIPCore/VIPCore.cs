@@ -11,13 +11,13 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.0.3";
+    public override string ModuleVersion => "1.0.4";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
     private VipConfig Config = new();
 
-    private string ChatPrefix => Localizer["chat_prefix"];
+    public string ChatPrefix => Localizer["chat_prefix"];
 
     private IVipStorage _storage = null!;
     private readonly Dictionary<ulong, VipEntry> _vips = new();
@@ -26,7 +26,15 @@ public partial class VIPCore : BasePlugin
     private readonly HashSet<string> _enabled = new();
     private readonly HashSet<string> _loaded = new();
     private readonly List<VipModule> _modules = new();
+    private readonly Dictionary<string, VipModule> _moduleByName = new();
+    private readonly Dictionary<(string Group, string Feature, Type Type), object?> _groupValueCache = new();
+    private Dictionary<string, HashSet<string>> _pistolDisable = new();
+    private readonly Dictionary<ulong, Dictionary<string, string?>> _pendingSettings = new();
+    private bool _isPistolRound;
+    private List<CCSPlayerController> _tickPlayers = new();
     private readonly object _lock = new();
+
+    public IReadOnlyList<CCSPlayerController> Players => _tickPlayers;
 
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
     private static readonly JsonSerializerOptions GroupOpts = new()
@@ -47,15 +55,60 @@ public partial class VIPCore : BasePlugin
         return _gameRulesProxy?.GameRules?.FreezePeriod == true;
     }
 
+    public bool IsPistolRound()
+    {
+        if (_gameRulesProxy == null || !_gameRulesProxy.IsValid)
+            _gameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
+
+        var rules = _gameRulesProxy?.GameRules;
+        if (rules == null)
+            return false;
+
+        bool halftime = ConVar.Find("mp_halftime")?.GetPrimitiveValue<bool>() ?? false;
+        int maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
+
+        return rules.TotalRoundsPlayed == 0
+            || (halftime && maxRounds / 2 == rules.TotalRoundsPlayed)
+            || rules.GameRestart;
+    }
+
+    private bool PistolRoundBlocked(CCSPlayerController player, string feature)
+    {
+        if (!_isPistolRound || _pistolDisable.Count == 0)
+            return false;
+
+        var group = GetClientGroup(player);
+        return group != null && _pistolDisable.TryGetValue(group, out var set) && set.Contains(feature);
+    }
+
     public override void Load(bool hotReload)
     {
         LoadConfig();
         DiscoverModules();
         InitStorage();
         ReloadData();
+
+        RegisterListener<OnTick>(() => _tickPlayers = Utilities.GetPlayers());
         ActivateModules();
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
+        RegisterEventHandler<EventRoundStart>((_, __) =>
+        {
+            _isPistolRound = IsPistolRound();
+            return HookResult.Continue;
+        });
+        RegisterEventHandler<EventRoundEnd>((_, __) =>
+        {
+            FlushSettings();
+            return HookResult.Continue;
+        });
+        RegisterEventHandler<EventPlayerDisconnect>((ev, _) =>
+        {
+            var p = ev.Userid;
+            if (p != null && p.IsValid && !p.IsBot)
+                FlushSettings(p.SteamID);
+            return HookResult.Continue;
+        });
         RegisterListener<OnMapStart>(_ => PurgeExpired());
         AddTimer(60f, PurgeExpired, CounterStrikeSharp.API.Modules.Timers.TimerFlags.REPEAT);
         RegisterListener<OnServerPrecacheResources>(m =>
@@ -71,6 +124,8 @@ public partial class VIPCore : BasePlugin
 
     public override void Unload(bool hotReload)
     {
+        FlushSettings(sync: true);
+
         foreach (var module in _modules)
             if (_loaded.Contains(module.Name))
                 module.OnUnload();
@@ -88,6 +143,7 @@ public partial class VIPCore : BasePlugin
 
             module.Bind(this);
             _modules.Add(module);
+            _moduleByName[module.Name] = module;
         }
     }
 
@@ -190,9 +246,25 @@ public partial class VIPCore : BasePlugin
             parsed = new();
         }
 
+        var pistolDisable = new Dictionary<string, HashSet<string>>();
+        foreach (var (groupName, feats) in parsed)
+        {
+            if (!feats.TryGetValue("PistolRoundDisable", out var element))
+                continue;
+            try
+            {
+                var list = element.Deserialize<List<string>>(GroupOpts);
+                if (list != null && list.Count > 0)
+                    pistolDisable[groupName] = new HashSet<string>(list);
+            }
+            catch { }
+        }
+
         lock (_lock)
         {
             _groups = parsed;
+            _pistolDisable = pistolDisable;
+            _groupValueCache.Clear();
             _enabled.Clear();
 
             foreach (var (groupName, feats) in _groups)
@@ -297,15 +369,43 @@ public partial class VIPCore : BasePlugin
         if (group == null)
             return default;
 
+        var key = (group, feature, typeof(T));
         lock (_lock)
         {
+            if (_groupValueCache.TryGetValue(key, out var cached))
+                return (T?)cached;
+
+            object? value = null;
             if (_groups.TryGetValue(group, out var feats) && feats.TryGetValue(feature, out var element))
             {
-                try { return element.Deserialize<T>(GroupOpts); }
-                catch { return default; }
+                try { value = element.Deserialize<T>(GroupOpts); }
+                catch { value = null; }
+            }
+
+            _groupValueCache[key] = value;
+            return (T?)value;
+        }
+    }
+
+    public List<T> GetAllGroupValues<T>(string feature)
+    {
+        var result = new List<T>();
+        lock (_lock)
+        {
+            foreach (var feats in _groups.Values)
+            {
+                if (!feats.TryGetValue(feature, out var element))
+                    continue;
+                try
+                {
+                    var value = element.Deserialize<T>(GroupOpts);
+                    if (value != null)
+                        result.Add(value);
+                }
+                catch { }
             }
         }
-        return default;
+        return result;
     }
 
     public bool IsModuleEnabled(string name)
@@ -318,7 +418,7 @@ public partial class VIPCore : BasePlugin
         IsClientVip(player) && IsModuleEnabled(feature) && GroupGrants(player, feature);
 
     public bool IsActive(CCSPlayerController player, string feature) =>
-        IsGranted(player, feature) && GetSetting(player.SteamID, feature) != "off";
+        IsGranted(player, feature) && GetSetting(player.SteamID, feature) != "off" && !PistolRoundBlocked(player, feature);
 
     public string GetSetting(ulong steamId, string feature)
     {
@@ -344,18 +444,12 @@ public partial class VIPCore : BasePlugin
         return null;
     }
 
-    private VipModule? FindModule(string feature)
-    {
-        foreach (var module in _modules)
-            if (module.Name == feature)
-                return module;
-        return null;
-    }
+    private VipModule? FindModule(string feature) =>
+        _moduleByName.TryGetValue(feature, out var module) ? module : null;
 
     public void SetSetting(CCSPlayerController player, string feature, string value)
     {
         ulong steamId = player.SteamID;
-        var storage = _storage;
 
         if (value == DefaultSetting(feature))
         {
@@ -367,13 +461,8 @@ public partial class VIPCore : BasePlugin
                     if (dict.Count == 0)
                         _settings.Remove(steamId);
                 }
+                PendingOp(steamId, feature, null);
             }
-
-            Task.Run(() =>
-            {
-                try { storage.DeleteSetting(steamId, feature); }
-                catch { }
-            });
             return;
         }
 
@@ -386,12 +475,63 @@ public partial class VIPCore : BasePlugin
                 _settings[steamId] = dict;
             }
             dict[feature] = stored;
+            PendingOp(steamId, feature, stored);
+        }
+    }
+
+    private void PendingOp(ulong steamId, string feature, string? value)
+    {
+        if (!_pendingSettings.TryGetValue(steamId, out var ops))
+        {
+            ops = new();
+            _pendingSettings[steamId] = ops;
+        }
+        ops[feature] = value;
+    }
+
+    public void FlushSettings(ulong? steamId = null, bool sync = false)
+    {
+        List<(ulong SteamId, Dictionary<string, string?> Ops)> batches = new();
+        lock (_lock)
+        {
+            if (steamId is ulong id)
+            {
+                if (_pendingSettings.Remove(id, out var ops))
+                    batches.Add((id, ops));
+            }
+            else
+            {
+                foreach (var (k, v) in _pendingSettings)
+                    batches.Add((k, v));
+                _pendingSettings.Clear();
+            }
         }
 
-        Task.Run(() =>
+        if (batches.Count == 0)
+            return;
+
+        var storage = _storage;
+        void Apply()
         {
-            try { storage.UpsertSetting(steamId, feature, stored); }
-            catch { }
-        });
+            foreach (var (id, ops) in batches)
+            {
+                foreach (var (feature, value) in ops)
+                {
+                    try
+                    {
+                        if (value == null)
+                            storage.DeleteSetting(id, feature);
+                        else
+                            storage.UpsertSetting(id, feature, value);
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        if (sync)
+            Apply();
+        else
+            Task.Run(Apply);
     }
 }

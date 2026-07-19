@@ -26,7 +26,7 @@ public class ColoredModel : VipModule
 
     private void OnTick()
     {
-        foreach (var player in Utilities.GetPlayers())
+        foreach (var player in Core.Players)
         {
             if (player == null || !player.IsValid || player.IsBot)
                 continue;
@@ -48,7 +48,9 @@ public class ColoredModel : VipModule
                 continue;
 
             _applied[slot] = true;
-            pawn.Render = TrailBeam.Resolve(Setting(player));
+            var color = TrailBeam.Resolve(Setting(player));
+            int alpha = PlayerModel.LegsHidden(slot) ? 254 : 255;
+            pawn.Render = System.Drawing.Color.FromArgb(alpha, color.R, color.G, color.B);
             Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
         }
     }
@@ -59,7 +61,8 @@ public class ColoredModel : VipModule
         if (pawn == null || !pawn.IsValid)
             return;
 
-        pawn.Render = System.Drawing.Color.FromArgb(255, 255, 255, 255);
+        int alpha = PlayerModel.LegsHidden(slot) ? 254 : 255;
+        pawn.Render = System.Drawing.Color.FromArgb(alpha, 255, 255, 255);
         Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
     }
 }

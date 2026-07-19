@@ -34,7 +34,7 @@ public class Gravity : VipModule
 
     private void OnTick()
     {
-        foreach (var player in Utilities.GetPlayers())
+        foreach (var player in Core.Players)
         {
             if (player == null || !player.IsValid || player.IsBot)
                 continue;

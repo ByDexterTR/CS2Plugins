@@ -244,7 +244,7 @@ public class SmokeEffect : VipModule
     {
         if (radius <= 0)
             radius = 180f;
-        foreach (var target in Utilities.GetPlayers())
+        foreach (var target in Core.Players)
         {
             if (target == null || !target.IsValid || !IsAlive(target))
                 continue;
