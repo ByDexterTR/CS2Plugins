@@ -101,6 +101,9 @@
       "@css/reservation",
       "@css/vip"
     ],
+    "AdminGroups": [
+      "#VIP"
+    ],
     "AntiFlash": {
       "self": true,
       "enemy": true,
@@ -121,10 +124,60 @@
       "max_armor": 100,
       "give_helmet_when_full": true
     },
+    "Aura": {
+      "heal": {
+        "heal": 2,
+        "tick": 0.5,
+        "radius": 180,
+        "beamcolor": "0 255 0",
+        "duration_on": 1,
+        "duration_off": 0,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true
+      },
+      "poison": {
+        "damage": 2,
+        "tick": 0.5,
+        "radius": 180,
+        "beamcolor": "255 0 255",
+        "duration_on": 1,
+        "duration_off": 0,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "slow": {
+        "percent": 30,
+        "minspeed": 100,
+        "radius": 180,
+        "beamcolor": "0 0 255",
+        "duration_on": 1,
+        "duration_off": 0,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "speed": {
+        "percent": 30,
+        "maxspeed": 400,
+        "radius": 180,
+        "beamcolor": "255 255 0",
+        "duration_on": 1,
+        "duration_off": 0,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true
+      }
+    },
     "AutoHS": {
       "multiplier": 4,
       "only_with_weapon": "",
       "ignore_teammates": true
+    },
+    "Berserk": {
+      "dpk": 0.2,
+      "maxdpk": 5.0
     },
     "Bhop": {
       "autostrafe": true,
@@ -176,6 +229,48 @@
       "Sari #FFFF00",
       "Mor #A020F0"
     ],
+    "C4Effect": [
+      {
+        "name": "Duman",
+        "particle": "particles/explosions_fx/explosion_smokegrenade_s1_child_smoke_bottom.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Su Sicramasi",
+        "particle": "particles/water_impact/water_splash_02_continuous.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Sis",
+        "particle": "particles/ambient_fx/cbbl_movie_fog.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Bomba Ping",
+        "particle": "particles/ui/hud/ui_map_bomb_plant_ping.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Ses Patlamasi",
+        "particle": "particles/ui/rank_carepackage_recieve.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Ses Portali",
+        "particle": "particles/ui/status_levels/ui_status_level_4_energycirc.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Bariyer",
+        "particle": "particles/ui/status_levels/ui_status_level_7_energycirc.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Bariyer 2",
+        "particle": "particles/ui/status_levels/ui_status_level_8_energycirc.vpcf",
+        "defuse": true
+      }
+    ],
     "CustomWeaponModel": [
       {
         "name": "M4A4 - AK47",
@@ -194,6 +289,10 @@
       "only_with_weapon": "",
       "ignore_teammates": true,
       "ignore_self": true
+    },
+    "Dash": {
+      "limit": 3,
+      "unit": 600
     },
     "DecoyTeleport": {
       "limit": 0
@@ -321,6 +420,104 @@
       "join_message": "{Gold}{name}{Default} sunucuya katildi {Green}(PLUS VIP)",
       "leave_message": "{Gold}{name}{Default} sunucudan ayrildi"
     },
+    "KillEffect": [
+      {
+        "name": "Simsek",
+        "particle": "particles/ui/status_levels/ui_status_level7_lightning.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Ates",
+        "particle": "particles/maps/generic/steam_fire_test.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Kor",
+        "particle": "particles/maps/cs_office/office_child_embers01a.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Toz Kasirgasi",
+        "particle": "particles/maps/de_dust/dust_devil_smoke.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Yildirim",
+        "particle": "particles/ui/ui_experience_award_innerpoint.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Kivilcim",
+        "particle": "particles/inferno_fx/firework_crate_ground_effect_fallback1.vpcf",
+        "hs": true,
+        "lastkill": false
+      },
+      {
+        "name": "Statik Elektrik",
+        "particle": "particles/ui/ui_electric_gold.vpcf",
+        "hs": true,
+        "lastkill": false
+      },
+      {
+        "name": "Parilti",
+        "particle": "particles/ui/ui_element_horiz_star_glow.vpcf",
+        "hs": true,
+        "lastkill": false
+      },
+      {
+        "name": "Enerji",
+        "particle": "particles/ui/ui_experience_award_rollingrings.vpcf",
+        "hs": true,
+        "lastkill": false
+      },
+      {
+        "name": "Don",
+        "particle": "particles/testsystems/test_endcap_freeze.vpcf",
+        "hs": true,
+        "lastkill": false
+      },
+      {
+        "name": "Kan Golü",
+        "particle": "particles/burning_fx/gas_cannister_idle_ring_embers.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Patlama",
+        "particle": "particles/explosions_fx/explosion_hegrenade_snow.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Isin",
+        "particle": "particles/ui/status_levels/ui_status_level_1.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Isin 2",
+        "particle": "particles/ui/status_levels/ui_status_level_2.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Ruzgar",
+        "particle": "particles/ui/status_levels/ui_status_level_3d.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Ulti",
+        "particle": "particles/ui/status_levels/ui_status_level_8.vpcf",
+        "hs": false,
+        "lastkill": true
+      }
+    ],
     "KillHeal": {
       "headshot": 15,
       "noscope": 10,

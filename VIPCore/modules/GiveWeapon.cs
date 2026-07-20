@@ -5,17 +5,8 @@ namespace VIPCore;
 
 public class GiveWeapon : VipModule
 {
-    private static readonly HashSet<string> Pistols = new()
-    {
-        "weapon_glock", "weapon_hkp2000", "weapon_usp_silencer", "weapon_p250", "weapon_elite",
-        "weapon_fiveseven", "weapon_tec9", "weapon_cz75a", "weapon_deagle", "weapon_revolver"
-    };
-
-    private static readonly HashSet<string> Utility = new()
-    {
-        "weapon_knife", "weapon_taser", "weapon_c4", "weapon_flashbang", "weapon_smokegrenade",
-        "weapon_hegrenade", "weapon_molotov", "weapon_incgrenade", "weapon_decoy", "weapon_healthshot"
-    };
+    private const int SlotRifle = 0;
+    private const int SlotPistol = 1;
 
     public override string Name => "GiveWeapon";
     public override string DisplayName => Core.Localizer["vip.module.giveweapon"];
@@ -95,30 +86,45 @@ public class GiveWeapon : VipModule
 
     private static void GiveOne(CCSPlayerController player, string weaponName, bool force)
     {
-        bool targetPistol = Pistols.Contains(weaponName);
-        var occupied = SlotWeapons(player, targetPistol);
+        var slotWeapons = SameSlotWeapons(player, weaponName, out bool slotKnown);
+        if (!slotKnown)
+        {
+            player.GiveNamedItem(weaponName);
+            return;
+        }
 
-        if (occupied.Any(w => w.Name == weaponName))
+        if (slotWeapons.Any(w => w.Name == weaponName))
             return;
 
-        if (occupied.Count > 0)
+        if (slotWeapons.Count > 0)
         {
             if (!force)
                 return;
 
-            foreach (var (weapon, _) in occupied)
+            foreach (var (weapon, _) in slotWeapons)
                 weapon.Remove();
         }
 
         player.GiveNamedItem(weaponName);
     }
 
-    private static List<(CBasePlayerWeapon Weapon, string Name)> SlotWeapons(CCSPlayerController player, bool pistol)
+    private static List<(CBasePlayerWeapon Weapon, string Name)> SameSlotWeapons(CCSPlayerController player, string wantedName, out bool slotKnown)
     {
         var result = new List<(CBasePlayerWeapon, string)>();
+        slotKnown = false;
+
         var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
         if (weapons == null)
             return result;
+
+        int wantedSlot = wantedName.Contains("knife") || wantedName.Contains("bayonet")
+            ? -1
+            : GuessSlot(wantedName);
+
+        if (wantedSlot != SlotRifle && wantedSlot != SlotPistol)
+            return result;
+
+        slotKnown = true;
 
         foreach (var handle in weapons)
         {
@@ -126,19 +132,41 @@ public class GiveWeapon : VipModule
             if (weapon == null || !weapon.IsValid || string.IsNullOrEmpty(weapon.DesignerName))
                 continue;
 
+            int slot = SlotOf(weapon);
+            if (slot != wantedSlot)
+                continue;
+
             int itemDef = 0;
             try { itemDef = weapon.AttributeManager.Item.ItemDefinitionIndex; }
             catch { }
 
-            string name = WeaponUtil.NormalizeWeaponName(weapon.DesignerName, itemDef);
-            if (Utility.Contains(name) || name.Contains("knife") || name.Contains("bayonet"))
-                continue;
-
-            if (Pistols.Contains(name) == pistol)
-                result.Add((weapon, name));
+            result.Add((weapon, WeaponUtil.NormalizeWeaponName(weapon.DesignerName, itemDef)));
         }
+
         return result;
     }
+
+    private static int SlotOf(CBasePlayerWeapon weapon)
+    {
+        try
+        {
+            var vdata = weapon.As<CCSWeaponBase>().VData;
+            if (vdata != null)
+                return (int)vdata.GearSlot;
+        }
+        catch { }
+
+        return -1;
+    }
+
+    private static readonly HashSet<string> KnownPistols = new()
+    {
+        "weapon_glock", "weapon_hkp2000", "weapon_usp_silencer", "weapon_p250", "weapon_elite",
+        "weapon_fiveseven", "weapon_tec9", "weapon_cz75a", "weapon_deagle", "weapon_revolver"
+    };
+
+    private static int GuessSlot(string weaponName) =>
+        KnownPistols.Contains(weaponName) ? SlotPistol : SlotRifle;
 
     private static string Clean(string weapon) =>
         weapon.StartsWith("weapon_") ? weapon["weapon_".Length..] : weapon;

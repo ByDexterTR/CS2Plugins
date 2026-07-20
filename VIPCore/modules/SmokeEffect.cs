@@ -67,6 +67,8 @@ public class SmokeEffect : VipModule
     private readonly List<ActiveSmoke> _smokes = new();
     private readonly int[] _used = new int[64];
     private readonly int[] _armed = new int[64];
+    private readonly HashSet<int> _slowed = new();
+    private readonly HashSet<int> _slowedThisTick = new();
 
     public override string Name => "SmokeEffect";
     public override string DisplayName => Core.Localizer["vip.module.smokeeffect"];
@@ -183,8 +185,12 @@ public class SmokeEffect : VipModule
     private void OnTick()
     {
         if (_smokes.Count == 0)
+        {
+            ResetStaleSlows();
             return;
+        }
 
+        _slowedThisTick.Clear();
         float now = Server.CurrentTime;
 
         foreach (var smoke in _smokes)
@@ -232,12 +238,45 @@ public class SmokeEffect : VipModule
                         factor = Math.Max(factor, cfg.Slow.MinSpeed / 250f);
                     Apply(smoke, owner!, cfg.Slow.Radius, cfg.Slow.IgnoreTeammates, cfg.Slow.IgnoreSelf, cfg.Slow.IgnoreEnemy, pawn =>
                     {
+                        var controller = pawn.Controller.Value?.As<CCSPlayerController>();
+                        if (controller != null && controller.IsValid)
+                            _slowedThisTick.Add(controller.Slot);
+
                         pawn.VelocityModifier = factor;
                         Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
                     });
                     break;
             }
         }
+
+        ResetStaleSlows();
+    }
+
+    private void ResetStaleSlows()
+    {
+        if (_slowed.Count == 0)
+        {
+            foreach (int slot in _slowedThisTick)
+                _slowed.Add(slot);
+            return;
+        }
+
+        foreach (int slot in _slowed)
+        {
+            if (_slowedThisTick.Contains(slot))
+                continue;
+
+            var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+            if (pawn != null && pawn.IsValid && Math.Abs(pawn.VelocityModifier - 1f) > 0.001f)
+            {
+                pawn.VelocityModifier = 1f;
+                Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+            }
+        }
+
+        _slowed.Clear();
+        foreach (int slot in _slowedThisTick)
+            _slowed.Add(slot);
     }
 
     private void Apply(ActiveSmoke smoke, CCSPlayerController owner, float radius, bool ignoreTeammates, bool ignoreSelf, bool ignoreEnemy, Action<CCSPlayerPawn> effect)

@@ -64,7 +64,9 @@ public class ExtraJump : VipModule
             else if (jumpPressed)
             {
                 var cfg = GroupValue<Cfg>(player) ?? new Cfg();
-                bool budgetOk = cfg.Limit <= 0 || _usedThisLife[slot] < cfg.Limit;
+                int total = cfg.Limit > 0 ? cfg.Count * cfg.Limit : 0;
+                bool budgetOk = total <= 0 || _usedThisLife[slot] < total;
+
                 if (_airJumps[slot] < cfg.Count && budgetOk)
                 {
                     _airJumps[slot]++;

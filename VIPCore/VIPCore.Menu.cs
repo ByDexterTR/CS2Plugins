@@ -5,6 +5,8 @@ namespace VIPCore;
 
 public partial class VIPCore
 {
+    private string BackLabel => $"{CC.Yellow}{Localizer["vip.menu_back"]}{CC.Default}";
+
     private const string VipIcon = "https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/vip.png";
 
     private void OpenMainMenu(CCSPlayerController player)
@@ -66,7 +68,10 @@ public partial class VIPCore
             options.AddRange(module.SelectOptions(player));
 
         string current = GetSetting(player.SteamID, module.Name);
-        var items = new List<(string display, Action<CCSPlayerController> onSelect)>();
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>
+        {
+            (BackLabel, OpenMainMenu)
+        };
 
         foreach (var option in options)
         {
@@ -81,15 +86,16 @@ public partial class VIPCore
             }));
         }
 
-        items.Add((Localizer["vip.menu_back"], OpenMainMenu));
-
         OpenMenu(player, module.DisplayName, items);
     }
 
     private void OpenCategoryList(CCSPlayerController player, VipModule module, List<VipFeatureOption> cats)
     {
         string state = GetSetting(player.SteamID, module.Name);
-        var items = new List<(string display, Action<CCSPlayerController> onSelect)>();
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>
+        {
+            (BackLabel, OpenMainMenu)
+        };
 
         string offLabel = Localizer["vip.option_off"];
         items.Add((state == "off" ? $"{CC.Green}{offLabel} *{CC.Default}" : offLabel, p =>
@@ -118,7 +124,6 @@ public partial class VIPCore
             items.Add(($"{cat.Display}: {label}", p => OpenCategoryOptions(p, module, cat)));
         }
 
-        items.Add((Localizer["vip.menu_back"], OpenMainMenu));
         OpenMenu(player, module.DisplayName, items);
     }
 
@@ -130,7 +135,11 @@ public partial class VIPCore
         var options = new List<VipFeatureOption> { new(Localizer["vip.option_off"], "off") };
         options.AddRange(module.CategoryOptions(player, cat.Value));
 
-        var items = new List<(string display, Action<CCSPlayerController> onSelect)>();
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>
+        {
+            (BackLabel, p => OpenFeatureMenu(p, module))
+        };
+
         foreach (var option in options)
         {
             var opt = option;
@@ -146,7 +155,6 @@ public partial class VIPCore
             }));
         }
 
-        items.Add((Localizer["vip.menu_back"], p => OpenFeatureMenu(p, module)));
         OpenMenu(player, $"{module.DisplayName} - {cat.Display}", items);
     }
 

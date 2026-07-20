@@ -13,6 +13,14 @@ public class CustomWeaponModel : VipModule
         public string Model { get; set; } = "";
     }
 
+    private class Applied
+    {
+        public bool IsSubclass;
+        public string? OriginalModel;
+    }
+
+    private readonly Dictionary<uint, Applied> _applied = new();
+
     public override string Name => "CustomWeaponModel";
     public override string DisplayName => Core.Localizer["vip.module.customweaponmodel"];
     public override VipFeatureType MenuType => VipFeatureType.Select;
@@ -26,8 +34,9 @@ public class CustomWeaponModel : VipModule
 
     public override void OnLoad()
     {
-        Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
-        Core.RegisterEventHandler<EventItemPickup>(OnPickup);
+        Core.RegisterEventHandler<EventPlayerSpawn>((ev, _) => { Schedule(ev.Userid); return HookResult.Continue; });
+        Core.RegisterEventHandler<EventItemPickup>((ev, _) => { Schedule(ev.Userid); return HookResult.Continue; });
+        Core.RegisterListener<OnEntityDeleted>(entity => _applied.Remove(entity.Index));
         Core.RegisterListener<OnServerPrecacheResources>(manifest =>
         {
             foreach (var entries in Core.GetAllGroupValues<List<Entry>>(Name))
@@ -37,21 +46,20 @@ public class CustomWeaponModel : VipModule
         });
     }
 
-    private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)
+    public override void OnUnload()
     {
-        Schedule(ev.Userid);
-        return HookResult.Continue;
-    }
-
-    private HookResult OnPickup(EventItemPickup ev, GameEventInfo info)
-    {
-        Schedule(ev.Userid);
-        return HookResult.Continue;
+        foreach (var (index, applied) in _applied)
+        {
+            var weapon = Utilities.GetEntityFromIndex<CBasePlayerWeapon>((int)index);
+            if (weapon != null && weapon.IsValid)
+                Revert(weapon, applied);
+        }
+        _applied.Clear();
     }
 
     private void Schedule(CCSPlayerController? player)
     {
-        if (!Active(player))
+        if (player == null || !player.IsValid || player.IsBot)
             return;
 
         Server.NextFrame(() => ApplyAll(player));
@@ -59,15 +67,17 @@ public class CustomWeaponModel : VipModule
 
     private void ApplyAll(CCSPlayerController? player)
     {
-        if (!IsAlive(player) || !Active(player))
+        if (player == null || !player.IsValid)
             return;
 
-        var entries = GroupValue<List<Entry>>(player!) ?? new();
-        var entry = entries.FirstOrDefault(e => e.Name == Setting(player!));
-        if (entry == null || entry.Weapon.Length == 0 || entry.Model.Length == 0)
-            return;
+        Entry? wanted = null;
+        if (IsAlive(player) && Active(player))
+        {
+            var entries = GroupValue<List<Entry>>(player) ?? new();
+            wanted = entries.FirstOrDefault(e => e.Name == Setting(player));
+        }
 
-        var weapons = player!.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+        var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
         if (weapons == null)
             return;
 
@@ -81,13 +91,43 @@ public class CustomWeaponModel : VipModule
             try { itemDef = weapon.AttributeManager.Item.ItemDefinitionIndex; }
             catch { }
 
-            if (WeaponUtil.NormalizeWeaponName(weapon.DesignerName, itemDef) != entry.Weapon)
-                continue;
+            string weaponName = WeaponUtil.NormalizeWeaponName(weapon.DesignerName, itemDef);
+            bool matches = wanted != null && wanted.Weapon.Length > 0 && wanted.Model.Length > 0 && wanted.Weapon == weaponName;
 
-            if (int.TryParse(entry.Model, out _))
-                weapon.AcceptInput("ChangeSubclass", weapon, weapon, entry.Model);
-            else
-                weapon.SetModel(entry.Model);
+            if (matches)
+                Apply(weapon, wanted!.Model);
+            else if (_applied.TryGetValue(weapon.Index, out var applied))
+                Revert(weapon, applied);
         }
+    }
+
+    private void Apply(CBasePlayerWeapon weapon, string model)
+    {
+        bool isSubclass = int.TryParse(model, out _);
+
+        if (!_applied.TryGetValue(weapon.Index, out var applied))
+        {
+            applied = new Applied
+            {
+                IsSubclass = isSubclass,
+                OriginalModel = isSubclass ? null : weapon.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.ModelState.ModelName
+            };
+            _applied[weapon.Index] = applied;
+        }
+
+        if (isSubclass)
+            weapon.AcceptInput("ChangeSubclass", weapon, weapon, model);
+        else
+            weapon.SetModel(model);
+    }
+
+    private void Revert(CBasePlayerWeapon weapon, Applied applied)
+    {
+        if (applied.IsSubclass)
+            weapon.AcceptInput("ChangeSubclass", weapon, weapon, "0");
+        else if (!string.IsNullOrEmpty(applied.OriginalModel))
+            weapon.SetModel(applied.OriginalModel);
+
+        _applied.Remove(weapon.Index);
     }
 }

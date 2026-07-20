@@ -1,10 +1,10 @@
 # VIPCore
 
-Modüler VIP sistemi. 50'den fazla yerleşik VIP özelliği (modül), grup tabanlı yetkilendirme, JSON veya MySQL depolama ve üç farklı menü tipiyle eksiksiz bir VIP altyapısı sunar.
+Modüler VIP sistemi. 70'den fazla yerleşik VIP özelliği (modül), grup tabanlı yetkilendirme, JSON veya MySQL depolama ve üç farklı menü tipiyle eksiksiz bir VIP altyapısı sunar.
 
 ## Özellikler
 
-- **50+ yerleşik modül** — hepsi tek DLL içinde, otomatik keşfedilir (reflection)
+- **70+ yerleşik modül** — hepsi tek DLL içinde, otomatik keşfedilir (reflection)
 - **Grup sistemi** — `vipgroups.json` içinde sınırsız grup; her grup hangi modülleri hangi değerlerle alacağını belirler
 - **Depolama** — JSON (varsayılan) veya MySQL; MySQL bağlantısı koparsa otomatik JSON'a düşer
 - **3 menü tipi** — `hud` (CenterHtml), `chat`, `wasd` (W/S/E/R tuşlarıyla gezilen menü)
@@ -111,23 +111,28 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | Modül | Açıklama | Grup değeri örneği |
 | --- | --- | --- |
 | `AdminFlags` | VIP'e otomatik yetki bayrağı verir | `["@css/reservation", "@css/vip"]` |
+| `AdminGroups` | VIP'e admin grubu üyeliği verir (SimpleAdmin vb. `#Grup` adları) | `["#VIP"]` |
 | `AntiFlash` | Flashbang'i engeller | `{ "self": true, "enemy": true, "teammates": true }` |
 | `AntiHS` | Headshot hasarını azaltır | `{ "percent": 0, "only_with_weapon": "" }` |
 | `Armor` | Spawn'da zırh (+kask) | `{ "value": 100, "helmet": true }` |
 | `ArmorRegen` | Zırh yenilenmesi | `{ "armor_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2, "max_armor": 100, "give_helmet_when_full": true }` |
+| `Aura` | Sürekli aktif alan etkisi (heal/poison/slow/speed), oyuncuyu takip eden dönen bir env_beam ile radius görselleştirilir; `duration_on`/`duration_off` yanıp sönme | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true } }` |
 | `AutoHS` | Vuruşlar Headshot sayılır | `{ "multiplier": 4, "only_with_weapon": "", "ignore_teammates": true }` |
+| `Berserk` | Öldürme başına hasar çarpanı artar; `dpk` kill başına eklenen çarpan, `maxdpk` tavan | `{ "dpk": 0.2, "maxdpk": 5.0 }` |
 | `Bhop` | Bunny hop (+opsiyonel autostrafe) | `{ "autostrafe": true, "max_speed": 500, "jump_boost": 1.1, "jump_velocity": 300 }` |
 | `BombsiteAnnouncer` | Bomba kurulunca CT'lere HUD görseli (yalnız görsel) + sohbet mesajı | `{ "img_a": "...Site-A.png", "img_b": "...Site-B.png", "duration": 5.0 }` |
 | `BulletTrail` | Mermi izi efekti | `{ "width": 1.5, "lifetime": 0.6, "colors": [...] }` |
 | `BuyTeamWeapon` | Karşı takım silahlarını satın alma; Komut adları `settings.json` → `buy_commands` | `{ "ak47": true, "m4a4": true, ... }` |
+| `C4Effect` | 2 kategori — kurma efekti (`defuse: false`, bombayı takip eder, imha/patlamada silinir) ve imha efekti (`defuse: true`, imha edende patlar) | `[{ "name": "Kan", "particle": "particles/blood_impact/blood_pool.vpcf", "defuse": false }]` |
 | `ColoredModel` | Renkli oyuncu modeli | `["Rainbow rainbow", "Mavi #0000FF"]` |
-| `CustomWeaponModel` | Silaha özel model; `model` sayıysa ChangeSubclass (görünüm + viewmodel), path ise yalnız dünya modeli | `[{ "name": "M4A4 - AK47", "weapon": "weapon_m4a1", "model": "weapons/models/ak47/weapon_rif_ak47.vmdl" }]` |
+| `CustomWeaponModel` | Silaha özel model; `model` sayıysa ChangeSubclass (görünüm + viewmodel), path ise yalnız dünya modeli; silah düşürülüp başkası alırsa native'e döner | `[{ "name": "M4A4 - AK47", "weapon": "weapon_m4a1", "model": "weapons/models/ak47/weapon_rif_ak47.vmdl" }]` |
 | `DamageDealt` | Verilen hasarı artırır | `{ "percent": 50, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true }` |
 | `DamageResist` | Alınan hasarı azaltır | `{ "percent": 40, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true }` |
+| `Dash` | Havadayken zıplama tuşuna basınca bastığın yön tuşuna doğru atılır (yön yoksa ileri); `limit`: raunt başına hak (0 = sınırsız), `unit`: itme hızı | `{ "limit": 3, "unit": 600 }` |
 | `DecoyTeleport` | Decoy'un düştüğü yere ışınlanma | `{ "limit": 3 }` |
 | `DefuseKit` | Spawn'da imha kiti (CT) | `true` |
 | `ExtraHP` | Spawn HP değeri | `150` |
-| `ExtraJump` | Çoklu zıplama | `{ "count": 2, "limit": 0 }` |
+| `ExtraJump` | Çoklu zıplama; `count` bir havalanmadaki ekstra zıplama, toplam hak = `count × limit` (`limit: 0` = sınırsız) | `{ "count": 2, "limit": 0 }` |
 | `ExtraKillAwards` | Öldürme şekline göre ekstra para: `headshot`, `noscope`, `inair`, `blind`, `weapon_*` (silaha özel), `distance` (her `unit` birim mesafe için `money`) | `{ "headshot": 150, "noscope": 100, "inair": 200, "blind": 50, "distance": { "unit": 2048, "money": 100 }, "weapon_knife": 1000 }` |
 | `ExtraMoney` | Spawn'da ekstra para | `{ "amount": 4000 }` |
 | `ExtraSpeed` | Hız çarpanı | `{ "multiplier": 1.3, "only_with_weapon": "" }` |
@@ -150,6 +155,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `InfiniteAmmo` | Sınırsız mermi | `{ "only_weapon": "" }` |
 | `Invisibility` | Görünmezlik (düşmanlara transmit edilmez) | `{ "only_stopped": true, "dmg_after_invis": 2.0, "only_with_weapon": "" }` |
 | `JoinMessage` | Giriş/çıkış duyurusu | `{ "join_message": "...", "leave_message": "..." }` |
+| `KillEffect` | Öldürmede partikül; 3 kategori — normal, HS (`hs: true`), son öldürme (`lastkill: true`). Menüden her kategoriye ayrı efekt seçilir; kategori seçilmemişse normal efekte düşer | `[{ "name": "Simsek", "particle": "particles/ui/status_levels/ui_status_level7_lightning.vpcf", "hs": false, "lastkill": false }]` |
 | `KillHeal` | Öldürme şekline göre can yeniler: `distance` içinde `hp` (veya `money`) anahtarı | `{ "headshot": 15, "noscope": 10, "inair": 20, "blind": 5, "distance": { "unit": 2048, "hp": 10 }, "weapon_knife": 50 }` |
 | `KillScreen` | Öldürme ekran efekti | `{ "duration": 1.0 }` |
 | `OneShot` | Belirli silahlarla tek atış | `{ "weapons": "weapon_awp,weapon_ssg08" }` |

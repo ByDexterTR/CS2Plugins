@@ -20,7 +20,9 @@ public abstract class VipModule
     public virtual void OnUnload() { }
     public virtual void OnSelect(CCSPlayerController player, string value) { }
 
-    protected bool Active(CCSPlayerController? player) => player != null && Core.IsActive(player, Name);
+    protected bool IsCurrent => ReferenceEquals(Core, VIPCore.Current);
+
+    protected bool Active(CCSPlayerController? player) => IsCurrent && player != null && Core.IsActive(player, Name);
     protected bool Granted(CCSPlayerController? player) => player != null && Core.IsGranted(player, Name);
     protected string Setting(CCSPlayerController player) => Core.GetSetting(player.SteamID, Name);
     protected string CategorySetting(CCSPlayerController player, string category) => Core.GetSetting(player.SteamID, $"{Name}@{category}");

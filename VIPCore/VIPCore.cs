@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.0.4";
+    public override string ModuleVersion => "1.0.5";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -55,6 +55,9 @@ public partial class VIPCore : BasePlugin
         return _gameRulesProxy?.GameRules?.FreezePeriod == true;
     }
 
+    private ConVar? _cvHalftime;
+    private ConVar? _cvMaxRounds;
+
     public bool IsPistolRound()
     {
         if (_gameRulesProxy == null || !_gameRulesProxy.IsValid)
@@ -64,8 +67,11 @@ public partial class VIPCore : BasePlugin
         if (rules == null)
             return false;
 
-        bool halftime = ConVar.Find("mp_halftime")?.GetPrimitiveValue<bool>() ?? false;
-        int maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
+        _cvHalftime ??= ConVar.Find("mp_halftime");
+        _cvMaxRounds ??= ConVar.Find("mp_maxrounds");
+
+        bool halftime = _cvHalftime?.GetPrimitiveValue<bool>() ?? false;
+        int maxRounds = _cvMaxRounds?.GetPrimitiveValue<int>() ?? 0;
 
         return rules.TotalRoundsPlayed == 0
             || (halftime && maxRounds / 2 == rules.TotalRoundsPlayed)
@@ -74,15 +80,21 @@ public partial class VIPCore : BasePlugin
 
     private bool PistolRoundBlocked(CCSPlayerController player, string feature)
     {
-        if (!_isPistolRound || _pistolDisable.Count == 0)
+        if (_pistolDisable.Count == 0)
             return false;
 
         var group = GetClientGroup(player);
-        return group != null && _pistolDisable.TryGetValue(group, out var set) && set.Contains(feature);
+        if (group == null || !_pistolDisable.TryGetValue(group, out var set) || !set.Contains(feature))
+            return false;
+
+        return IsPistolRound();
     }
+
+    internal static VIPCore? Current;
 
     public override void Load(bool hotReload)
     {
+        Current = this;
         LoadConfig();
         DiscoverModules();
         InitStorage();
@@ -129,6 +141,9 @@ public partial class VIPCore : BasePlugin
         foreach (var module in _modules)
             if (_loaded.Contains(module.Name))
                 module.OnUnload();
+
+        if (ReferenceEquals(Current, this))
+            Current = null;
     }
 
     private void DiscoverModules()
