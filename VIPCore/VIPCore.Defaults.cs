@@ -274,6 +274,71 @@ public partial class VIPCore
         "name": "Bariyer 2",
         "particle": "particles/ui/status_levels/ui_status_level_8_energycirc.vpcf",
         "defuse": true
+      },
+      {
+        "name": "Kivilcim",
+        "particle": "particles/ui/status_levels/ui_status_level_7_sparkles.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Elektrik Flare",
+        "particle": "particles/generic_fx/fx_electricspark_flare.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Kirmizi Isik",
+        "particle": "particles/ambient_fx/aircraft_navred.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Yesil Isik",
+        "particle": "particles/ambient_fx/aircraft_navgreen.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Baca Dumani",
+        "particle": "particles/ambient_fx/ambient_smokestack.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Sandik Dumani",
+        "particle": "particles/inventory_items/crate_emission_smoke.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Yildirim",
+        "particle": "particles/environment/de_train/train_lightning.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Helikopter Toz",
+        "particle": "particles/ambient_fx/copter_land_loop_1.vpcf",
+        "defuse": false
+      },
+      {
+        "name": "Toz Patlamasi",
+        "particle": "particles/breakable_fx/breakable_dust_expl.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Tavuk Tuyu",
+        "particle": "particles/critters/chicken/chicken_gone_feathers.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Alevli Tuy",
+        "particle": "particles/critters/chicken/chicken_gone_feathers_fire.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Zombi Tavuk",
+        "particle": "particles/critters/chicken/chicken_gone_zombie.vpcf",
+        "defuse": true
+      },
+      {
+        "name": "Toz Firtinasi",
+        "particle": "particles/inventory_items/crate_impact_smoke.vpcf",
+        "defuse": true
       }
     ],
     "CustomWeaponModel": [
@@ -519,6 +584,78 @@ public partial class VIPCore
       {
         "name": "Ulti",
         "particle": "particles/ui/status_levels/ui_status_level_8.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Su Patlamasi",
+        "particle": "particles/explosions_fx/explosion_hegrenade_water.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Sok Dalgasi",
+        "particle": "particles/explosions_fx/bumpmine_detonate.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Sok Kivilcimi",
+        "particle": "particles/explosions_fx/bumpmine_detonate_sparks.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Molotof",
+        "particle": "particles/inferno_fx/explosion_molotov_air.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Yakici Bomba",
+        "particle": "particles/inferno_fx/explosion_incend_air.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Tavuk",
+        "particle": "particles/money_fx/moneycrate_burst.vpcf",
+        "hs": true,
+        "lastkill": false
+      },
+      {
+        "name": "Para Yagmuru",
+        "particle": "particles/money_fx/moneycrate_burst_money.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Para Cantasi",
+        "particle": "particles/money_fx/moneybag_trail.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Kan Suyu",
+        "particle": "particles/blood_impact/blood_impact_headshot.vpcf",
+        "hs": true,
+        "lastkill": false
+      },
+      {
+        "name": "Gaz Carpma",
+        "particle": "particles/survival_fx/gas_cannister_impact.vpcf",
+        "hs": false,
+        "lastkill": true
+      },
+      {
+        "name": "Kucuk Enerji",
+        "particle": "particles/ui/ui_experience_award_rollingrings_inner.vpcf",
+        "hs": false,
+        "lastkill": false
+      },
+      {
+        "name": "Gen Patlama",
+        "particle": "particles/ui/status_levels/ui_status_level__gen_burst.vpcf",
         "hs": false,
         "lastkill": true
       }

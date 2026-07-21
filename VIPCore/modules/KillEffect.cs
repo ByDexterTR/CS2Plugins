@@ -72,9 +72,6 @@ public class KillEffect : VipModule
         string category = IsLastEnemy(victim) ? "last" : ev.Headshot ? "hs" : "normal";
         var entry = Pick(attacker, category);
 
-        if (entry == null && category != "normal")
-            entry = Pick(attacker, "normal");
-
         if (entry == null)
             return HookResult.Continue;
 
