@@ -15,7 +15,6 @@ public class C4Effect : VipModule
     }
 
     private CParticleSystem? _plantParticle;
-    private ulong _planterSteamId;
 
     public override string Name => "C4Effect";
     public override string DisplayName => Core.Localizer["vip.module.c4effect"];
@@ -74,8 +73,6 @@ public class C4Effect : VipModule
         if (entry == null)
             return HookResult.Continue;
 
-        _planterSteamId = player!.SteamID;
-
         Server.NextFrame(() =>
         {
             var c4 = Utilities.FindAllEntitiesByDesignerName<CPlantedC4>("planted_c4").FirstOrDefault(c => c != null && c.IsValid);
@@ -131,6 +128,5 @@ public class C4Effect : VipModule
         if (_plantParticle != null && _plantParticle.IsValid)
             _plantParticle.Remove();
         _plantParticle = null;
-        _planterSteamId = 0;
     }
 }

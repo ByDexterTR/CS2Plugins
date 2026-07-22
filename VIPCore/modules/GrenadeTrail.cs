@@ -20,6 +20,7 @@ public class GrenadeTrail : VipModule
         public required string ColorValue;
         public required float Width;
         public required float Lifetime;
+        public System.Drawing.Color? Fixed;
         public Vector Last = new(0, 0, 0);
     }
 
@@ -55,12 +56,14 @@ public class GrenadeTrail : VipModule
                 return;
 
             var cfg = GroupValue<Cfg>(owner!) ?? new Cfg();
+            string setting = Setting(owner!);
             _tracked.Add(new Tracked
             {
                 Projectile = projectile,
-                ColorValue = Setting(owner!),
+                ColorValue = setting,
                 Width = cfg.Width,
-                Lifetime = cfg.Lifetime
+                Lifetime = cfg.Lifetime,
+                Fixed = TrailBeam.IsRandom(setting) ? Core.RoundColor(owner!.Slot) : null
             });
         });
     }
@@ -91,7 +94,7 @@ public class GrenadeTrail : VipModule
                 continue;
 
             if (dist < 600)
-                TrailBeam.Create(Core, origin, t.Last, TrailBeam.Resolve(t.ColorValue), t.Width, t.Lifetime);
+                TrailBeam.Create(Core, origin, t.Last, t.Fixed ?? TrailBeam.Resolve(t.ColorValue), t.Width, t.Lifetime);
 
             t.Last.X = origin.X; t.Last.Y = origin.Y; t.Last.Z = origin.Z;
         }

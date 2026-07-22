@@ -26,6 +26,7 @@ public partial class VIPCore
     },
     "ColoredModel": [
       "Rainbow rainbow",
+      "Rastgele random",
       "Mavi #0000FF",
       "Yesil #00FF00"
     ],
@@ -75,6 +76,7 @@ public partial class VIPCore
       "team": -1,
       "colors": [
         "Rainbow rainbow",
+        "Rastgele random",
         "Mavi #0000FF",
         "Yesil #00FF00"
       ]
@@ -84,11 +86,13 @@ public partial class VIPCore
       "lifetime": 2,
       "colors": [
         "Rainbow rainbow",
+        "Rastgele random",
         "Mavi #0000FF",
         "Yesil #00FF00"
       ]
     },
     "SmokeColor": [
+      "Rastgele random",
       "Beyaz #FFFFFF",
       "Kirmizi #FF0000"
     ],
@@ -201,6 +205,7 @@ public partial class VIPCore
       "only_with_weapon": "",
       "colors": [
         "Rainbow rainbow",
+        "Rastgele random",
         "Kirmizi #FF0000",
         "Mavi #0000FF",
         "Yesil #00FF00"
@@ -228,6 +233,7 @@ public partial class VIPCore
     },
     "ColoredModel": [
       "Rainbow rainbow",
+      "Rastgele random",
       "Kirmizi #FF0000",
       "Yesil #00FF00",
       "Mavi #0000FF",
@@ -457,6 +463,7 @@ public partial class VIPCore
       "lifetime": 2.5,
       "colors": [
         "Rainbow rainbow",
+        "Rastgele random",
         "Kirmizi #FF0000",
         "Mavi #0000FF",
         "Yesil #00FF00"
@@ -485,6 +492,11 @@ public partial class VIPCore
       "only_stopped": true,
       "dmg_after_invis": 2,
       "only_with_weapon": ""
+    },
+    "Jammer": {
+      "radius": 500,
+      "ignore_teammates": true,
+      "ignore_enemy": false
     },
     "JoinMessage": {
       "join_message": "{Gold}{name}{Default} sunucuya katildi {Green}(PLUS VIP)",
@@ -675,6 +687,21 @@ public partial class VIPCore
     "KillScreen": {
       "duration": 1
     },
+    "MagneticDecoy": {
+      "radius": 180,
+      "strength": 30,
+      "ignore_teammates": true,
+      "ignore_enemy": false,
+      "ignore_self": true
+    },
+    "Mole": {
+      "time": 2.5,
+      "unit": 30,
+      "only_with_weapon": "weapon_deagle",
+      "ignore_teammates": true,
+      "ignore_enemy": false,
+      "ignore_self": true
+    },
     "OneShot": {
       "weapons": "weapon_awp,weapon_ssg08"
     },
@@ -687,6 +714,7 @@ public partial class VIPCore
       "team": -1,
       "colors": [
         "Rainbow rainbow",
+        "Rastgele random",
         "Kirmizi #FF0000",
         "Mavi #0000FF",
         "Yesil #00FF00",
@@ -735,6 +763,7 @@ public partial class VIPCore
       "lifetime": 2.5,
       "colors": [
         "Rainbow rainbow",
+        "Rastgele random",
         "Kirmizi #FF0000",
         "Mavi #0000FF",
         "Yesil #00FF00",
@@ -749,9 +778,19 @@ public partial class VIPCore
       "only_with_weapon": "",
       "ignore_teammates": true
     },
+    "Pyro": {
+      "multiplier": 1.5,
+      "ignore_teammates": false,
+      "ignore_enemy": true,
+      "ignore_self": false
+    },
     "RadarHack": {
       "duration_on": 1,
       "duration_off": 0
+    },
+    "RapidFire": {
+      "only_with_weapon": "",
+      "norecoil": true
     },
     "ReflectDamage": {
       "reflect_percent": 50,
@@ -763,6 +802,12 @@ public partial class VIPCore
     "Respawn": {
       "limit": 1,
       "timer": 3
+    },
+    "Sacrifice": {
+      "hp": 25,
+      "armor": 25,
+      "helmet": false,
+      "weapons": "weapon_hegrenade,weapon_flashbang"
     },
     "SaySound": {
       "cooldown": 2,
@@ -789,6 +834,7 @@ public partial class VIPCore
       "only_with_weapon": ""
     },
     "SmokeColor": [
+      "Rastgele random",
       "Beyaz #FFFFFF",
       "Kirmizi #FF0000",
       "Yesil #00FF00",
@@ -860,7 +906,7 @@ public partial class VIPCore
     "Vampire": {
       "heal_percent": 75,
       "only_with_weapon": "",
-      "max_overheal": 120,
+      "max_overheal": 200,
       "ignore_teammates": true
     },
     "WeaponAmmo": [

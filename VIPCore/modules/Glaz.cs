@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Attributes;
 using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
@@ -37,7 +38,7 @@ public class Glaz : VipModule
         return HookResult.Continue;
     }
 
-    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
     {
         if (_smokes.Count == 0)
             return;

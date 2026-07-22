@@ -8,7 +8,12 @@ public class OneShot : VipModule
     private class Cfg
     {
         public string Weapons { get; set; } = "";
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(Weapons);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "OneShot";
     public override string DisplayName => Core.Localizer["vip.module.oneshot"];
@@ -24,7 +29,7 @@ public class OneShot : VipModule
         if (!Active(attacker))
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv((GroupValue<Cfg>(attacker!) ?? new Cfg()).Weapons);
+        var allow = (GroupValue<Cfg>(attacker!) ?? DefaultCfg).Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
             return HookResult.Continue;
 

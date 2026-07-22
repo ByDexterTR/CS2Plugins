@@ -12,7 +12,12 @@ public class ReflectDamage : VipModule
         public string OnlyWithWeapon { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "ReflectDamage";
     public override string DisplayName => Core.Localizer["vip.module.reflectdamage"];
@@ -29,7 +34,7 @@ public class ReflectDamage : VipModule
         if (attacker == null || !attacker.IsValid)
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(victim!) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(victim!) ?? DefaultCfg;
         if (attacker.Slot == victim!.Slot)
         {
             if (cfg.IgnoreSelf)
@@ -44,7 +49,7 @@ public class ReflectDamage : VipModule
         if (pawn == null || !pawn.IsValid || pawn.Health <= 0)
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(victim!)))
             return HookResult.Continue;
 

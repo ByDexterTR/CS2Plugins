@@ -30,6 +30,12 @@ public static class TrailBeam
         return Color.White;
     }
 
+    public static bool IsRandom(string value) =>
+        value.Equals("random", StringComparison.OrdinalIgnoreCase);
+
+    public static Color RandomColor() =>
+        FromHue(Random.Shared.NextDouble() * 360.0);
+
     public static List<VipFeatureOption> ParseColorOptions(List<string> colors)
     {
         var options = new List<VipFeatureOption>();

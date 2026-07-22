@@ -11,7 +11,12 @@ public class BulletTrail : VipModule
         public float Lifetime { get; set; } = 0.6f;
         public string OnlyWithWeapon { get; set; } = "";
         public List<string> Colors { get; set; } = new();
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "BulletTrail";
     public override string DisplayName => Core.Localizer["vip.module.bullettrail"];
@@ -32,8 +37,8 @@ public class BulletTrail : VipModule
         if (pawn == null || pawn.AbsOrigin == null)
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(player) ?? new Cfg();
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(player)))
             return HookResult.Continue;
 
@@ -41,7 +46,9 @@ public class BulletTrail : VipModule
         var eye = new Vector(origin.X, origin.Y, origin.Z + pawn.ViewOffset.Z);
         var impact = new Vector(ev.X, ev.Y, ev.Z);
 
-        TrailBeam.Create(Core, eye, impact, TrailBeam.Resolve(Setting(player)), cfg.Width, cfg.Lifetime);
+        string setting = Setting(player);
+        var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(player.Slot) : TrailBeam.Resolve(setting);
+        TrailBeam.Create(Core, eye, impact, color, cfg.Width, cfg.Lifetime);
         return HookResult.Continue;
     }
 }

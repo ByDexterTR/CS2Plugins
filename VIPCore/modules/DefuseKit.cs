@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace VIPCore;
 
@@ -13,7 +14,7 @@ public class DefuseKit : VipModule
     private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)
     {
         var player = ev.Userid;
-        if (!Active(player) || player!.TeamNum != 3)
+        if (!Active(player) || player!.Team != CsTeam.CounterTerrorist)
             return HookResult.Continue;
 
         Server.NextFrame(() =>

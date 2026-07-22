@@ -8,7 +8,12 @@ public class InfiniteAmmo : VipModule
     private class Cfg
     {
         public string OnlyWeapon { get; set; } = "";
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     private static InfiniteAmmo? _instance;
 
@@ -18,7 +23,7 @@ public class InfiniteAmmo : VipModule
         if (self == null || !self.Active(player))
             return false;
 
-        var allow = WeaponUtil.ParseCsv((self.GroupValue<Cfg>(player) ?? new Cfg()).OnlyWeapon);
+        var allow = (self.GroupValue<Cfg>(player) ?? DefaultCfg).Allow;
         return allow.Count == 0 || (weaponName != null && WeaponUtil.MatchesAny(allow, weaponName));
     }
 
@@ -45,7 +50,7 @@ public class InfiniteAmmo : VipModule
         if (name.Contains("knife") || name.Contains("bayonet") || name.Contains("taser"))
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv((GroupValue<Cfg>(player) ?? new Cfg()).OnlyWeapon);
+        var allow = (GroupValue<Cfg>(player) ?? DefaultCfg).Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, name))
             return HookResult.Continue;
 

@@ -27,7 +27,7 @@ public class Bhop : VipModule
         if (Core.IsFreezeTime())
             return;
 
-        foreach (var player in Utilities.GetPlayers())
+        foreach (var player in Core.Players)
         {
             if (player == null || !player.IsValid || player.IsBot || !Active(player))
                 continue;
@@ -42,7 +42,8 @@ public class Bhop : VipModule
             if ((pawn.MovementServices?.QueuedButtonChangeMask & (ulong)PlayerButtons.Jump) != 0)
                 _lastJumpTick[slot] = Server.TickCount;
 
-            bool jumpPressed = player.Buttons.HasFlag(PlayerButtons.Jump) || _lastJumpTick[slot] + 20 >= Server.TickCount;
+            bool held = TryGetButtons(player, out var buttons) && buttons.HasFlag(PlayerButtons.Jump);
+            bool jumpPressed = held || _lastJumpTick[slot] + 20 >= Server.TickCount;
 
             if (!jumpPressed || !flags.HasFlag(PlayerFlags.FL_ONGROUND) || pawn.MoveType.HasFlag(MoveType_t.MOVETYPE_LADDER))
                 continue;

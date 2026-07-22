@@ -11,7 +11,12 @@ public class GrenadeResist : VipModule
         public string OnlyWithGrenade { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithGrenade);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "GrenadeResist";
     public override string DisplayName => Core.Localizer["vip.module.grenaderesist"];
@@ -30,7 +35,7 @@ public class GrenadeResist : VipModule
         if (!isBlast && !isBurn)
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(victim!) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(victim!) ?? DefaultCfg;
         if (cfg.Percent <= 0)
             return HookResult.Continue;
 
@@ -43,7 +48,7 @@ public class GrenadeResist : VipModule
                 return HookResult.Continue;
         }
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithGrenade);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !allow.Any(a => TypeMatches(a, isBlast, isBurn)))
             return HookResult.Continue;
 

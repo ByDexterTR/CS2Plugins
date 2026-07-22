@@ -10,6 +10,7 @@ public interface IVipStorage
     Dictionary<ulong, Dictionary<string, string>> LoadSettings();
 
     VipEntry? LoadVip(ulong steamId);
+    Dictionary<string, string>? LoadSettings(ulong steamId);
 
     void UpsertVip(ulong steamId, VipEntry entry);
     void DeleteVip(ulong steamId);

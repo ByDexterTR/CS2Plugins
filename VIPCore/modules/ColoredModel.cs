@@ -48,8 +48,13 @@ public class ColoredModel : VipModule
                 continue;
 
             _applied[slot] = true;
-            var color = TrailBeam.Resolve(Setting(player));
+            string setting = Setting(player);
+            var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(slot) : TrailBeam.Resolve(setting);
             int alpha = PlayerModel.LegsHidden(slot) ? 254 : 255;
+            var current = pawn.Render;
+            if (current.A == alpha && current.R == color.R && current.G == color.G && current.B == color.B)
+                continue;
+
             pawn.Render = System.Drawing.Color.FromArgb(alpha, color.R, color.G, color.B);
             Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
         }

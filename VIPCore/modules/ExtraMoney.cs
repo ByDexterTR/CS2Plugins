@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Cvars;
 
 namespace VIPCore;
 
@@ -9,6 +10,8 @@ public class ExtraMoney : VipModule
     {
         public int Amount { get; set; } = 0;
     }
+
+    private static ConVar? _cvMaxMoney;
 
     public override string Name => "ExtraMoney";
     public override string DisplayName => Core.Localizer["vip.module.extramoney"];
@@ -27,14 +30,20 @@ public class ExtraMoney : VipModule
 
         Server.NextFrame(() =>
         {
-            if (player == null || !player.IsValid)
+            if (!IsAlive(player))
                 return;
 
-            var money = player.InGameMoneyServices;
+            var money = player!.InGameMoneyServices;
             if (money == null)
                 return;
 
-            money.Account += cfg.Amount;
+            _cvMaxMoney ??= ConVar.Find("mp_maxmoney");
+            int maxMoney = _cvMaxMoney?.GetPrimitiveValue<int>() ?? 16000;
+            int target = Math.Clamp(money.Account + cfg.Amount, 0, maxMoney);
+            if (target == money.Account)
+                return;
+
+            money.Account = target;
             Utilities.SetStateChanged(player, "CCSPlayerController", "m_pInGameMoneyServices");
         });
 

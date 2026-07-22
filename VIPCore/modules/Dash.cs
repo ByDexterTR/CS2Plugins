@@ -52,7 +52,9 @@ public class Dash : VipModule
             int slot = player.Slot;
             var state = _states[slot] ??= new State();
 
-            var buttons = player.Buttons;
+            if (!TryGetButtons(player, out var buttons))
+                continue;
+
             bool jumpPressed = (buttons & PlayerButtons.Jump) != 0
                 || ((pawn.MovementServices?.QueuedButtonChangeMask ?? 0) & (ulong)PlayerButtons.Jump) != 0;
 

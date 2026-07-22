@@ -39,7 +39,7 @@ public class ExtraJump : VipModule
 
     private void OnTick()
     {
-        foreach (var player in Utilities.GetPlayers())
+        foreach (var player in Core.Players)
         {
             if (player == null || !player.IsValid || player.IsBot || !Active(player))
                 continue;
@@ -49,7 +49,9 @@ public class ExtraJump : VipModule
                 continue;
 
             int slot = player.Slot;
-            var buttons = player.Buttons;
+            if (!TryGetButtons(player, out var buttons))
+                continue;
+
             var flags = (PlayerFlags)pawn.Flags;
 
             bool jumpDown = (buttons & PlayerButtons.Jump) != 0;

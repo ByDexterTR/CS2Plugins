@@ -59,6 +59,9 @@ public class JsonStorage : IVipStorage
 
     public VipEntry? LoadVip(ulong steamId) => LoadVips().TryGetValue(steamId, out var e) ? e : null;
 
+    public Dictionary<string, string>? LoadSettings(ulong steamId) =>
+        LoadSettings().TryGetValue(steamId, out var s) ? s : null;
+
     public void UpsertVip(ulong steamId, VipEntry entry)
     {
         lock (_ioLock)

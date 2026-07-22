@@ -41,7 +41,16 @@ public class SmokeColor : VipModule
             if (Core.IsActive(controller!, "SmokeEffect"))
                 return;
 
-            if (!TryParseHex(Setting(controller!), out int r, out int g, out int b))
+            string setting = Setting(controller!);
+            int r, g, b;
+            if (TrailBeam.IsRandom(setting))
+            {
+                var color = Core.RoundColor(controller!.Slot);
+                r = color.R;
+                g = color.G;
+                b = color.B;
+            }
+            else if (!TryParseHex(setting, out r, out g, out b))
                 return;
 
             smoke.SmokeColor.X = r;
@@ -58,7 +67,7 @@ public class SmokeColor : VipModule
             return false;
 
         var tokens = entry.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (tokens.Length == 0 || !tokens[^1].StartsWith('#'))
+        if (tokens.Length == 0 || (!tokens[^1].StartsWith('#') && !TrailBeam.IsRandom(tokens[^1])))
             return false;
 
         hex = tokens[^1];

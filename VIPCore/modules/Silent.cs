@@ -9,7 +9,12 @@ public class Silent : VipModule
     private class Cfg
     {
         public string OnlyWithWeapon { get; set; } = "";
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     private static readonly HashSet<uint> FootstepHashes = new()
     {
@@ -57,7 +62,7 @@ public class Silent : VipModule
         if (!Active(player))
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv((GroupValue<Cfg>(player!) ?? new Cfg()).OnlyWithWeapon);
+        var allow = (GroupValue<Cfg>(player!) ?? DefaultCfg).Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(player!)))
             return HookResult.Continue;
 

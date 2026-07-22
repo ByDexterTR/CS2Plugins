@@ -47,7 +47,7 @@ public class PlayerTrail : VipModule
             return;
         _tick = 0;
 
-        foreach (var player in Utilities.GetPlayers())
+        foreach (var player in Core.Players)
         {
             if (player == null || !player.IsValid || player.IsBot || !IsAlive(player) || !Active(player))
                 continue;
@@ -71,7 +71,9 @@ public class PlayerTrail : VipModule
             if (dist < 250)
             {
                 var cfg = GroupValue<Cfg>(player) ?? new Cfg();
-                TrailBeam.Create(Core, origin, last, TrailBeam.Resolve(Setting(player)), cfg.Width, cfg.Lifetime);
+                string setting = Setting(player);
+                var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(slot) : TrailBeam.Resolve(setting);
+                TrailBeam.Create(Core, origin, last, color, cfg.Width, cfg.Lifetime);
             }
 
             last.X = origin.X; last.Y = origin.Y; last.Z = origin.Z;

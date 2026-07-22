@@ -13,6 +13,7 @@ public class ExtraSpeed : VipModule
     }
 
     private readonly (float mult, List<string> weapons)?[] _cache = new (float, List<string>)?[64];
+    private readonly bool[] _applied = new bool[64];
 
     public override string Name => "ExtraSpeed";
     public override string DisplayName => Core.Localizer["vip.module.extraspeed"];
@@ -29,6 +30,8 @@ public class ExtraSpeed : VipModule
         int slot = player?.Slot ?? -1;
         if (slot < 0 || slot >= 64)
             return HookResult.Continue;
+
+        _applied[slot] = false;
 
         if (!Active(player))
         {
@@ -58,7 +61,25 @@ public class ExtraSpeed : VipModule
                 continue;
 
             bool match = cached.Value.weapons.Count == 0 || WeaponUtil.MatchesAny(cached.Value.weapons, ActiveWeaponName(player));
-            pawn.VelocityModifier = match ? cached.Value.mult : 1f;
+
+            if (match)
+            {
+                _applied[slot] = true;
+                if (Math.Abs(pawn.VelocityModifier - cached.Value.mult) > 0.001f)
+                {
+                    pawn.VelocityModifier = cached.Value.mult;
+                    Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+                }
+            }
+            else if (_applied[slot])
+            {
+                _applied[slot] = false;
+                if (Math.Abs(pawn.VelocityModifier - 1f) > 0.001f)
+                {
+                    pawn.VelocityModifier = 1f;
+                    Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+                }
+            }
         }
     }
 }

@@ -14,12 +14,19 @@ public class Invisibility : VipModule
         public bool OnlyStopped { get; set; } = true;
         public float DmgAfterInvis { get; set; } = 0f;
         public string OnlyWithWeapon { get; set; } = "";
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     private const float VisibleAlpha = 0.5f;
 
     private readonly bool[] _invisible = new bool[64];
     private readonly float[] _revealedUntil = new float[64];
+    private int _invisCount;
+    private readonly List<(uint PawnIndex, nint PawnHandle, CsTeam Team)> _invisPawns = new();
 
     public override string Name => "Invisibility";
     public override string DisplayName => Core.Localizer["vip.module.invisibility"];
@@ -36,6 +43,7 @@ public class Invisibility : VipModule
             if (slot >= 0 && slot < 64 && _invisible[slot])
             {
                 _invisible[slot] = false;
+                _invisCount--;
                 SetVisible(slot);
             }
             return HookResult.Continue;
@@ -44,6 +52,7 @@ public class Invisibility : VipModule
         {
             Array.Clear(_invisible);
             Array.Clear(_revealedUntil);
+            _invisCount = 0;
             return HookResult.Continue;
         });
     }
@@ -61,26 +70,31 @@ public class Invisibility : VipModule
         if (slot < 0 || slot >= 64 || !Active(player))
             return;
 
-        float dmgAfter = (GroupValue<Cfg>(player!) ?? new Cfg()).DmgAfterInvis;
+        float dmgAfter = (GroupValue<Cfg>(player!) ?? DefaultCfg).DmgAfterInvis;
         if (dmgAfter > 0)
             _revealedUntil[slot] = Server.CurrentTime + dmgAfter;
     }
 
     private void OnTick()
     {
-        for (int slot = 0; slot < 64; slot++)
+        foreach (var player in Core.Players)
         {
-            var player = Utilities.GetPlayerFromSlot(slot);
+            if (player == null || !player.IsValid || player.IsBot)
+                continue;
+
+            int slot = player.Slot;
             bool wants = ShouldBeInvisible(player, slot);
 
             if (wants && !_invisible[slot])
             {
                 _invisible[slot] = true;
+                _invisCount++;
                 SetInvisible(slot);
             }
             else if (!wants && _invisible[slot])
             {
                 _invisible[slot] = false;
+                _invisCount--;
                 SetVisible(slot);
             }
         }
@@ -91,12 +105,12 @@ public class Invisibility : VipModule
         if (!Active(player) || !IsAlive(player))
             return false;
 
-        var cfg = GroupValue<Cfg>(player!) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(player!) ?? DefaultCfg;
 
         if (cfg.DmgAfterInvis > 0 && Server.CurrentTime < _revealedUntil[slot])
             return false;
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(player!)))
             return false;
 
@@ -137,6 +151,33 @@ public class Invisibility : VipModule
 
     private void OnCheckTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
     {
+        if (_invisCount == 0)
+            return;
+
+        _invisPawns.Clear();
+        for (int slot = 0; slot < 64; slot++)
+        {
+            if (!_invisible[slot])
+                continue;
+
+            var invisPlayer = Utilities.GetPlayerFromSlot(slot);
+            if (invisPlayer == null || !invisPlayer.IsValid)
+            {
+                _invisible[slot] = false;
+                _invisCount--;
+                continue;
+            }
+
+            var invisPawn = invisPlayer.PlayerPawn.Value;
+            if (invisPawn == null || !invisPawn.IsValid)
+                continue;
+
+            _invisPawns.Add((invisPawn.Index, invisPawn.Handle, invisPlayer.Team));
+        }
+
+        if (_invisPawns.Count == 0)
+            return;
+
         foreach (var (info, player) in infoList)
         {
             if (player == null || !player.IsValid || player.Team == CsTeam.Spectator)
@@ -144,24 +185,16 @@ public class Invisibility : VipModule
 
             var targetHandle = player.Pawn.Value?.ObserverServices?.ObserverTarget.Value?.Handle ?? nint.Zero;
 
-            for (int slot = 0; slot < 64; slot++)
+            foreach (var (pawnIndex, pawnHandle, team) in _invisPawns)
             {
-                if (!_invisible[slot])
+                if (team == player.Team)
                     continue;
 
-                var invisPlayer = Utilities.GetPlayerFromSlot(slot);
-                if (invisPlayer == null || !invisPlayer.IsValid || invisPlayer.Index == player.Index || invisPlayer.Team == player.Team)
+                if (targetHandle != nint.Zero && pawnHandle == targetHandle)
                     continue;
 
-                var invisPawn = invisPlayer.PlayerPawn.Value;
-                if (invisPawn == null || !invisPawn.IsValid)
-                    continue;
-
-                if (targetHandle != nint.Zero && invisPawn.Handle == targetHandle)
-                    continue;
-
-                if (info.TransmitEntities.Contains(invisPawn.Index))
-                    info.TransmitEntities.Remove(invisPawn.Index);
+                if (info.TransmitEntities.Contains(pawnIndex))
+                    info.TransmitEntities.Remove(pawnIndex);
             }
         }
     }

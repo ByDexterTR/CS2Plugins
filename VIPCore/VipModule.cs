@@ -1,3 +1,4 @@
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 
 namespace VIPCore;
@@ -27,6 +28,25 @@ public abstract class VipModule
     protected string Setting(CCSPlayerController player) => Core.GetSetting(player.SteamID, Name);
     protected string CategorySetting(CCSPlayerController player, string category) => Core.GetSetting(player.SteamID, $"{Name}@{category}");
     protected T? GroupValue<T>(CCSPlayerController player) => Core.GetGroupValue<T>(player, Name);
+
+    public static bool TryGetButtons(CCSPlayerController? p, out PlayerButtons buttons)
+    {
+        buttons = 0;
+
+        var pawn = p?.Pawn.Value;
+        if (pawn == null || !pawn.IsValid || pawn.MovementServices == null)
+            return false;
+
+        try
+        {
+            buttons = (PlayerButtons)pawn.MovementServices.Buttons.ButtonStates[0];
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     protected static bool IsAlive(CCSPlayerController? p) =>
         p != null && p.IsValid && p.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;

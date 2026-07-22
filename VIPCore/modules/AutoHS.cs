@@ -10,7 +10,12 @@ public class AutoHS : VipModule
         public float Multiplier { get; set; } = 4f;
         public string OnlyWithWeapon { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "AutoHS";
     public override string DisplayName => Core.Localizer["vip.module.autohs"];
@@ -41,11 +46,11 @@ public class AutoHS : VipModule
         if (string.IsNullOrEmpty(weapon) || weapon.StartsWith("knife") || weapon.Contains("bayonet") || NoHsWeapons.Contains(weapon))
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(attacker) ?? DefaultCfg;
         if (cfg.IgnoreTeammates && victim.Team == attacker.Team)
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, "weapon_" + weapon))
             return HookResult.Continue;
 
@@ -63,15 +68,15 @@ public class AutoHS : VipModule
             return HookResult.Continue;
 
         var victim = PawnController(entity);
-        if (victim == null)
+        if (victim == null || victim.Slot == attacker!.Slot)
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(attacker!) ?? new Cfg();
-        if (cfg.IgnoreTeammates && victim.Slot != attacker!.Slot && victim.Team == attacker.Team)
+        var cfg = GroupValue<Cfg>(attacker) ?? DefaultCfg;
+        if (cfg.IgnoreTeammates && victim.Team == attacker.Team)
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
-        if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
+        var allow = cfg.Allow;
+        if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker)))
             return HookResult.Continue;
 
         info.Damage *= cfg.Multiplier;

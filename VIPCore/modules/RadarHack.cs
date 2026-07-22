@@ -49,11 +49,11 @@ public class RadarHack : VipModule
                 if (enemyPawn.Render.A < 200)
                     continue;
 
-                enemyPawn.EntitySpottedState.SpottedByMask[0] |= 1u << (slot % 32);
+                enemyPawn.EntitySpottedState.SpottedByMask[slot / 32] |= 1u << (slot % 32);
             }
 
             if (bomb != null && bomb.IsValid)
-                bomb.EntitySpottedState.SpottedByMask[0] |= 1u << (slot % 32);
+                bomb.EntitySpottedState.SpottedByMask[slot / 32] |= 1u << (slot % 32);
         }
     }
 }

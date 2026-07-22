@@ -45,7 +45,7 @@ public partial class VIPCore
             Title = title,
             Items = items,
             Selected = selected,
-            OldButtons = player.Buttons
+            OldButtons = TryGetButtons(player, out var current) ? current : 0
         };
         session.Html = BuildWasdHtml(session);
         _wasd[slot] = session;
@@ -56,6 +56,9 @@ public partial class VIPCore
             _wasdTickHooked = true;
         }
     }
+
+    private static bool TryGetButtons(CCSPlayerController player, out PlayerButtons buttons) =>
+        VipModule.TryGetButtons(player, out buttons);
 
     private void WasdOnTick()
     {
@@ -72,7 +75,12 @@ public partial class VIPCore
                 continue;
             }
 
-            var buttons = player.Buttons;
+            if (!TryGetButtons(player, out var buttons))
+            {
+                player.PrintToCenterHtml(session.Html);
+                continue;
+            }
+
             var old = session.OldButtons;
             session.OldButtons = buttons;
 

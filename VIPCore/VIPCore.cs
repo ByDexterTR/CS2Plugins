@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.0.5";
+    public override string ModuleVersion => "1.0.6";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -32,9 +32,33 @@ public partial class VIPCore : BasePlugin
     private readonly Dictionary<ulong, Dictionary<string, string?>> _pendingSettings = new();
     private bool _isPistolRound;
     private List<CCSPlayerController> _tickPlayers = new();
+    private int _tickPlayersAt = -1;
     private readonly object _lock = new();
 
-    public IReadOnlyList<CCSPlayerController> Players => _tickPlayers;
+    public IReadOnlyList<CCSPlayerController> Players
+    {
+        get
+        {
+            int tick = Server.TickCount;
+            if (_tickPlayersAt != tick)
+            {
+                _tickPlayersAt = tick;
+                _tickPlayers = Utilities.GetPlayers();
+            }
+            return _tickPlayers;
+        }
+    }
+
+    private readonly System.Drawing.Color[] _roundColors = new System.Drawing.Color[64];
+
+    public System.Drawing.Color RoundColor(int slot) =>
+        slot >= 0 && slot < 64 ? _roundColors[slot] : TrailBeam.RandomColor();
+
+    private void RollRoundColors()
+    {
+        for (int i = 0; i < 64; i++)
+            _roundColors[i] = TrailBeam.RandomColor();
+    }
 
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
     private static readonly JsonSerializerOptions GroupOpts = new()
@@ -95,18 +119,19 @@ public partial class VIPCore : BasePlugin
     public override void Load(bool hotReload)
     {
         Current = this;
+        RollRoundColors();
         LoadConfig();
         DiscoverModules();
         InitStorage();
         ReloadData();
 
-        RegisterListener<OnTick>(() => _tickPlayers = Utilities.GetPlayers());
         ActivateModules();
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterEventHandler<EventRoundStart>((_, __) =>
         {
             _isPistolRound = IsPistolRound();
+            RollRoundColors();
             return HookResult.Continue;
         });
         RegisterEventHandler<EventRoundEnd>((_, __) =>
@@ -298,18 +323,7 @@ public partial class VIPCore : BasePlugin
 
         if (_storage.SupportsLiveRefresh)
         {
-            Task.Run(() =>
-            {
-                var entry = _storage.LoadVip(steamId);
-                lock (_lock)
-                {
-                    if (entry != null)
-                        _vips[steamId] = entry;
-                    else
-                        _vips.Remove(steamId);
-                }
-                PurgeIfExpired(steamId);
-            });
+            ScheduleStorageRefresh(player.Slot, player.UserId ?? -1, 1);
         }
         else
         {
@@ -317,6 +331,69 @@ public partial class VIPCore : BasePlugin
         }
 
         return HookResult.Continue;
+    }
+
+    private const int MaxRefreshAttempts = 3;
+    private const float RefreshRetryDelay = 5.0f;
+    private const ulong MinValidSteamId = 76561197960265728UL;
+
+    private void ScheduleStorageRefresh(int slot, int userId, int attempt)
+    {
+        if (userId < 0)
+            return;
+
+        var player = Utilities.GetPlayerFromSlot(slot);
+        if (player == null || !player.IsValid || player.IsBot || player.UserId != userId)
+            return;
+
+        ulong steamId = player.AuthorizedSteamID?.SteamId64 ?? player.SteamID;
+
+        if (steamId >= MinValidSteamId)
+        {
+            RefreshFromStorage(steamId);
+            return;
+        }
+
+        if (attempt >= MaxRefreshAttempts)
+        {
+            Logger.LogWarning("VIPCore: slot {0} icin SteamID {1} denemede dogrulanamadi, VIP yenilemesi atlandi.",
+                slot, MaxRefreshAttempts);
+            return;
+        }
+
+        AddTimer(RefreshRetryDelay, () => ScheduleStorageRefresh(slot, userId, attempt + 1),
+            CounterStrikeSharp.API.Modules.Timers.TimerFlags.STOP_ON_MAPCHANGE);
+    }
+
+    private void RefreshFromStorage(ulong steamId)
+    {
+        var storage = _storage;
+
+        Task.Run(() =>
+        {
+            try
+            {
+                var entry = storage.LoadVip(steamId);
+                var settings = storage.LoadSettings(steamId);
+
+                lock (_lock)
+                {
+                    if (entry != null)
+                        _vips[steamId] = entry;
+                    else
+                        _vips.Remove(steamId);
+
+                    if (settings != null && settings.Count > 0)
+                        _settings[steamId] = settings;
+                }
+
+                PurgeIfExpired(steamId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("VIPCore: {0} icin depo yenilemesi basarisiz: {1}", steamId, ex.Message);
+            }
+        });
     }
 
     public void PurgeIfExpired(ulong steamId)

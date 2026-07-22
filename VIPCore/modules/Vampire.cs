@@ -11,7 +11,12 @@ public class Vampire : VipModule
         public string OnlyWithWeapon { get; set; } = "";
         public int MaxOverheal { get; set; } = 100;
         public bool IgnoreTeammates { get; set; } = true;
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "Vampire";
     public override string DisplayName => Core.Localizer["vip.module.vampire"];
@@ -28,11 +33,11 @@ public class Vampire : VipModule
         if (victim == null || !victim.IsValid || victim.Slot == attacker!.Slot)
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(attacker) ?? DefaultCfg;
         if (cfg.IgnoreTeammates && victim.Team == attacker.Team)
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
             return HookResult.Continue;
 

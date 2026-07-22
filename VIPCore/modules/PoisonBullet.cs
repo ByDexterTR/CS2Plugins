@@ -16,7 +16,12 @@ public class PoisonBullet : VipModule
         public float DamageTick { get; set; } = 1f;
         public string OnlyWithWeapon { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     private class Poisoned
     {
@@ -56,11 +61,11 @@ public class PoisonBullet : VipModule
         if (slot < 0 || slot >= 64 || victim!.Slot == attacker!.Slot)
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(attacker) ?? DefaultCfg;
         if (cfg.IgnoreTeammates && victim.Team == attacker.Team)
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
             return HookResult.Continue;
 

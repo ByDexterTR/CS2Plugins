@@ -11,7 +11,12 @@ public class DamageDealt : VipModule
         public string OnlyWithWeapon { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "DamageDealt";
     public override string DisplayName => Core.Localizer["vip.module.damagedealt"];
@@ -27,7 +32,7 @@ public class DamageDealt : VipModule
         if (!Active(attacker))
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(attacker!) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(attacker!) ?? DefaultCfg;
         if (cfg.Percent == 0)
             return HookResult.Continue;
 
@@ -40,7 +45,7 @@ public class DamageDealt : VipModule
                 return HookResult.Continue;
         }
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
             return HookResult.Continue;
 

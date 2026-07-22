@@ -29,6 +29,12 @@ public class PlayerGlow : VipModule
         Core.RegisterEventHandler<EventRoundStart>((_, _) => { Array.Clear(_glows); return HookResult.Continue; });
     }
 
+    private Color ResolveColor(CCSPlayerController player)
+    {
+        string setting = Setting(player);
+        return TrailBeam.IsRandom(setting) ? Core.RoundColor(player.Slot) : TrailBeam.Resolve(setting);
+    }
+
     public override void OnUnload()
     {
         for (int slot = 0; slot < 64; slot++)
@@ -37,7 +43,7 @@ public class PlayerGlow : VipModule
 
     private void OnTick()
     {
-        foreach (var player in Utilities.GetPlayers())
+        foreach (var player in Core.Players)
         {
             if (player == null || !player.IsValid || player.IsBot)
                 continue;
@@ -71,8 +77,13 @@ public class PlayerGlow : VipModule
 
             if (glow != null && glow.IsValid)
             {
-                glow.Glow.GlowColorOverride = TrailBeam.Resolve(Setting(player));
-                Utilities.SetStateChanged(glow, "CGlowProperty", "m_glowColorOverride");
+                var color = ResolveColor(player);
+                var current = glow.Glow.GlowColorOverride;
+                if (current.R != color.R || current.G != color.G || current.B != color.B || current.A != color.A)
+                {
+                    glow.Glow.GlowColorOverride = color;
+                    Utilities.SetStateChanged(glow, "CGlowProperty", "m_glowColorOverride");
+                }
             }
         }
     }
@@ -111,7 +122,7 @@ public class PlayerGlow : VipModule
         glow.DispatchSpawn();
 
         var cfg = GroupValue<Cfg>(player) ?? new();
-        glow.Glow.GlowColorOverride = TrailBeam.Resolve(Setting(player));
+        glow.Glow.GlowColorOverride = ResolveColor(player);
         glow.Glow.GlowRange = cfg.Range;
         glow.Glow.GlowTeam = cfg.Team;
         glow.Glow.GlowType = 3;

@@ -11,7 +11,12 @@ public class DamageResist : VipModule
         public string OnlyWithWeapon { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "DamageResist";
     public override string DisplayName => Core.Localizer["vip.module.damageresist"];
@@ -24,7 +29,7 @@ public class DamageResist : VipModule
         if (!Active(victim))
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(victim!) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(victim!) ?? DefaultCfg;
         if (cfg.Percent <= 0)
             return HookResult.Continue;
 
@@ -37,7 +42,7 @@ public class DamageResist : VipModule
                 return HookResult.Continue;
         }
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(victim!)))
             return HookResult.Continue;
 

@@ -8,7 +8,12 @@ public class FastReload : VipModule
     private class Cfg
     {
         public string OnlyWithWeapon { get; set; } = "";
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     private static FastReload? _instance;
 
@@ -18,7 +23,7 @@ public class FastReload : VipModule
         if (self == null || !self.Active(player))
             return false;
 
-        var allow = WeaponUtil.ParseCsv((self.GroupValue<Cfg>(player) ?? new Cfg()).OnlyWithWeapon);
+        var allow = (self.GroupValue<Cfg>(player) ?? DefaultCfg).Allow;
         return allow.Count == 0 || (weaponName != null && WeaponUtil.MatchesAny(allow, weaponName));
     }
 
@@ -48,7 +53,7 @@ public class FastReload : VipModule
         if (weapon.ReserveAmmo.Length == 0 || weapon.ReserveAmmo[0] <= 0)
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv((GroupValue<Cfg>(player) ?? new Cfg()).OnlyWithWeapon);
+        var allow = (GroupValue<Cfg>(player) ?? DefaultCfg).Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(player)))
             return HookResult.Continue;
 

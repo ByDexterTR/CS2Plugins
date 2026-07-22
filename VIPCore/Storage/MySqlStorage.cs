@@ -98,6 +98,22 @@ public class MySqlStorage : IVipStorage
         return null;
     }
 
+    public Dictionary<string, string>? LoadSettings(ulong steamId)
+    {
+        using var conn = new MySqlConnection(_connString);
+        conn.Open();
+
+        using var cmd = new MySqlCommand($"SELECT feature, value FROM `{_settings}` WHERE steamid = @s;", conn);
+        cmd.Parameters.AddWithValue("@s", steamId);
+        using var reader = cmd.ExecuteReader();
+
+        var result = new Dictionary<string, string>();
+        while (reader.Read())
+            result[reader.GetString(0)] = reader.GetString(1);
+
+        return result;
+    }
+
     public void UpsertVip(ulong steamId, VipEntry entry)
     {
         using var conn = new MySqlConnection(_connString);

@@ -79,6 +79,8 @@ public class Aura : VipModule
 
     private readonly Dictionary<int, List<CBeam>> _rings = new();
     private readonly float[] _nextEffectTick = new float[64];
+    private readonly string?[] _colorStr = new string?[64];
+    private readonly Color[] _colorVal = new Color[64];
     private readonly HashSet<int> _affected = new();
     private readonly HashSet<int> _affectedThisTick = new();
 
@@ -155,7 +157,14 @@ public class Aura : VipModule
                 continue;
 
             if (ringVisible)
-                UpdateRing(slot, pawn.AbsOrigin, radius, TrailBeam.Resolve(color));
+            {
+                if (_colorStr[slot] != color || color.Length == 0 || color.Equals("rainbow", StringComparison.OrdinalIgnoreCase))
+                {
+                    _colorStr[slot] = color;
+                    _colorVal[slot] = TrailBeam.Resolve(color);
+                }
+                UpdateRing(slot, pawn.AbsOrigin, radius, _colorVal[slot]);
+            }
             else
                 RemoveRing(slot);
 
@@ -303,8 +312,11 @@ public class Aura : VipModule
                 center.Y + radius * (float)Math.Sin(a1),
                 z);
 
-            beam.Render = color;
-            Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+            if (beam.Render != color)
+            {
+                beam.Render = color;
+                Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+            }
 
             beam.Teleport(start, new QAngle(), new Vector());
 

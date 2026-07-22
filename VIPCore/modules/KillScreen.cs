@@ -18,7 +18,7 @@ public class KillScreen : VipModule
     private HookResult OnDeath(EventPlayerDeath ev, GameEventInfo info)
     {
         var attacker = ev.Attacker;
-        if (!Active(attacker) || attacker == ev.Userid)
+        if (!Active(attacker) || ev.Userid?.Slot == attacker!.Slot)
             return HookResult.Continue;
 
         var pawn = attacker!.PlayerPawn.Value;

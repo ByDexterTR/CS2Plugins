@@ -24,6 +24,17 @@ public class HealthRegen : VipModule
     {
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
         Core.RegisterEventHandler<EventPlayerHurt>(OnHurt);
+        Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { KillTimer(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
+        Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { KillTimer(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
+    }
+
+    private void KillTimer(int slot)
+    {
+        if (slot < 0 || slot >= 64)
+            return;
+
+        _timers[slot]?.Kill();
+        _timers[slot] = null;
     }
 
     private HookResult OnHurt(EventPlayerHurt ev, GameEventInfo info)

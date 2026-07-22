@@ -10,7 +10,12 @@ public class AntiHS : VipModule
     {
         public int Percent { get; set; } = 0;
         public string OnlyWithWeapon { get; set; } = "";
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "AntiHS";
     public override string DisplayName => Core.Localizer["vip.module.antihs"];
@@ -20,17 +25,17 @@ public class AntiHS : VipModule
     private HookResult OnHurt(EventPlayerHurt ev, GameEventInfo info)
     {
         var victim = ev.Userid;
-        if (!Active(victim) || ev.Attacker == victim)
+        if (!Active(victim) || ev.Attacker?.Slot == victim!.Slot)
             return HookResult.Continue;
 
         if (ev.Hitgroup != (int)HitGroup_t.HITGROUP_HEAD)
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(victim!) ?? new Cfg();
+        var cfg = GroupValue<Cfg>(victim!) ?? DefaultCfg;
         if (cfg.Percent >= 100)
             return HookResult.Continue;
 
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(victim!)))
             return HookResult.Continue;
 

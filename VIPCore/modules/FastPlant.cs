@@ -14,7 +14,11 @@ public class FastPlant : VipModule
     public override string Name => "FastPlant";
     public override string DisplayName => Core.Localizer["vip.module.fastplant"];
 
-    public override void OnLoad() => Core.RegisterEventHandler<EventBombBeginplant>(OnPlant);
+    public override void OnLoad()
+    {
+        FireUtil.Ensure(Core);
+        Core.RegisterEventHandler<EventBombBeginplant>(OnPlant);
+    }
 
     private HookResult OnPlant(EventBombBeginplant ev, GameEventInfo info)
     {
@@ -23,6 +27,9 @@ public class FastPlant : VipModule
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(player!) ?? new Cfg();
+
+        if (!cfg.ImmuneWhileBurning && FireUtil.Blocked(player))
+            return HookResult.Continue;
 
         Server.NextFrame(() =>
         {

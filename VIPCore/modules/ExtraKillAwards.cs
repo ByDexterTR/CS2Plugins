@@ -7,6 +7,9 @@ namespace VIPCore;
 
 public class ExtraKillAwards : VipModule
 {
+    private static ConVar? _cvFfa;
+    private static ConVar? _cvMaxMoney;
+
     public override string Name => "ExtraKillAwards";
     public override string DisplayName => Core.Localizer["vip.module.extrakillawards"];
 
@@ -19,7 +22,8 @@ public class ExtraKillAwards : VipModule
         if (attacker == null || !attacker.IsValid || attacker.IsBot || victim == null || !victim.IsValid)
             return HookResult.Continue;
 
-        bool ffa = ConVar.Find("mp_teammates_are_enemies")?.GetPrimitiveValue<bool>() ?? false;
+        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
         if (attacker.Slot == victim.Slot || (!ffa && attacker.Team == victim.Team) || !Active(attacker))
             return HookResult.Continue;
 
@@ -73,7 +77,8 @@ public class ExtraKillAwards : VipModule
         if (moneyServices == null)
             return HookResult.Continue;
 
-        int maxMoney = ConVar.Find("mp_maxmoney")?.GetPrimitiveValue<int>() ?? 16000;
+        _cvMaxMoney ??= ConVar.Find("mp_maxmoney");
+        int maxMoney = _cvMaxMoney?.GetPrimitiveValue<int>() ?? 16000;
         moneyServices.Account = Math.Min(moneyServices.Account + total, maxMoney);
         Utilities.SetStateChanged(attacker, "CCSPlayerController", "m_pInGameMoneyServices");
 

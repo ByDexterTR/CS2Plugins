@@ -14,7 +14,11 @@ public class FastDefuse : VipModule
     public override string Name => "FastDefuse";
     public override string DisplayName => Core.Localizer["vip.module.fastdefuse"];
 
-    public override void OnLoad() => Core.RegisterEventHandler<EventBombBegindefuse>(OnDefuse);
+    public override void OnLoad()
+    {
+        FireUtil.Ensure(Core);
+        Core.RegisterEventHandler<EventBombBegindefuse>(OnDefuse);
+    }
 
     private HookResult OnDefuse(EventBombBegindefuse ev, GameEventInfo info)
     {
@@ -23,6 +27,9 @@ public class FastDefuse : VipModule
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(player!) ?? new Cfg();
+
+        if (!cfg.ImmuneWhileBurning && FireUtil.Blocked(player))
+            return HookResult.Continue;
 
         Server.NextFrame(() =>
         {

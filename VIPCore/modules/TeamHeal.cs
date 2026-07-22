@@ -13,7 +13,12 @@ public class TeamHeal : VipModule
         public int MinHp { get; set; } = 1;
         public int Percent { get; set; } = 50;
         public string OnlyWithWeapon { get; set; } = "";
+
+        private List<string>? _allow;
+        public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
     }
+
+    private static readonly Cfg DefaultCfg = new();
 
     public override string Name => "TeamHeal";
     public override string DisplayName => Core.Localizer["vip.module.teamheal"];
@@ -33,8 +38,8 @@ public class TeamHeal : VipModule
         if (victim == null || victim.Slot == attacker!.Slot || victim.Team != attacker.Team)
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
-        var allow = WeaponUtil.ParseCsv(cfg.OnlyWithWeapon);
+        var cfg = GroupValue<Cfg>(attacker) ?? DefaultCfg;
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker)))
             return HookResult.Continue;
 
