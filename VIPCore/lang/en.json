@@ -9,6 +9,7 @@
 	"vip.buy_given": "{Green}{0}{Default} given. {Grey}(-${1}){Default}",
 	"vip.buy_no_money": "{Red}Not enough money.{Default} Need {Green}${0}{Default}",
 	"vip.buy_not_allowed": "{Red}This weapon is disabled for your group.{Default}",
+	"vip.buy_not_in_buyzone": "{Red}You are not in a buy zone.{Default}",
 	"vip.buy_wrong_team": "{Red}Your team can't buy this weapon.{Default}",
 	"vip.c4effect.defuse": "Defuse Effect",
 	"vip.c4effect.plant": "Plant Effect",

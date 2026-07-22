@@ -74,6 +74,12 @@ public class BuyTeamWeapon : VipModule
         if (!IsAlive(player))
             return;
 
+        if (player.PlayerPawn.Value?.InBuyZone != true)
+        {
+            Reply(info, Core.Localizer["vip.buy_not_in_buyzone"]);
+            return;
+        }
+
         var money = player.InGameMoneyServices;
         if (money == null)
             return;

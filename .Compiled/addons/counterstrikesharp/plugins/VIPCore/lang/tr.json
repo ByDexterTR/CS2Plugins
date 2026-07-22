@@ -9,6 +9,7 @@
 	"vip.buy_given": "{Green}{0}{Default} verildi. {Grey}(-${1}){Default}",
 	"vip.buy_no_money": "{Red}Yetersiz bakiye.{Default} Gerekli: {Green}${0}{Default}",
 	"vip.buy_not_allowed": "{Red}Bu silah için erişiminiz yok.{Default}",
+	"vip.buy_not_in_buyzone": "{Red}Satın alma bölgesinde değilsin.{Default}",
 	"vip.buy_wrong_team": "{Red}Bu silahı satın alamazsın.{Default}",
 	"vip.c4effect.defuse": "Imha Efekti",
 	"vip.c4effect.plant": "Kurma Efekti",
