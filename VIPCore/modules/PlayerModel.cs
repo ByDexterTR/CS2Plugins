@@ -36,9 +36,9 @@ public class PlayerModel : VipModule
     {
         var cfg = GroupValue<Cfg>(player) ?? new Cfg();
         var cats = new List<VipFeatureOption>();
-        if (cfg.Ct.Count > 0)
+        if (cfg.Ct.Any(m => m.Name.Length > 0 && m.Model.Length > 0))
             cats.Add(new VipFeatureOption("CT", "ct"));
-        if (cfg.T.Count > 0)
+        if (cfg.T.Any(m => m.Name.Length > 0 && m.Model.Length > 0))
             cats.Add(new VipFeatureOption("T", "t"));
         return cats;
     }

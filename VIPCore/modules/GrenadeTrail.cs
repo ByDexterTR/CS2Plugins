@@ -20,6 +20,7 @@ public class GrenadeTrail : VipModule
         public required string ColorValue;
         public required float Width;
         public required float Lifetime;
+        public required int OwnerSlot;
         public System.Drawing.Color? Fixed;
         public Vector Last = new(0, 0, 0);
     }
@@ -35,6 +36,7 @@ public class GrenadeTrail : VipModule
 
     public override void OnLoad()
     {
+        EffectHide.Ensure(Core);
         Core.RegisterListener<OnEntitySpawned>(OnEntitySpawned);
         Core.RegisterListener<OnTick>(OnTick);
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { _tracked.Clear(); return HookResult.Continue; });
@@ -63,7 +65,8 @@ public class GrenadeTrail : VipModule
                 ColorValue = setting,
                 Width = cfg.Width,
                 Lifetime = cfg.Lifetime,
-                Fixed = TrailBeam.IsRandom(setting) ? Core.RoundColor(owner!.Slot) : null
+                OwnerSlot = owner!.Slot,
+                Fixed = TrailBeam.IsRandom(setting) ? Core.RoundColor(owner.Slot) : null
             });
         });
     }
@@ -94,7 +97,8 @@ public class GrenadeTrail : VipModule
                 continue;
 
             if (dist < 600)
-                TrailBeam.Create(Core, origin, t.Last, t.Fixed ?? TrailBeam.Resolve(t.ColorValue), t.Width, t.Lifetime);
+                TrailBeam.Create(Core, origin, t.Last, t.Fixed ?? TrailBeam.Resolve(t.ColorValue), t.Width, t.Lifetime,
+                    EffectHide.GrenadeTrail, t.OwnerSlot);
 
             t.Last.X = origin.X; t.Last.Y = origin.Y; t.Last.Z = origin.Z;
         }

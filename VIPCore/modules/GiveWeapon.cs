@@ -34,8 +34,14 @@ public class GiveWeapon : VipModule
 
     public override List<VipFeatureOption> SelectCategories(CCSPlayerController player)
     {
-        var cats = Categories(player).Keys.Select(k => new VipFeatureOption(CategoryDisplay(k), k)).ToList();
-        cats.Add(new VipFeatureOption(Core.Localizer["vip.giveweapon.force"], "force"));
+        var cats = Categories(player)
+            .Where(kv => kv.Value.Count > 0)
+            .Select(kv => new VipFeatureOption(CategoryDisplay(kv.Key), kv.Key))
+            .ToList();
+
+        if (cats.Count > 0)
+            cats.Add(new VipFeatureOption(Core.Localizer["vip.giveweapon.force"], "force"));
+
         return cats;
     }
 

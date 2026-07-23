@@ -165,37 +165,70 @@ public class WeaponAmmo : VipModule
             if (weapon == null || !weapon.IsValid)
                 continue;
 
-            string? name = WeaponName(weapon);
-            var entry = name == null ? null : entries.FirstOrDefault(e => e.WeaponName == name);
-            if (entry == null)
+            Adopt(player!, weapon, entries);
+        }
+    }
+
+    private void Adopt(CCSPlayerController player, CBasePlayerWeapon weapon, List<Entry> entries)
+    {
+        string? name = WeaponName(weapon);
+        var entry = name == null ? null : entries.FirstOrDefault(e => e.WeaponName == name);
+        if (entry == null)
+            return;
+
+        if (InfiniteAmmo.Covers(player, weapon.DesignerName))
+        {
+            _states.Remove(weapon.Index);
+            return;
+        }
+
+        var state = new State
+        {
+            ManageClip = entry.Ammo > 0,
+            ManageReserve = entry.Reserve >= 0 && weapon.ReserveAmmo.Length > 0,
+            FullClip = entry.Ammo,
+            Clip = entry.Ammo > 0 ? entry.Ammo : weapon.Clip1,
+            Reserve = entry.Reserve >= 0 && weapon.ReserveAmmo.Length > 0 ? entry.Reserve : 0
+        };
+        _states[weapon.Index] = state;
+
+        if (state.ManageClip && weapon.Clip1 != state.Clip)
+        {
+            weapon.Clip1 = state.Clip;
+            Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+        }
+
+        if (state.ManageReserve && weapon.ReserveAmmo[0] != state.Reserve)
+        {
+            weapon.ReserveAmmo[0] = state.Reserve;
+            Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+        }
+    }
+
+    private int _reAdoptTick;
+
+    private void ReAdopt()
+    {
+        foreach (var player in Core.Players)
+        {
+            if (player == null || !player.IsValid || player.IsBot || !IsAlive(player) || !Active(player))
                 continue;
 
-            if (InfiniteAmmo.Covers(player, weapon.DesignerName))
-            {
-                _states.Remove(weapon.Index);
+            var entries = GroupValue<List<Entry>>(player) ?? new();
+            if (entries.Count == 0)
                 continue;
-            }
 
-            var state = new State
-            {
-                ManageClip = entry.Ammo > 0,
-                ManageReserve = entry.Reserve >= 0 && weapon.ReserveAmmo.Length > 0,
-                FullClip = entry.Ammo,
-                Clip = entry.Ammo > 0 ? entry.Ammo : weapon.Clip1,
-                Reserve = entry.Reserve >= 0 && weapon.ReserveAmmo.Length > 0 ? entry.Reserve : 0
-            };
-            _states[weapon.Index] = state;
+            var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+            if (weapons == null)
+                continue;
 
-            if (state.ManageClip && weapon.Clip1 != state.Clip)
+            foreach (var handle in weapons)
             {
-                weapon.Clip1 = state.Clip;
-                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
-            }
+                var weapon = handle.Value;
+                if (weapon == null || !weapon.IsValid || _states.ContainsKey(weapon.Index))
+                    continue;
 
-            if (state.ManageReserve && weapon.ReserveAmmo[0] != state.Reserve)
-            {
-                weapon.ReserveAmmo[0] = state.Reserve;
-                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+                Adopt(player, weapon, entries);
             }
         }
     }
@@ -204,6 +237,12 @@ public class WeaponAmmo : VipModule
 
     private void OnTick()
     {
+        if (++_reAdoptTick >= 64)
+        {
+            _reAdoptTick = 0;
+            ReAdopt();
+        }
+
         if (_states.Count == 0)
             return;
 

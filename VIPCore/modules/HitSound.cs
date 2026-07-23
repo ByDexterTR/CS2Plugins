@@ -1,9 +1,12 @@
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Cvars;
 
 namespace VIPCore;
 
 public class HitSound : VipModule
 {
+    private static ConVar? _cvFfa;
+
     private class Entry
     {
         public string Name { get; set; } = "";
@@ -31,6 +34,11 @@ public class HitSound : VipModule
             return HookResult.Continue;
 
         if (!Active(attacker))
+            return HookResult.Continue;
+
+        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
+        if (!ffa && victim.Team == attacker.Team)
             return HookResult.Continue;
 
         var entries = GroupValue<List<Entry>>(attacker) ?? new();

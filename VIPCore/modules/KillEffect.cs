@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
 
@@ -12,22 +13,30 @@ public class KillEffect : VipModule
     {
         public string Name { get; set; } = "";
         public string Particle { get; set; } = "";
+        public float Time { get; set; }
         public bool Hs { get; set; }
 
         [JsonPropertyName("lastkill")]
         public bool LastKill { get; set; }
     }
 
+    private static ConVar? _cvFfa;
+
     public override string Name => "KillEffect";
     public override string DisplayName => Core.Localizer["vip.module.killeffect"];
     public override VipFeatureType MenuType => VipFeatureType.Select;
 
-    public override List<VipFeatureOption> SelectCategories(CCSPlayerController player) => new()
+    public override List<VipFeatureOption> SelectCategories(CCSPlayerController player)
     {
-        new VipFeatureOption(Core.Localizer["vip.killeffect.normal"], "normal"),
-        new VipFeatureOption(Core.Localizer["vip.killeffect.hs"], "hs"),
-        new VipFeatureOption(Core.Localizer["vip.killeffect.last"], "last")
-    };
+        var cats = new List<VipFeatureOption>();
+        if (Entries(player, "normal").Count > 0)
+            cats.Add(new VipFeatureOption(Core.Localizer["vip.killeffect.normal"], "normal"));
+        if (Entries(player, "hs").Count > 0)
+            cats.Add(new VipFeatureOption(Core.Localizer["vip.killeffect.hs"], "hs"));
+        if (Entries(player, "last").Count > 0)
+            cats.Add(new VipFeatureOption(Core.Localizer["vip.killeffect.last"], "last"));
+        return cats;
+    }
 
     public override List<VipFeatureOption> CategoryOptions(CCSPlayerController player, string category) =>
         Entries(player, category).Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
@@ -47,6 +56,7 @@ public class KillEffect : VipModule
 
     public override void OnLoad()
     {
+        EffectHide.Ensure(Core);
         Core.RegisterEventHandler<EventPlayerDeath>(OnDeath);
         Core.RegisterListener<OnServerPrecacheResources>(manifest =>
         {
@@ -65,6 +75,11 @@ public class KillEffect : VipModule
             || attacker.Slot == victim.Slot || !Active(attacker))
             return HookResult.Continue;
 
+        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
+        if (!ffa && victim.Team == attacker.Team)
+            return HookResult.Continue;
+
         var origin = victim.PlayerPawn.Value?.AbsOrigin;
         if (origin == null)
             return HookResult.Continue;
@@ -72,11 +87,16 @@ public class KillEffect : VipModule
         string category = IsLastEnemy(victim) ? "last" : ev.Headshot ? "hs" : "normal";
         var entry = Pick(attacker, category);
 
+        if (entry == null && category == "last" && ev.Headshot)
+            entry = Pick(attacker, "hs");
+        if (entry == null && category != "normal")
+            entry = Pick(attacker, "normal");
+
         if (entry == null)
             return HookResult.Continue;
 
         var pos = new Vector(origin.X, origin.Y, origin.Z + 40f);
-        ParticleUtil.Burst(Core, entry.Particle, pos, 2.0f);
+        ParticleUtil.Burst(Core, entry.Particle, pos, entry.Time > 0 ? entry.Time : 2.0f, EffectHide.KillEffect, attacker.Slot);
         return HookResult.Continue;
     }
 

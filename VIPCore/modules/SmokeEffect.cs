@@ -13,6 +13,7 @@ public class SmokeEffect : VipModule
         [JsonPropertyName("minhp")]
         public int MinHp { get; set; } = 1;
         public int Damage { get; set; } = 2;
+        public float Time { get; set; } = 20f;
         public float Tick { get; set; } = 0.5f;
         [JsonPropertyName("smokecolor")]
         public List<int> SmokeColor { get; set; } = new() { 255, 0, 255 };
@@ -25,6 +26,7 @@ public class SmokeEffect : VipModule
     private class HealCfg
     {
         public int Heal { get; set; } = 2;
+        public float Time { get; set; } = 20f;
         public float Tick { get; set; } = 0.5f;
         [JsonPropertyName("smokecolor")]
         public List<int> SmokeColor { get; set; } = new() { 0, 255, 0 };
@@ -38,6 +40,7 @@ public class SmokeEffect : VipModule
     private class SlowCfg
     {
         public int Percent { get; set; } = 30;
+        public float Time { get; set; } = 20f;
         [JsonPropertyName("minspeed")]
         public float MinSpeed { get; set; } = 100f;
         [JsonPropertyName("smokecolor")]
@@ -62,6 +65,7 @@ public class SmokeEffect : VipModule
         public int OwnerSlot;
         public string Mode = "";
         public float NextTick;
+        public float ExpireAt;
     }
 
     private readonly List<ActiveSmoke> _smokes = new();
@@ -98,6 +102,14 @@ public class SmokeEffect : VipModule
             Array.Clear(_used);
             Array.Clear(_armed);
             return HookResult.Continue;
+        });
+        Core.RegisterListener<OnMapStart>(_ =>
+        {
+            _smokes.Clear();
+            Array.Clear(_used);
+            Array.Clear(_armed);
+            _slowed.Clear();
+            _slowedThisTick.Clear();
         });
         Core.RegisterListener<OnTick>(OnTick);
     }
@@ -164,13 +176,23 @@ public class SmokeEffect : VipModule
         if (ModeInfo(player, mode).color == null)
             return HookResult.Continue;
 
+        var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+        float time = mode switch
+        {
+            "poison" when cfg.Poison != null => cfg.Poison.Time,
+            "heal" when cfg.Heal != null => cfg.Heal.Time,
+            "slow" when cfg.Slow != null => cfg.Slow.Time,
+            _ => 0f
+        };
+
         _armed[slot]--;
         _smokes.Add(new ActiveSmoke
         {
             Pos = new Vector(ev.X, ev.Y, ev.Z),
             OwnerSlot = slot,
             Mode = mode,
-            NextTick = Server.CurrentTime
+            NextTick = Server.CurrentTime,
+            ExpireAt = time > 0 ? Server.CurrentTime + time : float.MaxValue
         });
 
         return HookResult.Continue;
@@ -192,6 +214,8 @@ public class SmokeEffect : VipModule
 
         _slowedThisTick.Clear();
         float now = Server.CurrentTime;
+
+        _smokes.RemoveAll(s => now >= s.ExpireAt);
 
         foreach (var smoke in _smokes)
         {

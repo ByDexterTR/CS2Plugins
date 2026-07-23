@@ -244,106 +244,127 @@ public partial class VIPCore
       {
         "name": "Duman",
         "particle": "particles/explosions_fx/explosion_smokegrenade_s1_child_smoke_bottom.vpcf",
+        "time": 6,
         "defuse": false
       },
       {
         "name": "Su Sicramasi",
         "particle": "particles/water_impact/water_splash_02_continuous.vpcf",
+        "time": 4,
         "defuse": false
       },
       {
         "name": "Sis",
         "particle": "particles/ambient_fx/cbbl_movie_fog.vpcf",
+        "time": 8,
         "defuse": false
       },
       {
         "name": "Bomba Ping",
         "particle": "particles/ui/hud/ui_map_bomb_plant_ping.vpcf",
+        "time": 10,
         "defuse": false
       },
       {
         "name": "Ses Patlamasi",
         "particle": "particles/ui/rank_carepackage_recieve.vpcf",
+        "time": 4,
         "defuse": true
       },
       {
         "name": "Ses Portali",
         "particle": "particles/ui/status_levels/ui_status_level_4_energycirc.vpcf",
+        "time": 4,
         "defuse": true
       },
       {
         "name": "Bariyer",
         "particle": "particles/ui/status_levels/ui_status_level_7_energycirc.vpcf",
+        "time": 3,
         "defuse": true
       },
       {
         "name": "Bariyer 2",
         "particle": "particles/ui/status_levels/ui_status_level_8_energycirc.vpcf",
+        "time": 3,
         "defuse": true
       },
       {
         "name": "Kivilcim",
         "particle": "particles/ui/status_levels/ui_status_level_7_sparkles.vpcf",
+        "time": 2,
         "defuse": true
       },
       {
         "name": "Elektrik Flare",
         "particle": "particles/generic_fx/fx_electricspark_flare.vpcf",
+        "time": 1.5,
         "defuse": true
       },
       {
         "name": "Kirmizi Isik",
         "particle": "particles/ambient_fx/aircraft_navred.vpcf",
+        "time": 10,
         "defuse": false
       },
       {
         "name": "Yesil Isik",
         "particle": "particles/ambient_fx/aircraft_navgreen.vpcf",
+        "time": 10,
         "defuse": false
       },
       {
         "name": "Baca Dumani",
         "particle": "particles/ambient_fx/ambient_smokestack.vpcf",
+        "time": 8,
         "defuse": false
       },
       {
         "name": "Sandik Dumani",
         "particle": "particles/inventory_items/crate_emission_smoke.vpcf",
+        "time": 8,
         "defuse": false
       },
       {
         "name": "Yildirim",
         "particle": "particles/environment/de_train/train_lightning.vpcf",
+        "time": 4,
         "defuse": false
       },
       {
         "name": "Helikopter Toz",
         "particle": "particles/ambient_fx/copter_land_loop_1.vpcf",
+        "time": 8,
         "defuse": false
       },
       {
         "name": "Toz Patlamasi",
         "particle": "particles/breakable_fx/breakable_dust_expl.vpcf",
+        "time": 2,
         "defuse": true
       },
       {
         "name": "Tavuk Tuyu",
         "particle": "particles/critters/chicken/chicken_gone_feathers.vpcf",
+        "time": 3,
         "defuse": true
       },
       {
         "name": "Alevli Tuy",
         "particle": "particles/critters/chicken/chicken_gone_feathers_fire.vpcf",
+        "time": 3,
         "defuse": true
       },
       {
         "name": "Zombi Tavuk",
         "particle": "particles/critters/chicken/chicken_gone_zombie.vpcf",
+        "time": 3,
         "defuse": true
       },
       {
         "name": "Toz Firtinasi",
         "particle": "particles/inventory_items/crate_impact_smoke.vpcf",
+        "time": 4,
         "defuse": true
       }
     ],
@@ -506,168 +527,196 @@ public partial class VIPCore
       {
         "name": "Simsek",
         "particle": "particles/ui/status_levels/ui_status_level7_lightning.vpcf",
+        "time": 3,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Ates",
         "particle": "particles/maps/generic/steam_fire_test.vpcf",
+        "time": 3,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Kor",
         "particle": "particles/maps/cs_office/office_child_embers01a.vpcf",
+        "time": 3,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Toz Kasirgasi",
         "particle": "particles/maps/de_dust/dust_devil_smoke.vpcf",
+        "time": 5,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Yildirim",
         "particle": "particles/ui/ui_experience_award_innerpoint.vpcf",
+        "time": 3,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Kivilcim",
         "particle": "particles/inferno_fx/firework_crate_ground_effect_fallback1.vpcf",
+        "time": 2.5,
         "hs": true,
         "lastkill": false
       },
       {
         "name": "Statik Elektrik",
         "particle": "particles/ui/ui_electric_gold.vpcf",
+        "time": 2.5,
         "hs": true,
         "lastkill": false
       },
       {
         "name": "Parilti",
         "particle": "particles/ui/ui_element_horiz_star_glow.vpcf",
+        "time": 3,
         "hs": true,
         "lastkill": false
       },
       {
         "name": "Enerji",
         "particle": "particles/ui/ui_experience_award_rollingrings.vpcf",
+        "time": 2.5,
         "hs": true,
         "lastkill": false
       },
       {
         "name": "Don",
         "particle": "particles/testsystems/test_endcap_freeze.vpcf",
+        "time": 3,
         "hs": true,
         "lastkill": false
       },
       {
         "name": "Kan Golü",
         "particle": "particles/burning_fx/gas_cannister_idle_ring_embers.vpcf",
+        "time": 4,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Patlama",
         "particle": "particles/explosions_fx/explosion_hegrenade_snow.vpcf",
+        "time": 3,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Isin",
         "particle": "particles/ui/status_levels/ui_status_level_1.vpcf",
+        "time": 2.5,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Isin 2",
         "particle": "particles/ui/status_levels/ui_status_level_2.vpcf",
+        "time": 2.5,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Ruzgar",
         "particle": "particles/ui/status_levels/ui_status_level_3d.vpcf",
+        "time": 3,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Ulti",
         "particle": "particles/ui/status_levels/ui_status_level_8.vpcf",
+        "time": 2.5,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Su Patlamasi",
         "particle": "particles/explosions_fx/explosion_hegrenade_water.vpcf",
+        "time": 2.5,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Sok Dalgasi",
         "particle": "particles/explosions_fx/bumpmine_detonate.vpcf",
+        "time": 1.5,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Sok Kivilcimi",
         "particle": "particles/explosions_fx/bumpmine_detonate_sparks.vpcf",
+        "time": 1.5,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Molotof",
         "particle": "particles/inferno_fx/explosion_molotov_air.vpcf",
+        "time": 1.5,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Yakici Bomba",
         "particle": "particles/inferno_fx/explosion_incend_air.vpcf",
+        "time": 1.5,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Tavuk",
         "particle": "particles/money_fx/moneycrate_burst.vpcf",
+        "time": 3,
         "hs": true,
         "lastkill": false
       },
       {
         "name": "Para Yagmuru",
         "particle": "particles/money_fx/moneycrate_burst_money.vpcf",
+        "time": 4,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Para Cantasi",
         "particle": "particles/money_fx/moneybag_trail.vpcf",
+        "time": 5,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Kan Suyu",
         "particle": "particles/blood_impact/blood_impact_headshot.vpcf",
+        "time": 0.5,
         "hs": true,
         "lastkill": false
       },
       {
         "name": "Gaz Carpma",
         "particle": "particles/survival_fx/gas_cannister_impact.vpcf",
+        "time": 3,
         "hs": false,
         "lastkill": true
       },
       {
         "name": "Kucuk Enerji",
         "particle": "particles/ui/ui_experience_award_rollingrings_inner.vpcf",
+        "time": 2.5,
         "hs": false,
         "lastkill": false
       },
       {
         "name": "Gen Patlama",
         "particle": "particles/ui/status_levels/ui_status_level__gen_burst.vpcf",
+        "time": 1.5,
         "hs": false,
         "lastkill": true
       }
@@ -846,6 +895,7 @@ public partial class VIPCore
       "poison": {
         "minhp": 10,
         "damage": 2,
+        "time": 20,
         "tick": 0.5,
         "radius": 180,
         "smokecolor": [
@@ -859,6 +909,7 @@ public partial class VIPCore
       },
       "heal": {
         "heal": 2,
+        "time": 20,
         "tick": 0.5,
         "radius": 180,
         "smokecolor": [
@@ -873,6 +924,7 @@ public partial class VIPCore
       },
       "slow": {
         "percent": 30,
+        "time": 20,
         "minspeed": 100,
         "radius": 180,
         "smokecolor": [

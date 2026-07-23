@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
 
@@ -11,6 +12,7 @@ public class C4Effect : VipModule
     {
         public string Name { get; set; } = "";
         public string Particle { get; set; } = "";
+        public float Time { get; set; }
         public bool Defuse { get; set; }
     }
 
@@ -20,11 +22,15 @@ public class C4Effect : VipModule
     public override string DisplayName => Core.Localizer["vip.module.c4effect"];
     public override VipFeatureType MenuType => VipFeatureType.Select;
 
-    public override List<VipFeatureOption> SelectCategories(CCSPlayerController player) => new()
+    public override List<VipFeatureOption> SelectCategories(CCSPlayerController player)
     {
-        new VipFeatureOption(Core.Localizer["vip.c4effect.plant"], "plant"),
-        new VipFeatureOption(Core.Localizer["vip.c4effect.defuse"], "defuse")
-    };
+        var cats = new List<VipFeatureOption>();
+        if (Entries(player, "plant").Count > 0)
+            cats.Add(new VipFeatureOption(Core.Localizer["vip.c4effect.plant"], "plant"));
+        if (Entries(player, "defuse").Count > 0)
+            cats.Add(new VipFeatureOption(Core.Localizer["vip.c4effect.defuse"], "defuse"));
+        return cats;
+    }
 
     public override List<VipFeatureOption> CategoryOptions(CCSPlayerController player, string category) =>
         Entries(player, category).Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
@@ -39,6 +45,7 @@ public class C4Effect : VipModule
 
     public override void OnLoad()
     {
+        EffectHide.Ensure(Core);
         Core.RegisterEventHandler<EventBombPlanted>(OnPlanted);
         Core.RegisterEventHandler<EventBombDefused>(OnDefused);
         Core.RegisterEventHandler<EventBombExploded>((_, __) => { RemovePlantParticle(); return HookResult.Continue; });
@@ -73,6 +80,7 @@ public class C4Effect : VipModule
         if (entry == null)
             return HookResult.Continue;
 
+        int planterSlot = player!.Slot;
         Server.NextFrame(() =>
         {
             var c4 = Utilities.FindAllEntitiesByDesignerName<CPlantedC4>("planted_c4").FirstOrDefault(c => c != null && c.IsValid);
@@ -80,7 +88,15 @@ public class C4Effect : VipModule
                 return;
 
             RemovePlantParticle();
-            _plantParticle = ParticleUtil.Spawn(entry.Particle, c4.AbsOrigin, c4);
+            var particle = ParticleUtil.Spawn(entry.Particle, c4.AbsOrigin, c4, EffectHide.C4Effect, planterSlot);
+            _plantParticle = particle;
+
+            if (particle != null && entry.Time > 0)
+                Core.AddTimer(entry.Time, () =>
+                {
+                    if (ReferenceEquals(_plantParticle, particle))
+                        RemovePlantParticle();
+                }, TimerFlags.STOP_ON_MAPCHANGE);
         });
 
         return HookResult.Continue;
@@ -119,7 +135,7 @@ public class C4Effect : VipModule
         }
 
         var pos = new Vector(bombPos.X, bombPos.Y, bombPos.Z + 10f);
-        ParticleUtil.Burst(Core, entry.Particle, pos, 3.0f);
+        ParticleUtil.Burst(Core, entry.Particle, pos, entry.Time > 0 ? entry.Time : 3.0f, EffectHide.C4Effect, player!.Slot);
         return HookResult.Continue;
     }
 

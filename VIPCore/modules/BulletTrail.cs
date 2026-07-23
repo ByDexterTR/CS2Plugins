@@ -25,7 +25,11 @@ public class BulletTrail : VipModule
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player) =>
         TrailBeam.ParseColorOptions(GroupValue<Cfg>(player)?.Colors ?? new());
 
-    public override void OnLoad() => Core.RegisterEventHandler<EventBulletImpact>(OnImpact);
+    public override void OnLoad()
+    {
+        EffectHide.Ensure(Core);
+        Core.RegisterEventHandler<EventBulletImpact>(OnImpact);
+    }
 
     private HookResult OnImpact(EventBulletImpact ev, GameEventInfo info)
     {
@@ -48,7 +52,7 @@ public class BulletTrail : VipModule
 
         string setting = Setting(player);
         var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(player.Slot) : TrailBeam.Resolve(setting);
-        TrailBeam.Create(Core, eye, impact, color, cfg.Width, cfg.Lifetime);
+        TrailBeam.Create(Core, eye, impact, color, cfg.Width, cfg.Lifetime, EffectHide.BulletTrail, player.Slot);
         return HookResult.Continue;
     }
 }

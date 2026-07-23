@@ -42,6 +42,7 @@ public class SaySound : VipModule
 
     public override void OnLoad()
     {
+        EffectHide.Ensure(Core);
         Core.AddCommandListener("say", (p, info) => Handle(p, info, false), HookMode.Post);
         Core.AddCommandListener("say_team", (p, info) => Handle(p, info, true), HookMode.Post);
         Core.RegisterListener<CounterStrikeSharp.API.Core.Listeners.OnMapStart>(_ => Array.Clear(_lastPlay));
@@ -72,6 +73,12 @@ public class SaySound : VipModule
             if (target == null || !target.IsValid || target.IsBot)
                 continue;
             if (teamOnly && target.Team != player.Team)
+                continue;
+
+            byte mode = EffectHide.Mode(target.Slot, EffectHide.SaySound);
+            if (mode == EffectHide.ModeOff)
+                continue;
+            if (mode == EffectHide.ModeSelf && target.Slot != player.Slot)
                 continue;
 
             target.ExecuteClientCommand($"play {entry.Path}");

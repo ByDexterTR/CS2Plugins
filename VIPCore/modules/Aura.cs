@@ -99,7 +99,23 @@ public class Aura : VipModule
         return options;
     }
 
-    public override void OnLoad() => Core.RegisterListener<OnTick>(OnTick);
+    public override void OnLoad()
+    {
+        Core.RegisterListener<OnTick>(OnTick);
+        Core.RegisterEventHandler<EventRoundEnd>((_, __) => { ClearRings(); return HookResult.Continue; });
+        Core.RegisterEventHandler<EventRoundStart>((_, __) =>
+        {
+            ClearRings();
+            Array.Clear(_nextEffectTick);
+            return HookResult.Continue;
+        });
+    }
+
+    private void ClearRings()
+    {
+        foreach (var slot in _rings.Keys.ToList())
+            RemoveRing(slot);
+    }
 
     public override void OnUnload()
     {
@@ -274,7 +290,15 @@ public class Aura : VipModule
 
     private void UpdateRing(int slot, Vector center, float radius, Color color)
     {
-        if (!_rings.TryGetValue(slot, out var beams))
+        List<CBeam>? beams = _rings.TryGetValue(slot, out var existing) ? existing : null;
+
+        if (beams != null && (beams.Count == 0 || beams[0] == null || !beams[0].IsValid))
+        {
+            RemoveRing(slot);
+            beams = null;
+        }
+
+        if (beams == null)
         {
             beams = new List<CBeam>();
             for (int i = 0; i < Segments; i++)

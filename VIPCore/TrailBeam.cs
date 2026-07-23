@@ -55,11 +55,18 @@ public static class TrailBeam
         return options;
     }
 
-    public static void Create(BasePlugin plugin, Vector from, Vector to, Color color, float width, float lifetime)
+    public static void Create(BasePlugin plugin, Vector from, Vector to, Color color, float width, float lifetime,
+        int hideModule = -1, int ownerSlot = -1)
     {
+        if (hideModule >= 0 && !EffectHide.AnyViewer(hideModule, ownerSlot))
+            return;
+
         var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam");
         if (beam == null || !beam.IsValid)
             return;
+
+        if (hideModule >= 0)
+            EffectHide.Track(hideModule, beam.Index, ownerSlot);
 
         beam.Width = width;
         beam.Render = color;

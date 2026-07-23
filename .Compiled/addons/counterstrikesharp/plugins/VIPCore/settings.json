@@ -1,6 +1,6 @@
 {
   "storage": "json",
-  "menu_type": "hud",
+  "menu_type": "wasd",
   "admin_flag": "@css/root",
   "commands": {
     "menu": "css_vip,css_vipmenu",
@@ -10,7 +10,8 @@
     "removevip": "css_removevip,css_delvip",
     "reload": "css_reloadvip,css_vipreload",
     "tp": "css_tp,css_thirdperson",
-    "updateuser": "css_updatevip,css_vipupdate"
+    "updateuser": "css_updatevip,css_vipupdate",
+    "hidevip": "css_hidevip,css_hidefx"
   },
   "buy_commands": {
     "galil": "css_galil",
@@ -31,6 +32,15 @@
     "scar20": "css_scar20",
     "mp9": "css_mp9",
     "usp": "css_usp,css_usps"
+  },
+  "hide": {
+    "BulletTrail": "all",
+    "C4Effect": "all",
+    "KillEffect": "all",
+    "PlayerTrail": "all",
+    "PlayerGlow": "self",
+    "GrenadeTrail": "all",
+    "SaySound": "all"
   },
   "mysql": {
     "host": "",

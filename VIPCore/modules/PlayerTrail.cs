@@ -29,6 +29,7 @@ public class PlayerTrail : VipModule
         for (int i = 0; i < 64; i++)
             _last[i] = new Vector(0, 0, 0);
 
+        EffectHide.Ensure(Core);
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
         Core.RegisterListener<OnTick>(OnTick);
     }
@@ -73,7 +74,7 @@ public class PlayerTrail : VipModule
                 var cfg = GroupValue<Cfg>(player) ?? new Cfg();
                 string setting = Setting(player);
                 var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(slot) : TrailBeam.Resolve(setting);
-                TrailBeam.Create(Core, origin, last, color, cfg.Width, cfg.Lifetime);
+                TrailBeam.Create(Core, origin, last, color, cfg.Width, cfg.Lifetime, EffectHide.PlayerTrail, slot);
             }
 
             last.X = origin.X; last.Y = origin.Y; last.Z = origin.Z;

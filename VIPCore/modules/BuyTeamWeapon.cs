@@ -80,6 +80,12 @@ public class BuyTeamWeapon : VipModule
             return;
         }
 
+        if (Core.IsBuyTimeEnded())
+        {
+            Reply(info, Core.Localizer["vip.buy_time_over"]);
+            return;
+        }
+
         var money = player.InGameMoneyServices;
         if (money == null)
             return;

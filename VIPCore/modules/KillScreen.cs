@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Cvars;
 
 namespace VIPCore;
 
@@ -10,6 +11,8 @@ public class KillScreen : VipModule
         public float Duration { get; set; } = 1.0f;
     }
 
+    private static ConVar? _cvFfa;
+
     public override string Name => "KillScreen";
     public override string DisplayName => Core.Localizer["vip.module.killscreen"];
 
@@ -18,7 +21,13 @@ public class KillScreen : VipModule
     private HookResult OnDeath(EventPlayerDeath ev, GameEventInfo info)
     {
         var attacker = ev.Attacker;
-        if (!Active(attacker) || ev.Userid?.Slot == attacker!.Slot)
+        var victim = ev.Userid;
+        if (!Active(attacker) || victim == null || !victim.IsValid || victim.Slot == attacker!.Slot)
+            return HookResult.Continue;
+
+        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
+        if (!ffa && victim.Team == attacker.Team)
             return HookResult.Continue;
 
         var pawn = attacker!.PlayerPawn.Value;

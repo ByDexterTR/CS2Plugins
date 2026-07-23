@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.0.7";
+    public override string ModuleVersion => "1.0.8";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -77,6 +77,14 @@ public partial class VIPCore : BasePlugin
             _gameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
 
         return _gameRulesProxy?.GameRules?.FreezePeriod == true;
+    }
+
+    public bool IsBuyTimeEnded()
+    {
+        if (_gameRulesProxy == null || !_gameRulesProxy.IsValid)
+            _gameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
+
+        return _gameRulesProxy?.GameRules?.BuyTimeEnded == true;
     }
 
     private ConVar? _cvHalftime;

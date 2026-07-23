@@ -17,6 +17,53 @@ public partial class VIPCore
         Register(Config.Commands.RemoveVip, OnRemoveVipCommand);
         Register(Config.Commands.Reload, OnVipReloadCommand);
         Register(Config.Commands.UpdateUser, OnUpdateVipCommand);
+        Register(Config.Commands.HideVip, OnHideVipCommand);
+    }
+
+    public void OnHideVipCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player == null || !player.IsValid || player.IsBot)
+            return;
+
+        EffectHide.Ensure(this);
+        EffectHide.LoadPrefs(player);
+        OpenHideVipMenu(player);
+    }
+
+    private void OpenHideVipMenu(CCSPlayerController player)
+    {
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>();
+
+        for (int m = 0; m < EffectHide.ModuleCount; m++)
+        {
+            if (EffectHide.Locked(m))
+                continue;
+
+            int module = m;
+            string display = Localizer["vip.module." + EffectHide.Names[module].ToLowerInvariant()];
+            byte mode = EffectHide.Mode(player.Slot, module);
+            string label = mode switch
+            {
+                EffectHide.ModeSelf => $"{CC.Yellow}{Localizer["vip.hide.self"]}{CC.Default}",
+                EffectHide.ModeOff => $"{CC.Red}{Localizer["vip.hide.off"]}{CC.Default}",
+                _ => $"{CC.Green}{Localizer["vip.hide.all"]}{CC.Default}"
+            };
+
+            items.Add(($"{display}: {label}", p =>
+            {
+                byte next = (byte)((EffectHide.Mode(p.Slot, module) + 1) % 3);
+                EffectHide.SetMode(p, module, next);
+                OpenHideVipMenu(p);
+            }));
+        }
+
+        if (items.Count == 0)
+        {
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.menu_empty"]}");
+            return;
+        }
+
+        OpenMenu(player, Localizer["vip.hidevip_title"], items);
     }
 
     private readonly HashSet<string> _registeredCommands = new(StringComparer.OrdinalIgnoreCase);
@@ -31,6 +78,9 @@ public partial class VIPCore
     public void RegisterAliasedCommand(string names, CommandInfo.CommandCallback handler) => Register(names, handler);
 
     public string TpCommands => Config.Commands.Tp;
+
+    public string HideDefault(string module) =>
+        Config.Hide.TryGetValue(module, out var value) && !string.IsNullOrWhiteSpace(value) ? value : "all";
 
     public string BuyCommandNames(string key) =>
         Config.BuyCommands.TryGetValue(key, out var names) && !string.IsNullOrWhiteSpace(names)

@@ -39,6 +39,18 @@ public class VipConfig
         ["usp"] = "css_usp,css_usps"
     };
 
+    [JsonPropertyName("hide")]
+    public Dictionary<string, string> Hide { get; set; } = new()
+    {
+        ["BulletTrail"] = "all",
+        ["C4Effect"] = "all",
+        ["KillEffect"] = "all",
+        ["PlayerTrail"] = "all",
+        ["PlayerGlow"] = "self",
+        ["GrenadeTrail"] = "all",
+        ["SaySound"] = "all"
+    };
+
     [JsonPropertyName("mysql")]
     public MySqlSettings MySql { get; set; } = new();
 }
@@ -53,6 +65,7 @@ public class CommandNames
     [JsonPropertyName("reload")] public string Reload { get; set; } = "css_reloadvip,css_vipreload";
     [JsonPropertyName("tp")] public string Tp { get; set; } = "css_tp,css_thirdperson";
     [JsonPropertyName("updateuser")] public string UpdateUser { get; set; } = "css_updatevip,css_vipupdate";
+    [JsonPropertyName("hidevip")] public string HideVip { get; set; } = "css_hidevip,css_hidefx";
 }
 
 public class MySqlSettings

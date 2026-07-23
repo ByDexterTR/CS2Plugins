@@ -25,6 +25,7 @@ public class PlayerGlow : VipModule
 
     public override void OnLoad()
     {
+        EffectHide.Ensure(Core);
         Core.RegisterListener<OnTick>(OnTick);
         Core.RegisterEventHandler<EventRoundStart>((_, _) => { Array.Clear(_glows); return HookResult.Continue; });
     }
@@ -90,6 +91,9 @@ public class PlayerGlow : VipModule
 
     private (uint, uint)? Create(CCSPlayerController player)
     {
+        if (!EffectHide.AnyViewer(EffectHide.PlayerGlow, player.Slot))
+            return null;
+
         var pawn = player.PlayerPawn.Value;
         if (pawn == null || !pawn.IsValid)
             return null;
@@ -130,6 +134,8 @@ public class PlayerGlow : VipModule
 
         relay.AcceptInput("FollowEntity", pawn, relay, "!activator");
         glow.AcceptInput("FollowEntity", relay, glow, "!activator");
+
+        EffectHide.Track(EffectHide.PlayerGlow, glow.Index, player.Slot);
 
         return (glow.Index, relay.Index);
     }
