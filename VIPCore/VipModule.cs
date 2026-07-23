@@ -21,6 +21,34 @@ public abstract class VipModule
     public virtual void OnUnload() { }
     public virtual void OnSelect(CCSPlayerController player, string value) { }
 
+    private int[]? _limitUsed;
+    private int _limitRound = int.MinValue;
+
+    private void SyncLimitRound()
+    {
+        int round = Core.RoundNumber;
+        if (_limitRound == round)
+            return;
+        _limitRound = round;
+        (_limitUsed ??= new int[64]).AsSpan().Clear();
+    }
+
+    protected bool LimitReached(int slot, int limit)
+    {
+        if (limit <= 0 || slot < 0 || slot >= 64)
+            return false;
+        SyncLimitRound();
+        return _limitUsed![slot] >= limit;
+    }
+
+    protected void LimitUse(int slot)
+    {
+        if (slot < 0 || slot >= 64)
+            return;
+        SyncLimitRound();
+        _limitUsed![slot]++;
+    }
+
     protected bool IsCurrent => ReferenceEquals(Core, VIPCore.Current);
 
     protected bool Active(CCSPlayerController? player) => IsCurrent && player != null && Core.IsActive(player, Name);

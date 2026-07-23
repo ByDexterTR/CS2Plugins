@@ -54,7 +54,7 @@ public partial class VIPCore
     },
     "FallDamage": {
       "percent": 50,
-      "count": 0
+      "limit": 0
     },
     "Fov": [
       50,
@@ -96,7 +96,10 @@ public partial class VIPCore
       "Beyaz #FFFFFF",
       "Kirmizi #FF0000"
     ],
-    "SpawnProtection": 2,
+    "SpawnProtection": {
+      "time": 2,
+      "limit": 0
+    },
     "Tag": {
       "tag": "{BlueGrey}[LITE]",
       "name_color": "bluegrey",
@@ -116,11 +119,13 @@ public partial class VIPCore
     "AntiFlash": {
       "self": true,
       "enemy": true,
-      "teammates": true
+      "teammates": true,
+      "limit": 0
     },
     "AntiHS": {
       "percent": 0,
-      "only_with_weapon": ""
+      "only_with_weapon": "",
+      "limit": 0
     },
     "Armor": {
       "value": 100,
@@ -182,7 +187,8 @@ public partial class VIPCore
     "AutoHS": {
       "multiplier": 4,
       "only_with_weapon": "",
-      "ignore_teammates": true
+      "ignore_teammates": true,
+      "limit": 0
     },
     "Berserk": {
       "dpk": 0.2,
@@ -379,13 +385,15 @@ public partial class VIPCore
       "percent": 50,
       "only_with_weapon": "",
       "ignore_teammates": true,
-      "ignore_self": true
+      "ignore_self": true,
+      "limit": 0
     },
     "DamageResist": {
       "percent": 40,
       "only_with_weapon": "",
       "ignore_teammates": true,
-      "ignore_self": true
+      "ignore_self": true,
+      "limit": 0
     },
     "Dash": {
       "limit": 3,
@@ -421,7 +429,7 @@ public partial class VIPCore
     },
     "FallDamage": {
       "percent": 0,
-      "count": 0
+      "limit": 0
     },
     "FastDefuse": {
       "time": 1,
@@ -432,7 +440,8 @@ public partial class VIPCore
       "immune_while_burning": true
     },
     "FastReload": {
-      "only_with_weapon": ""
+      "only_with_weapon": "",
+      "limit": 0
     },
     "Fov": [
       50,
@@ -458,7 +467,8 @@ public partial class VIPCore
     "GiveZeus": true,
     "Glaz": true,
     "GlueGrenade": {
-      "only_grenades": "flashbang,hegrenade"
+      "only_grenades": "flashbang,hegrenade",
+      "limit": 0
     },
     "Gravity": [
       1,
@@ -477,7 +487,8 @@ public partial class VIPCore
       "percent": 50,
       "only_with_grenade": "he,molotov,inferno",
       "ignore_teammates": true,
-      "ignore_self": true
+      "ignore_self": true,
+      "limit": 0
     },
     "GrenadeTrail": {
       "width": 1.5,
@@ -741,7 +752,8 @@ public partial class VIPCore
       "strength": 30,
       "ignore_teammates": true,
       "ignore_enemy": false,
-      "ignore_self": true
+      "ignore_self": true,
+      "limit": 0
     },
     "Mole": {
       "time": 2.5,
@@ -752,7 +764,8 @@ public partial class VIPCore
       "ignore_self": true
     },
     "OneShot": {
-      "weapons": "weapon_awp,weapon_ssg08"
+      "weapons": "weapon_awp,weapon_ssg08",
+      "limit": 0
     },
     "PistolRoundDisable": [
       "GiveWeapon",
@@ -820,18 +833,44 @@ public partial class VIPCore
         "Mor #A020F0"
       ]
     },
-    "PoisonBullet": {
-      "minhp": 10,
-      "damage": 2,
-      "damagetick": 1,
-      "only_with_weapon": "",
-      "ignore_teammates": true
+    "BulletEffect": {
+      "poison": {
+        "damage": 2,
+        "tick": 0.5,
+        "duration": 3,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "slow": {
+        "percent": 20,
+        "duration": 3,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "lower": {
+        "size": 0.85,
+        "duration": 5,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "upper": {
+        "size": 1.25,
+        "duration": 5,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "only_with_weapon": ""
     },
     "Pyro": {
       "multiplier": 1.5,
       "ignore_teammates": false,
       "ignore_enemy": true,
-      "ignore_self": false
+      "ignore_self": false,
+      "limit": 0
     },
     "RadarHack": {
       "duration_on": 1,
@@ -846,11 +885,12 @@ public partial class VIPCore
       "max_per_shot": 100,
       "only_with_weapon": "",
       "ignore_teammates": true,
-      "ignore_self": true
+      "ignore_self": true,
+      "limit": 0
     },
     "Respawn": {
       "limit": 1,
-      "timer": 3
+      "time": 3
     },
     "Sacrifice": {
       "hp": 25,
@@ -938,7 +978,10 @@ public partial class VIPCore
         "limit": 0
       }
     },
-    "SpawnProtection": 4,
+    "SpawnProtection": {
+      "time": 4,
+      "limit": 0
+    },
     "Spy": true,
     "Tag": {
       "tag": "{Gold}[{Orchid}PLUS{Gold}]",

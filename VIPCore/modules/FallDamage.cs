@@ -8,7 +8,7 @@ public class FallDamage : VipModule
     private class Cfg
     {
         public int Percent { get; set; } = 100;
-        public int Count { get; set; } = 0;
+        public int Limit { get; set; } = 0;
     }
 
     private readonly int[] _used = new int[64];
@@ -44,7 +44,7 @@ public class FallDamage : VipModule
         if (cfg.Percent >= 100)
             return HookResult.Continue;
 
-        if (cfg.Count > 0 && _used[slot] >= cfg.Count)
+        if (cfg.Limit > 0 && _used[slot] >= cfg.Limit)
             return HookResult.Continue;
 
         if (cfg.Percent <= 0)

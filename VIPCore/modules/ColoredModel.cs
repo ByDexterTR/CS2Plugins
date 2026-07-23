@@ -14,6 +14,8 @@ public class ColoredModel : VipModule
         TrailBeam.ParseColorOptions(GroupValue<List<string>>(player) ?? new());
 
     private readonly bool[] _applied = new bool[64];
+    private readonly int[] _lastArgb = new int[64];
+    private readonly bool[] _external = new bool[64];
 
     public override void OnLoad() => Core.RegisterListener<OnTick>(OnTick);
 
@@ -40,23 +42,40 @@ public class ColoredModel : VipModule
                     _applied[slot] = false;
                     Reset(slot);
                 }
+                _external[slot] = false;
                 continue;
             }
+
+            if (_external[slot])
+                continue;
 
             var pawn = player.PlayerPawn.Value;
             if (pawn == null || !pawn.IsValid)
                 continue;
 
-            _applied[slot] = true;
+            var current = pawn.Render;
+            if (_applied[slot] && current.ToArgb() != _lastArgb[slot])
+            {
+                _external[slot] = true;
+                _applied[slot] = false;
+                continue;
+            }
+
             string setting = Setting(player);
             var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(slot) : TrailBeam.Resolve(setting);
             int alpha = PlayerModel.LegsHidden(slot) ? 254 : 255;
-            var current = pawn.Render;
-            if (current.A == alpha && current.R == color.R && current.G == color.G && current.B == color.B)
-                continue;
+            var target = System.Drawing.Color.FromArgb(alpha, color.R, color.G, color.B);
 
-            pawn.Render = System.Drawing.Color.FromArgb(alpha, color.R, color.G, color.B);
+            _applied[slot] = true;
+            if (current.ToArgb() == target.ToArgb())
+            {
+                _lastArgb[slot] = target.ToArgb();
+                continue;
+            }
+
+            pawn.Render = target;
             Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+            _lastArgb[slot] = target.ToArgb();
         }
     }
 

@@ -41,6 +41,9 @@ public class SmokeColor : VipModule
             if (Core.IsActive(controller!, "SmokeEffect"))
                 return;
 
+            if (smoke.SmokeColor.X != 0f || smoke.SmokeColor.Y != 0f || smoke.SmokeColor.Z != 0f)
+                return;
+
             string setting = Setting(controller!);
             int r, g, b;
             if (TrailBeam.IsRandom(setting))

@@ -10,7 +10,7 @@ public class Respawn : VipModule
     private class Cfg
     {
         public int Limit { get; set; } = 1;
-        public float Timer { get; set; } = 3f;
+        public float Time { get; set; } = 3f;
     }
 
     private readonly int[] _used = new int[64];
@@ -45,7 +45,7 @@ public class Respawn : VipModule
         int round = _round;
         int userId = player!.UserId ?? -1;
 
-        Core.AddTimer(Math.Max(cfg.Timer, 0.1f), () =>
+        Core.AddTimer(Math.Max(cfg.Time, 0.1f), () =>
         {
             if (round != _round || userId < 0)
                 return;

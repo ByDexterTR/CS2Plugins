@@ -10,6 +10,7 @@ public class AntiFlash : VipModule
         public bool Self { get; set; } = true;
         public bool Enemy { get; set; } = true;
         public bool Teammates { get; set; } = true;
+        public int Limit { get; set; } = 0;
     }
 
     public override string Name => "AntiFlash";
@@ -42,9 +43,13 @@ public class AntiFlash : VipModule
 
         if (block)
         {
+            if (LimitReached(victim.Slot, cfg.Limit))
+                return HookResult.Continue;
+
             pawn.FlashDuration = 0f;
             pawn.FlashMaxAlpha = 0f;
             pawn.BlindUntilTime = Server.CurrentTime;
+            LimitUse(victim.Slot);
         }
 
         return HookResult.Continue;

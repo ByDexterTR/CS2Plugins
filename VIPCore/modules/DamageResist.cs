@@ -11,6 +11,7 @@ public class DamageResist : VipModule
         public string OnlyWithWeapon { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
+        public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
@@ -45,6 +46,11 @@ public class DamageResist : VipModule
         var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(victim!)))
             return HookResult.Continue;
+
+        if (LimitReached(victim!.Slot, cfg.Limit))
+            return HookResult.Continue;
+
+        LimitUse(victim.Slot);
 
         if (cfg.Percent >= 100)
         {

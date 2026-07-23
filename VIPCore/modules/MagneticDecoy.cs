@@ -14,6 +14,7 @@ public class MagneticDecoy : VipModule
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreEnemy { get; set; } = false;
         public bool IgnoreSelf { get; set; } = true;
+        public int Limit { get; set; } = 0;
     }
 
     private class ActiveDecoy
@@ -41,10 +42,15 @@ public class MagneticDecoy : VipModule
         if (!Active(player))
             return HookResult.Continue;
 
+        var cfg = GroupValue<Cfg>(player!) ?? new Cfg();
+        if (LimitReached(player!.Slot, cfg.Limit))
+            return HookResult.Continue;
+
+        LimitUse(player.Slot);
         _decoys[ev.Entityid] = new ActiveDecoy
         {
             Pos = new Vector(ev.X, ev.Y, ev.Z),
-            OwnerSlot = player!.Slot
+            OwnerSlot = player.Slot
         };
 
         return HookResult.Continue;

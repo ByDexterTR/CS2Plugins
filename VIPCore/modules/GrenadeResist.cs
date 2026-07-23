@@ -11,6 +11,7 @@ public class GrenadeResist : VipModule
         public string OnlyWithGrenade { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
+        public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithGrenade);
@@ -52,6 +53,10 @@ public class GrenadeResist : VipModule
         if (allow.Count > 0 && !allow.Any(a => TypeMatches(a, isBlast, isBurn)))
             return HookResult.Continue;
 
+        if (LimitReached(victim!.Slot, cfg.Limit))
+            return HookResult.Continue;
+
+        LimitUse(victim.Slot);
         info.Damage *= 1f - Math.Min(cfg.Percent, 100) / 100f;
         return HookResult.Changed;
     }

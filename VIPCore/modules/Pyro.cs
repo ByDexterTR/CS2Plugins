@@ -11,6 +11,7 @@ public class Pyro : VipModule
         public bool IgnoreTeammates { get; set; } = false;
         public bool IgnoreEnemy { get; set; } = true;
         public bool IgnoreSelf { get; set; } = false;
+        public int Limit { get; set; } = 0;
     }
 
     private static readonly Cfg DefaultCfg = new();
@@ -58,8 +59,12 @@ public class Pyro : VipModule
         int newHp = Math.Min(pawn.Health + heal, maxHp);
         if (newHp > pawn.Health)
         {
+            if (LimitReached(attacker.Slot, cfg.Limit))
+                return HookResult.Continue;
+
             pawn.Health = newHp;
             Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+            LimitUse(attacker.Slot);
         }
 
         return HookResult.Continue;

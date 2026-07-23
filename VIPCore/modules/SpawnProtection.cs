@@ -7,6 +7,12 @@ namespace VIPCore;
 
 public class SpawnProtection : VipModule
 {
+    private class Cfg
+    {
+        public float Time { get; set; } = 2f;
+        public int Limit { get; set; } = 0;
+    }
+
     private readonly float[] _until = new float[64];
 
     public override string Name => "SpawnProtection";
@@ -31,11 +37,25 @@ public class SpawnProtection : VipModule
             return HookResult.Continue;
         }
 
-        float seconds = GroupValue<float>(player!);
+        var cfg = GroupValue<Cfg>(player!) ?? new Cfg();
+        if (LimitReached(slot, cfg.Limit))
+        {
+            _until[slot] = 0f;
+            return HookResult.Continue;
+        }
+
+        float seconds = cfg.Time;
+        if (seconds <= 0f)
+        {
+            _until[slot] = 0f;
+            return HookResult.Continue;
+        }
+
+        LimitUse(slot);
         float until = Server.CurrentTime + seconds;
         _until[slot] = until;
 
-        if (seconds <= 0f || player!.IsBot)
+        if (player!.IsBot)
             return HookResult.Continue;
 
         player.PrintToChat($" {CC.Orchid}{Core.Localizer["chat_prefix"]}{CC.Default} {Core.Localizer["vip.spawnprot.start", (int)seconds]}");

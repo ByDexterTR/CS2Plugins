@@ -8,6 +8,7 @@ public class GlueGrenade : VipModule
     private class Cfg
     {
         public string OnlyGrenades { get; set; } = "";
+        public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyGrenades);
@@ -43,6 +44,10 @@ public class GlueGrenade : VipModule
                 return;
         }
 
+        if (LimitReached(player!.Slot, cfg.Limit))
+            return;
+
         grenade.Bounces = 555;
+        LimitUse(player.Slot);
     }
 }

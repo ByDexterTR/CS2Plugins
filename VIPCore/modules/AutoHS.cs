@@ -10,6 +10,7 @@ public class AutoHS : VipModule
         public float Multiplier { get; set; } = 4f;
         public string OnlyWithWeapon { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
+        public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
@@ -79,7 +80,11 @@ public class AutoHS : VipModule
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker)))
             return HookResult.Continue;
 
+        if (LimitReached(attacker.Slot, cfg.Limit))
+            return HookResult.Continue;
+
         info.Damage *= cfg.Multiplier;
+        LimitUse(attacker.Slot);
         return HookResult.Changed;
     }
 }

@@ -10,6 +10,7 @@ public class AntiHS : VipModule
     {
         public int Percent { get; set; } = 0;
         public string OnlyWithWeapon { get; set; } = "";
+        public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
@@ -47,8 +48,12 @@ public class AntiHS : VipModule
         if (restore <= 0)
             return HookResult.Continue;
 
+        if (LimitReached(victim.Slot, cfg.Limit))
+            return HookResult.Continue;
+
         pawn.Health = Math.Min(pawn.Health + restore, pawn.MaxHealth);
         Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+        LimitUse(victim.Slot);
         return HookResult.Continue;
     }
 }

@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.0.8";
+    public override string ModuleVersion => "1.0.9";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -31,6 +31,8 @@ public partial class VIPCore : BasePlugin
     private Dictionary<string, HashSet<string>> _pistolDisable = new();
     private readonly Dictionary<ulong, Dictionary<string, string?>> _pendingSettings = new();
     private bool _isPistolRound;
+    private int _roundNumber;
+    public int RoundNumber => _roundNumber;
     private List<CCSPlayerController> _tickPlayers = new();
     private int _tickPlayersAt = -1;
     private readonly object _lock = new();
@@ -139,6 +141,7 @@ public partial class VIPCore : BasePlugin
         RegisterEventHandler<EventRoundStart>((_, __) =>
         {
             _isPistolRound = IsPistolRound();
+            _roundNumber++;
             RollRoundColors();
             return HookResult.Continue;
         });

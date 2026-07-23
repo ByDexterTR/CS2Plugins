@@ -54,7 +54,11 @@ public class PlayerSize : VipModule
 
         var skeleton = pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance();
         if (skeleton != null)
+        {
+            if (Math.Abs(skeleton.Scale - 1f) > 0.01f && Math.Abs(skeleton.Scale - scale) > 0.01f)
+                return;
             skeleton.Scale = scale;
+        }
 
         pawn.AcceptInput("SetScale", null, null, scale.ToString(CultureInfo.InvariantCulture));
         Server.NextFrame(() =>

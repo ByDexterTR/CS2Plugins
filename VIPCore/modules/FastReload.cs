@@ -8,6 +8,7 @@ public class FastReload : VipModule
     private class Cfg
     {
         public string OnlyWithWeapon { get; set; } = "";
+        public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
@@ -53,9 +54,15 @@ public class FastReload : VipModule
         if (weapon.ReserveAmmo.Length == 0 || weapon.ReserveAmmo[0] <= 0)
             return HookResult.Continue;
 
-        var allow = (GroupValue<Cfg>(player) ?? DefaultCfg).Allow;
+        var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(player)))
             return HookResult.Continue;
+
+        if (LimitReached(player.Slot, cfg.Limit))
+            return HookResult.Continue;
+
+        LimitUse(player.Slot);
 
         int reserve = weapon.ReserveAmmo[0];
 

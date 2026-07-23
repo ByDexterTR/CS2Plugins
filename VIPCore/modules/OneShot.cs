@@ -8,6 +8,7 @@ public class OneShot : VipModule
     private class Cfg
     {
         public string Weapons { get; set; } = "";
+        public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(Weapons);
@@ -29,11 +30,16 @@ public class OneShot : VipModule
         if (!Active(attacker))
             return HookResult.Continue;
 
-        var allow = (GroupValue<Cfg>(attacker!) ?? DefaultCfg).Allow;
+        var cfg = GroupValue<Cfg>(attacker!) ?? DefaultCfg;
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
             return HookResult.Continue;
 
+        if (LimitReached(attacker!.Slot, cfg.Limit))
+            return HookResult.Continue;
+
         info.Damage = 1000f;
+        LimitUse(attacker.Slot);
         return HookResult.Changed;
     }
 }
