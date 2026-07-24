@@ -174,7 +174,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `KillHeal` | Öldürme şekline göre can yeniler: `distance` içinde `hp` (veya `money`) anahtarı | `{ "headshot": 15, "noscope": 10, "inair": 20, "blind": 5, "distance": { "unit": 2048, "hp": 10 }, "weapon_knife": 50 }` |
 | `KillScreen` | Öldürme ekran efekti (FFA kapalıysa takım arkadaşında çalışmaz) | `{ "duration": 1.0 }` |
 | `MagneticDecoy` | Decoy yere düşüp öttüğü sürece `radius` içindekileri kendine çeker; çekim mesafeyle azalır (`strength` taban güç); `limit` raunt başına kaç decoy | `{ "radius": 180, "strength": 30, "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
-| `Mole` | Hasar verilen oyuncu `time` saniye `unit` birim yere gömülür ve hareket edemez | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true }` |
+| `Mole` | Hasar verilen oyuncu `time` saniye `unit` birim yere gömülür ve hareket edemez; `limit` raunt başına kaç gömme (0=sınırsız) | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
 | `OneShot` | Belirli silahlarla tek atış | `{ "weapons": "weapon_awp,weapon_ssg08", "limit": 0 }` |
 | `PistolRoundDisable` | Listelenen modüller pistol rauntlarda devre dışı kalır (modül değil, grup ayarı) | `["GiveWeapon", "WeaponAmmo"]` |
 | `PlayerGlow` | Oyuncu glow (duvar arkası parlama) | `{ "range": 300, "team": -1, "colors": [...] }` |

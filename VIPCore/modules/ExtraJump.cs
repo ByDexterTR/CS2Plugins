@@ -16,6 +16,7 @@ public class ExtraJump : VipModule
     private readonly int[] _airJumps = new int[64];
     private readonly int[] _usedThisLife = new int[64];
     private readonly PlayerButtons[] _lastButtons = new PlayerButtons[64];
+    private readonly PlayerFlags[] _lastFlags = new PlayerFlags[64];
 
     public override string Name => "ExtraJump";
     public override string DisplayName => Core.Localizer["vip.module.extrajump"];
@@ -33,6 +34,8 @@ public class ExtraJump : VipModule
         {
             _airJumps[slot] = 0;
             _usedThisLife[slot] = 0;
+            _lastButtons[slot] = 0;
+            _lastFlags[slot] = 0;
         }
         return HookResult.Continue;
     }
@@ -54,12 +57,18 @@ public class ExtraJump : VipModule
 
             var flags = (PlayerFlags)pawn.Flags;
 
+            bool onGround = (flags & PlayerFlags.FL_ONGROUND) != 0;
+            bool wasOnGround = (_lastFlags[slot] & PlayerFlags.FL_ONGROUND) != 0;
+
             bool jumpDown = (buttons & PlayerButtons.Jump) != 0;
             bool wasJumpDown = (_lastButtons[slot] & PlayerButtons.Jump) != 0;
-            bool jumpPressed = (jumpDown && !wasJumpDown)
-                || ((pawn.MovementServices?.QueuedButtonChangeMask ?? 0) & (ulong)PlayerButtons.Jump) != 0;
+            bool jumpPressed = jumpDown && !wasJumpDown;
 
-            if ((flags & PlayerFlags.FL_ONGROUND) != 0)
+            if (onGround)
+            {
+                _airJumps[slot] = 0;
+            }
+            else if (wasOnGround && jumpPressed)
             {
                 _airJumps[slot] = 0;
             }
@@ -78,6 +87,7 @@ public class ExtraJump : VipModule
             }
 
             _lastButtons[slot] = buttons;
+            _lastFlags[slot] = flags;
         }
     }
 }

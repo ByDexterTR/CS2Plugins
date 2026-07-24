@@ -761,7 +761,8 @@ public partial class VIPCore
       "only_with_weapon": "weapon_deagle",
       "ignore_teammates": true,
       "ignore_enemy": false,
-      "ignore_self": true
+      "ignore_self": true,
+      "limit": 0
     },
     "OneShot": {
       "weapons": "weapon_awp,weapon_ssg08",

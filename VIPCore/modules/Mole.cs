@@ -16,6 +16,7 @@ public class Mole : VipModule
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreEnemy { get; set; } = false;
         public bool IgnoreSelf { get; set; } = true;
+        public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
@@ -76,11 +77,15 @@ public class Mole : VipModule
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, "weapon_" + ev.Weapon))
             return HookResult.Continue;
 
+        if (LimitReached(attacker.Slot, cfg.Limit))
+            return HookResult.Continue;
+
         var pawn = victim.PlayerPawn.Value;
         var origin = pawn?.AbsOrigin;
         if (pawn == null || !pawn.IsValid || origin == null)
             return HookResult.Continue;
 
+        LimitUse(attacker.Slot);
         _buried[slot] = true;
         var restore = new Vector(origin.X, origin.Y, origin.Z);
 
