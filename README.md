@@ -55,6 +55,7 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 | [DiscordLogger](DiscordLogger/README.md) | 35+ sunucu olayını 10 Discord webhook kanalına ve günlük dosyaya loglar |
 | [PlayerHourCheck](PlayerHourCheck/README.md) | CS2 oynama saati kontrolü; kademeli kick/ban cezaları |
 | [VIPCore](VIPCore/README.md) | 75+ modüllü, grup tabanlı, JSON/MySQL destekli VIP sistemi |
+| [TABServerName](TABServerName/README.md) | Skorboardda sol üstteki harita ismini istediğiniz gibi değiştirme |
 
 ## Kurulum (Sunucu)
 

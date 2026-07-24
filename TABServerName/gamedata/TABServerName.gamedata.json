@@ -1,0 +1,20 @@
+{
+  "INetworkServerService_GetIGameServer": {
+    "offsets": {
+      "windows": 23,
+      "linux": 24
+    }
+  },
+  "CNetworkGameServer_MapName": {
+    "offsets": {
+      "windows": 336,
+      "linux": 336
+    }
+  },
+  "CUtlString_Set": {
+    "signatures": {
+      "windows": "?Set@CUtlString@@QEAAXPEBD@Z",
+      "linux": "_ZN10CUtlString3SetEPKc"
+    }
+  }
+}
