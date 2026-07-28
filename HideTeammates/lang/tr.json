@@ -1,0 +1,9 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "hide.enabled": "Gizleme açıldı: {0} artık görünmüyor.",
+  "hide.disabled": "Gizleme kapatıldı: {0} yeniden görünüyor.",
+  "hide.no_permission": "Bu komut için yetkin yok.",
+  "hide.mode_team": "takım arkadaşların",
+  "hide.mode_enemy": "rakip takım",
+  "hide.mode_all": "diğer tüm oyuncular"
+}

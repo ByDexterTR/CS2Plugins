@@ -29,14 +29,17 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 | Eklenti | Açıklama |
 | --- | --- |
 | [1v1Slay](1v1Slay/README.md) | 1v1 durumunda geri sayım; süre dolunca kalanları öldürür |
+| [AntiCapsLock](AntiCapsLock/README.md) | Sohbetteki aşırı büyük harfi küçültür veya mesajı siler |
 | [AntiTeamFlash](AntiTeamFlash/README.md) | Takım arkadaşı flash'larının kör etmesini engeller |
 | [BhopDoorFix](BhopDoorFix/README.md) | Bhop/KZ haritalarındaki kapıları dondurur |
 | [ChatCleaner](ChatCleaner/README.md) | Kendi ekranını veya tüm sunucu sohbetini temizleme |
 | [CommandMaker](CommandMaker/README.md) | JSON ile kod yazmadan özel sunucu komutları oluşturma |
 | [FortniteArmor](FortniteArmor/README.md) | Hasar önce zırhtan düşer, zırh bitmeden can azalmaz |
+| [HideTeammates](HideTeammates/README.md) | Takım arkadaşlarını (veya rakipleri/herkesi) gizler |
 | [Lazer](Lazer/README.md) | Ölü oyunculara canlıların baktığı yeri lazerle gösterir |
 | [MapBlock](MapBlock/README.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır |
 | [PlayerRGB](PlayerRGB/README.md) | Oyuncu modeline RGB (gökkuşağı) efekti |
+| [Postprocessing](Postprocessing/README.md) | Oyuncuya özel post processing efekti; 106 hazır efekt (bloom, blur, renk, zoom) |
 | [PrivateMessage](PrivateMessage/README.md) | Oyuncular arası özel mesaj (!pm) |
 | [Redbull](Redbull/README.md) | Süreli hız artışı; limit ve cooldown destekli |
 | [ScreenText](ScreenText/README.md) | Ekranın istenen noktasına JSON'dan tanımlı kalıcı yazılar |

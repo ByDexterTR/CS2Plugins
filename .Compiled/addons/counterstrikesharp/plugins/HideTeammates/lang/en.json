@@ -1,0 +1,9 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "hide.enabled": "Hiding enabled: {0} are no longer visible.",
+  "hide.disabled": "Hiding disabled: {0} are visible again.",
+  "hide.no_permission": "You don't have permission for this command.",
+  "hide.mode_team": "your teammates",
+  "hide.mode_enemy": "the enemy team",
+  "hide.mode_all": "all other players"
+}

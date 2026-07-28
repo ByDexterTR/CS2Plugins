@@ -16,7 +16,7 @@ public partial class VIPCore
         foreach (var name in GetGroupFeatures(player))
         {
             var module = FindModule(name);
-            if (module == null || !module.ShowInMenu)
+            if (module == null || !module.ShowInMenu || IsForced(player, name))
                 continue;
 
             var m = module;

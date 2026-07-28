@@ -403,6 +403,10 @@ public partial class VIPCore
       "limit": 0
     },
     "DefuseKit": true,
+    "Force": [
+      "Dash",
+      "ExtraHP"
+    ],
     "ExtraHP": 150,
     "ExtraJump": {
       "count": 2,

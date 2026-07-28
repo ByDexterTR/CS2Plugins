@@ -1,0 +1,21 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "no_access": "Bu komut için yetkin yok.",
+  "not_found": "Oyuncu bulunamadı.",
+  "no_preset": "Bu haritada kullanılabilir efekt yok.",
+  "preset_not_found": "'{0}' adında bir efekt yok.",
+  "applied": "Efekt uygulandı: {0}",
+  "cleared": "Efekt kapatıldı.",
+  "give.usage": "Kullanım: css_ppver <oyuncu> <efekt|off>",
+  "give.applied": "{0} efekti {1} oyuncuya verildi.",
+  "give.cleared": "{0} oyuncunun efekti kapatıldı.",
+  "menu.title": "Efekt Menüsü",
+  "menu.category": "{0} ({1})",
+  "menu.uncategorized": "Diğer",
+  "menu.item_active": "{0} (aktif)",
+  "menu.back": "Geri",
+  "menu.off": "Efekti Kapat",
+  "menu.scroll": "Kaydır",
+  "menu.select": "Seç",
+  "menu.exit": "Çık"
+}

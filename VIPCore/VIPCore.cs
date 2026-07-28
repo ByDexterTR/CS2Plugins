@@ -29,6 +29,7 @@ public partial class VIPCore : BasePlugin
     private readonly Dictionary<string, VipModule> _moduleByName = new();
     private readonly Dictionary<(string Group, string Feature, Type Type), object?> _groupValueCache = new();
     private Dictionary<string, HashSet<string>> _pistolDisable = new();
+    private Dictionary<string, HashSet<string>> _forced = new();
     private readonly Dictionary<ulong, Dictionary<string, string?>> _pendingSettings = new();
     private bool _isPistolRound;
     private int _roundNumber;
@@ -298,23 +299,37 @@ public partial class VIPCore : BasePlugin
         }
 
         var pistolDisable = new Dictionary<string, HashSet<string>>();
+        var forced = new Dictionary<string, HashSet<string>>();
         foreach (var (groupName, feats) in parsed)
         {
-            if (!feats.TryGetValue("PistolRoundDisable", out var element))
-                continue;
-            try
+            if (feats.TryGetValue("PistolRoundDisable", out var pistolElement))
             {
-                var list = element.Deserialize<List<string>>(GroupOpts);
-                if (list != null && list.Count > 0)
-                    pistolDisable[groupName] = new HashSet<string>(list);
+                try
+                {
+                    var list = pistolElement.Deserialize<List<string>>(GroupOpts);
+                    if (list != null && list.Count > 0)
+                        pistolDisable[groupName] = new HashSet<string>(list);
+                }
+                catch { }
             }
-            catch { }
+
+            if (feats.TryGetValue("Force", out var forceElement))
+            {
+                try
+                {
+                    var list = forceElement.Deserialize<List<string>>(GroupOpts);
+                    if (list != null && list.Count > 0)
+                        forced[groupName] = new HashSet<string>(list);
+                }
+                catch { }
+            }
         }
 
         lock (_lock)
         {
             _groups = parsed;
             _pistolDisable = pistolDisable;
+            _forced = forced;
             _groupValueCache.Clear();
             _enabled.Clear();
 
@@ -520,8 +535,25 @@ public partial class VIPCore : BasePlugin
     public bool IsGranted(CCSPlayerController player, string feature) =>
         IsClientVip(player) && IsModuleEnabled(feature) && GroupGrants(player, feature);
 
-    public bool IsActive(CCSPlayerController player, string feature) =>
-        IsGranted(player, feature) && GetSetting(player.SteamID, feature) != "off" && !PistolRoundBlocked(player, feature);
+    public bool IsForced(CCSPlayerController player, string feature)
+    {
+        if (_forced.Count == 0)
+            return false;
+        if (FindModule(feature)?.MenuType != VipFeatureType.Toggle)
+            return false;
+
+        var group = GetClientGroup(player);
+        return group != null && _forced.TryGetValue(group, out var set) && set.Contains(feature);
+    }
+
+    public bool IsActive(CCSPlayerController player, string feature)
+    {
+        if (!IsGranted(player, feature))
+            return false;
+        if (IsForced(player, feature))
+            return true;
+        return GetSetting(player.SteamID, feature) != "off" && !PistolRoundBlocked(player, feature);
+    }
 
     public string GetSetting(ulong steamId, string feature)
     {

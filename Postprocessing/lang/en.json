@@ -1,0 +1,21 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "no_access": "You do not have access to this command.",
+  "not_found": "Player not found.",
+  "no_preset": "No effect is available on this map.",
+  "preset_not_found": "There is no effect named '{0}'.",
+  "applied": "Effect applied: {0}",
+  "cleared": "Effect disabled.",
+  "give.usage": "Usage: css_ppver <player> <effect|off>",
+  "give.applied": "Effect {0} was given to {1} player(s).",
+  "give.cleared": "Effect disabled for {0} player(s).",
+  "menu.title": "Effect Menu",
+  "menu.category": "{0} ({1})",
+  "menu.uncategorized": "Other",
+  "menu.item_active": "{0} (active)",
+  "menu.back": "Back",
+  "menu.off": "Disable Effect",
+  "menu.scroll": "Scroll",
+  "menu.select": "Select",
+  "menu.exit": "Exit"
+}
