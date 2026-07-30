@@ -56,6 +56,10 @@ public partial class VIPCore
       "percent": 50,
       "limit": 0
     },
+    "FortniteArmor": {
+      "percent": 50,
+      "absorb_fall_damage": false
+    },
     "Fov": [
       50,
       60
@@ -446,6 +450,10 @@ public partial class VIPCore
     "FastReload": {
       "only_with_weapon": "",
       "limit": 0
+    },
+    "FortniteArmor": {
+      "percent": 100,
+      "absorb_fall_damage": false
     },
     "Fov": [
       50,

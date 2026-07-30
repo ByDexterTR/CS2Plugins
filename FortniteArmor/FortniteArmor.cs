@@ -7,6 +7,9 @@ namespace FortniteArmor;
 
 public class FortniteArmorConfig : BasePluginConfig
 {
+  [JsonPropertyName("armor_flag")]
+  public string ArmorFlag { get; set; } = "";
+
   [JsonPropertyName("absorb_fall_damage")]
   public bool AbsorbFallDamage { get; set; } = false;
 }
@@ -14,7 +17,7 @@ public class FortniteArmorConfig : BasePluginConfig
 public class FortniteArmor : BasePlugin, IPluginConfig<FortniteArmorConfig>
 {
   public override string ModuleName => "FortniteArmor";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -40,6 +43,13 @@ public class FortniteArmor : BasePlugin, IPluginConfig<FortniteArmorConfig>
       var pawn = victimEnt as CCSPlayerPawn ?? new CCSPlayerPawn(victimEnt.Handle);
       if (!pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
         return HookResult.Continue;
+
+      if (Config.ArmorFlag.Length > 0)
+      {
+        var player = pawn.Controller.Value?.As<CCSPlayerController>();
+        if (player == null || !Util.HasAccess(player, Config.ArmorFlag))
+          return HookResult.Continue;
+      }
 
       int armor = pawn.ArmorValue;
       if (armor <= 0)

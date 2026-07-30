@@ -11,4 +11,9 @@
   <ItemGroup>
     <PackageReference Include="CounterStrikeSharp.API" Version="1.0.371" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
+    <Using Include="ByDexter.Shared" />
+  </ItemGroup>
 </Project>

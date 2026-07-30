@@ -37,7 +37,7 @@ public class GrenadeResist : VipModule
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(victim!) ?? DefaultCfg;
-        if (cfg.Percent <= 0)
+        if (cfg.Percent == 0)
             return HookResult.Continue;
 
         var attacker = PawnController(info.Attacker?.Value);
@@ -57,7 +57,7 @@ public class GrenadeResist : VipModule
             return HookResult.Continue;
 
         LimitUse(victim.Slot);
-        info.Damage *= 1f - Math.Min(cfg.Percent, 100) / 100f;
+        info.Damage = MathF.Max(info.Damage * (1f - Math.Min(cfg.Percent, 100) / 100f), 0f);
         return HookResult.Changed;
     }
 

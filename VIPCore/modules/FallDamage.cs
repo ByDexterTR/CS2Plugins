@@ -47,10 +47,8 @@ public class FallDamage : VipModule
         if (cfg.Limit > 0 && _used[slot] >= cfg.Limit)
             return HookResult.Continue;
 
-        if (cfg.Percent <= 0)
-            info.Damage = 0;
-        else
-            info.Damage *= cfg.Percent / 100f;
+        float scale = cfg.Percent < 0 ? 1f - cfg.Percent / 100f : cfg.Percent / 100f;
+        info.Damage = MathF.Max(info.Damage * scale, 0f);
 
         _used[slot]++;
         return HookResult.Changed;

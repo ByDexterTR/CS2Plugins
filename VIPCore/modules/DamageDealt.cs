@@ -53,7 +53,7 @@ public class DamageDealt : VipModule
         if (LimitReached(attacker!.Slot, cfg.Limit))
             return HookResult.Continue;
 
-        info.Damage *= 1f + cfg.Percent / 100f;
+        info.Damage = MathF.Max(info.Damage * (1f + cfg.Percent / 100f), 0f);
         LimitUse(attacker.Slot);
         return HookResult.Changed;
     }

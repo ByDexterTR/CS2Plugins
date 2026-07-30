@@ -21,9 +21,6 @@ public class PostprocessingPreset
   [JsonPropertyName("category")]
   public string Category { get; set; } = "";
 
-  [JsonPropertyName("map")]
-  public string Map { get; set; } = "";
-
   [JsonPropertyName("flag")]
   public string Flag { get; set; } = "";
 
@@ -100,7 +97,7 @@ public class PostprocessingConfig : BasePluginConfig
     P("cache_postprocessv2", "postprocess/cache_postprocessv2.vpost", "Genel"),
     P("cache_postprocessv3", "postprocess/cache_postprocessv3.vpost", "Genel"),
     P("de_cache_s2", "postprocess/de_cache_s2.vpost", "Genel"),
-    P("zoom", "", "Genel", "", 40),
+    P("zoom", "", "Genel", 40),
     P("icon_generation_basic", "lighting/postprocessing/ui/icon_generation_basic.vpost", "Arayuz"),
     P("icon_generation_characters", "lighting/postprocessing/ui/icon_generation_characters.vpost", "Arayuz"),
     P("xp_shop_case", "lighting/postprocessing/ui/xp_shop_case.vpost", "Arayuz"),
@@ -154,34 +151,34 @@ public class PostprocessingConfig : BasePluginConfig
     P("de_train_vanity_postprocess", "lighting/postprocessing/de_train_prefab/de_train_vanity_postprocess.vpost", "Haritalar"),
     P("de_vertigo_prefab", "lighting/postprocessing/de_vertigo_prefab/de_vertigo_prefab.vpost", "Haritalar"),
     P("lobby_mapveto_prefab", "lighting/postprocessing/lobby_mapveto_prefab/lobby_mapveto_prefab.vpost", "Haritalar"),
-    P("bldr_01_ct_spawn", "lighting/postprocessing/bldr_01_ct_spawn/bldr_01_ct_spawn.vpost", "HaritaOzel", "de_boulder"),
-    P("bldr_04_b_site", "lighting/postprocessing/bldr_04_b_site/bldr_04_b_site.vpost", "HaritaOzel", "de_boulder"),
-    P("de_boulder_postprocess", "lighting/postprocessing/de_boulder_postprocess.vpost", "HaritaOzel", "de_boulder"),
-    P("de_boulder_postprocess2", "lighting/postprocessing/de_boulder_postprocess2.vpost", "HaritaOzel", "de_boulder"),
-    P("de_boulder_postprocess3", "lighting/postprocessing/de_boulder_postprocess3.vpost", "HaritaOzel", "de_boulder"),
-    P("de_boulder_prefab", "lighting/postprocessing/de_boulder_prefab/de_boulder_prefab.vpost", "HaritaOzel", "de_boulder"),
-    P("de_inferno_postprocess_boulder", "lighting/postprocessing/de_inferno_postprocess.vpost", "HaritaOzel", "de_boulder"),
-    P("eldorado_postprocess", "materials/eldorado_postprocess.vpost", "HaritaOzel", "de_eldorado"),
-    P("ar_pool_day", "postprocess/ar_pool_day.vpost", "HaritaOzel", "ar_pool_day"),
-    P("basic_linear_post", "postprocess/basic_linear_post.vpost", "HaritaOzel", "ar_pool_day,cs_shelter,de_fachwerk,de_poseidon"),
-    P("de_boulder_skybox", "postprocess/de_boulder_skybox.vpost", "HaritaOzel", "de_boulder"),
-    P("de_debris", "postprocess/de_debris.vpost", "HaritaOzel", "de_debris"),
-    P("de_fachwerk", "postprocess/de_fachwerk.vpost", "HaritaOzel", "de_fachwerk"),
-    P("de_fachwerk2", "postprocess/de_fachwerk2.vpost", "HaritaOzel", "de_fachwerk"),
-    P("de_fachwerk3", "postprocess/de_fachwerk3.vpost", "HaritaOzel", "de_fachwerk"),
-    P("de_fachwerk3_drunk", "postprocess/de_fachwerk3_drunk.vpost", "HaritaOzel", "de_fachwerk"),
-    P("de_fachwerk4", "postprocess/de_fachwerk4.vpost", "HaritaOzel", "de_fachwerk"),
-    P("de_fachwerk5", "postprocess/de_fachwerk5.vpost", "HaritaOzel", "de_fachwerk"),
-    P("drawbridge", "postprocess/drawbridge.vpost", "HaritaOzel", "de_fachwerk"),
-    P("eldorado", "postprocess/eldorado.vpost", "HaritaOzel", "de_eldorado"),
-    P("poseidon", "postprocess/poseidon.vpost", "HaritaOzel", "de_poseidon"),
-    P("postprocess_filmic_pool_day", "postprocess/postprocess_filmic_pool_day.vpost", "HaritaOzel", "ar_pool_day"),
-    P("postprocess_filmic_pool_day_cs16", "postprocess/postprocess_filmic_pool_day_cs16.vpost", "HaritaOzel", "ar_pool_day"),
-    P("postprocess_filmic_underwater", "postprocess/postprocess_filmic_underwater.vpost", "HaritaOzel", "ar_pool_day")
+    P("bldr_01_ct_spawn", "lighting/postprocessing/bldr_01_ct_spawn/bldr_01_ct_spawn.vpost", "HaritaOzel"),
+    P("bldr_04_b_site", "lighting/postprocessing/bldr_04_b_site/bldr_04_b_site.vpost", "HaritaOzel"),
+    P("de_boulder_postprocess", "lighting/postprocessing/de_boulder_postprocess.vpost", "HaritaOzel"),
+    P("de_boulder_postprocess2", "lighting/postprocessing/de_boulder_postprocess2.vpost", "HaritaOzel"),
+    P("de_boulder_postprocess3", "lighting/postprocessing/de_boulder_postprocess3.vpost", "HaritaOzel"),
+    P("de_boulder_prefab", "lighting/postprocessing/de_boulder_prefab/de_boulder_prefab.vpost", "HaritaOzel"),
+    P("de_inferno_postprocess_boulder", "lighting/postprocessing/de_inferno_postprocess.vpost", "HaritaOzel"),
+    P("eldorado_postprocess", "materials/eldorado_postprocess.vpost", "HaritaOzel"),
+    P("ar_pool_day", "postprocess/ar_pool_day.vpost", "HaritaOzel"),
+    P("basic_linear_post", "postprocess/basic_linear_post.vpost", "HaritaOzel"),
+    P("de_boulder_skybox", "postprocess/de_boulder_skybox.vpost", "HaritaOzel"),
+    P("de_debris", "postprocess/de_debris.vpost", "HaritaOzel"),
+    P("de_fachwerk", "postprocess/de_fachwerk.vpost", "HaritaOzel"),
+    P("de_fachwerk2", "postprocess/de_fachwerk2.vpost", "HaritaOzel"),
+    P("de_fachwerk3", "postprocess/de_fachwerk3.vpost", "HaritaOzel"),
+    P("de_fachwerk3_drunk", "postprocess/de_fachwerk3_drunk.vpost", "HaritaOzel"),
+    P("de_fachwerk4", "postprocess/de_fachwerk4.vpost", "HaritaOzel"),
+    P("de_fachwerk5", "postprocess/de_fachwerk5.vpost", "HaritaOzel"),
+    P("drawbridge", "postprocess/drawbridge.vpost", "HaritaOzel"),
+    P("eldorado", "postprocess/eldorado.vpost", "HaritaOzel"),
+    P("poseidon", "postprocess/poseidon.vpost", "HaritaOzel"),
+    P("postprocess_filmic_pool_day", "postprocess/postprocess_filmic_pool_day.vpost", "HaritaOzel"),
+    P("postprocess_filmic_pool_day_cs16", "postprocess/postprocess_filmic_pool_day_cs16.vpost", "HaritaOzel"),
+    P("postprocess_filmic_underwater", "postprocess/postprocess_filmic_underwater.vpost", "HaritaOzel")
   };
 
-  private static PostprocessingPreset P(string name, string file, string category, string map = "", int fov = 0) =>
-    new() { Name = name, File = file, Category = category, Map = map, Fov = fov };
+  private static PostprocessingPreset P(string name, string file, string category, int fov = 0) =>
+    new() { Name = name, File = file, Category = category, Fov = fov };
 }
 
 public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
@@ -265,7 +262,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
   {
     foreach (var preset in Config.Presets)
     {
-      if (string.IsNullOrWhiteSpace(preset.File) || !MatchesMap(preset))
+      if (string.IsNullOrWhiteSpace(preset.File))
         continue;
 
       try
@@ -279,22 +276,8 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
     }
   }
 
-  private static bool MatchesMap(PostprocessingPreset preset)
-  {
-    if (string.IsNullOrWhiteSpace(preset.Map))
-      return true;
-
-    foreach (var map in Util.Split(preset.Map))
-    {
-      if (Server.MapName.Contains(map, StringComparison.OrdinalIgnoreCase))
-        return true;
-    }
-
-    return false;
-  }
-
   private List<PostprocessingPreset> AvailableFor(CCSPlayerController player) =>
-    Config.Presets.Where(p => MatchesMap(p) && Util.HasAccess(player, p.Flag)).ToList();
+    Config.Presets.Where(p => Util.HasAccess(player, p.Flag)).ToList();
 
   private PostprocessingPreset? FindPreset(string name) =>
     Config.Presets.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
@@ -323,7 +306,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
       }
 
       var wanted = FindPreset(arg);
-      if (wanted == null || !MatchesMap(wanted) || !Util.HasAccess(player, wanted.Flag))
+      if (wanted == null || !Util.HasAccess(player, wanted.Flag))
       {
         Reply(player, Localizer["preset_not_found", arg]);
         return;
@@ -448,7 +431,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
     bool off = arg.Equals("off", StringComparison.OrdinalIgnoreCase) || arg.Equals("kapat", StringComparison.OrdinalIgnoreCase);
     var preset = off ? null : FindPreset(arg);
 
-    if (!off && (preset == null || !MatchesMap(preset)))
+    if (!off && preset == null)
     {
       Reply(player, Localizer["preset_not_found", arg]);
       return;
@@ -604,12 +587,6 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
       if (target == null || !target.IsValid || preset == null)
         return;
 
-      if (!MatchesMap(preset))
-      {
-        Clear(slot, true);
-        return;
-      }
-
       Apply(target, preset);
     });
 
@@ -652,7 +629,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
     }
 
     var preset = FindPreset(name);
-    return preset != null && MatchesMap(preset) && Util.HasAccess(player, preset.Flag) ? preset : null;
+    return preset != null && Util.HasAccess(player, preset.Flag) ? preset : null;
   }
 
   private void Remember(CCSPlayerController player, PostprocessingPreset? preset)

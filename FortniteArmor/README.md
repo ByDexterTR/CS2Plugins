@@ -6,6 +6,7 @@ Alınan hasarı Fortnite'taki gibi önce zırhtan düşürür: zırh yettiği s�
 
 - Zırh varken tüm hasar önce zırhtan düşer; can ancak zırh tükenince azalmaya başlar
 - Vanilla kevlar oranı (kısmi emilim) devre dışı — zırh hasarı 1'e 1 emer
+- Yetki bayrağıyla sınırlandırılabilir; bayrak boşsa herkeste çalışır
 - Düşme hasarı varsayılan olarak zırhtan düşmez (config ile açılabilir)
 - Hasar uygulanmadan **önce** müdahale eder (`OnEntityTakeDamagePre`) — ölüm/can hesabı her zaman doğrudur
 - Mermi, HE, molotof, bıçak dahil tüm hasar türlerinde çalışır
@@ -31,12 +32,14 @@ csgo/addons/counterstrikesharp/configs/plugins/FortniteArmor/FortniteArmor.json
 
 | Ayar | Tip | Açıklama |
 | --- | --- | --- |
+| `armor_flag` | string | Virgülle ayrılmış yetki bayrakları; boş bırakılırsa herkes yararlanır (varsayılan `""`) |
 | `absorb_fall_damage` | bool | `true` ise düşme hasarı da zırhtan düşer (varsayılan `false`) |
 
 ### Örnek Config
 
 ```json
 {
+  "armor_flag": "@css/vip,@css/root,@css/ban",
   "absorb_fall_damage": false
 }
 ```
@@ -46,3 +49,4 @@ csgo/addons/counterstrikesharp/configs/plugins/FortniteArmor/FortniteArmor.json
 - `player_hurt` eventi hasar uygulandıktan sonra yandığı için bu iş orada yapılamaz; oyuncu vanilla hesapla ölmüşse event anında iş işten geçmiştir. Bu yüzden hasar öncesi hook kullanılır.
 - Hasar tamamen zırh tarafından emildiğinde motor 0 hasar gördüğü için vuruş geri bildirimi (aim punch, `player_hurt` eventi) oluşmayabilir.
 - Kask ayrıca takip edilmez; zırh 0'a inince vanilla davranış (korumasız) geçerlidir.
+- `armor_flag` dolu olduğunda yetkisi olmayan oyuncularda vanilla zırh davranışı geçerlidir. `@css/root` bayrağı her zaman geçerli sayılır.

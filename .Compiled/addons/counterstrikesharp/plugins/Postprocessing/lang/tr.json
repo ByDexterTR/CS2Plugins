@@ -6,7 +6,7 @@
   "preset_not_found": "'{0}' adında bir efekt yok.",
   "applied": "Efekt uygulandı: {0}",
   "cleared": "Efekt kapatıldı.",
-  "give.usage": "Kullanım: css_ppver <oyuncu> <efekt|off>",
+  "give.usage": "Kullanım: css_givepp <oyuncu> <efekt|off>",
   "give.applied": "{0} efekti {1} oyuncuya verildi.",
   "give.cleared": "{0} oyuncunun efekti kapatıldı.",
   "menu.title": "Efekt Menüsü",

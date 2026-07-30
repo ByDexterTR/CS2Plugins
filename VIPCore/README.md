@@ -140,8 +140,8 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `C4Effect` | 2 kategori — kurma efekti (`defuse: false`, bombayı takip eder, `time` sn sonra veya imha/patlamada silinir) ve imha efekti (`defuse: true`, imha edende `time` sn oynar); boş kategori menüde gizlenir | `[{ "name": "Duman", "particle": "...", "time": 6, "defuse": false }]` |
 | `ColoredModel` | Renkli oyuncu modeli; başka eklenti (ör. jRandomSkills) rengi değiştirirse o el geri çekilir | `["Rainbow rainbow", "Mavi #0000FF"]` |
 | `CustomWeaponModel` | Silaha özel model; `model` sayıysa ChangeSubclass (görünüm + viewmodel), path ise yalnız dünya modeli; silah düşürülüp başkası alırsa native'e döner | `[{ "name": "M4A4 - AK47", "weapon": "weapon_m4a1", "model": "weapons/models/ak47/weapon_rif_ak47.vmdl" }]` |
-| `DamageDealt` | Verilen hasarı artırır | `{ "percent": 50, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
-| `DamageResist` | Alınan hasarı azaltır | `{ "percent": 40, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `DamageDealt` | Verilen hasarı artırır; **negatif `percent` = debuff** (`-50` verilen hasarı yarıya düşürür) | `{ "percent": 50, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `DamageResist` | Alınan hasarı azaltır; **negatif `percent` = debuff** (`-50` alınan hasarı %50 artırır) | `{ "percent": 40, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `Dash` | Havadayken zıplama tuşuna basınca bastığın yön tuşuna doğru atılır (yön yoksa ileri); `limit`: raunt başına hak (0 = sınırsız), `unit`: itme hızı | `{ "limit": 3, "unit": 600 }` |
 | `DecoyTeleport` | Decoy'un düştüğü yere ışınlanma | `{ "limit": 3 }` |
 | `DefuseKit` | Spawn'da imha kiti (CT) | `true` |
@@ -150,10 +150,11 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `ExtraKillAwards` | Öldürme şekline göre ekstra para: `headshot`, `noscope`, `inair`, `blind`, `weapon_*` (silaha özel), `distance` (her `unit` birim mesafe için `money`) | `{ "headshot": 150, "noscope": 100, "inair": 200, "blind": 50, "distance": { "unit": 2048, "money": 100 }, "weapon_knife": 1000 }` |
 | `ExtraMoney` | Spawn'da ekstra para | `{ "amount": 4000 }` |
 | `ExtraSpeed` | Hız çarpanı | `{ "multiplier": 1.3, "only_with_weapon": "" }` |
-| `FallDamage` | Düşme hasarını azaltır/kaldırır; `limit` raunt başına kaç kez (0=sınırsız) | `{ "percent": 0, "limit": 0 }` |
+| `FallDamage` | Düşme hasarının `percent` kadarını alır (`0` = hiç, `100` = normal); **negatif = debuff** (`-50` düşme hasarını %50 artırır); `limit` raunt başına kaç kez (0=sınırsız) | `{ "percent": 0, "limit": 0 }` |
 | `FastDefuse` | Hızlı bomba imhası; `immune_while_burning: false` ise yanarken / ateşin veya havadaki molotofun yakınında hız avantajı devre dışı | `{ "time": 1, "immune_while_burning": true }` |
 | `FastPlant` | Hızlı bomba kurma;  `immune_while_burning: false` ise yanarken / ateşin veya havadaki molotofun yakınında hız avantajı devre dışı | `{ "time": 1, "immune_while_burning": true }` |
 | `FastReload` | Şarjör normal boşalır; son mermide yedekten anında dolar — (yedekten 1 şarjör düşer) | `{ "only_with_weapon": "", "limit": 0 }` |
+| `FortniteArmor` | Hasarın `percent` kadarını zırh karşılar, kalanı cana gider (`100` = zırh bitene kadar can azalmaz, `50` = yarısı zırhtan); zırh yetmezse kalan hasar cana işler; `absorb_fall_damage` düşme hasarını da zırhın emmesini sağlar | `{ "percent": 100, "absorb_fall_damage": false }` |
 | `Fov` | FOV seçenekleri | `[50, 60, 70, 80, 90]` |
 | `GiveWeapon` | Spawn'da silah seçimi; kategori bazlı (her kategoriden bir seçim `rifle`/`pistol`), Menüdeki "Daima Ver" açıkken slottaki mevcut silah silinip verilir; boş kategori menüde gizlenir | `{ "rifle": ["weapon_ak47", "weapon_awp"], "pistol": ["weapon_deagle"] }` |
 | `GiveZeus` | Spawn'da taser | `true` |
@@ -161,7 +162,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `GlueGrenade` | Atılan bombalar ilk temasta yapışır (decoy eklersen DecoyTeleport ile duvar içine ışınlanma riski) | `{ "only_grenades": "flashbang,hegrenade", "limit": 0 }` |
 | `Gravity` | Yerçekimi seçenekleri | `[1.0, 0.8, 0.5]` |
 | `GrenadeKit` | Spawn'da bomba seti; zaten varsa vermez, 2+ ise atınca yeniden verir (InfiniteAmmo açıkken yeniden vermez) | `{ "flash": 2, "smoke": 1, "he": 3, "molotov": 1, "decoy": 0 }` |
-| `GrenadeResist` | Bomba (HE/molotov/inferno) hasarını azaltır | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `GrenadeResist` | Bomba (HE/molotov/inferno) hasarını azaltır; **negatif `percent` = debuff** (`-50` bomba hasarını %50 artırır) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `GrenadeTrail` | Bomba izi efekti | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
 | `HealthRegen` | Can yenilenmesi | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Spawn'da healthshot | `2` |

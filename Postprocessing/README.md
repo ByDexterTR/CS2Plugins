@@ -4,13 +4,12 @@ Oyunculara kişiye özel post processing efekti (bloom, blur, renk düzeltme, po
 
 ## Özellikler
 
-- Oyunda bulunan **106 hazır efekt** ile gelir: CS2'nin 81 ortak `.vpost` dosyası, 24 harita özel dosya ve bir FOV (zoom) efekti
+- Oyundaki **tüm `.vpost` dosyaları** hazır gelir: 105 benzersiz dosya + bir FOV (zoom) efekti = 106 efekt
 - Efektler oyuncu bazında çalışır; aynı anda farklı oyuncularda farklı efekt olabilir
 - Kategorili WASD menüsü (Efektler / Renk / Genel / Arayüz / Haritalar / HaritaOzel), `css_pp <efekt>` ile doğrudan seçim
-- `map` alanıyla efekt belirli haritalara kilitlenir; harita özel efektler yalnızca o haritada precache edilir ve menüde görünür
 - `flag` alanıyla efekt belirli yetkilere kilitlenebilir
 - Config'ten sınırsız efekt eklenebilir; her efekt kendi `.vpost` dosyası, pozlama ayarları ve isteğe bağlı FOV değeriyle gelir
-- Yetkililer için `css_ppver` ile başka oyunculara efekt verme
+- Yetkililer için `css_givepp` ile başka oyunculara efekt verme
 - Efekt tercihi SteamID bazında kaydedilir; oyuncu tekrar bağlandığında geri yüklenir
 - Haritanın kendi post processing volume'leri efekt aktifken oyuncudan gizlenir (çakışma olmaz)
 - FOV değeri tanımlanan efektler zoom efekti olarak da kullanılabilir
@@ -36,7 +35,7 @@ Oyunculara kişiye özel post processing efekti (bloom, blur, renk düzeltme, po
 | `css_pp` / `css_postprocessing` | Kategorili efekt menüsünü açar | `pp_flag` |
 | `css_pp <efekt>` | Efekti doğrudan uygular | `pp_flag` + efektin `flag` değeri |
 | `css_pp off` | Efekti kapatır | `pp_flag` |
-| `css_ppver <oyuncu> <efekt\|off>` | Hedef oyuncuya efekt verir veya kapatır | `pp_give_flag` |
+| `css_givepp <oyuncu> <efekt\|off>` | Hedef oyuncuya efekt verir veya kapatır | `pp_give_flag` |
 
 ## Yapılandırma
 
@@ -48,7 +47,7 @@ csgo/addons/counterstrikesharp/configs/plugins/Postprocessing/Postprocessing.jso
 | --- | --- | --- | --- |
 | `pp_cmd` | string | `"css_pp,css_postprocessing"` | Virgülle ayrılmış menü komutları |
 | `pp_flag` | string | `""` | Menü komutu yetkisi (boş = herkes) |
-| `pp_give_cmd` | string | `"css_ppver"` | Virgülle ayrılmış yetkili komutları |
+| `pp_give_cmd` | string | `"css_givepp"` | Virgülle ayrılmış yetkili komutları |
 | `pp_give_flag` | string | `"@css/generic"` | Yetkili komutu yetkisi |
 | `pp_remember` | bool | `true` | Oyuncunun efekt tercihini SteamID bazında kaydeder |
 | `pp_hide_map_effects` | bool | `true` | Efekt aktifken haritanın kendi post processing efektini gizler |
@@ -61,7 +60,6 @@ csgo/addons/counterstrikesharp/configs/plugins/Postprocessing/Postprocessing.jso
 | `name` | string | – | Menüde görünen ve komutta yazılan efekt adı |
 | `file` | string | – | `.vpost` dosya yolu (boş bırakılırsa yalnızca FOV uygulanır) |
 | `category` | string | `""` | Menüdeki kategori adı (boş = "Diğer" kategorisi) |
-| `map` | string | `""` | Efektin çalışacağı harita adları (virgülle ayrılır, boş = tüm haritalar) |
 | `flag` | string | `""` | Efekt için gereken yetki (boş = herkes) |
 | `fade` | float | `0.25` | Efekte geçiş süresi (saniye) |
 | `exposure` | bool | `true` | Pozlama (exposure) kontrolü açık mı |
@@ -77,7 +75,7 @@ csgo/addons/counterstrikesharp/configs/plugins/Postprocessing/Postprocessing.jso
 {
   "pp_cmd": "css_pp,css_postprocessing",
   "pp_flag": "",
-  "pp_give_cmd": "css_ppver",
+  "pp_give_cmd": "css_givepp",
   "pp_give_flag": "@css/generic",
   "pp_remember": true,
   "pp_hide_map_effects": true,
@@ -86,7 +84,6 @@ csgo/addons/counterstrikesharp/configs/plugins/Postprocessing/Postprocessing.jso
       "name": "bloomtest",
       "file": "lighting/postprocessing/correction/bloomtest.vpost",
       "category": "Renk",
-      "map": "",
       "flag": "",
       "fade": 0.25,
       "exposure": true,
@@ -100,7 +97,6 @@ csgo/addons/counterstrikesharp/configs/plugins/Postprocessing/Postprocessing.jso
       "name": "zoom",
       "file": "",
       "category": "Genel",
-      "map": "",
       "flag": "",
       "fade": 0.25,
       "exposure": true,
@@ -114,7 +110,6 @@ csgo/addons/counterstrikesharp/configs/plugins/Postprocessing/Postprocessing.jso
       "name": "de_fachwerk3_drunk",
       "file": "postprocess/de_fachwerk3_drunk.vpost",
       "category": "HaritaOzel",
-      "map": "de_fachwerk",
       "flag": "",
       "fade": 0.25,
       "exposure": true,
@@ -138,31 +133,33 @@ Efekt adları `.vpost` dosya adının kendisidir, yani `css_pp de_fachwerk3_drun
 | `Renk` | 3 | `lighting/postprocessing/correction/` — `bloomtest`, `cc_freeze_ct`, `cc_freeze_t` |
 | `Genel` | 15 | Kök `lighting/postprocessing/` ve `postprocess/` dosyaları — `ar_dizzy`, `filmic_default`, `basepostprocess`, `inspect_laptop`, `graphics_settings` ve FOV efekti `zoom` |
 | `Arayuz` | 4 | `lighting/postprocessing/ui/` — envanter/kasa ikon efektleri |
-| `Haritalar` | 49 | Resmî harita prefab'leri (`de_dust2_prefab`, `de_train_postprocess_v2`, `de_mirage_vanity` …) — tüm haritalarda çalışır |
-| `HaritaOzel` | 24 | Harita `.vpk` dosyalarındaki özel efektler — yalnızca ilgili harita yüklüyken görünür |
+| `Haritalar` | 49 | Resmî harita prefab'leri (`de_dust2_prefab`, `de_train_postprocess_v2`, `de_mirage_vanity` …) |
+| `HaritaOzel` | 24 | Harita `.vpk` dosyalarındaki özel efektler |
 
-`HaritaOzel` içeriği:
+`HaritaOzel` efektleri `pak01_dir.vpk` içinde değil, ilgili haritanın kendi `.vpk` dosyasındadır. Menüde her haritada görünürler ancak yalnızca kaynağı olan harita yüklüyken çalışırlar:
 
-| Harita | Efektler |
+| Kaynak harita | Efektler |
 | --- | --- |
-| `de_fachwerk` | `de_fachwerk`, `de_fachwerk2`, `de_fachwerk3`, `de_fachwerk3_drunk`, `de_fachwerk4`, `de_fachwerk5`, `drawbridge`, `basic_linear_post` |
+| `de_fachwerk` | `de_fachwerk`, `de_fachwerk2`, `de_fachwerk3`, `de_fachwerk3_drunk`, `de_fachwerk4`, `de_fachwerk5`, `drawbridge` |
 | `de_boulder` | `de_boulder_postprocess`, `de_boulder_postprocess2`, `de_boulder_postprocess3`, `de_boulder_prefab`, `de_boulder_skybox`, `bldr_01_ct_spawn`, `bldr_04_b_site`, `de_inferno_postprocess_boulder` |
-| `ar_pool_day` | `ar_pool_day`, `postprocess_filmic_pool_day`, `postprocess_filmic_pool_day_cs16`, `postprocess_filmic_underwater`, `basic_linear_post` |
+| `ar_pool_day` | `ar_pool_day`, `postprocess_filmic_pool_day`, `postprocess_filmic_pool_day_cs16`, `postprocess_filmic_underwater` |
 | `de_eldorado` | `eldorado`, `eldorado_postprocess` |
-| `de_poseidon` | `poseidon`, `basic_linear_post` |
+| `de_poseidon` | `poseidon` |
 | `de_debris` | `de_debris` |
-| `cs_shelter` | `basic_linear_post` |
+| `ar_pool_day`, `cs_shelter`, `de_fachwerk`, `de_poseidon` | `basic_linear_post` (dördünde de aynı dosya) |
 
 ## Kendi `.vpost` Dosyanı Bulma
 
-Oyunun tüm post processing dosyaları `pak01_dir.vpk` içinde `lighting/postprocessing/` ve `postprocess/` altındadır. Harita özel dosyalar ilgili haritanın `.vpk` dosyasında bulunur. Listelemek için [Source2Viewer CLI](https://valveresourceformat.github.io/) kullanılır:
+Varsayılan config, oyun klasöründeki tüm `.vpk` arşivleri taranarak üretilmiştir; ekleme gerekmez. Atölyeden indirilen yeni bir haritanın kendi dosyalarını bulmak için [Source2Viewer CLI](https://valveresourceformat.github.io/) kullanılır:
 
 ```powershell
-# Oyunun ortak dosyaları
+# Tek bir arşiv
 Source2Viewer-CLI.exe -i "csgo\pak01_dir.vpk" --vpk_dir | Select-String "vpost"
 
-# Bir haritanın kendi dosyaları
-Source2Viewer-CLI.exe -i "csgo\maps\de_fachwerk.vpk" --vpk_dir | Select-String "vpost"
+# Oyun klasörünün tamamı
+Get-ChildItem "C:\cs2\game" -Filter "*.vpk" -Recurse |
+  Where-Object { $_.Name -like "*_dir.vpk" -or $_.Name -notmatch "_\d{3}\.vpk$" } |
+  ForEach-Object { Source2Viewer-CLI.exe -i $_.FullName --vpk_dir | Select-String "\.vpost_c" }
 ```
 
 Haritanın hangi efekti kullandığını görmek için entity dökümü alınır:
@@ -185,12 +182,12 @@ postprocessing                 resource_name:"postprocess/de_fachwerk5.vpost"
 classname                      "post_processing_volume"
 ```
 
-Atölye haritalarındaki `.vpost` dosyaları da aynı şekilde kullanılır; `map` alanına harita adı yazılması yeterlidir.
+Bulunan yolu `pp_presets` listesine yeni bir kayıt olarak eklemek yeterlidir.
 
 ## Notlar
 
 - Efekt entity'si `master` olarak spawn edilir, yani oyuncunun konumundan bağımsız olarak tüm haritada geçerlidir. Entity oyuncunun pawn'ına parent edilir, böylece PVS dışında kalıp kaybolmaz.
-- `.vpost` dosyaları harita yüklenirken precache edilir. Bir dosya o haritada bulunmuyorsa konsola uyarı yazılır ve yalnızca o efekt çalışmaz; eklenti çalışmaya devam eder. Bu yüzden harita özel dosyalarda `map` alanı doldurulmalıdır.
+- `.vpost` dosyaları harita yüklenirken precache edilir. `HaritaOzel` efektleri yalnızca kaynak haritalarında mevcuttur; başka bir haritada seçilirlerse ekranda değişiklik olmaz ve konsola bir kaynak uyarısı düşer, eklenti çalışmaya devam eder.
 - Oyuncu öldüğünde efekt entity'si kaldırılır, tekrar doğduğunda otomatik geri gelir. Ölüyken izlenen oyuncunun efekti görünmez.
 - `fov` alanı `m_iDesiredFOV` üzerinden çalışır; dürbünlü silahlarda oyunun kendi zoom'u önceliklidir.
 - Efekt adları komutlarda büyük/küçük harf duyarsızdır (`css_pp bloomtest` = `css_pp BloomTest`).

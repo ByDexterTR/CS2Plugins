@@ -31,7 +31,7 @@ public class DamageResist : VipModule
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(victim!) ?? DefaultCfg;
-        if (cfg.Percent <= 0)
+        if (cfg.Percent == 0)
             return HookResult.Continue;
 
         var attacker = PawnController(info.Attacker?.Value);
@@ -58,7 +58,7 @@ public class DamageResist : VipModule
             return HookResult.Changed;
         }
 
-        info.Damage *= 1f - cfg.Percent / 100f;
+        info.Damage = MathF.Max(info.Damage * (1f - cfg.Percent / 100f), 0f);
         return HookResult.Changed;
     }
 }

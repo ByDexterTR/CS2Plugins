@@ -1,6 +1,6 @@
 {
   "storage": "json",
-  "menu_type": "wasd",
+  "menu_type": "hud",
   "admin_flag": "@css/root",
   "commands": {
     "menu": "css_vip,css_vipmenu",
