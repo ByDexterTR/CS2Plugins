@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.1.0";
+    public override string ModuleVersion => "1.1.1";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -354,6 +354,7 @@ public partial class VIPCore : BasePlugin
         else
         {
             PurgeIfExpired(steamId);
+            SanitizeSettings(player);
         }
 
         return HookResult.Continue;
@@ -414,6 +415,9 @@ public partial class VIPCore : BasePlugin
                 }
 
                 PurgeIfExpired(steamId);
+
+                Server.NextFrame(() => SanitizeSettings(
+                    Utilities.GetPlayers().FirstOrDefault(p => p != null && p.IsValid && !p.IsBot && p.SteamID == steamId)));
             }
             catch (Exception ex)
             {
@@ -430,7 +434,7 @@ public partial class VIPCore : BasePlugin
             expired = _vips.TryGetValue(steamId, out var entry) && entry.Expires != 0 && entry.Expires <= now;
 
         if (expired)
-            RemoveVip(steamId);
+            PurgeVerified(steamId);
     }
 
     private void PurgeExpired()
@@ -441,7 +445,58 @@ public partial class VIPCore : BasePlugin
             expired = _vips.Where(kv => kv.Value.Expires != 0 && kv.Value.Expires <= now).Select(kv => kv.Key).ToList();
 
         foreach (var id in expired)
-            RemoveVip(id);
+            PurgeVerified(id);
+    }
+
+    private readonly HashSet<ulong> _purgeChecking = new();
+
+    private void PurgeVerified(ulong steamId)
+    {
+        var storage = _storage;
+        if (!storage.SupportsLiveRefresh)
+        {
+            RemoveVip(steamId);
+            return;
+        }
+
+        lock (_lock)
+            if (!_purgeChecking.Add(steamId))
+                return;
+
+        Task.Run(() =>
+        {
+            VipEntry? fresh = null;
+            bool queried = true;
+
+            try
+            {
+                fresh = storage.LoadVip(steamId);
+            }
+            catch (Exception ex)
+            {
+                queried = false;
+                Logger.LogWarning("VIPCore: {0} icin sure dogrulamasi basarisiz, silme ertelendi: {1}", steamId, ex.Message);
+            }
+
+            Server.NextFrame(() =>
+            {
+                lock (_lock)
+                    _purgeChecking.Remove(steamId);
+
+                if (!queried)
+                    return;
+
+                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                if (fresh != null && (fresh.Expires == 0 || fresh.Expires > now))
+                {
+                    lock (_lock)
+                        _vips[steamId] = fresh;
+                    return;
+                }
+
+                RemoveVip(steamId);
+            });
+        });
     }
 
     public IEnumerable<VipModule> EnabledModules()
@@ -581,6 +636,55 @@ public partial class VIPCore : BasePlugin
 
     private VipModule? FindModule(string feature) =>
         _moduleByName.TryGetValue(feature, out var module) ? module : null;
+
+    public void SanitizeSettings(CCSPlayerController? player)
+    {
+        if (player == null || !player.IsValid || player.IsBot)
+            return;
+
+        ulong steamId = player.SteamID;
+        List<string> keys;
+        lock (_lock)
+        {
+            if (!_settings.TryGetValue(steamId, out var dict) || dict.Count == 0)
+                return;
+            keys = dict.Keys.ToList();
+        }
+
+        foreach (var key in keys)
+        {
+            string feature = key;
+            string? category = null;
+
+            int at = key.IndexOf('@');
+            if (at > 0)
+            {
+                feature = key[..at];
+                category = key[(at + 1)..];
+            }
+
+            var module = FindModule(feature);
+            if (module == null)
+                continue;
+
+            string value = GetSetting(steamId, key);
+            if (value is "off" or "on")
+                continue;
+
+            bool valid = category == null
+                ? module.SelectOptions(player).Any(o => o.Value == value)
+                : module.CategoryOptions(player, category).Any(o => o.Value == value);
+
+            if (valid)
+                continue;
+
+            lock (_lock)
+            {
+                if (_settings.TryGetValue(steamId, out var dict) && dict.Remove(key) && dict.Count == 0)
+                    _settings.Remove(steamId);
+            }
+        }
+    }
 
     public void SetSetting(CCSPlayerController player, string feature, string value)
     {

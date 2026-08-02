@@ -261,6 +261,9 @@ public partial class VIPCore
         LoadConfig();
         ReloadData();
         ActivateModules();
+
+        foreach (var p in Utilities.GetPlayers())
+            SanitizeSettings(p);
         info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.reloaded"]}");
     }
 
