@@ -1,78 +1,80 @@
-# Meslekmenu
+# Meslekmenu (Job Menu)
 
-T oyuncularının raunt başına bir kez "meslek" seçmesini sağlar. Her meslek farklı bir avantaj verir. Jailbreak sunucuları için tasarlanmıştır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Lets T players pick a "job" once per round. Every job gives a different advantage. Designed for Jailbreak servers.
 
-- 5 meslek: **Doktor**, **Flash**, **Bombacı**, **Rambo**, **Zeus**
-- Her meslek config'ten ayrı ayrı açılıp kapatılabilir ve özelleştirilebilir
-- Raunt başına **tek seçim hakkı** (raunt başında sıfırlanır)
-- Yalnızca hayattaki T oyuncuları kullanabilir
-- Argümansız kullanımda aktif mesleklerin listesi ve detayları gösterilir
-- Doktor/Zeus ile ilgili sunucu cvar'ları raunt başında otomatik ayarlanır
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Meslekler
+- 5 jobs: **Doctor**, **Flash**, **Bomber**, **Rambo**, **Zeus**
+- Every job can be enabled/disabled and customized separately from the config
+- **One pick per round** (reset at round start)
+- Only living T players can use it
+- Used without arguments it shows the list of active jobs and their details
+- Server cvars related to Doctor/Zeus are set automatically at round start
+- Turkish / English language support (`lang/`)
 
-| Meslek | Avantaj |
+## Jobs
+
+| Job | Advantage |
 | --- | --- |
-| `doktor` | Healthshot verir (iyileşme miktarı config'ten, `healthshot_health` cvar'ı ile) |
-| `flash` | Belirli süre boyunca hız çarpanı (varsayılan 3x, 5 sn) |
-| `bombaci` | Rastgele bir bomba verir (smoke / HE / flash / molotof — hangileri verilebileceği config'ten) |
-| `rambo` | Yüksek HP + zırh (+ opsiyonel kask); `rambo_fix` açıksa 100 HP altındakiler seçemez |
-| `zeus` | Taser verir (şarj süresi ve düşürme ayarı cvar'lar ile) |
+| `doktor` | Gives a healthshot (heal amount from the config, via the `healthshot_health` cvar) |
+| `flash` | Speed multiplier for a set duration (default 3x, 5 s) |
+| `bombaci` | Gives a random grenade (smoke / HE / flash / molotov — which ones are allowed comes from the config) |
+| `rambo` | High HP + armor (+ optional helmet); with `rambo_fix` on, players below 100 HP cannot pick it |
+| `zeus` | Gives a taser (recharge time and drop behavior via cvars) |
 
-## Gereksinimler
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Meslekmenu` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Meslekmenu` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Meslekmenu/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Meslekmenu` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load Meslekmenu`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_meslek` | Aktif meslekleri ve detaylarını listeler | — (herkes) |
-| `css_meslek <meslek>` | Belirtilen mesleği seçer | — (canlı T, raunt başına 1 kez) |
+| `css_meslek` | Lists the active jobs and their details | — (everyone) |
+| `css_meslek <job>` | Picks the given job | — (living T, once per round) |
 
-Kabul edilen meslek adları: `doktor`/`doctor`, `flash`, `bombaci`/`bombacı`/`bomber`, `rambo`, `zeus`
+Accepted job names: `doktor`/`doctor`, `flash`, `bombaci`/`bombacı`/`bomber`, `rambo`, `zeus`
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/Meslekmenu/Meslekmenu.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `doktor_enabled` | bool | `true` | Doktor mesleği aktif mi |
-| `doktor_regen` | int | `50` | Healthshot iyileştirme miktarı (`healthshot_health`) |
-| `doktor_drop_healthshot` | bool | `true` | Ölünce healthshot düşsün mü (`mp_death_drop_healthshot`) |
-| `flash_enabled` | bool | `true` | Flash mesleği aktif mi |
-| `flash_speed` | float | `3.0` | Hız çarpanı |
-| `flash_duration` | int | `5` | Hızın süresi (saniye) |
-| `bombaci_enabled` | bool | `true` | Bombacı mesleği aktif mi |
-| `bombaci_give_smoke` | bool | `true` | Smoke verilebilsin mi |
-| `bombaci_give_grenade` | bool | `true` | HE verilebilsin mi |
-| `bombaci_give_flashbang` | bool | `true` | Flashbang verilebilsin mi |
-| `bombaci_give_molotov` | bool | `true` | Molotof verilebilsin mi |
-| `rambo_enabled` | bool | `true` | Rambo mesleği aktif mi |
-| `rambo_hp` | int | `150` | Rambo HP değeri |
-| `rambo_armor` | int | `100` | Rambo zırh değeri |
-| `rambo_helmet` | bool | `true` | Kevlar verilsin mi |
-| `rambo_fix` | bool | `true` | 100 HP altındakilerin Rambo seçmesini engelle |
-| `zeus_enabled` | bool | `true` | Zeus mesleği aktif mi |
-| `zeus_recharge_taser` | int | `30` | Taser şarj süresi (`mp_taser_recharge_time`) |
-| `zeus_drop_taser` | bool | `true` | Ölünce taser düşsün mü (`mp_death_drop_taser`) |
+| `doktor_enabled` | bool | `true` | Whether the Doctor job is active |
+| `doktor_regen` | int | `50` | Healthshot heal amount (`healthshot_health`) |
+| `doktor_drop_healthshot` | bool | `true` | Whether the healthshot drops on death (`mp_death_drop_healthshot`) |
+| `flash_enabled` | bool | `true` | Whether the Flash job is active |
+| `flash_speed` | float | `3.0` | Speed multiplier |
+| `flash_duration` | int | `5` | Speed duration (seconds) |
+| `bombaci_enabled` | bool | `true` | Whether the Bomber job is active |
+| `bombaci_give_smoke` | bool | `true` | Whether a smoke can be given |
+| `bombaci_give_grenade` | bool | `true` | Whether an HE can be given |
+| `bombaci_give_flashbang` | bool | `true` | Whether a flashbang can be given |
+| `bombaci_give_molotov` | bool | `true` | Whether a molotov can be given |
+| `rambo_enabled` | bool | `true` | Whether the Rambo job is active |
+| `rambo_hp` | int | `150` | Rambo HP value |
+| `rambo_armor` | int | `100` | Rambo armor value |
+| `rambo_helmet` | bool | `true` | Whether a helmet is given |
+| `rambo_fix` | bool | `true` | Stop players below 100 HP from picking Rambo |
+| `zeus_enabled` | bool | `true` | Whether the Zeus job is active |
+| `zeus_recharge_taser` | int | `30` | Taser recharge time (`mp_taser_recharge_time`) |
+| `zeus_drop_taser` | bool | `true` | Whether the taser drops on death (`mp_death_drop_taser`) |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -98,10 +100,10 @@ csgo/addons/counterstrikesharp/configs/plugins/Meslekmenu/Meslekmenu.json
 }
 ```
 
-## Kullanım Örneği
+## Usage Example
 
 ```
-!meslek           → aktif mesleklerin listesi
-!meslek rambo     → 150 HP + 100 zırh + kask
-!meslek bombaci   → rastgele bomba
+!meslek           → list of active jobs
+!meslek rambo     → 150 HP + 100 armor + helmet
+!meslek bombaci   → a random grenade
 ```

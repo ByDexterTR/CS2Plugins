@@ -1,77 +1,79 @@
 # PrivateMessage
 
-Oyuncuların birbirlerine `!pm` / `!msg` ile özel mesaj göndermesini sağlar. Mesaj komutları chat'te diğer oyunculara gözükmez; alıcı ve gönderene ayrı bildirim sesleri çalınır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
+
+Lets players send private messages to each other with `!pm` / `!msg`. The message commands are not visible to other players in chat; separate notification sounds are played for the receiver and the sender.
 
 ```
-Alıcının ekranı:    [ByDexter] Gönderen: Bugün nasılsın
-Gönderenin ekranı:  [ByDexter] Mesaj Alıcı kullanıcısına gönderildi.
+Receiver's screen: [ByDexter] Sender: How are you today
+Sender's screen:   [ByDexter] Message sent to Receiver.
 ```
 
-## Özellikler
+## Features
 
-- `!pm <oyuncu> <mesaj>` ile özel mesaj; isim tam veya kısmi eşleşmeyle bulunur
-- `!pm` / `!msg` ile başlayan chat yazıları herkese gözükmez (UserMessage hook)
-- Oyuncu bazında özel mesajları kapatma/açma (`!pmoff` / `!pmon`); kapatan oyuncu PM alamaz ve gönderemez
-- Oyuncu bazında bildirim sesi açma/kapama (`!pmsound`)
-- Alıcıya ve gönderene ayrı sesler çalınır; sesler config'ten değiştirilebilir
-- Tercihler kalıcıdır — JSON (varsayılan) veya MySQL; MySQL bağlantısı koparsa otomatik JSON'a düşer
-- İsteğe bağlı loglama: konsola ve `logs/` altına günlük ayrı dosyalarla yazar
-- Botlar ve GOTV hedef alınamaz
-- Türkçe / İngilizce dil desteği (`lang/`)
+- Private message with `!pm <player> <message>`; the name is matched fully or partially
+- Chat lines starting with `!pm` / `!msg` are not shown to anyone (UserMessage hook)
+- Per-player toggle for private messages (`!pmoff` / `!pmon`); a player who turns it off cannot receive or send PMs
+- Per-player toggle for the notification sound (`!pmsound`)
+- Separate sounds are played for the receiver and the sender; the sounds can be changed from the config
+- Preferences are persistent — JSON (default) or MySQL; falls back to JSON automatically if the MySQL connection drops
+- Optional logging: writes to the console and to daily files under `logs/`
+- Bots and GOTV cannot be targeted
+- Turkish / English language support (`lang/`)
 
-## Gereksinimler
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `PrivateMessage` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `PrivateMessage` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/PrivateMessage/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load PrivateMessage` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load PrivateMessage`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_msg` / `css_pm <oyuncu> <mesaj>` | Oyuncuya özel mesaj gönderir | Yok |
-| `css_msgoff` / `css_pmoff` | Özel mesajları kapatır | Yok |
-| `css_msgon` / `css_pmon` | Özel mesajları açar | Yok |
-| `css_msgsound` / `css_pmsound` | Özel mesaj sesini açar/kapatır | Yok |
+| `css_msg` / `css_pm <player> <message>` | Sends a private message to a player | None |
+| `css_msgoff` / `css_pmoff` | Turns off private messages | None |
+| `css_msgon` / `css_pmon` | Turns on private messages | None |
+| `css_msgsound` / `css_pmsound` | Toggles the private message sound | None |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/PrivateMessage/PrivateMessage.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `msg_cmd` | string | `"css_msg,css_pm"` | Virgülle ayrılmış mesaj komutu adları |
-| `msgoff_cmd` | string | `"css_msgoff,css_pmoff"` | Virgülle ayrılmış kapatma komutu adları |
-| `msgon_cmd` | string | `"css_msgon,css_pmon"` | Virgülle ayrılmış açma komutu adları |
-| `msgsound_cmd` | string | `"css_msgsound,css_pmsound"` | Virgülle ayrılmış ses komutu adları |
-| `receive_sound` | string | `"sounds/ambient/common/water/rain_drip3.vsnd"` | Alıcıya çalınan ses |
-| `send_sound` | string | `"sounds/ambient/common/water/rain_drip1.vsnd"` | Gönderene çalınan ses |
-| `log_enabled` | bool | `false` | Mesajları konsola ve günlük log dosyasına yazar |
-| `database` | object | JSON | Tercih depolama ayarları (aşağıda) |
+| `msg_cmd` | string | `"css_msg,css_pm"` | Comma separated message command names |
+| `msgoff_cmd` | string | `"css_msgoff,css_pmoff"` | Comma separated turn-off command names |
+| `msgon_cmd` | string | `"css_msgon,css_pmon"` | Comma separated turn-on command names |
+| `msgsound_cmd` | string | `"css_msgsound,css_pmsound"` | Comma separated sound command names |
+| `receive_sound` | string | `"sounds/ambient/common/water/rain_drip3.vsnd"` | Sound played for the receiver |
+| `send_sound` | string | `"sounds/ambient/common/water/rain_drip1.vsnd"` | Sound played for the sender |
+| `log_enabled` | bool | `false` | Writes messages to the console and a daily log file |
+| `database` | object | JSON | Preference storage settings (below) |
 
-### Depolama
+### Storage
 
-| Alan | Varsayılan | Açıklama |
+| Field | Default | Description |
 | --- | --- | --- |
-| `provider` | `"json"` | `"json"` veya `"mysql"` |
-| `host` | `"localhost"` | MySQL sunucusu |
-| `name` | `"bydexter_pm"` | Veritabanı adı (yoksa oluşturulur) |
-| `port` | `"3306"` | MySQL portu |
-| `user` | `"root"` | MySQL kullanıcısı |
-| `password` | `""` | MySQL şifresi |
+| `provider` | `"json"` | `"json"` or `"mysql"` |
+| `host` | `"localhost"` | MySQL server |
+| `name` | `"bydexter_pm"` | Database name (created if missing) |
+| `port` | `"3306"` | MySQL port |
+| `user` | `"root"` | MySQL user |
+| `password` | `""` | MySQL password |
 
-JSON modunda tercihler `plugins/PrivateMessage/players.json` dosyasında tutulur. MySQL modunda `pm_preferences` tablosu otomatik oluşturulur; bağlantı kurulamazsa JSON'a düşülür.
+In JSON mode preferences are kept in `plugins/PrivateMessage/players.json`. In MySQL mode the `pm_preferences` table is created automatically; if the connection cannot be made it falls back to JSON.
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -93,19 +95,19 @@ JSON modunda tercihler `plugins/PrivateMessage/players.json` dosyasında tutulur
 }
 ```
 
-## Loglama
+## Logging
 
-`log_enabled: true` iken her mesaj `[GÖNDEREN -> ALICI]: Mesaj` biçiminde sunucu konsoluna yazılır ve gün bazında ayrı dosyalara kaydedilir:
+With `log_enabled: true` every message is written to the server console as `[SENDER -> RECEIVER]: Message` and saved to separate daily files:
 
 ```
 plugins/PrivateMessage/logs/PrivateMessage-2026-07-16.log
 ```
 
-Dosya satırları saat damgası içerir: `[21:45:03] [ByDexter -> Oyuncu]: selam`
+File lines include a timestamp: `[21:45:03] [ByDexter -> Player]: hello`
 
-## Notlar
+## Notes
 
-- Chat'e yazılan `!pm ...` / `/pm ...` satırları (config'teki tüm komut adları dahil) UserMessage hook ile engellenir, kimseye gözükmez; komut yine de çalışır.
-- Mesaj ve ses tercihleri SteamID bazında kalıcıdır (varsayılan: mesajlar açık, ses açık); her değişiklikte ve oyuncu çıkışında kaydedilir.
-- İsim eşleşmesi önce tam ad, yoksa kısmi arama yapar; birden fazla eşleşmede mesaj gönderilmez.
-- Komut adı değişiklikleri eklenti yeniden başlatıldığında etkinleşir.
+- `!pm ...` / `/pm ...` lines typed into chat (including every command name in the config) are blocked with a UserMessage hook and are not shown to anyone; the command still runs.
+- Message and sound preferences are persistent per SteamID (default: messages on, sound on); they are saved on every change and when the player disconnects.
+- Name matching tries the full name first, then a partial search; if there are multiple matches no message is sent.
+- Command name changes take effect when the plugin is restarted.

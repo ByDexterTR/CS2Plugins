@@ -1,55 +1,57 @@
 # JBRace
 
-Jailbreak sunucuları için yarış etkinliği. Warden başlangıç ve bitiş noktası belirler, T oyuncuları bitişe ilk ulaşan olmak için yarışır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Race event for Jailbreak servers. The warden sets a start and a finish point, and T players race to be the first to reach the finish.
 
-- CenterHtml menü ile tam yarış yönetimi: başlat, iptal, başlangıç/bitiş noktası, kazanan sayısı, işaretçileri temizle
-- Bitiş noktasında dönen **coin modeli** ve gökyüzüne uzanan **yeşil ışın** işaretçisi
-- 3 saniyelik HUD geri sayımı; yarışçılar başlangıç noktasına ışınlanıp dondurulur
-- Yarışan T'ler kırmızı, bitişe ulaşanlar yeşil renge boyanır
-- Hedeflenen kazanan sayısına ulaşıldığında **kazanamayan T'ler slay edilir** ve yarış sona erer
-- Kazanan sayısı sohbete yazılarak belirlenir (menüden istendiğinde)
-- Raunt başında yarış otomatik sıfırlanır
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Full race management through a CenterHtml menu: start, cancel, start/finish point, winner count, clear markers
+- A spinning **coin model** and a **green beam** reaching to the sky as the finish marker
+- 3 second HUD countdown; racers are teleported to the start point and frozen
+- Racing Ts are colored red, players who reach the finish are colored green
+- When the target winner count is reached the **Ts who did not win are slayed** and the race ends
+- The winner count is set by typing it into chat (when requested from the menu)
+- The race is reset automatically at round start
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `JBRace` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `JBRace` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/JBRace/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load JBRace` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load JBRace`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_race` | Yarış menüsünü açar | `@css/generic` **veya** `@jailbreak/warden` |
+| `css_race` | Opens the race menu | `@css/generic` **or** `@jailbreak/warden` |
 
-### Menü Seçenekleri
+### Menu Options
 
-| Seçenek | İşlev |
+| Option | Function |
 | --- | --- |
-| Yarışı Başlat / İptal Et | Yarışı başlatır (başlangıç+bitiş ayarlanmış olmalı) veya aktif yarışı iptal eder |
-| Başlangıç Noktası | Bulunduğunuz konumu ve bakış yönünü başlangıç olarak kaydeder |
-| Bitiş Noktası | Bulunduğunuz konumu bitiş olarak kaydeder, işaretçiyi diker |
-| Kazanan Sayısı (N) | Sohbete sayı yazmanızı ister; ilk N kişi kazanır |
-| İşaretçileri Temizle | Bitiş modelini/ışınını kaldırır |
+| Start / Cancel Race | Starts the race (start+finish must be set) or cancels the active race |
+| Start Point | Saves your current position and view direction as the start |
+| Finish Point | Saves your current position as the finish and places the marker |
+| Winner Count (N) | Asks you to type a number into chat; the first N players win |
+| Clear Markers | Removes the finish model/beam |
 
-## Kullanım Örneği
+## Usage Example
 
-1. Warden bitiş çizgisine gider → `!race` → "Bitiş Noktası".
-2. Yarışın başlayacağı yere gider → "Başlangıç Noktası".
-3. "Kazanan Sayısı" → sohbete `3` yazar.
-4. "Yarışı Başlat" → tüm canlı T'ler başlangıca ışınlanır, 3-2-1 geri sayımı sonrası yarış başlar.
-5. Bitişe ilk 3 ulaşan kazanır; kalan T'ler otomatik slay edilir.
+1. The warden walks to the finish line → `!race` → "Finish Point".
+2. They walk to where the race will start → "Start Point".
+3. "Winner Count" → they type `3` into chat.
+4. "Start Race" → every living T is teleported to the start and the race begins after a 3-2-1 countdown.
+5. The first 3 to reach the finish win; the remaining Ts are slayed automatically.
 
-## Notlar
+## Notes
 
-- Yalnızca **hayattaki T oyuncuları** yarışa katılır.
-- Coin modeli (`models/coop/challenge_coin.vmdl`) sunucu tarafından otomatik precache edilir.
+- Only **living T players** join the race.
+- The coin model (`models/coop/challenge_coin.vmdl`) is precached automatically by the server.

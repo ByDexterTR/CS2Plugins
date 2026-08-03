@@ -1,48 +1,50 @@
 # SpawnkillProtection
 
-Spawn olan oyunculara yapılandırılabilir süreli hasar koruması verir. [CTSpawnKill](../CTSpawnKill)'in kapsamlı sürümüdür: takım bazlı **ve** yetki (flag) bazlı koruma, renkli görsel geri bildirim ve koruma süresince **yavaşça normale dönen renk geçişi** içerir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Gives spawning players damage protection for a configurable duration. This is the full version of [CTSpawnKill](../CTSpawnKill): it has team based **and** permission (flag) based protection, colored visual feedback, and a **color that fades back to normal** over the protection period.
 
-- **Flag bazlı koruma** takım korumasından **önceliklidir** — ör. VIP'lere daha uzun koruma
-- T ve CT için ayrı ayrı açılıp kapatılabilen, süresi ve rengi özelleştirilebilen takım koruması
-- Koruma süresince oyuncunun rengi koruma renginden **kademeli olarak normale döner** — rengin solması korumanın ne kadar kaldığını gösterir, bitişi herkes anlar
-- Koruma boyunca tüm hasar sıfırlanır (`OnEntityTakeDamagePre`)
-- Koruma başlangıcı ve bitişi oyuncuya sohbetten bildirilir
-- Raunt başında ve oyuncu ayrıldığında durum güvenle temizlenir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- **Flag based protection takes priority** over team protection — e.g. longer protection for VIPs
+- Team protection that can be enabled/disabled per T and CT with customizable duration and color
+- During the protection the player's color **fades gradually back to normal** — the fading color shows how much protection is left, so everyone can see when it ends
+- All damage is zeroed while the protection lasts (`OnEntityTakeDamagePre`)
+- The start and end of the protection are reported to the player in chat
+- State is cleaned up safely at round start and when a player leaves
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `SpawnkillProtection` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `SpawnkillProtection` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/SpawnkillProtection/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load SpawnkillProtection` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load SpawnkillProtection`.
+3. The config file is created automatically on first load.
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/SpawnkillProtection/SpawnkillProtection.json
 ```
 
-| Ayar | Tip | Açıklama |
+| Setting | Type | Description |
 | --- | --- | --- |
-| `flag_protections` | liste | Yetki bazlı korumalar; **listedeki sıra öncelik sırasıdır** ve takım korumasını ezer |
-| `flag_protections[].flag` | string | Gerekli yetki (ör. `@css/vip`) |
-| `flag_protections[].seconds` | float | Koruma süresi (saniye) |
-| `flag_protections[].color` | int[3] | Koruma rengi (RGB) |
-| `team_t.enabled` | bool | T takımı koruması aktif mi |
-| `team_t.seconds` | float | T koruma süresi |
-| `team_t.color` | int[3] | T koruma rengi |
-| `team_ct.enabled` / `seconds` / `color` | — | CT için aynı ayarlar |
+| `flag_protections` | list | Permission based protections; **the order in the list is the priority order** and it overrides team protection |
+| `flag_protections[].flag` | string | Required permission (e.g. `@css/vip`) |
+| `flag_protections[].seconds` | float | Protection duration (seconds) |
+| `flag_protections[].color` | int[3] | Protection color (RGB) |
+| `team_t.enabled` | bool | Whether T team protection is active |
+| `team_t.seconds` | float | T protection duration |
+| `team_t.color` | int[3] | T protection color |
+| `team_ct.enabled` / `seconds` / `color` | — | Same settings for CT |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -55,10 +57,10 @@ csgo/addons/counterstrikesharp/configs/plugins/SpawnkillProtection/SpawnkillProt
 }
 ```
 
-Bu örnekte: root yetkili 10 sn mor, VIP 8 sn altın, diğer T'ler 5 sn kırmızı, diğer CT'ler 5 sn mavi korumayla doğar.
+In this example: root admins spawn with 10 s purple, VIPs with 8 s gold, other Ts with 5 s red and other CTs with 5 s blue protection.
 
-## Notlar
+## Notes
 
-- Takım koruması botlara da uygulanır; flag kontrolü yalnızca gerçek oyuncular için yapılır.
-- `seconds: 0` veya `enabled: false` ile ilgili koruma tamamen kapatılabilir.
-- Aynı işlevin yalnızca CT'ye sabit renkle uygulanan basit hâli için [CTSpawnKill](../CTSpawnKill) eklentisine bakın; iki eklentiyi **aynı anda kullanmayın**.
+- Team protection applies to bots too; the flag check is only done for real players.
+- A protection can be disabled completely with `seconds: 0` or `enabled: false`.
+- For a simpler version of the same feature that only applies to CT with a fixed color see the [CTSpawnKill](../CTSpawnKill) plugin; **do not use both plugins at the same time**.

@@ -1,27 +1,29 @@
 # BhopDoorFix
 
-Bhop / KZ haritalarındaki `func_door` kapılarının hareket etmesini engeller. Kapıların oyuncuyu fırlatması veya hareket ederek exploit oluşturması önlenir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Stops `func_door` doors on bhop / KZ maps from moving. Prevents doors from launching players or creating exploits by moving.
 
-- Haritadaki tüm `func_door` entity'lerini dondurur (`Speed = 0` + `Lock` input)
-- Yeni spawn olan kapıları da otomatik yakalar (`OnEntitySpawned`)
-- Her raunt başında tüm kapılar yeniden dondurulur
-- Hot reload destekli — eklenti yeniden yüklendiğinde mevcut kapılar anında dondurulur
-- Config gerektirmez
+## Features
 
-## Gereksinimler
+- Freezes every `func_door` entity on the map (`Speed = 0` + `Lock` input)
+- Catches newly spawned doors automatically (`OnEntitySpawned`)
+- Re-freezes every door at the start of each round
+- Hot reload supported — existing doors are frozen instantly when the plugin is reloaded
+- No config required
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `BhopDoorFix` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `BhopDoorFix` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/BhopDoorFix/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load BhopDoorFix` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load BhopDoorFix`.
 
-## Notlar
+## Notes
 
-- Kapılar kilitlendiği için haritadaki kapı açma mekanikleri (buton, tetikleyici vb.) çalışmaz — eklenti bhop/surf sunucuları için tasarlanmıştır.
+- Because the doors are locked, map door mechanics (buttons, triggers, etc.) will not work — the plugin is designed for bhop/surf servers.

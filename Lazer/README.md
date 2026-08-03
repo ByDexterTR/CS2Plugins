@@ -1,53 +1,55 @@
 # Lazer
 
-Ölü oyunculara ve izleyicilere, canlı oyuncuların o an baktığı yönü lazer ışını olarak gösterir. Işın, oyuncunun gözünden bakış yönünde ilk engele (duvar, zemin, oyuncu) kadar uzanır; canlı oyuncular ışınları göremez.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Shows dead players and spectators where living players are currently aiming, as a laser beam. The beam runs from the player's eye along their view direction to the first obstacle (wall, floor, player); living players cannot see the beams.
 
-- Her canlı oyuncunun bakış yönü gerçek zamanlı (her tick) lazerle çizilir
-- Native ray-trace ile ışın ilk engelde biter (duvar arkasına taşmaz)
-- Işınlar yalnızca lazeri açık olan ölü oyunculara/izleyicilere gönderilir (`CheckTransmit`); canlı oyuncular ve GOTV hiçbir şekilde görmez
-- `css_lazer` ile oyuncu bazında aç/kapat; varsayılan durum config'ten ayarlanabilir
-- Takım bazlı ışın rengi (T / CT ayrı, config'ten `R G B` veya `#RRGGBB`)
-- Işın kalınlığı ve maksimum mesafe ayarlanabilir
-- Ölüm, ayrılma, raunt başı/sonu ve eklenti kapanışında ışınlar güvenle temizlenir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Every living player's view direction is drawn as a laser in real time (every tick)
+- Native ray-trace ends the beam at the first obstacle (it does not go through walls)
+- Beams are only sent to dead players/spectators who have the laser enabled (`CheckTransmit`); living players and GOTV never see them
+- Toggle per player with `css_lazer`; the default state can be set from the config
+- Team based beam color (separate T / CT, `R G B` or `#RRGGBB` from the config)
+- Beam width and maximum distance are adjustable
+- Beams are cleaned up safely on death, disconnect, round start/end and plugin unload
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Lazer` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Lazer` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Lazer/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Lazer` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load Lazer`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_lazer` / `css_laser` | Lazer görünürlüğünü açar/kapatır (tercih ölüyken uygulanır) | Yok |
+| `css_lazer` / `css_laser` | Toggles laser visibility (the preference applies while dead) | None |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/Lazer/Lazer.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lazer_cmd` | string | `"css_lazer,css_laser"` | Virgülle ayrılmış komut adları |
-| `lazer_default_on` | bool | `true` | Yeni bağlanan oyuncular için lazer başlangıç durumu |
-| `lazer_width` | float | `0.4` | Işın kalınlığı (minimum 0.1) |
-| `lazer_max_distance` | float | `8192` | Işının maksimum uzunluğu (minimum 256) |
-| `lazer_t_color` | string | `"234 210 139"` | T takımı ışın rengi (`R G B` veya `#RRGGBB`) |
-| `lazer_ct_color` | string | `"182 212 238"` | CT takımı ışın rengi (`R G B` veya `#RRGGBB`) |
+| `lazer_cmd` | string | `"css_lazer,css_laser"` | Comma separated command names |
+| `lazer_default_on` | bool | `true` | Initial laser state for newly connecting players |
+| `lazer_width` | float | `0.4` | Beam width (minimum 0.1) |
+| `lazer_max_distance` | float | `8192` | Maximum beam length (minimum 256) |
+| `lazer_t_color` | string | `"234 210 139"` | T team beam color (`R G B` or `#RRGGBB`) |
+| `lazer_ct_color` | string | `"182 212 238"` | CT team beam color (`R G B` or `#RRGGBB`) |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -60,9 +62,9 @@ csgo/addons/counterstrikesharp/configs/plugins/Lazer/Lazer.json
 }
 ```
 
-## Notlar
+## Notes
 
-- Işın kesme, oyun motorunun trace fonksiyonuna imza taramasıyla bağlanır (`CNavPhysicsInterface`). Oyun güncellemesi sonrası imza kırılırsa eklenti çalışmaya devam eder ancak ışınlar engelde kesilmek yerine maksimum mesafeye uzanır (konsola hata yazılır).
-- Lazeri açık ölü oyuncu yoksa hiç ışın oluşturulmaz ve trace çağrılmaz; performans maliyeti sıfıra iner.
-- Oyuncu takım değiştirdiğinde ışın rengi bir sonraki canlanışta otomatik güncellenir.
-- Komut adı değişikliği (`lazer_cmd`) sunucu/eklenti yeniden başlatıldığında etkinleşir.
+- Beam cutting is bound to the game engine's trace function via a signature scan (`CNavPhysicsInterface`). If a game update breaks the signature the plugin keeps working but the beams extend to the maximum distance instead of being cut at obstacles (an error is written to the console).
+- If no dead player has the laser enabled, no beams are created and trace is never called; the performance cost drops to zero.
+- When a player changes team the beam color updates automatically on their next spawn.
+- Command name changes (`lazer_cmd`) take effect when the server/plugin is restarted.

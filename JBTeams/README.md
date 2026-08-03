@@ -1,51 +1,53 @@
 # JBTeams
 
-Hayattaki T oyuncularını renkli takımlara bölen etkinlik eklentisi. Aynı takımdaki oyuncular birbirine hasar veremez; son takım ayakta kalana kadar mücadele sürer.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Event plugin that splits living T players into colored teams. Players on the same team cannot damage each other; the fight continues until one team is left standing.
 
-- 2–5 takım desteği: Kırmızı, Yeşil, Mavi, Sarı, Magenta
-- Oyuncular rastgele karıştırılıp **eşit sayıda** dağıtılır (eşit bölünemiyorsa uyarı verir)
-- Aynı takım üyeleri arasındaki hasar otomatik sıfırlanır (friendly fire koruması)
-- Her oyuncu takım rengine boyanır; ölen oyuncunun rengi sıfırlanır
-- Tek takım kaldığında kazanan duyurulur ve sistem kapanır
-- `!takim 0` veya `!takim 1` ile takımlar manuel kapatılabilir
-- Raunt başında/sonunda otomatik sıfırlama
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- 2–5 team support: Red, Green, Blue, Yellow, Magenta
+- Players are shuffled randomly and distributed in **equal numbers** (warns if they cannot be split evenly)
+- Damage between members of the same team is zeroed automatically (friendly fire protection)
+- Every player is colored in their team color; a dead player's color is reset
+- When one team is left the winner is announced and the system shuts down
+- Teams can be disabled manually with `!takim 0` or `!takim 1`
+- Automatic reset at round start/end
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `JBTeams` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `JBTeams` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/JBTeams/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load JBTeams` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load JBTeams`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_takim <2-5>` | Canlı T'leri belirtilen sayıda takıma böler | `@css/generic` **veya** `@jailbreak/warden` |
-| `css_takim <0-1>` | Aktif takım sistemini kapatır | `@css/generic` **veya** `@jailbreak/warden` |
+| `css_takim <2-5>` | Splits living Ts into the given number of teams | `@css/generic` **or** `@jailbreak/warden` |
+| `css_takim <0-1>` | Shuts down the active team system | `@css/generic` **or** `@jailbreak/warden` |
 
-## Yapılandırma
+## Configuration
 
-Takım renkleri ve isimleri kaynak kodda tanımlıdır; mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Team colors and names are defined in the source code; messages can be edited through `lang/tr.json` / `lang/en.json`.
 
-## Kullanım Örneği
+## Usage Example
 
 ```
 !takim 2
 ```
 
-> 8 canlı T → 4 kişilik Kırmızı ve Yeşil takımlar oluşturulur.
-> Kırmızı takımdan biri Yeşil'in tamamını elediğinde: `Kırmızı kazandı.`
+> 8 living Ts → Red and Green teams of 4 players each are created.
+> When someone from Red eliminates all of Green: `Red wins.`
 
-## Notlar
+## Notes
 
-- Canlı T sayısı takım sayısına tam bölünemiyorsa sistem başlamaz (ör. 7 oyuncu / 2 takım).
-- Yalnızca **T takımındaki canlı oyuncular** dahil edilir.
+- If the living T count cannot be divided evenly by the team count the system will not start (e.g. 7 players / 2 teams).
+- Only **living players on the T team** are included.

@@ -1,41 +1,43 @@
 # FortniteArmor
 
-Alınan hasarı Fortnite'taki gibi önce zırhtan düşürür: zırh yettiği sürece can hiç azalmaz, zırh bitince kalan hasar cana geçer. Örneğin 50 hasarlık bir vuruşta zırhınız 40 ise zırhınız 0'a iner ve canınızdan yalnızca 10 eksilir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Makes incoming damage hit armor first, like in Fortnite: as long as there is armor left your health never drops, and once the armor is gone the remaining damage goes to health. For example, on a 50 damage hit with 40 armor your armor drops to 0 and you only lose 10 health.
 
-- Zırh varken tüm hasar önce zırhtan düşer; can ancak zırh tükenince azalmaya başlar
-- Vanilla kevlar oranı (kısmi emilim) devre dışı — zırh hasarı 1'e 1 emer
-- Yetki bayrağıyla sınırlandırılabilir; bayrak boşsa herkeste çalışır
-- Düşme hasarı varsayılan olarak zırhtan düşmez (config ile açılabilir)
-- Hasar uygulanmadan **önce** müdahale eder (`OnEntityTakeDamagePre`) — ölüm/can hesabı her zaman doğrudur
-- Mermi, HE, molotof, bıçak dahil tüm hasar türlerinde çalışır
+## Features
 
-## Gereksinimler
+- While you have armor all damage comes off the armor first; health only starts dropping once the armor runs out
+- The vanilla kevlar ratio (partial absorption) is disabled — armor absorbs damage 1 to 1
+- Can be restricted with a permission flag; works for everyone when the flag is empty
+- Fall damage does not come off armor by default (can be enabled in the config)
+- Intervenes **before** the damage is applied (`OnEntityTakeDamagePre`) — the death/health calculation is always correct
+- Works on every damage type including bullets, HE, molotov and knife
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `FortniteArmor` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `FortniteArmor` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/FortniteArmor/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load FortniteArmor` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load FortniteArmor`.
+3. The config file is created automatically on first load.
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/FortniteArmor/FortniteArmor.json
 ```
 
-| Ayar | Tip | Açıklama |
+| Setting | Type | Description |
 | --- | --- | --- |
-| `armor_flag` | string | Virgülle ayrılmış yetki bayrakları; boş bırakılırsa herkes yararlanır (varsayılan `""`) |
-| `absorb_fall_damage` | bool | `true` ise düşme hasarı da zırhtan düşer (varsayılan `false`) |
+| `armor_flag` | string | Comma separated permission flags; if left empty everyone benefits (default `""`) |
+| `absorb_fall_damage` | bool | When `true` fall damage also comes off armor (default `false`) |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -44,9 +46,9 @@ csgo/addons/counterstrikesharp/configs/plugins/FortniteArmor/FortniteArmor.json
 }
 ```
 
-## Notlar
+## Notes
 
-- `player_hurt` eventi hasar uygulandıktan sonra yandığı için bu iş orada yapılamaz; oyuncu vanilla hesapla ölmüşse event anında iş işten geçmiştir. Bu yüzden hasar öncesi hook kullanılır.
-- Hasar tamamen zırh tarafından emildiğinde motor 0 hasar gördüğü için vuruş geri bildirimi (aim punch, `player_hurt` eventi) oluşmayabilir.
-- Kask ayrıca takip edilmez; zırh 0'a inince vanilla davranış (korumasız) geçerlidir.
-- `armor_flag` dolu olduğunda yetkisi olmayan oyuncularda vanilla zırh davranışı geçerlidir. `@css/root` bayrağı her zaman geçerli sayılır.
+- The `player_hurt` event fires after the damage is applied, so this cannot be done there; if the player already died by the vanilla calculation it is too late by the time the event runs. That is why a pre-damage hook is used.
+- When the damage is fully absorbed by armor the engine sees 0 damage, so hit feedback (aim punch, the `player_hurt` event) may not happen.
+- The helmet is not tracked separately; once armor drops to 0 the vanilla behavior (unprotected) applies.
+- When `armor_flag` is set, players without the permission get the vanilla armor behavior. The `@css/root` flag is always treated as valid.

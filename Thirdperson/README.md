@@ -1,51 +1,53 @@
 # Thirdperson
 
-Oyuncunun kamerasını üçüncü şahıs (omuz arkası) görünüme alan bağımsız eklenti. Komut adları, yetki, kamera mesafesi ve duvar engelleme davranışı config'ten yönetilir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Standalone plugin that puts the player's camera into a third person (over the shoulder) view. Command names, permission, camera distance and wall blocking behavior are managed from the config.
 
-- Komutla aç/kapat; komut adları config'ten değiştirilebilir
-- Yetki (flag) kontrolü — boş bırakılırsa herkes kullanabilir
-- Ayarlanabilir kamera mesafesi
-- **Duvar engelleme (`thirdperson_blockwall`)** — açıkken kamera duvarların arkasına geçemez; native ray-trace ile duvara çarptığı noktada oyuncuya yaklaştırılır (duvar arkasını görme/wallhack istismarını engeller)
-- Kamera her tick oyuncunun bakışını takip eder (görünmez `prop_dynamic` + `ViewEntity`)
-- **Raunt başında ve raunt sonunda** tüm üçüncü şahıs kameralar zorla kapatılır
-- Ölüm, ayrılma ve eklenti kapanışında (unload) kamera güvenle eski hâline döner
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Toggle with a command; command names can be changed from the config
+- Permission (flag) check — leave it empty and everyone can use it
+- Adjustable camera distance
+- **Wall blocking (`thirdperson_blockwall`)** — while enabled the camera cannot pass behind walls; native ray-trace pulls it toward the player at the point it hits the wall (prevents seeing through walls / wallhack abuse)
+- The camera follows the player's view every tick (invisible `prop_dynamic` + `ViewEntity`)
+- Every third person camera is force-disabled **at round start and round end**
+- The camera safely returns to its old state on death, disconnect and plugin unload
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Thirdperson` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Thirdperson` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Thirdperson/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Thirdperson` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load Thirdperson`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_tp` / `css_thirdperson` | Üçüncü şahıs görünümü açar/kapatır (hayattayken) | `thirdperson_flag` (varsayılan `@css/thirdperson`) |
+| `css_tp` / `css_thirdperson` | Toggles the third person view (while alive) | `thirdperson_flag` (default `@css/thirdperson`) |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/Thirdperson/Thirdperson.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `thirdperson_cmd` | string | `"css_tp,css_thirdperson"` | Virgülle ayrılmış komut adları |
-| `thirdperson_flag` | string | `"@css/thirdperson"` | Gerekli yetki; boş string = herkes kullanabilir |
-| `thirdperson_distance` | float | `110` | Kameranın oyuncuya uzaklığı (minimum 20) |
-| `thirdperson_blockwall` | bool | `true` | `true`: duvarlar kamerayı engeller; `false`: kamera duvarların arkasına geçebilir |
+| `thirdperson_cmd` | string | `"css_tp,css_thirdperson"` | Comma separated command names |
+| `thirdperson_flag` | string | `"@css/thirdperson"` | Required permission; empty string = everyone can use it |
+| `thirdperson_distance` | float | `110` | Distance of the camera from the player (minimum 20) |
+| `thirdperson_blockwall` | bool | `true` | `true`: walls block the camera; `false`: the camera can pass behind walls |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -56,9 +58,9 @@ csgo/addons/counterstrikesharp/configs/plugins/Thirdperson/Thirdperson.json
 }
 ```
 
-## Notlar
+## Notes
 
-- Duvar engelleme, oyun motorunun trace fonksiyonuna imza taramasıyla bağlanır (`CNavPhysicsInterface`). Oyun güncellemesi sonrası imza kırılırsa eklenti çalışmaya devam eder ancak kamera duvar kısıtlaması devre dışı kalır (konsola hata yazılır).
-- Duvar engelleme açıkken kamera, göz ile hedef nokta arasındaki ilk engelde (16 birim pay bırakarak) durur; engel çok yakınsa kamera göz hizasına çekilir.
-- Komut adı değişikliği (`thirdperson_cmd`) sunucu/eklenti yeniden başlatıldığında etkinleşir.
-- VIP üyelerinize grup bazlı üçüncü şahıs özelliği vermek istiyorsanız [VIPCore](../VIPCore)'daki `Thirdperson` modülünü kullanın; iki sistemi aynı oyuncuda aynı anda kullanmayın.
+- Wall blocking is bound to the game engine's trace function via a signature scan (`CNavPhysicsInterface`). If a game update breaks the signature the plugin keeps working but the camera wall restriction is disabled (an error is written to the console).
+- While wall blocking is on, the camera stops at the first obstacle between the eye and the target point (leaving a 16 unit margin); if the obstacle is very close the camera is pulled to eye level.
+- Command name changes (`thirdperson_cmd`) take effect when the server/plugin is restarted.
+- If you want to give third person to your VIP members on a per-group basis, use the `Thirdperson` module in [VIPCore](../VIPCore); do not use both systems on the same player at the same time.

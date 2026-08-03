@@ -1,61 +1,63 @@
 # CTPerk
 
-CT takımına raunt bazlı güçlendirmeler (perk) seçtirir. Jailbreak'te T sayısına göre CT'lere denge sağlamak için tasarlanmıştır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Lets the CT team pick round based perks. Designed to balance CTs against the T count in Jailbreak.
 
-- 5 farklı perk:
-  - **Can + Zırh** — tüm canlı CT'lere yüksek HP ve zırh (+ kask)
-  - **Can Çalma (Lifesteal)** — CT'nin verdiği hasarın belirli yüzdesi can olarak geri döner
-  - **Sınırsız Mermi** — şarjör yarıya düşünce otomatik dolar
-  - **Hasar Azaltma** — CT'nin aldığı hasarın belirli yüzdesi geri yüklenir
-  - **Hasar Artırma** — CT'lerin T'lere verdiği hasar çarpanla artar
-- Raunt başındaki **T sayısına göre seçim hakkı** (ör. 9+ T → 2 hak, 20+ T → 3 hak)
-- Her perk config'ten ayrı ayrı açılıp kapatılabilir, oranlar özelleştirilebilir
-- Perk seçimleri tüm CT'lere duyurulur; menüde seçilenler yeşil ✔ ile işaretlenir
-- Raunt başında perkler sıfırlanır, CT'lerin fazla HP/zırhı normale çekilir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- 5 different perks:
+  - **HP + Armor** — high HP and armor (+ helmet) for every living CT
+  - **Lifesteal** — a percentage of the damage a CT deals comes back as health
+  - **Infinite Ammo** — the magazine refills automatically when it drops to half
+  - **Damage Reduction** — a percentage of the damage a CT takes is restored
+  - **Damage Boost** — the damage CTs deal to Ts is increased by a multiplier
+- **Selection budget based on the T count** at round start (e.g. 9+ Ts → 2 picks, 20+ Ts → 3 picks)
+- Every perk can be enabled/disabled separately from the config and the ratios customized
+- Perk selections are announced to every CT; selected ones are marked with a green ✔ in the menu
+- Perks are reset at round start and the CTs' extra HP/armor is pulled back to normal
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `CTPerk` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `CTPerk` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/CTPerk/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load CTPerk` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load CTPerk`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_ctperk` | Perk seçim menüsünü açar | `@css/generic` **veya** `@jailbreak/warden` |
+| `css_ctperk` | Opens the perk selection menu | `@css/generic` **or** `@jailbreak/warden` |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/CTPerk/CTPerk.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `perk_hparmor_hp` | int | `200` | Can+Zırh perk'inin verdiği HP |
-| `perk_hparmor_armor` | int | `100` | Can+Zırh perk'inin verdiği zırh |
-| `perk_lifesteal_ratio` | float | `0.25` | Can çalma oranı (0.25 = %25) |
-| `perk_damagereducation_ratio` | float | `0.25` | Hasar azaltma oranı |
-| `perk_damageboost_ratio` | float | `1.50` | Hasar çarpanı (1.5 = +%50) |
-| `enabled_perk_hparmor` | bool | `true` | Can+Zırh perk'i aktif mi |
-| `enabled_perk_lifesteal` | bool | `true` | Can çalma perk'i aktif mi |
-| `enabled_perk_infammo` | bool | `true` | Sınırsız mermi perk'i aktif mi |
-| `enabled_perk_damagereducation` | bool | `true` | Hasar azaltma perk'i aktif mi |
-| `enabled_perk_damageboost` | bool | `true` | Hasar artırma perk'i aktif mi |
-| `selection_rights` | liste | aşağıda | T sayısına göre perk seçim hakları |
+| `perk_hparmor_hp` | int | `200` | HP given by the HP+Armor perk |
+| `perk_hparmor_armor` | int | `100` | Armor given by the HP+Armor perk |
+| `perk_lifesteal_ratio` | float | `0.25` | Lifesteal ratio (0.25 = 25%) |
+| `perk_damagereducation_ratio` | float | `0.25` | Damage reduction ratio |
+| `perk_damageboost_ratio` | float | `1.50` | Damage multiplier (1.5 = +50%) |
+| `enabled_perk_hparmor` | bool | `true` | Whether the HP+Armor perk is active |
+| `enabled_perk_lifesteal` | bool | `true` | Whether the lifesteal perk is active |
+| `enabled_perk_infammo` | bool | `true` | Whether the infinite ammo perk is active |
+| `enabled_perk_damagereducation` | bool | `true` | Whether the damage reduction perk is active |
+| `enabled_perk_damageboost` | bool | `true` | Whether the damage boost perk is active |
+| `selection_rights` | list | below | Perk selection budget by T count |
 
-`selection_rights` — T sayısı eşiği (`t_count`) ve o eşikte tanınan hak (`hak`); en yüksek eşleşen eşik geçerlidir:
+`selection_rights` — the T count threshold (`t_count`) and the budget granted at that threshold (`hak`); the highest matching threshold applies:
 
 ```json
 "selection_rights": [
@@ -65,7 +67,7 @@ csgo/addons/counterstrikesharp/configs/plugins/CTPerk/CTPerk.json
 ]
 ```
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -87,14 +89,14 @@ csgo/addons/counterstrikesharp/configs/plugins/CTPerk/CTPerk.json
 }
 ```
 
-## Kullanım Örneği
+## Usage Example
 
-1. Raunt başlar → CT'lere "Bu raunt 2 perk hakkınız var" duyurusu yapılır.
-2. Warden `!ctperk` yazar, menüden "Can Çalma (%25)" seçer.
-3. Hak bitene kadar menü yeniden açılır; tüm seçimler CT'lere duyurulur.
+1. The round starts → CTs are told "You have 2 perk picks this round".
+2. The warden types `!ctperk` and picks "Lifesteal (25%)" from the menu.
+3. The menu reopens until the budget runs out; every selection is announced to the CTs.
 
-## Notlar
+## Notes
 
-- Perkler **takım geneli** çalışır; oyuncu bazlı değildir.
-- Hasar azaltma perk'i hasarı kesmek yerine alınan hasarın bir kısmını anında geri yükler.
-- Sınırsız mermi bıçak, taser gibi silahlarda devreye girmez.
+- Perks work **team-wide**, not per player.
+- The damage reduction perk does not cut the damage; it instantly restores part of the damage taken.
+- Infinite ammo does not apply to weapons like the knife or taser.

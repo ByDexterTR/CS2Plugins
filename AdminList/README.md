@@ -1,69 +1,71 @@
 # AdminList
 
-Oyuncuların `css_admins` komutuyla o an çevrimiçi olan yetkilileri grup etiketleriyle görmesini sağlar. Gruplar config'ten tanımlanır; her grubun etiketi, etiket rengi, isim rengi ve yetki bayrağı vardır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
+
+Lets players see the currently online admins with their group tags via the `css_admins` command. Groups are defined in the config; every group has a tag, a tag color, a name color and a permission flag.
 
 ```
-Çevrimiçi Yetkililer:
+Online Admins:
 [OWNER] ByDexter
 [DEV] Claude
 [MOD] Grok
 [VIP] Gemini
 ```
 
-## Özellikler
+## Features
 
-- Sunucu sahibi config'ten sınırsız grup tanımlayabilir (`tag`, `tag_color`, `name_color`, `flag`)
-- Gruplar yukarıdan aşağıya öncelik sırasıyla değerlendirilir; oyuncu eşleştiği ilk gruptan sayılır (ör. `@css/root` sahibi yalnızca en üstteki grupta görünür, alt gruplarda tekrarlanmaz)
-- Etiket ve isim renkleri grup bazında ayrı ayrı ayarlanabilir
-- `css_adminsreload` / `css_reloadadmins` ile config sunucu yeniden başlatılmadan yeniden yüklenir
-- Botlar ve GOTV listeye girmez
-- Türkçe / İngilizce dil desteği (`lang/`)
+- The server owner can define unlimited groups in the config (`tag`, `tag_color`, `name_color`, `flag`)
+- Groups are evaluated top to bottom in priority order; a player counts under the first group they match (e.g. someone with `@css/root` only appears in the topmost group, not repeated in lower ones)
+- Tag and name colors can be set separately per group
+- The config can be reloaded without restarting the server with `css_adminsreload` / `css_reloadadmins`
+- Bots and GOTV are not listed
+- Turkish / English language support (`lang/`)
 
-## Gereksinimler
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `AdminList` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `AdminList` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/AdminList/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load AdminList` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load AdminList`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_admins` | Çevrimiçi yetkilileri grup etiketleriyle listeler | Yok |
-| `css_adminsreload` / `css_reloadadmins` | Config'i yeniden yükler | `@css/root` |
+| `css_admins` | Lists online admins with their group tags | None |
+| `css_adminsreload` / `css_reloadadmins` | Reloads the config | `@css/root` |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/AdminList/AdminList.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `admins_cmd` | string | `"css_admins"` | Virgülle ayrılmış liste komutu adları |
-| `reload_cmd` | string | `"css_adminsreload,css_reloadadmins"` | Virgülle ayrılmış reload komutu adları |
-| `reload_flag` | string | `"@css/root"` | Reload komutu için gereken yetki |
-| `groups` | array | 4 örnek grup | Öncelik sırasına göre grup tanımları |
+| `admins_cmd` | string | `"css_admins"` | Comma separated list command names |
+| `reload_cmd` | string | `"css_adminsreload,css_reloadadmins"` | Comma separated reload command names |
+| `reload_flag` | string | `"@css/root"` | Permission required for the reload command |
+| `groups` | array | 4 example groups | Group definitions in priority order |
 
-### Grup Alanları
+### Group Fields
 
-| Alan | Açıklama |
+| Field | Description |
 | --- | --- |
-| `tag` | Chat'te gösterilen etiket (`[TAG]`) |
-| `tag_color` | Etiket rengi |
-| `name_color` | Oyuncu ismi rengi |
-| `flag` | Grubun yetki bayrağı (ör. `@css/mod`) |
+| `tag` | Tag shown in chat (`[TAG]`) |
+| `tag_color` | Tag color |
+| `name_color` | Player name color |
+| `flag` | The group's permission flag (e.g. `@css/mod`) |
 
-Geçerli renkler: `default`, `white`, `darkred`, `green`, `lightgreen`, `lime`, `red`, `grey`, `yellow`, `bluegrey`, `blue`, `darkblue`, `purple`, `orchid`, `lightred`, `gold`
+Valid colors: `default`, `white`, `darkred`, `green`, `lightgreen`, `lime`, `red`, `grey`, `yellow`, `bluegrey`, `blue`, `darkblue`, `purple`, `orchid`, `lightred`, `gold`
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -79,8 +81,8 @@ Geçerli renkler: `default`, `white`, `darkred`, `green`, `lightgreen`, `lime`, 
 }
 ```
 
-## Notlar
+## Notes
 
-- Grup sıralaması önceliktir: oyuncu birden fazla grubun bayrağına sahipse yalnızca listede en üstte olan grupta gösterilir. `@css/root` sahipleri tüm `@css/*` bayraklarını geçtiği için en üst gruba `@css/root` veya `@css/owner` gibi bir bayrak koymak doğru sıralamayı sağlar.
-- Bayraklar CounterStrikeSharp'ın `admins.json` dosyasındaki yetkilerle eşleşir; `@css/owner`, `@css/dev`, `@css/mod` gibi özel bayraklar da kullanılabilir.
-- Komut adı değişiklikleri (`admins_cmd`, `reload_cmd`) eklenti yeniden başlatıldığında etkinleşir; reload komutu yalnızca grup ve yetki ayarlarını anında günceller.
+- Group order is priority: if a player has the flags of more than one group they are only shown in the group highest in the list. Since `@css/root` holders pass every `@css/*` flag, putting a flag like `@css/root` or `@css/owner` on the top group gives the correct ordering.
+- Flags match the permissions in CounterStrikeSharp's `admins.json` file; custom flags like `@css/owner`, `@css/dev`, `@css/mod` can also be used.
+- Command name changes (`admins_cmd`, `reload_cmd`) take effect when the plugin is restarted; the reload command only updates the group and permission settings instantly.

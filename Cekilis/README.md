@@ -1,55 +1,57 @@
-# Çekiliş (Cekilis)
+# Cekilis (Raffle)
 
-Sunucudaki oyuncular arasından filtreli rastgele çekiliş yapar. Jailbreak etkinlikleri, ödül dağıtımı vb. için idealdir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Runs a filtered random raffle among the players on the server. Ideal for Jailbreak events, prize giveaways and similar.
 
-- 9 farklı filtre: herkes, canlı, ölü, takım ve takım+durum kombinasyonları
-- Kazanan tüm sunucuya duyurulur (çekilişi yapan admin ve kategori bilgisiyle)
-- Botlar çekilişe dahil edilmez
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- 9 different filters: everyone, alive, dead, team, and team+state combinations
+- The winner is announced to the whole server (with the admin who ran the raffle and the category)
+- Bots are not included in the raffle
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Cekilis` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Cekilis` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Cekilis/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Cekilis` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load Cekilis`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_cek <filtre>` | Belirtilen havuzdan rastgele bir oyuncu seçer | `@css/chat` |
-| `css_cek` | Kullanılabilir filtrelerin listesini gösterir | `@css/chat` |
+| `css_cek <filter>` | Picks a random player from the given pool | `@css/chat` |
+| `css_cek` | Shows the list of available filters | `@css/chat` |
 
-### Filtreler
+### Filters
 
-| Filtre | Havuz |
+| Filter | Pool |
 | --- | --- |
-| `all` | Tüm oyuncular |
-| `live` | Hayatta olan tüm oyuncular |
-| `dead` | Ölü olan tüm oyuncular |
-| `t` | Tüm T takımı |
-| `ct` | Tüm CT takımı |
-| `tlive` | Hayattaki T'ler |
-| `tdead` | Ölü T'ler |
-| `ctlive` | Hayattaki CT'ler |
-| `ctdead` | Ölü CT'ler |
+| `all` | All players |
+| `live` | All living players |
+| `dead` | All dead players |
+| `t` | The whole T team |
+| `ct` | The whole CT team |
+| `tlive` | Living Ts |
+| `tdead` | Dead Ts |
+| `ctlive` | Living CTs |
+| `ctdead` | Dead CTs |
 
-## Yapılandırma
+## Configuration
 
-Mesajlar ve sohbet ön eki `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Messages and the chat prefix can be edited through `lang/tr.json` / `lang/en.json`.
 
-## Kullanım Örneği
+## Usage Example
 
 ```
 !cek tdead
 ```
 
-> `[ByDexter] AdminAdı, TDEAD kategorisinde çekiliş yaptı: Kazanan → OyuncuAdı`
+> `[ByDexter] AdminName ran a raffle in the TDEAD category: Winner → PlayerName`

@@ -1,75 +1,77 @@
 # Postprocessing
 
-Oyunculara kişiye özel post processing efekti (bloom, blur, renk düzeltme, pozlama) uygular. Efektler `post_processing_volume` entity'siyle verilir ve `CheckTransmit` ile yalnızca ilgili oyuncuya gönderilir; diğer oyuncular ekranlarında hiçbir değişiklik görmez.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Applies a personal post processing effect (bloom, blur, color correction, exposure) to players. Effects are delivered with a `post_processing_volume` entity and sent only to the player in question via `CheckTransmit`; other players see no change on their screens.
 
-- Oyundaki **tüm `.vpost` dosyaları** hazır gelir: 105 benzersiz dosya + bir FOV (zoom) efekti = 106 efekt
-- Efektler oyuncu bazında çalışır; aynı anda farklı oyuncularda farklı efekt olabilir
-- Kategorili WASD menüsü (Efektler / Renk / Genel / Arayüz / Haritalar / HaritaOzel), `css_pp <efekt>` ile doğrudan seçim
-- `flag` alanıyla efekt belirli yetkilere kilitlenebilir
-- Config'ten sınırsız efekt eklenebilir; her efekt kendi `.vpost` dosyası, pozlama ayarları ve isteğe bağlı FOV değeriyle gelir
-- Yetkililer için `css_givepp` ile başka oyunculara efekt verme
-- Efekt tercihi SteamID bazında kaydedilir; oyuncu tekrar bağlandığında geri yüklenir
-- Haritanın kendi post processing volume'leri efekt aktifken oyuncudan gizlenir (çakışma olmaz)
-- FOV değeri tanımlanan efektler zoom efekti olarak da kullanılabilir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- **Every `.vpost` file in the game** ships ready to use: 105 unique files + one FOV (zoom) effect = 106 effects
+- Effects work per player; different players can have different effects at the same time
+- Categorized WASD menu (Effects / Color / General / UI / Maps / MapSpecific), or pick directly with `css_pp <effect>`
+- An effect can be locked behind specific permissions with the `flag` field
+- Unlimited effects can be added from the config; every effect has its own `.vpost` file, exposure settings and an optional FOV value
+- Admins can give effects to other players with `css_givepp`
+- The effect preference is saved per SteamID and restored when the player reconnects
+- The map's own post processing volumes are hidden from the player while an effect is active (no conflict)
+- Effects with a defined FOV value can also be used as a zoom effect
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Postprocessing` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Postprocessing` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Postprocessing/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Postprocessing` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load Postprocessing`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_pp` / `css_postprocessing` | Kategorili efekt menüsünü açar | `pp_flag` |
-| `css_pp <efekt>` | Efekti doğrudan uygular | `pp_flag` + efektin `flag` değeri |
-| `css_pp off` | Efekti kapatır | `pp_flag` |
-| `css_givepp <oyuncu> <efekt\|off>` | Hedef oyuncuya efekt verir veya kapatır | `pp_give_flag` |
+| `css_pp` / `css_postprocessing` | Opens the categorized effect menu | `pp_flag` |
+| `css_pp <effect>` | Applies the effect directly | `pp_flag` + the effect's `flag` value |
+| `css_pp off` | Turns the effect off | `pp_flag` |
+| `css_givepp <player> <effect\|off>` | Gives an effect to the target player or turns it off | `pp_give_flag` |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/Postprocessing/Postprocessing.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pp_cmd` | string | `"css_pp,css_postprocessing"` | Virgülle ayrılmış menü komutları |
-| `pp_flag` | string | `""` | Menü komutu yetkisi (boş = herkes) |
-| `pp_give_cmd` | string | `"css_givepp"` | Virgülle ayrılmış yetkili komutları |
-| `pp_give_flag` | string | `"@css/generic"` | Yetkili komutu yetkisi |
-| `pp_remember` | bool | `true` | Oyuncunun efekt tercihini SteamID bazında kaydeder |
-| `pp_hide_map_effects` | bool | `true` | Efekt aktifken haritanın kendi post processing efektini gizler |
-| `pp_presets` | liste | 106 efekt | Efekt tanımları |
+| `pp_cmd` | string | `"css_pp,css_postprocessing"` | Comma separated menu commands |
+| `pp_flag` | string | `""` | Permission for the menu command (empty = everyone) |
+| `pp_give_cmd` | string | `"css_givepp"` | Comma separated admin commands |
+| `pp_give_flag` | string | `"@css/generic"` | Permission for the admin command |
+| `pp_remember` | bool | `true` | Saves the player's effect preference per SteamID |
+| `pp_hide_map_effects` | bool | `true` | Hides the map's own post processing effect while an effect is active |
+| `pp_presets` | list | 106 effects | Effect definitions |
 
-### Efekt Alanları
+### Effect Fields
 
-| Alan | Tip | Varsayılan | Açıklama |
+| Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | string | – | Menüde görünen ve komutta yazılan efekt adı |
-| `file` | string | – | `.vpost` dosya yolu (boş bırakılırsa yalnızca FOV uygulanır) |
-| `category` | string | `""` | Menüdeki kategori adı (boş = "Diğer" kategorisi) |
-| `flag` | string | `""` | Efekt için gereken yetki (boş = herkes) |
-| `fade` | float | `0.25` | Efekte geçiş süresi (saniye) |
-| `exposure` | bool | `true` | Pozlama (exposure) kontrolü açık mı |
-| `min_exposure` | float | `0.5` | Minimum pozlama |
-| `max_exposure` | float | `2.0` | Maksimum pozlama |
-| `exposure_speed_up` | float | `1.0` | Pozlama artış hızı |
-| `exposure_speed_down` | float | `1.0` | Pozlama azalma hızı |
-| `fov` | int | `0` | Efektle birlikte uygulanan FOV (0 = değiştirme, 40 = zoom) |
+| `name` | string | – | Effect name shown in the menu and typed in the command |
+| `file` | string | – | `.vpost` file path (if left empty only the FOV is applied) |
+| `category` | string | `""` | Category name in the menu (empty = the "Other" category) |
+| `flag` | string | `""` | Permission required for the effect (empty = everyone) |
+| `fade` | float | `0.25` | Transition time into the effect (seconds) |
+| `exposure` | bool | `true` | Whether exposure control is on |
+| `min_exposure` | float | `0.5` | Minimum exposure |
+| `max_exposure` | float | `2.0` | Maximum exposure |
+| `exposure_speed_up` | float | `1.0` | Exposure increase speed |
+| `exposure_speed_down` | float | `1.0` | Exposure decrease speed |
+| `fov` | int | `0` | FOV applied together with the effect (0 = do not change, 40 = zoom) |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -123,22 +125,22 @@ csgo/addons/counterstrikesharp/configs/plugins/Postprocessing/Postprocessing.jso
 }
 ```
 
-## Varsayılan Efektler
+## Default Effects
 
-Efekt adları `.vpost` dosya adının kendisidir, yani `css_pp de_fachwerk3_drunk` doğrudan çalışır.
+Effect names are the `.vpost` file names themselves, so `css_pp de_fachwerk3_drunk` works directly.
 
-| Kategori | Adet | İçerik |
+| Category | Count | Contents |
 | --- | --- | --- |
-| `Efektler` | 11 | `lighting/postprocessing/effects/` — ölüm kamerası, dürbün, bomba sonu, satın alma bulanıklığı, ağır zırh, HLTV replay |
-| `Renk` | 3 | `lighting/postprocessing/correction/` — `bloomtest`, `cc_freeze_ct`, `cc_freeze_t` |
-| `Genel` | 15 | Kök `lighting/postprocessing/` ve `postprocess/` dosyaları — `ar_dizzy`, `filmic_default`, `basepostprocess`, `inspect_laptop`, `graphics_settings` ve FOV efekti `zoom` |
-| `Arayuz` | 4 | `lighting/postprocessing/ui/` — envanter/kasa ikon efektleri |
-| `Haritalar` | 49 | Resmî harita prefab'leri (`de_dust2_prefab`, `de_train_postprocess_v2`, `de_mirage_vanity` …) |
-| `HaritaOzel` | 24 | Harita `.vpk` dosyalarındaki özel efektler |
+| `Efektler` (Effects) | 11 | `lighting/postprocessing/effects/` — death camera, scope, bomb end, buy blur, heavy armor, HLTV replay |
+| `Renk` (Color) | 3 | `lighting/postprocessing/correction/` — `bloomtest`, `cc_freeze_ct`, `cc_freeze_t` |
+| `Genel` (General) | 15 | Root `lighting/postprocessing/` and `postprocess/` files — `ar_dizzy`, `filmic_default`, `basepostprocess`, `inspect_laptop`, `graphics_settings` and the FOV effect `zoom` |
+| `Arayuz` (UI) | 4 | `lighting/postprocessing/ui/` — inventory/case icon effects |
+| `Haritalar` (Maps) | 49 | Official map prefabs (`de_dust2_prefab`, `de_train_postprocess_v2`, `de_mirage_vanity` …) |
+| `HaritaOzel` (MapSpecific) | 24 | Custom effects inside map `.vpk` files |
 
-`HaritaOzel` efektleri `pak01_dir.vpk` içinde değil, ilgili haritanın kendi `.vpk` dosyasındadır. Menüde her haritada görünürler ancak yalnızca kaynağı olan harita yüklüyken çalışırlar:
+`HaritaOzel` effects are not in `pak01_dir.vpk` but inside that map's own `.vpk` file. They appear in the menu on every map but only work while the map they come from is loaded:
 
-| Kaynak harita | Efektler |
+| Source map | Effects |
 | --- | --- |
 | `de_fachwerk` | `de_fachwerk`, `de_fachwerk2`, `de_fachwerk3`, `de_fachwerk3_drunk`, `de_fachwerk4`, `de_fachwerk5`, `drawbridge` |
 | `de_boulder` | `de_boulder_postprocess`, `de_boulder_postprocess2`, `de_boulder_postprocess3`, `de_boulder_prefab`, `de_boulder_skybox`, `bldr_01_ct_spawn`, `bldr_04_b_site`, `de_inferno_postprocess_boulder` |
@@ -146,29 +148,29 @@ Efekt adları `.vpost` dosya adının kendisidir, yani `css_pp de_fachwerk3_drun
 | `de_eldorado` | `eldorado`, `eldorado_postprocess` |
 | `de_poseidon` | `poseidon` |
 | `de_debris` | `de_debris` |
-| `ar_pool_day`, `cs_shelter`, `de_fachwerk`, `de_poseidon` | `basic_linear_post` (dördünde de aynı dosya) |
+| `ar_pool_day`, `cs_shelter`, `de_fachwerk`, `de_poseidon` | `basic_linear_post` (the same file in all four) |
 
-## Kendi `.vpost` Dosyanı Bulma
+## Finding Your Own `.vpost` File
 
-Varsayılan config, oyun klasöründeki tüm `.vpk` arşivleri taranarak üretilmiştir; ekleme gerekmez. Atölyeden indirilen yeni bir haritanın kendi dosyalarını bulmak için [Source2Viewer CLI](https://valveresourceformat.github.io/) kullanılır:
+The default config was generated by scanning every `.vpk` archive in the game folder; nothing needs to be added. To find the files of a new map downloaded from the workshop, use the [Source2Viewer CLI](https://valveresourceformat.github.io/):
 
 ```powershell
-# Tek bir arşiv
+# A single archive
 Source2Viewer-CLI.exe -i "csgo\pak01_dir.vpk" --vpk_dir | Select-String "vpost"
 
-# Oyun klasörünün tamamı
+# The whole game folder
 Get-ChildItem "C:\cs2\game" -Filter "*.vpk" -Recurse |
   Where-Object { $_.Name -like "*_dir.vpk" -or $_.Name -notmatch "_\d{3}\.vpk$" } |
   ForEach-Object { Source2Viewer-CLI.exe -i $_.FullName --vpk_dir | Select-String "\.vpost_c" }
 ```
 
-Haritanın hangi efekti kullandığını görmek için entity dökümü alınır:
+To see which effect a map uses, dump its entities:
 
 ```powershell
 Source2Viewer-CLI.exe -i "csgo\maps\de_fachwerk.vpk" --vpk_filepath "maps/de_fachwerk/entities" -o out -d
 ```
 
-Çıkan `default_ents.vents` dosyasındaki `post_processing_volume` kaydı config'e birebir taşınabilir:
+The `post_processing_volume` entry in the resulting `default_ents.vents` file can be carried over to the config as is:
 
 ```
 fadetime                       20.0
@@ -182,15 +184,15 @@ postprocessing                 resource_name:"postprocess/de_fachwerk5.vpost"
 classname                      "post_processing_volume"
 ```
 
-Bulunan yolu `pp_presets` listesine yeni bir kayıt olarak eklemek yeterlidir.
+Adding the path you found as a new entry in the `pp_presets` list is all it takes.
 
-## Notlar
+## Notes
 
-- Efekt entity'si `master` olarak spawn edilir, yani oyuncunun konumundan bağımsız olarak tüm haritada geçerlidir. Entity oyuncunun pawn'ına parent edilir, böylece PVS dışında kalıp kaybolmaz.
-- `.vpost` dosyaları harita yüklenirken precache edilir. `HaritaOzel` efektleri yalnızca kaynak haritalarında mevcuttur; başka bir haritada seçilirlerse ekranda değişiklik olmaz ve konsola bir kaynak uyarısı düşer, eklenti çalışmaya devam eder.
-- Oyuncu öldüğünde efekt entity'si kaldırılır, tekrar doğduğunda otomatik geri gelir. Ölüyken izlenen oyuncunun efekti görünmez.
-- `fov` alanı `m_iDesiredFOV` üzerinden çalışır; dürbünlü silahlarda oyunun kendi zoom'u önceliklidir.
-- Efekt adları komutlarda büyük/küçük harf duyarsızdır (`css_pp bloomtest` = `css_pp BloomTest`).
-- Menü iki kademelidir: önce kategori, sonra efekt listesi. Kategori içinde `R` (Geri) üst menüye döner.
-- Efekt listesi config'te değiştirildiğinde mevcut `Postprocessing.json` dosyası **otomatik güncellenmez**. Yeni varsayılan listeyi almak için config dosyasını silip sunucuyu yeniden başlatın.
-- Komut adı değişikliği (`pp_cmd`, `pp_give_cmd`) sunucu/eklenti yeniden başlatıldığında etkinleşir.
+- The effect entity is spawned as `master`, so it applies across the whole map regardless of the player's position. The entity is parented to the player's pawn so it does not fall outside the PVS and disappear.
+- `.vpost` files are precached while the map loads. `HaritaOzel` effects only exist on their source maps; if selected on another map nothing changes on screen and a resource warning is written to the console, while the plugin keeps working.
+- The effect entity is removed when the player dies and comes back automatically when they respawn. While dead, the spectated player's effect is not visible.
+- The `fov` field works through `m_iDesiredFOV`; on scoped weapons the game's own zoom takes priority.
+- Effect names are case insensitive in commands (`css_pp bloomtest` = `css_pp BloomTest`).
+- The menu has two levels: category first, then the effect list. Inside a category `R` (Back) returns to the upper menu.
+- When the effect list is changed in the config, the existing `Postprocessing.json` file is **not updated automatically**. To get the new default list, delete the config file and restart the server.
+- Command name changes (`pp_cmd`, `pp_give_cmd`) take effect when the server/plugin is restarted.

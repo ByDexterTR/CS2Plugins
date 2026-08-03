@@ -1,40 +1,42 @@
 # Speedometer
 
-Oyuncunun anlık hızını (u/s) ekran ortasında gösterir. Hız arttıkça gösterge rengi beyazdan maviye, turuncuya ve kırmızıya geçer. Bhop / surf / kz sunucuları için tasarlanmıştır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Shows the player's live speed (u/s) in the middle of the screen. As speed increases the readout goes from white to blue, orange and red. Designed for bhop / surf / kz servers.
 
-- CenterHtml HUD üzerinde anlık yatay hız göstergesi (`u/s`)
-- Hıza göre renk geçişi: 0 beyaz → 1000 mavi → 2000 turuncu → 3000+ kırmızı (ara değerler interpolasyonlu)
-- İzleyici (spectator) modunda izlenen oyuncunun hızı gösterilir
-- Tercih kalıcıdır — kapatan oyuncu için `Speedometer.json` dosyasına kaydedilir
-- Menü açıkken gösterge otomatik gizlenir
-- Slot bazlı takip; kimse kullanmıyorken tick maliyeti minimumdur
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Live horizontal speed readout (`u/s`) on the CenterHtml HUD
+- Color transition by speed: 0 white → 1000 blue → 2000 orange → 3000+ red (values in between are interpolated)
+- In spectator mode the spectated player's speed is shown
+- The preference is persistent — players who turn it off are saved to the `Speedometer.json` file
+- The readout is hidden automatically while a menu is open
+- Slot based tracking; tick cost is minimal while nobody is using it
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Speedometer` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Speedometer` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Speedometer/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Speedometer` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load Speedometer`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_hiz` / `css_hız` | Hız göstergesini açar/kapatır | — (herkes) |
+| `css_hiz` / `css_hız` | Toggles the speed readout | — (everyone) |
 
-## Yapılandırma
+## Configuration
 
-Göstergeyi **kapatan** oyuncuların SteamID64 listesi eklenti klasöründeki `Speedometer.json` dosyasında tutulur (varsayılan davranış: herkes için açık).
+The SteamID64 list of players who **turned off** the readout is kept in the `Speedometer.json` file inside the plugin folder (default behavior: on for everyone).
 
-## Notlar
+## Notes
 
-- Hız hesabına dikey eksen dahil edilmez (yalnızca X/Y düzlemi).
-- Gösterge ikonu repodaki [`img/speedometer.png`](../img/speedometer.png) dosyasından yüklenir.
+- The vertical axis is not included in the speed calculation (X/Y plane only).
+- The readout icon is loaded from [`img/speedometer.png`](../img/speedometer.png) in this repository.

@@ -1,39 +1,41 @@
 # CTSpawnKill
 
-CT oyuncularına spawn olduktan sonra kısa süreli hasar koruması verir. Jailbreak'te raunt başı gardiyan avlamayı (spawn kill) engeller.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Gives CT players short damage protection after they spawn. Prevents guards from being hunted (spawn killed) at the start of a round in Jailbreak.
 
-- CT spawn olduğunda belirlenen süre boyunca **tüm hasar sıfırlanır**
-- Korumalı oyuncu turuncu renkle boyanır; süre bitince rengi normale döner
-- Koruma başlangıcı ve bitişi oyuncuya sohbetten bildirilir
-- Oyuncu ayrıldığında / harita değiştiğinde zamanlayıcılar güvenle temizlenir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- **All damage is zeroed** for the configured duration when a CT spawns
+- The protected player is colored orange; the color returns to normal when the duration ends
+- The start and end of the protection are reported to the player in chat
+- Timers are cleaned up safely when a player leaves / the map changes
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `CTSpawnKill` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `CTSpawnKill` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/CTSpawnKill/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load CTSpawnKill` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load CTSpawnKill`.
+3. The config file is created automatically on first load.
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/CTSpawnKill/CTSpawnKill.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `spawn_protect_seconds` | int | `5` | Spawn korumasının süresi (saniye, minimum 1) |
+| `spawn_protect_seconds` | int | `5` | Duration of the spawn protection (seconds, minimum 1) |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -41,9 +43,8 @@ csgo/addons/counterstrikesharp/configs/plugins/CTSpawnKill/CTSpawnKill.json
 }
 ```
 
-## Notlar
+## Notes
 
-- Koruma yalnızca **CT takımı** için geçerlidir.
-- Hasar engelleme `OnEntityTakeDamagePre` üzerinden yapılır; her türlü hasar kaynağı (silah, bıçak, patlama) sıfırlanır.
-- Flag bazlı koruma, T desteği ve renk geçişli kapsamlı sürüm için [SpawnkillProtection](../SpawnkillProtection) eklentisine bakın; iki eklentiyi aynı anda kullanmayın.
-
+- The protection only applies to the **CT team**.
+- Damage blocking is done through `OnEntityTakeDamagePre`; every damage source (weapon, knife, explosion) is zeroed.
+- For a more complete version with flag based protection, T support and color transitions see the [SpawnkillProtection](../SpawnkillProtection) plugin; do not use both plugins at the same time.

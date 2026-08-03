@@ -1,59 +1,61 @@
 # CTKit
 
-CT oyuncularının her spawn'da otomatik alacağı birincil ve ikincil silahı menüden seçmesini sağlar. Jailbreak gardiyan kiti sistemidir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Lets CT players pick from a menu which primary and secondary weapon they get automatically on every spawn. This is the Jailbreak guard kit system.
 
-- CenterHtml menü ile birincil / ikincil silah seçimi
-- Seçimler oyuncu bazında hatırlanır (oyuncu ayrılana kadar)
-- Seçim yapmayanlara config'teki varsayılan silahlar verilir
-- Spawn'da bıçak hariç tüm silahlar temizlenip kit verilir
-- Silah listeleri tamamen config üzerinden özelleştirilebilir
-- Menüde "kiti sıfırla" seçeneği
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Primary / secondary weapon selection through a CenterHtml menu
+- Selections are remembered per player (until the player disconnects)
+- Players who have not chosen get the default weapons from the config
+- On spawn every weapon except the knife is cleared and the kit is given
+- Weapon lists are fully customizable through the config
+- "Reset kit" option in the menu
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `CTKit` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `CTKit` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/CTKit/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load CTKit` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load CTKit`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_kit` | Silah kiti menüsünü açar | — (yalnızca CT takımı) |
+| `css_kit` | Opens the weapon kit menu | — (CT team only) |
 
-## Yapılandırma
+## Configuration
 
-Config dosyası ilk yüklemede otomatik oluşturulur:
+The config file is created automatically on first load:
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/CTKit/CTKit.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `default_primary_weapon` | string | `weapon_ak47` | Seçim yapılmamışsa verilecek birincil silah |
-| `default_secondary_weapon` | string | `weapon_deagle` | Seçim yapılmamışsa verilecek ikincil silah |
-| `primary_weapons` | liste | AK47, M4A4, M4A1-S, AWP, MAG7 | Menüde sunulacak birincil silahlar |
-| `secondary_weapons` | liste | Deagle, CZ75A, Tec9, Dual Beretta, USP-S, Glock, Revolver | Menüde sunulacak ikincil silahlar |
+| `default_primary_weapon` | string | `weapon_ak47` | Primary weapon given when nothing is selected |
+| `default_secondary_weapon` | string | `weapon_deagle` | Secondary weapon given when nothing is selected |
+| `primary_weapons` | list | AK47, M4A4, M4A1-S, AWP, MAG7 | Primary weapons offered in the menu |
+| `secondary_weapons` | list | Deagle, CZ75A, Tec9, Dual Berettas, USP-S, Glock, Revolver | Secondary weapons offered in the menu |
 
-Her silah kaydı iki alandan oluşur:
+Every weapon entry has two fields:
 
-| Alan | Açıklama |
+| Field | Description |
 | --- | --- |
-| `weapon_name` | Oyun içi entity adı (`weapon_` ön ekiyle) |
-| `display_name` | Menüde gösterilecek isim |
+| `weapon_name` | In-game entity name (with the `weapon_` prefix) |
+| `display_name` | Name shown in the menu |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -71,13 +73,13 @@ Her silah kaydı iki alandan oluşur:
 }
 ```
 
-## Kullanım Örneği
+## Usage Example
 
-1. CT oyuncusu `!kit` yazar → menü açılır (mevcut seçimler başlıkta görünür).
-2. "Birincil Silah" → listeden AWP seçer.
-3. Bir sonraki spawn'da otomatik olarak AWP + seçili tabanca verilir.
+1. A CT player types `!kit` → the menu opens (current selections are shown in the title).
+2. "Primary Weapon" → they pick AWP from the list.
+3. On their next spawn they automatically get the AWP + the selected pistol.
 
-## Notlar
+## Notes
 
-- Kit yalnızca **CT takımına** ve spawn anında uygulanır; T oyuncuları etkilenmez.
-- Menü başlığındaki ikon repodaki [`img/pistol.png`](../img/pistol.png) dosyasından yüklenir.
+- The kit is only applied to the **CT team** and only at spawn; T players are not affected.
+- The icon in the menu title is loaded from [`img/pistol.png`](../img/pistol.png) in this repository.

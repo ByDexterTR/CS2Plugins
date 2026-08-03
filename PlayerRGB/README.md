@@ -1,36 +1,38 @@
 # PlayerRGB
 
-Oyuncu modelini akıcı bir RGB (gökkuşağı) döngüsüyle renklendirir. Komutla açılıp kapatılır ve tercih kalıcı olarak saklanır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Colors the player model with a smooth RGB (rainbow) cycle. Toggled with a command and the preference is stored persistently.
 
-- Model rengi her tick'te kırmızı → yeşil → mavi döngüsüyle yumuşak geçiş yapar
-- Tercih `PlayerRGB.json` dosyasında saklanır — oyuncu sunucuya tekrar girdiğinde otomatik açılır
-- Kapatıldığında model rengi anında normale döner
-- RGB aktif oyuncu yokken tick maliyeti sıfıra yakındır
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- The model color transitions smoothly through red → green → blue every tick
+- The preference is stored in the `PlayerRGB.json` file — it turns back on automatically when the player rejoins the server
+- The model color returns to normal instantly when turned off
+- Tick cost is near zero while no player has RGB active
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `PlayerRGB` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `PlayerRGB` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/PlayerRGB/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load PlayerRGB` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load PlayerRGB`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_rgb` | RGB efektini açar/kapatır | `@css/cheats` |
+| `css_rgb` | Toggles the RGB effect | `@css/cheats` |
 
-## Yapılandırma
+## Configuration
 
-Açık durumdaki oyuncuların SteamID64 listesi eklenti klasöründeki `PlayerRGB.json` dosyasında tutulur:
+The SteamID64 list of players who have it enabled is kept in the `PlayerRGB.json` file inside the plugin folder:
 
 ```json
 [
@@ -39,8 +41,8 @@ Açık durumdaki oyuncuların SteamID64 listesi eklenti klasöründeki `PlayerRG
 ]
 ```
 
-## Notlar
+## Notes
 
-- Efekt yalnızca hayattaki oyunculara uygulanır.
-- Renk döngüsü sunucu genelinde ortaktır (tüm RGB'li oyuncular aynı anda aynı rengi alır).
-- Dosya yazma işlemleri arka planda yapılır.
+- The effect is only applied to living players.
+- The color cycle is shared server-wide (every player with RGB gets the same color at the same time).
+- File writes are done in the background.

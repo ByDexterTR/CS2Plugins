@@ -1,50 +1,52 @@
 # Slowmode
 
-Sohbete genel yavaş mod uygular; açıkken oyuncular mesajlar arasında belirlenen saniye kadar beklemek zorunda kalır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Applies a server-wide chat slow mode; while it is on, players have to wait the configured number of seconds between messages.
 
-- `!slowmode <saniye>` ile tüm sunucuya yavaş mod (sınırlar config'ten)
-- `!slowmode off` veya `!slowmode 0` ile kapatma (`0` her zaman geçerli, min sınırından etkilenmez)
-- Süre dolmadan yazan oyuncunun mesajı engellenir, kalan süre kendisine bildirilir
-- Muafiyet flag'i config'ten ayarlanabilir (varsayılan `@css/chat`, boş bırakılırsa kimse muaf olmaz)
-- Açılış/kapanış tüm sunucuya duyurulur
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Server-wide slow mode with `!slowmode <seconds>` (limits come from the config)
+- Turn it off with `!slowmode off` or `!slowmode 0` (`0` is always valid, the minimum limit does not apply to it)
+- A player who types before the delay expires has their message blocked and is told the remaining time
+- The exempt flag can be set from the config (default `@css/chat`, leave empty and nobody is exempt)
+- Enabling/disabling is announced to the whole server
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Slowmode` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Slowmode` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Slowmode/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Slowmode` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load Slowmode`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_slowmode <saniye>` | Yavaş modu belirtilen saniye aralığıyla açar | `@css/chat` |
-| `css_slowmode off` | Yavaş modu kapatır | `@css/chat` |
+| `css_slowmode <seconds>` | Enables slow mode with the given second interval | `@css/chat` |
+| `css_slowmode off` | Disables slow mode | `@css/chat` |
 
-## Yapılandırma
+## Configuration
 
-`configs/plugins/Slowmode/Slowmode.json` (ilk yüklemede otomatik oluşur):
+`configs/plugins/Slowmode/Slowmode.json` (created automatically on first load):
 
-| Ayar | Açıklama | Varsayılan |
+| Setting | Description | Default |
 | --- | --- | --- |
-| `slowignore_flag` | Yavaş moddan etkilenmeyecek admin flag'i (boş = herkes etkilenir) | `@css/chat` |
-| `slow_min` | Komutla girilebilecek en düşük saniye (en az 1) | `1` |
-| `slow_max` | Komutla girilebilecek en yüksek saniye | `300` |
+| `slowignore_flag` | Admin flag not affected by slow mode (empty = everyone is affected) | `@css/chat` |
+| `slow_min` | Lowest number of seconds that can be entered with the command (at least 1) | `1` |
+| `slow_max` | Highest number of seconds that can be entered with the command | `300` |
 
-Mesajlar ve sohbet ön eki `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Messages and the chat prefix can be edited through `lang/tr.json` / `lang/en.json`.
 
-## Kullanım Örneği
+## Usage Example
 
 ```
-!slowmode 10  → Yavaş mod açıldı! Mesajlar arasında 10 saniye beklemelisin.
-!slowmode off → Yavaş mod kapatıldı.
+!slowmode 10  → Slow mode enabled! You must wait 10 seconds between messages.
+!slowmode off → Slow mode disabled.
 ```

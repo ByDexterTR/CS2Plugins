@@ -1,61 +1,63 @@
 # PlayerHourCheck
 
-Sunucuya bağlanan oyuncuların CS2 oynama saatini kontrol eder; yetersiz saati olan veya profili gizli oyunculara kademeli ceza (kick/ban) uygular.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Checks the CS2 playtime of players connecting to the server; applies tiered punishments (kick/ban) to players with too few hours or a private profile.
 
-- 3 aşamalı oynama saati sorgusu: **Steam Web API** → **DecAPI** → **ByDexter API** (ilk başarılı sonuç kullanılır)
-- **JSON (varsayılan) veya MySQL** depolama; MySQL bağlantısı başarısız olursa JSON'a düşer
-- Sonuçlar veritabanında önbelleğe alınır — eksik saat dolmadan tekrar API sorgusu yapılmaz
-- Profili gizli oyunculara yapılandırılabilir sayıda **uyarı**, ardından ceza
-- İhlal sayısına göre **kademeli ceza sistemi** (ör. 1. ihlal kick, 3. ihlal 1 saat ban, 5. ihlal 1 gün ban)
-- Yetki bayrağı veya SteamID ile muafiyet listesi
-- Config'i ve tüm oyuncuları yeniden kontrol eden reload komutu
-- Renk kodlu mesaj desteği (`{Gold}`, `{Red}` vb.)
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- 3 stage playtime lookup: **Steam Web API** → **DecAPI** → **ByDexter API** (the first successful result is used)
+- **JSON (default) or MySQL** storage; falls back to JSON if the MySQL connection fails
+- Results are cached in the database — no API lookup is repeated until the missing hours are made up
+- A configurable number of **warnings** for players with a private profile, then the punishment
+- **Tiered punishment system** by violation count (e.g. 1st violation kick, 3rd violation 1 hour ban, 5th violation 1 day ban)
+- Exemption list by permission flag or SteamID
+- Reload command that reloads the config and re-checks every player
+- Color coded message support (`{Gold}`, `{Red}` etc.)
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
-- Ceza uygulamak için `css_kick` ve `css_ban` komutlarını sağlayan bir admin eklentisi (ör. CS2-SimpleAdmin)
-- (Önerilen) [Steam Web API anahtarı](https://steamcommunity.com/dev/apikey)
-- (MySQL kullanılacaksa) MySQL 8+ sunucusu
+- An admin plugin providing the `css_kick` and `css_ban` commands so punishments can be applied (e.g. CS2-SimpleAdmin)
+- (Recommended) [Steam Web API key](https://steamcommunity.com/dev/apikey)
+- (If MySQL will be used) MySQL 8+ server
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `PlayerHourCheck` klasörünü **tüm bağımlılık DLL'leriyle birlikte** sunucuya kopyalayın:
+1. Copy the compiled `PlayerHourCheck` folder to the server **together with all dependency DLLs**:
    ```
    csgo/addons/counterstrikesharp/plugins/PlayerHourCheck/
    ```
-2. İlk yüklemede oluşan config dosyasını düzenleyin (en azından `phc_required_playtime` ve tercihen `phc_steam_api_key`).
-3. `css_plugins reload PlayerHourCheck` ile yeniden yükleyin.
+2. Edit the config file created on first load (at least `phc_required_playtime` and preferably `phc_steam_api_key`).
+3. Reload with `css_plugins reload PlayerHourCheck`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_phc_reload` | Config'i diskten yeniden yükler ve tüm oyuncuları yeniden kontrol eder | `@css/root` |
+| `css_phc_reload` | Reloads the config from disk and re-checks every player | `@css/root` |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/PlayerHourCheck/PlayerHourCheck.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `phc_db` | nesne | json | Depolama ayarları (aşağıda) |
-| `phc_steam_api_key` | string | `""` | Steam Web API anahtarı (boşsa doğrudan DecAPI'ye geçilir) |
-| `phc_required_playtime` | int | `100` | Gereken minimum CS2 saati |
-| `phc_warn_enabled` | int | `1` | Gizli profil uyarı sistemi (1: açık, 0: direkt ceza) |
-| `phc_warn_times` | int | `3` | Cezadan önceki uyarı sayısı |
-| `phc_warn_timer` | int | `30` | Uyarılar arası bekleme (saniye) |
-| `phc_warn_reason_private` | string | — | Gizli profil uyarı mesajı (`{0}`: mevcut, `{1}`: toplam uyarı) |
-| `phc_kick_reason_private` | string | — | Gizli profil kick sebebi |
-| `phc_kick_reason_playtime` | string | — | Yetersiz saat kick sebebi |
-| `phc_penalty` | nesne | aşağıda | İhlal sayısı → ceza eşlemesi |
-| `phc_ignore_flags` | liste | `["@bydexter/ignoreplaytime", "@css/root"]` | Muaf yetki bayrakları |
-| `phc_ignore_steamids` | liste | — | Muaf SteamID64 listesi |
+| `phc_db` | object | json | Storage settings (below) |
+| `phc_steam_api_key` | string | `""` | Steam Web API key (if empty it goes straight to DecAPI) |
+| `phc_required_playtime` | int | `100` | Minimum required CS2 hours |
+| `phc_warn_enabled` | int | `1` | Private profile warning system (1: on, 0: punish directly) |
+| `phc_warn_times` | int | `3` | Number of warnings before the punishment |
+| `phc_warn_timer` | int | `30` | Wait between warnings (seconds) |
+| `phc_warn_reason_private` | string | — | Private profile warning message (`{0}`: current, `{1}`: total warnings) |
+| `phc_kick_reason_private` | string | — | Private profile kick reason |
+| `phc_kick_reason_playtime` | string | — | Insufficient hours kick reason |
+| `phc_penalty` | object | below | Violation count → punishment mapping |
+| `phc_ignore_flags` | list | `["@bydexter/ignoreplaytime", "@css/root"]` | Exempt permission flags |
+| `phc_ignore_steamids` | list | — | Exempt SteamID64 list |
 
 ### `phc_db`
 
@@ -70,24 +72,24 @@ csgo/addons/counterstrikesharp/configs/plugins/PlayerHourCheck/PlayerHourCheck.j
 }
 ```
 
-- `provider`: `"json"` (varsayılan, eklenti klasöründe `players.json`) veya `"mysql"`
-- MySQL seçiliyse veritabanı ve tablo otomatik oluşturulur.
+- `provider`: `"json"` (default, `players.json` in the plugin folder) or `"mysql"`
+- If MySQL is selected the database and table are created automatically.
 
 ### `phc_penalty`
 
-Anahtar = ihlal sayısı, değer = ceza. `type`: `"kick"` veya `"ban"`, `time`: ban süresi (dakika), `reason` içinde `{PlayerPlaytime}` ve `{RequiredPlaytime}` yer tutucuları kullanılabilir:
+Key = violation count, value = punishment. `type`: `"kick"` or `"ban"`, `time`: ban duration (minutes), and `reason` can use the `{PlayerPlaytime}` and `{RequiredPlaytime}` placeholders:
 
 ```json
 "phc_penalty": {
-  "1": { "type": "kick", "time": 0,    "reason": "Yetersiz oyun saati ({PlayerPlaytime}/{RequiredPlaytime} saat)" },
-  "3": { "type": "ban",  "time": 60,   "reason": "Yetersiz oyun saati ({PlayerPlaytime}/{RequiredPlaytime} saat)" },
-  "5": { "type": "ban",  "time": 1440, "reason": "Yetersiz oyun saati ({PlayerPlaytime}/{RequiredPlaytime} saat)" }
+  "1": { "type": "kick", "time": 0,    "reason": "Insufficient playtime ({PlayerPlaytime}/{RequiredPlaytime} hours)" },
+  "3": { "type": "ban",  "time": 60,   "reason": "Insufficient playtime ({PlayerPlaytime}/{RequiredPlaytime} hours)" },
+  "5": { "type": "ban",  "time": 1440, "reason": "Insufficient playtime ({PlayerPlaytime}/{RequiredPlaytime} hours)" }
 }
 ```
 
-> Aradaki ihlallerde bir alt eşiğin cezası uygulanır (ör. 4. ihlal → "3" kaydı).
+> For violations in between, the punishment of the lower tier applies (e.g. 4th violation → the "3" entry).
 
-## Notlar
+## Notes
 
-- Cezalar `css_kick` / `css_ban` konsol komutlarıyla uygulanır; bu komutlar sunucuda tanımlı değilse ceza gerçekleşmez.
-- Tüm veritabanı işlemleri arka planda yürütülür, oyun akışı bloklanmaz.
+- Punishments are applied with the `css_kick` / `css_ban` console commands; if those commands are not defined on the server no punishment happens.
+- All database operations run in the background and do not block the game loop.

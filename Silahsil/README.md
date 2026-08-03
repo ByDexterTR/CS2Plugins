@@ -1,38 +1,40 @@
 # Silahsil
 
-Yerdeki sahipsiz silahları tek komutla temizler. Jailbreak'te hücre açılışı öncesi silah temizliği için kullanılır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Clears unowned weapons on the ground with a single command. Used in Jailbreak to clean up weapons before the cells open.
 
-- Haritadaki tüm sahipsiz (`weapon_*`) entity'lerini kaldırır
-- Oyuncuların elindeki/üzerindeki silahlara dokunmaz
-- Kaldırılan silah sayısı komutu kullanan oyuncuya bildirilir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Removes every unowned (`weapon_*`) entity on the map
+- Does not touch weapons held or carried by players
+- The number of removed weapons is reported to the player who used the command
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Silahsil` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Silahsil` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Silahsil/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Silahsil` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load Silahsil`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_silahsil` | Yerdeki tüm silahları siler | `@css/slay` |
+| `css_silahsil` | Deletes every weapon on the ground | `@css/slay` |
 
-## Yapılandırma
+## Configuration
 
-Mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Messages can be edited through `lang/tr.json` / `lang/en.json`.
 
-## Kullanım Örneği
+## Usage Example
 
 ```
-!silahsil → [ByDexter] AdminAdı yerdeki 12 silahı sildi.
+!silahsil → [ByDexter] AdminName deleted 12 weapons on the ground.
 ```

@@ -1,61 +1,63 @@
 # GoBhop
 
-Ölü T oyuncularını haritada belirlenen gizli bhop noktasına ışınlar. Oyuncu gerçekte yaşar ama TAB'da ölü gözükür, kimse onu izleyemez ve göremez; hasar almaz ve silahsız doğar. T takımında son kişi kalınca GoBhop'takiler otomatik öldürülür ve GoBhop o raunt için kapanır. CSGO'daki [csgo_GoBhop](https://github.com/ByDexterTR/csgo_GoBhop) eklentisinin CS2 uyarlamasıdır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Teleports dead T players to a hidden bhop area set up on the map. The player is actually alive but shows as dead on TAB, nobody can spectate or see them; they take no damage and spawn without weapons. When only one player is left on the T team everyone in GoBhop is killed automatically and GoBhop closes for that round. This is the CS2 port of the CSGO plugin [csgo_GoBhop](https://github.com/ByDexterTR/csgo_GoBhop).
 
-- Ölü T oyuncusu `css_gobhop` menüsünden seçtiği noktaya canlı olarak ışınlanır; tek nokta varsa menüsüz direkt gider
-- TAB'da ölü gözükür, izlenemez; GoBhop'takilerle dışarıdakiler birbirini görmez ve duymaz
-- Hasar almaz, silahsız doğar; silah alsa anında silinir, yere silah atamaz, yasaklı komutları kullanamaz
-- Noktalar harita başına isimli olarak `positions.json` dosyasında tutulur, oyun içinden yönetilir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- A dead T player is teleported alive to the point they pick from the `css_gobhop` menu; if there is only one point they go straight there without a menu
+- They show as dead on TAB and cannot be spectated; players inside and outside GoBhop cannot see or hear each other
+- They take no damage and spawn without weapons; any weapon they pick up is removed instantly, they cannot drop weapons and cannot use blocked commands
+- Points are stored per map with names in the `positions.json` file and managed in-game
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `GoBhop` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `GoBhop` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/GoBhop/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load GoBhop` komutunu çalıştırın.
-3. Haritada GoBhop noktasında durup `css_setbhop <isim>` ile konumu kaydedin.
+2. Restart the server or run `css_plugins load GoBhop`.
+3. Stand at the GoBhop point on the map and save the position with `css_setbhop <name>`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_gobhop` | Nokta menüsünü açar; GoBhop dışındayken girer (tek nokta varsa direkt), içindeyken çıkış + nokta değiştirme sunar | Yok |
-| `css_onbhop` | GoBhop'a gitmeyi açar | `@css/ban` |
-| `css_offbhop` | GoBhop'a gitmeyi kapatır ve içindeki herkesi çıkarır | `@css/ban` |
-| `css_setbhop <isim>` | Bulunduğun konumu ve bakış yönünü verilen isimle kaydeder | `@css/root` |
-| `css_delbhop <isim>` | Haritadaki isimli GoBhop noktasını siler | `@css/root` |
-| `css_resetbhop` | Haritanın tüm kayıtlı GoBhop noktalarını siler | `@css/root` |
+| `css_gobhop` | Opens the point menu; enters GoBhop when outside (straight in if there is a single point), and offers exit + change point when inside | None |
+| `css_onbhop` | Enables going to GoBhop | `@css/ban` |
+| `css_offbhop` | Disables going to GoBhop and removes everyone inside | `@css/ban` |
+| `css_setbhop <name>` | Saves your position and view direction under the given name | `@css/root` |
+| `css_delbhop <name>` | Deletes the named GoBhop point on the map | `@css/root` |
+| `css_resetbhop` | Deletes every saved GoBhop point on the map | `@css/root` |
 
-Komut adları ve yetkiler config'ten değiştirilebilir.
+Command names and permissions can be changed from the config.
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/GoBhop/GoBhop.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `gobhop_cmd` | string | `"css_gobhop"` | Virgülle ayrılmış giriş komutu adları |
-| `onbhop_cmd` | string | `"css_onbhop"` | Virgülle ayrılmış açma komutu adları |
-| `offbhop_cmd` | string | `"css_offbhop"` | Virgülle ayrılmış kapatma komutu adları |
-| `set_cmd` | string | `"css_setbhop"` | Virgülle ayrılmış nokta kaydetme komutu adları |
-| `del_cmd` | string | `"css_delbhop"` | Virgülle ayrılmış isimli nokta silme komutu adları |
-| `reset_cmd` | string | `"css_resetbhop"` | Virgülle ayrılmış toplu silme komutu adları |
-| `blocked_cmd` | string | `"css_wp"` | GoBhop'tayken kullanılamayacak komutlar (virgülle ayrılır) |
-| `admin_flag` | string | `"@css/ban"` | Aç/kapat komutları için gereken yetki |
-| `set_flag` | string | `"@css/root"` | Nokta kaydetme için gereken yetki |
-| `gobhop_min_alive_t` | int | `2` | Girişe izin verilen minimum canlı T sayısı |
+| `gobhop_cmd` | string | `"css_gobhop"` | Comma separated entry command names |
+| `onbhop_cmd` | string | `"css_onbhop"` | Comma separated enable command names |
+| `offbhop_cmd` | string | `"css_offbhop"` | Comma separated disable command names |
+| `set_cmd` | string | `"css_setbhop"` | Comma separated save point command names |
+| `del_cmd` | string | `"css_delbhop"` | Comma separated named point delete command names |
+| `reset_cmd` | string | `"css_resetbhop"` | Comma separated bulk delete command names |
+| `blocked_cmd` | string | `"css_wp"` | Commands that cannot be used while in GoBhop (comma separated) |
+| `admin_flag` | string | `"@css/ban"` | Permission required for the enable/disable commands |
+| `set_flag` | string | `"@css/root"` | Permission required for saving points |
+| `gobhop_min_alive_t` | int | `2` | Minimum living T count for entry to be allowed |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -72,7 +74,7 @@ csgo/addons/counterstrikesharp/configs/plugins/GoBhop/GoBhop.json
 }
 ```
 
-GoBhop noktaları eklenti klasöründeki `positions.json` dosyasında tutulur ve `css_setbhop`/`css_delbhop`/`css_resetbhop` ile otomatik yazılır:
+GoBhop points are kept in the `positions.json` file inside the plugin folder and written automatically by `css_setbhop`/`css_delbhop`/`css_resetbhop`:
 
 ```
 csgo/addons/counterstrikesharp/plugins/GoBhop/positions.json
@@ -93,9 +95,9 @@ csgo/addons/counterstrikesharp/plugins/GoBhop/positions.json
 }
 ```
 
-## Notlar
+## Notes
 
-- Skorbordda ölü gösterme `m_bPawnIsAlive` alanıyla yapılır; oyun değeri geri çevirirse her tick yeniden uygulanır.
-- Raunt sonu, eklenti kapanışı ve `css_offbhop` GoBhop'taki herkesi güvenle çıkarır; bu ölümler kill feed'de gösterilmez.
-- Kapalıyken (`css_offbhop` veya son T) başka bir eklenti GoBhop'taki oyuncuyu canlandırırsa spawn anında yakalanıp çıkarılır.
-- Komut adı değişiklikleri sunucu/eklenti yeniden başlatıldığında etkinleşir.
+- Showing as dead on the scoreboard is done with the `m_bPawnIsAlive` field; if the game reverts the value it is reapplied every tick.
+- Round end, plugin unload and `css_offbhop` remove everyone in GoBhop safely; these deaths are not shown in the kill feed.
+- While disabled (`css_offbhop` or the last T), if another plugin revives a player in GoBhop they are caught at spawn and removed.
+- Command name changes take effect when the server/plugin is restarted.

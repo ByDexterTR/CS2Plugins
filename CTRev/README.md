@@ -1,49 +1,51 @@
 # CTRev
 
-Ölen CT oyuncularını menüden veya otomatik olarak canlandırır (respawn). Jailbreak'te gardiyan dengesini korumak için raunt başına sınırlı hak sistemiyle çalışır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Revives (respawns) dead CT players from a menu or automatically. Works with a limited per-round budget to keep the guard balance in Jailbreak.
 
-- Ölen CT'leri listeleyen CenterHtml menü — canlandırılabilir oyuncular yeşil, bekleme süresindekiler gri gösterilir
-- Ölümden sonra **bekleme süresi (cooldown)** — süre dolmadan canlandırma yapılamaz
-- Raunt başına **sınırlı canlandırma hakkı**; her raunt başında otomatik yenilenir
-- **Otomatik canlandırma modu** — açıldığında bekleme süresi dolan CT'ler hak bitene kadar kendiliğinden doğar
-- Hakları raunt ortasında sıfırlama komutu
-- Menü açıkken saniyede bir otomatik yenilenir (kalan süreler canlı görünür)
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- CenterHtml menu listing dead CTs — revivable players are shown in green, players still on cooldown in gray
+- **Cooldown** after death — a player cannot be revived before it expires
+- **Limited revive budget** per round; refilled automatically at the start of each round
+- **Automatic revive mode** — when enabled, CTs whose cooldown has expired respawn by themselves until the budget runs out
+- Command to reset the budget mid-round
+- The menu refreshes once per second while open (remaining times update live)
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `CTRev` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `CTRev` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/CTRev/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load CTRev` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load CTRev`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_ctr` / `css_ctrev` / `css_ctrevmenu` | Canlandırma menüsünü açar | `@css/generic` **veya** `@jailbreak/warden` |
-| `css_hak0` / `css_haksifir` / `css_haksifirla` | Canlandırma haklarını sıfırlar (yeniler) | `@css/generic` |
+| `css_ctr` / `css_ctrev` / `css_ctrevmenu` | Opens the revive menu | `@css/generic` **or** `@jailbreak/warden` |
+| `css_hak0` / `css_haksifir` / `css_haksifirla` | Resets (refills) the revive budget | `@css/generic` |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/CTRev/CTRev.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `cooldown` | int | `15` | Ölümden sonra canlandırılabilmek için beklenecek süre (saniye) |
-| `revive_count` | int | `3` | Raunt başına toplam canlandırma hakkı |
+| `cooldown` | int | `15` | Time to wait after death before a player can be revived (seconds) |
+| `revive_count` | int | `3` | Total revive budget per round |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -52,13 +54,13 @@ csgo/addons/counterstrikesharp/configs/plugins/CTRev/CTRev.json
 }
 ```
 
-## Kullanım Örneği
+## Usage Example
 
-1. Warden `!ctr` yazar → menüde kalan hak sayısı ve ölü CT listesi görünür.
-2. Yeşil görünen oyuncuya tıklar → oyuncu canlanır, kalan hak tüm sunucuya duyurulur.
-3. Dilerse "Otomatik Canlandırma: Kapalı" seçeneğini açar → bekleme süresi dolan CT'ler hak bitene kadar otomatik doğar.
+1. The warden types `!ctr` → the menu shows the remaining budget and the list of dead CTs.
+2. They click a player shown in green → the player is revived and the remaining budget is announced to the whole server.
+3. If they want, they enable the "Automatic Revive: Off" option → CTs whose cooldown expires respawn automatically until the budget runs out.
 
-## Notlar
+## Notes
 
-- Canlandırma hakları **takım genelidir**, oyuncu başına değildir.
-- Hak bittiğinde menüden veya otomatik moddan canlandırma yapılamaz; `!hak0` ile yenilenebilir.
+- The revive budget is **team-wide**, not per player.
+- When the budget runs out no revives can happen from the menu or automatic mode; it can be refilled with `!hak0`.

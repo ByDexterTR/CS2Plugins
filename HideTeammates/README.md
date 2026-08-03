@@ -1,51 +1,53 @@
 # HideTeammates
 
-Oyuncuların diğer oyuncu modellerini komutla gizlemesini sağlar. Gizlenen oyuncular istemciye hiç gönderilmez (`CheckTransmit`), istenirse çıkardıkları sesler de duyulmaz. Tercihler SteamID bazında JSON'a yazılır; kayıtlı oyuncu sunucuya girdiğinde gizleme otomatik açılır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Lets players hide other player models with a command. Hidden players are never sent to the client (`CheckTransmit`), and optionally the sounds they make are muted too. Preferences are written to JSON per SteamID; hiding is enabled automatically when a saved player joins the server.
 
-- `css_hide` / `css_gizle` ile aç/kapat; komut adları config'ten değiştirilebilir
-- Yetki (flag) kontrolü — boş bırakılırsa herkes kullanabilir
-- 3 gizleme modu: takım arkadaşları, rakip takım veya herkes (`mode_hide`)
-- Gizlenen oyuncunun modeli ve elindeki silahlar istemciye gönderilmez
-- `disable_sound` ile gizlenen oyuncuların ayak sesi, beden sesi, bıçak ve silah sesleri de susturulur (257 ses hash'i)
-- Tercihler `players.json` içinde SteamID dizisi olarak saklanır; girişte otomatik uygulanır
-- Ölüyken/izlerken gizleme uygulanmaz, izlenen oyuncunun görüntüsü bozulmaz
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Toggle with `css_hide` / `css_gizle`; command names can be changed from the config
+- Permission (flag) check — leave it empty and everyone can use it
+- 3 hiding modes: teammates, the enemy team or everyone (`mode_hide`)
+- The hidden player's model and the weapons in their hands are not sent to the client
+- With `disable_sound` the hidden players' footsteps, body sounds, knife and weapon sounds are muted too (257 sound hashes)
+- Preferences are stored in `players.json` as a SteamID array; applied automatically on join
+- Hiding is not applied while dead/spectating, so the spectated player's view is not broken
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `HideTeammates` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `HideTeammates` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/HideTeammates/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load HideTeammates` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load HideTeammates`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_hide` / `css_gizle` | Gizlemeyi açar/kapatır; tercih kaydedilir | `flag_hide` (varsayılan: herkes) |
+| `css_hide` / `css_gizle` | Toggles hiding; the preference is saved | `flag_hide` (default: everyone) |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/HideTeammates/HideTeammates.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `cmd_hide` | string | `"css_hide,css_gizle"` | Virgülle ayrılmış komut adları |
-| `flag_hide` | string | `""` | Gerekli yetki; boş string = herkes kullanabilir |
-| `mode_hide` | int | `1` | `1`: takım arkadaşları, `2`: rakip takım, `3`: herkes |
-| `disable_sound` | int | `1` | `0`: sesler duyulur, `1`: gizlenen oyuncuların sesleri de susturulur |
+| `cmd_hide` | string | `"css_hide,css_gizle"` | Comma separated command names |
+| `flag_hide` | string | `""` | Required permission; empty string = everyone can use it |
+| `mode_hide` | int | `1` | `1`: teammates, `2`: enemy team, `3`: everyone |
+| `disable_sound` | int | `1` | `0`: sounds are heard, `1`: hidden players' sounds are muted too |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -56,7 +58,7 @@ csgo/addons/counterstrikesharp/configs/plugins/HideTeammates/HideTeammates.json
 }
 ```
 
-## Tercih Dosyası
+## Preference File
 
 ```
 csgo/addons/counterstrikesharp/plugins/HideTeammates/players.json
@@ -69,13 +71,13 @@ csgo/addons/counterstrikesharp/plugins/HideTeammates/players.json
 ]
 ```
 
-Dosyadaki SteamID'ler gizlemesi açık oyunculardır; komutla açıp kapattıkça dosya güncellenir. Elle de düzenlenebilir, değişiklik eklenti yeniden yüklendiğinde okunur.
+The SteamIDs in the file are the players who have hiding enabled; the file is updated as they toggle it with the command. It can also be edited by hand, and the change is read when the plugin is reloaded.
 
-## Notlar
+## Notes
 
-- Gizleme yalnızca **hayattayken** uygulanır; ölü/izleyici durumundayken tüm oyuncular görünür kalır, böylece izlenen oyuncunun görüntüsü bozulmaz.
-- Gizlenen oyuncular yalnızca görünmez olur; çarpışma (collision) ve mermi engelleme devam eder.
-- Ses susturma `208` (soundevent), `369` (weapon sound) ve `452` (weapon event) user message'ları üzerinden yapılır; ayak sesi/beden sesi/bıçak hash listesi Sesler, VIPCore `Silent` ve jRandomSkills kaynaklarının birleşimidir.
-- `disable_sound` değeri sunucu/eklenti yeniden başlatıldığında etkinleşir (hook'lar yüklemede bağlanır).
-- Komut adı değişikliği (`cmd_hide`) sunucu/eklenti yeniden başlatıldığında etkinleşir.
-- Sesleri kategori bazında kendisi ayarlamak isteyen oyuncular için [Sesler](../Sesler) eklentisine bakın.
+- Hiding is only applied **while alive**; while dead/spectating every player stays visible, so the spectated player's view is not broken.
+- Hidden players only become invisible; collision and bullet blocking still apply.
+- Sound muting is done through the `208` (soundevent), `369` (weapon sound) and `452` (weapon event) user messages; the footstep/body sound/knife hash list is a combination of the Sesler, VIPCore `Silent` and jRandomSkills sources.
+- The `disable_sound` value takes effect when the server/plugin is restarted (hooks are bound at load).
+- Command name changes (`cmd_hide`) take effect when the server/plugin is restarted.
+- For players who want to set sounds by category themselves, see the [Sesler](../Sesler) plugin.

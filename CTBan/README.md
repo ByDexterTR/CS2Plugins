@@ -1,72 +1,74 @@
 # CTBan
 
-Oyuncuların CT (gardiyan) takımına geçişini süreli olarak yasaklar. Jailbreak sunucularının vazgeçilmez moderasyon aracıdır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Temporarily bans players from joining the CT (guard) team. An essential moderation tool for Jailbreak servers.
 
-- Süreli CT yasağı (saniyeden yıla kadar esnek süre birimleri)
-- Yasaklı oyuncu CT'ye geçmeye çalıştığında otomatik T takımına gönderilir (takım değişimi, spawn ve `jointeam` komutunun üçü de kontrol edilir)
-- Sunucuda olmayan oyunculara SteamID64 ile yasak ekleme
-- Yasak listesi kalıcıdır — `CTBanList.json` dosyasında saklanır, sunucu yeniden başlasa da korunur
-- Süresi dolan yasaklar otomatik temizlenir
-- Yasak sebebini ve yasaklayan admini kaydeder
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Timed CT ban (flexible time units from seconds to years)
+- A banned player is sent to the T team automatically when they try to join CT (team change, spawn and the `jointeam` command are all checked)
+- Add bans by SteamID64 for players who are not on the server
+- The ban list is persistent — stored in `CTBanList.json`, kept across server restarts
+- Expired bans are cleaned up automatically
+- Records the ban reason and the admin who issued it
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `CTBan` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `CTBan` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/CTBan/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load CTBan` komutunu çalıştırın.
-3. `CTBanList.json` ilk yüklemede otomatik oluşturulur.
+2. Restart the server or run `css_plugins load CTBan`.
+3. `CTBanList.json` is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_ctban <hedef> <süre> [sebep]` | Sunucudaki oyuncuya CT yasağı verir (CT'deyse T'ye atılır) | `@css/ban` |
-| `css_ctunban <hedef>` | Sunucudaki oyuncunun CT yasağını kaldırır | `@css/ban` |
-| `css_ctaddban <steamid64> <süre> [sebep]` | SteamID64 ile (çevrimdışı) yasak ekler | `@css/ban` |
-| `css_ctbanlist` | Aktif CT yasaklarını listeler | — (herkes) |
+| `css_ctban <target> <time> [reason]` | CT bans a player on the server (moved to T if they are on CT) | `@css/ban` |
+| `css_ctunban <target>` | Removes the CT ban of a player on the server | `@css/ban` |
+| `css_ctaddban <steamid64> <time> [reason]` | Adds an (offline) ban by SteamID64 | `@css/ban` |
+| `css_ctbanlist` | Lists the active CT bans | — (everyone) |
 
-- `<hedef>`: oyuncu adı veya `#userid`
-- `<süre>` birimleri: `s` saniye, `m` dakika (varsayılan), `h` saat, `d` gün, `w` hafta, `mo` ay, `y` yıl
+- `<target>`: player name or `#userid`
+- `<time>` units: `s` seconds, `m` minutes (default), `h` hours, `d` days, `w` weeks, `mo` months, `y` years
 
-## Veri Dosyası
+## Data File
 
-Yasaklar eklenti klasöründeki `CTBanList.json` dosyasında tutulur:
+Bans are kept in the `CTBanList.json` file inside the plugin folder:
 
 ```json
 {
   "BannedPlayers": {
     "76561198000000000": {
-      "Nickname": "OyuncuAdı",
+      "Nickname": "PlayerName",
       "BanTime": 1751630000,
-      "Reason": "Kural ihlali",
+      "Reason": "Rule violation",
       "Admin": "76561198000000001"
     }
   }
 }
 ```
 
-> `BanTime`, yasağın **bitiş** zamanıdır (Unix timestamp, saniye).
+> `BanTime` is the **expiry** time of the ban (Unix timestamp, seconds).
 
-## Kullanım Örnekleri
+## Usage Examples
 
 ```
-!ctban Oyuncu 30m Serbest gün kuralı ihlali
+!ctban Player 30m Freeday rule violation
 !ctban #42 2h
-!ctaddban 76561198000000000 1d Mikrofon yok
-!ctunban Oyuncu
+!ctaddban 76561198000000000 1d No microphone
+!ctunban Player
 !ctbanlist
 ```
 
-## Notlar
+## Notes
 
-- Yasak süresi dolduğunda oyuncu bağlandığı, takım değiştirdiği veya spawn olduğu anda kayıt otomatik silinir.
-- Dosya yazma işlemleri arka planda (async) yapılır, oyun akışını bloklamaz.
+- When a ban expires the record is deleted automatically the moment the player connects, changes team or spawns.
+- File writes are done in the background (async) and do not block the game loop.

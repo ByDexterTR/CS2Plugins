@@ -1,52 +1,54 @@
 # Redbull
 
-Komut kullanan oyuncuya kısa süreli hız artışı verir ("Redbull kanatlandırır"). Süre, hız, takım kısıtı, raunt limiti ve bekleme süresi config'ten yönetilir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Gives the player who runs the command a short speed boost ("Redbull gives you wings"). Duration, speed, team restriction, round limit and cooldown are managed from the config.
 
-- Ayarlanabilir hız çarpanı ve süre
-- Efekt aktifken oyuncu config'teki renge boyanır; süre bitince normale döner
-- Takım filtresi: yalnızca T, yalnızca CT veya herkes
-- Raunt başına kullanım limiti
-- Kullanımlar arası bekleme süresi (cooldown)
-- Raunt başında tüm limit/cooldown/efektler sıfırlanır
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Adjustable speed multiplier and duration
+- While the effect is active the player is colored with the config color; it returns to normal when the duration ends
+- Team filter: T only, CT only or everyone
+- Usage limit per round
+- Cooldown between uses
+- All limits/cooldowns/effects are reset at round start
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Redbull` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `Redbull` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/Redbull/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Redbull` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load Redbull`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_redbull` | Hız efektini başlatır | — (takım filtresine ve hayatta olmaya bağlı) |
+| `css_redbull` | Starts the speed effect | — (depends on the team filter and being alive) |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/Redbull/Redbull.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `speed` | float | `2.0` | Hız çarpanı (1.0 = normal) |
-| `duration` | int | `10` | Efekt süresi (saniye) |
-| `filter_team` | string | `"T"` | `"T"`, `"CT"` veya `"Both"` |
-| `player_color` | int[3] | `[248, 123, 27]` | Efekt aktifken oyuncu rengi (RGB) |
-| `round_limiter` | int | `2` | Raunt başına kullanım limiti (`0` = sınırsız) |
-| `cooldown` | int | `15` | Kullanımlar arası bekleme (saniye, `0` = yok) |
+| `speed` | float | `2.0` | Speed multiplier (1.0 = normal) |
+| `duration` | int | `10` | Effect duration (seconds) |
+| `filter_team` | string | `"T"` | `"T"`, `"CT"` or `"Both"` |
+| `player_color` | int[3] | `[248, 123, 27]` | Player color while the effect is active (RGB) |
+| `round_limiter` | int | `2` | Usage limit per round (`0` = unlimited) |
+| `cooldown` | int | `15` | Wait between uses (seconds, `0` = none) |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -59,13 +61,13 @@ csgo/addons/counterstrikesharp/configs/plugins/Redbull/Redbull.json
 }
 ```
 
-## Kullanım Örneği
+## Usage Example
 
 ```
-!redbull → 10 saniye boyunca 2x hız + turuncu renk
+!redbull → 2x speed + orange color for 10 seconds
 ```
 
-## Notlar
+## Notes
 
-- Efekt sırasında başka bir eklenti hızı düşürürse Redbull hızı tekrar uygular (`VelocityModifier` her tick kontrol edilir).
-- Efekt yalnızca hayattaki oyuncularda çalışır; oyuncu ölürse efekt kendiliğinden sonlanır.
+- If another plugin lowers the speed while the effect is running, Redbull reapplies it (`VelocityModifier` is checked every tick).
+- The effect only works on living players; if the player dies the effect ends by itself.

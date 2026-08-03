@@ -1,40 +1,42 @@
 # ChatCleaner
 
-Sohbet temizleme aracı. Oyuncular kendi ekranını, adminler tüm sunucunun sohbetini temizleyebilir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Chat clearing tool. Players can clear their own screen, admins can clear the whole server's chat.
 
-- Oyuncu bazlı sohbet temizleme (yalnızca kendi ekranı)
-- Admin için tüm sunucu sohbetini temizleme (temizleyen adminin adı duyurulur)
-- 500 boş satır basarak geçmişi ekrandan kaydırır
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Per-player chat clearing (own screen only)
+- Server-wide chat clearing for admins (the clearing admin's name is announced)
+- Pushes history off the screen by printing 500 blank lines
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `ChatCleaner` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `ChatCleaner` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/ChatCleaner/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load ChatCleaner` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load ChatCleaner`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_selfcc` | Yalnızca kendi sohbet ekranınızı temizler | — (herkes) |
-| `css_cc` | Tüm sunucunun sohbetini temizler | `@css/chat` |
+| `css_selfcc` | Clears only your own chat screen | — (everyone) |
+| `css_cc` | Clears the whole server's chat | `@css/chat` |
 
-## Yapılandırma
+## Configuration
 
-Mesajlar ve sohbet ön eki `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Messages and the chat prefix can be edited through `lang/tr.json` / `lang/en.json`.
 
-## Kullanım Örneği
+## Usage Example
 
 ```
-!selfcc   → Sohbetin temizlendi.
-!cc       → Sohbet temizlendi. Temizleyen: AdminAdı
+!selfcc   → Your chat has been cleared.
+!cc       → Chat cleared. Cleared by: AdminName
 ```

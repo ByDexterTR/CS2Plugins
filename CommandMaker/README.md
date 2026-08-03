@@ -1,52 +1,54 @@
 # CommandMaker
 
-Kod yazmadan, JSON dosyası üzerinden özel sunucu komutları oluşturmanızı sağlar. Hedefli admin komutları, bilgi komutları, cvar/exec makroları ve oyuncu komutları tek dosyadan tanımlanır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Lets you create custom server commands from a JSON file without writing code. Targeted admin commands, info commands, cvar/exec macros and player commands are all defined in a single file.
 
-- `commands.json` içinde sınırsız özel komut tanımı; ilk çalıştırmada 11 örnek komutla oluşturulur
-- 4 komut tipi: `default`, `target`, `playertarget`, `execute`
-- 30'a yakın eylem: can/zırh/para/hız/yerçekimi ayarlama, silah verme/alma, ışınlama, dondurma, noclip, godmode, slap, respawn, model/isim değiştirme, ses çalma ve daha fazlası
-- Zengin yer tutucu sistemi: oyuncu/hedef bilgileri, sunucu bilgileri, skorlar, rastgele oyuncu seçimi
-- Chat renk etiketleri: `[GOLD]`, `[RED]`, `[GREEN]`, `[ORCHID]` vb.
-- Hedef seçiciler: isim, `#userid`, `@all`, `@ct`, `@t`, `@alive`, `@dead`, `@me`, `@random`
-- Komut başına: yetki bayrakları, takım filtresi, canlı/ölü filtresi, bekleme süresi (cooldown), argüman doğrulama (sayı aralığı / kelime uzunluğu)
-- Sunucuyu yeniden başlatmadan komutları yeniden yükleme
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Unlimited custom command definitions in `commands.json`; created with 11 example commands on first run
+- 4 command types: `default`, `target`, `playertarget`, `execute`
+- Nearly 30 actions: set health/armor/money/speed/gravity, give/strip weapons, teleport, freeze, noclip, godmode, slap, respawn, change model/name, play a sound and more
+- Rich placeholder system: player/target info, server info, scores, random player selection
+- Chat color tags: `[GOLD]`, `[RED]`, `[GREEN]`, `[ORCHID]` etc.
+- Target selectors: name, `#userid`, `@all`, `@ct`, `@t`, `@alive`, `@dead`, `@me`, `@random`
+- Per command: permission flags, team filter, alive/dead filter, cooldown, argument validation (number range / word length)
+- Reload the commands without restarting the server
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `CommandMaker` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `CommandMaker` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/CommandMaker/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load CommandMaker` komutunu çalıştırın.
-3. İlk yüklemede eklenti klasöründe örneklerle dolu `commands.json` oluşturulur; düzenleyip `!cm_reload` çalıştırın.
+2. Restart the server or run `css_plugins load CommandMaker`.
+3. On first load a `commands.json` full of examples is created in the plugin folder; edit it and run `!cm_reload`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_cm_reload` | `commands.json` dosyasını yeniden yükler | `@css/root` |
-| *(tanımladıklarınız)* | `commands.json` içindeki tüm komutlar otomatik kaydedilir | tanıma göre |
+| `css_cm_reload` | Reloads the `commands.json` file | `@css/root` |
+| *(the ones you define)* | Every command in `commands.json` is registered automatically | per definition |
 
-## Yapılandırma
+## Configuration
 
-### Ana config
+### Main config
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/CommandMaker/CommandMaker.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `ConfigPath` | string | `"commands.json"` | Komut tanım dosyasının eklenti klasörüne göre yolu |
+| `ConfigPath` | string | `"commands.json"` | Path of the command definition file relative to the plugin folder |
 
-### Komut tanım dosyası (`commands.json`)
+### Command definition file (`commands.json`)
 
 ```json
 {
@@ -61,80 +63,79 @@ csgo/addons/counterstrikesharp/configs/plugins/CommandMaker/CommandMaker.json
       "flag": ["@css/slay", "@css/cheats"],
       "cooldown": 3,
       "sethealth": "[TARGET] [ARG1]",
-      "chat": ["[GOLD][TARGET] [DEFAULT]adlı oyuncunun canı [GOLD][ARG1] [DEFAULT]olarak ayarlandı."],
-      "center": "<font color='green'>Can: [ARG1]</font>",
+      "chat": ["[GOLD][TARGET][DEFAULT]'s health was set to [GOLD][ARG1][DEFAULT]."],
+      "center": "<font color='green'>Health: [ARG1]</font>",
       "centertime": 3.0
     }
   ]
 }
 ```
 
-#### Genel alanlar
+#### General fields
 
-| Alan | Tip | Açıklama |
+| Field | Type | Description |
 | --- | --- | --- |
-| `command` | string / dizi | Komut adları (`;` ile de ayrılabilir) |
+| `command` | string / array | Command names (can also be separated with `;`) |
 | `type` | string | `default`, `target`, `playertarget`, `execute` |
-| `args` | int | Beklenen ek argüman sayısı (0-3) |
-| `arg1..arg3` | string | Argüman tipi: `number` veya `word` |
-| `argN_number_min` / `argN_number_max` | int | Sayı argümanı sınırları |
-| `argN_word_length` | int | Kelime argümanı maksimum uzunluğu |
-| `flag` | string / dizi | Gerekli yetki bayrakları (herhangi biri yeterli) |
-| `team_filter` | string | `T` veya `CT` — yalnızca o takım kullanabilir |
-| `alive_filter` | string | `alive` veya `dead` |
-| `cooldown` | float | Oyuncu başına bekleme süresi (saniye) |
-| `announce` | bool | Komut kullanımını tüm sunucuya duyur |
+| `args` | int | Number of extra arguments expected (0-3) |
+| `arg1..arg3` | string | Argument type: `number` or `word` |
+| `argN_number_min` / `argN_number_max` | int | Limits for a number argument |
+| `argN_word_length` | int | Maximum length of a word argument |
+| `flag` | string / array | Required permission flags (any one is enough) |
+| `team_filter` | string | `T` or `CT` — only that team can use it |
+| `alive_filter` | string | `alive` or `dead` |
+| `cooldown` | float | Per-player cooldown (seconds) |
+| `announce` | bool | Announce the command usage to the whole server |
 
-#### Komut tipleri
+#### Command types
 
-| Tip | Davranış |
+| Type | Behavior |
 | --- | --- |
-| `default` | Hedef almaz; mesaj/`execute`/`setcvar` çalıştırır |
-| `target` | 1. argüman zorunlu hedef; eylemler hedef(ler)e uygulanır |
-| `playertarget` | Hedef opsiyonel; verilmezse komutu yazan hedeflenir |
-| `execute` | Yalnızca `execute`/`setcvar` satırlarını çalıştırır |
+| `default` | Takes no target; runs message/`execute`/`setcvar` |
+| `target` | The 1st argument is a required target; actions are applied to the target(s) |
+| `playertarget` | Target is optional; if not given the player running the command is targeted |
+| `execute` | Only runs the `execute`/`setcvar` lines |
 
-#### Eylem alanları (hedefe uygulanır)
+#### Action fields (applied to the target)
 
 `sethealth`, `setmaxhealth`, `setarmor`, `sethelmet`, `setmoney`, `setclip`, `setammo`, `giveweapon`, `stripweapons`, `setfreeze`, `setnoclip`, `setgodmode`, `setmovetype`, `setspeed`, `setgravity`, `kill`, `respawn`, `slapdamage`, `teleport`, `setplayercolor`, `setmodel`, `setname`, `changeteam`, `playsound`
 
-Değer biçimi genellikle `"[TARGET] <değer>"` şeklindedir; örn. `"sethealth": "[TARGET] [ARG1]"`.
+The value format is usually `"[TARGET] <value>"`; e.g. `"sethealth": "[TARGET] [ARG1]"`.
 
-#### Mesaj alanları
+#### Message fields
 
-| Alan | Hedef |
+| Field | Target |
 | --- | --- |
-| `chat` | Komutu kullanana sohbet mesajı (dizi olabilir) |
-| `console` | Komutu kullanana konsol mesajı |
-| `center` + `centertime` | Komutu kullanana ekran ortası mesaj |
-| `serverchat` | Tüm sunucuya sohbet mesajı |
-| `servercenter` | Tüm sunucuya ekran ortası mesaj |
-| `execute` | Sunucu konsolunda komut çalıştır |
-| `setcvar` | Cvar ayarla (`"mp_warmuptime 60"`) |
+| `chat` | Chat message to the command user (can be an array) |
+| `console` | Console message to the command user |
+| `center` + `centertime` | Center screen message to the command user |
+| `serverchat` | Chat message to the whole server |
+| `servercenter` | Center screen message to the whole server |
+| `execute` | Run a command in the server console |
+| `setcvar` | Set a cvar (`"mp_warmuptime 60"`) |
 
-#### Yer tutucular
+#### Placeholders
 
-- **Oyuncu:** `[PLAYER]`, `[PLAYERHEALTH]`, `[PLAYERARMOR]`, `[PLAYERMONEY]`, `[PLAYERSTEAMID]`, `[PLAYERTEAM]`, `[PLAYERWEAPON]`, `[PLAYERCOORDINATE]`
-- **Hedef:** `[TARGET]`, `[TARGETHEALTH]`, `[TARGETARMOR]`, `[TARGETMONEY]`, `[TARGETSTEAMID]`, `[TARGETTEAM]`, `[TARGETWEAPON]`, `[TARGETCOORDINATE]`
-- **Argümanlar:** `[ARG1]`, `[ARG2]`, `[ARG3]`
-- **Sunucu:** `[HOSTNAME]`, `[SERVERIP]`, `[SERVERPORT]`, `[MAPNAME]`, `[TIME]`, `[ROUND]`, `[CTSCORE]`, `[TSCORE]`
-- **Sayımlar:** `[PLAYERCOUNT]`, `[ALIVECOUNT]`, `[TCOUNT]`, `[CTCOUNT]`, `[SPECCOUNT]`, `[ALIVET]`, `[ALIVECT]`
-- **Rastgele:** `[RANDOMPLAYER]`, `[RANDOMT]`, `[RANDOMCT]`, `[RANDOMALIVE]`, `[RANDOMDEAD]`, `[RANDOMTALIVE]`, `[RANDOMTDEAD]`, `[RANDOMCTALIVE]`, `[RANDOMCTDEAD]`
-- **Renkler:** `[DEFAULT]`, `[RED]`, `[LIGHTRED]`, `[DARKRED]`, `[BLUEGREY]`, `[BLUE]`, `[DARKBLUE]`, `[PURPLE]`, `[ORCHID]`, `[YELLOW]`, `[GOLD]`, `[LIGHTGREEN]`, `[GREEN]`, `[LIME]`, `[GREY]`, `[GREY2]`
+- **Player:** `[PLAYER]`, `[PLAYERHEALTH]`, `[PLAYERARMOR]`, `[PLAYERMONEY]`, `[PLAYERSTEAMID]`, `[PLAYERTEAM]`, `[PLAYERWEAPON]`, `[PLAYERCOORDINATE]`
+- **Target:** `[TARGET]`, `[TARGETHEALTH]`, `[TARGETARMOR]`, `[TARGETMONEY]`, `[TARGETSTEAMID]`, `[TARGETTEAM]`, `[TARGETWEAPON]`, `[TARGETCOORDINATE]`
+- **Arguments:** `[ARG1]`, `[ARG2]`, `[ARG3]`
+- **Server:** `[HOSTNAME]`, `[SERVERIP]`, `[SERVERPORT]`, `[MAPNAME]`, `[TIME]`, `[ROUND]`, `[CTSCORE]`, `[TSCORE]`
+- **Counts:** `[PLAYERCOUNT]`, `[ALIVECOUNT]`, `[TCOUNT]`, `[CTCOUNT]`, `[SPECCOUNT]`, `[ALIVET]`, `[ALIVECT]`
+- **Random:** `[RANDOMPLAYER]`, `[RANDOMT]`, `[RANDOMCT]`, `[RANDOMALIVE]`, `[RANDOMDEAD]`, `[RANDOMTALIVE]`, `[RANDOMTDEAD]`, `[RANDOMCTALIVE]`, `[RANDOMCTDEAD]`
+- **Colors:** `[DEFAULT]`, `[RED]`, `[LIGHTRED]`, `[DARKRED]`, `[BLUEGREY]`, `[BLUE]`, `[DARKBLUE]`, `[PURPLE]`, `[ORCHID]`, `[YELLOW]`, `[GOLD]`, `[LIGHTGREEN]`, `[GREEN]`, `[LIME]`, `[GREY]`, `[GREY2]`
 
-## Kullanım Örnekleri
+## Usage Examples
 
 ```
-!hp Oyuncu 200        → hedefin canını 200 yapar
-!slap @t 10           → tüm T'lere 10 hasarlık slap
-!team #42 3           → 42 id'li oyuncuyu CT'ye taşır
-!serverinfo           → sunucu bilgilerini gösterir
-!can                  → (T, canlı, 30 sn cooldown) kendi canını yeniler
+!hp Player 200        → sets the target's health to 200
+!slap @t 10           → slaps every T for 10 damage
+!team #42 3           → moves the player with id 42 to CT
+!serverinfo           → shows the server info
+!can                  → (T, alive, 30 s cooldown) refills your own health
 ```
 
-## Notlar
+## Notes
 
-- `setspeed` / `setgravity` etkileri kalıcıdır (tick bazlı uygulanır); sıfırlamak için `1.0` değerini ayarlayan ikinci bir komut tanımlayın.
-- `setgodmode` alan oyuncular sunucudan çıkana veya kapatılana kadar hasar almaz.
-- Grup hedeflerinde (`@all` vb.) mesajlardaki `[TARGET]` grup etiketiyle değiştirilir.
-
+- `setspeed` / `setgravity` effects are persistent (applied per tick); to reset them define a second command that sets the value to `1.0`.
+- Players given `setgodmode` take no damage until they leave the server or it is turned off.
+- For group targets (`@all` etc.) the `[TARGET]` placeholder in messages is replaced with the group label.

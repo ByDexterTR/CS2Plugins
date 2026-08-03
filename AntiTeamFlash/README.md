@@ -1,26 +1,28 @@
 # AntiTeamFlash
 
-Takım arkadaşlarının attığı flash bombalarının kör etme etkisini iptal eder. Düşman flash'ları normal şekilde çalışmaya devam eder.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Cancels the blinding effect of flashbangs thrown by teammates. Enemy flashes keep working normally.
 
-- Takım arkadaşından gelen flash etkisini anında sıfırlar
-- Düşmandan gelen ve hâlâ süren "meşru" körlük varsa onu geri yükler (takım flash'ı meşru körlüğü silemez)
-- Slot bazlı hafif durum takibi — tick döngüsü yok, yalnızca event tabanlı
-- Config gerektirmez
+## Features
 
-## Gereksinimler
+- Instantly clears the flash effect coming from a teammate
+- Restores any still-running "legitimate" blindness caused by an enemy (a team flash cannot wipe legitimate blindness)
+- Lightweight slot based state tracking — no tick loop, event driven only
+- No config required
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `AntiTeamFlash` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `AntiTeamFlash` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/AntiTeamFlash/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load AntiTeamFlash` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load AntiTeamFlash`.
 
-## Notlar
+## Notes
 
-- Kendi attığınız flash sizi etkilemeye devam eder (yalnızca *takım arkadaşının* flash'ı engellenir).
+- Flashbangs you throw yourself still affect you (only a *teammate's* flash is blocked).

@@ -1,57 +1,59 @@
 # MapBlock
 
-Oyuncu sayısı düşükken haritanın belirli bölgelerini çit modelleriyle otomatik kapatır. Sunucu kalabalıklaştığında engeller kendiliğinden kalkar.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Automatically closes off certain areas of the map with fence models while the player count is low. The blocks disappear by themselves once the server fills up.
 
-- Harita bazlı kalıcı çit yerleşimleri (`MapBlock.json`)
-- Oyuncu sayısına göre otomatik açma/kapama: eşik altında çitler kurulur, eşiğe ulaşılınca kaldırılır
-- İki sayım modu: yalnızca CT veya T+CT
-- Her raunt başında durum yeniden değerlendirilir
-- Örnek yerleşim dosyası (`MapBlock.example.json`) ilk çalıştırmada otomatik kopyalanır
-- JSON'u elle düzenledikten sonra sunucuyu yeniden başlatmadan yeniden yükleme komutu
-- Çit modelleri otomatik precache edilir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Per-map persistent fence layouts (`MapBlock.json`)
+- Automatic open/close by player count: fences are placed below the threshold, removed once the threshold is reached
+- Two counting modes: CT only or T+CT
+- The state is re-evaluated at the start of every round
+- The example layout file (`MapBlock.example.json`) is copied automatically on first run
+- Reload command so you can edit the JSON by hand without restarting the server
+- Fence models are precached automatically
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `MapBlock` klasörünü sunucuya kopyalayın (**`MapBlock.example.json` dahil**):
+1. Copy the compiled `MapBlock` folder to the server (**including `MapBlock.example.json`**):
    ```
    csgo/addons/counterstrikesharp/plugins/MapBlock/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load MapBlock` komutunu çalıştırın.
-3. İlk yüklemede `MapBlock.example.json` → `MapBlock.json` olarak kopyalanır; kendi yerleşimlerinizi bu dosyaya ekleyin.
+2. Restart the server or run `css_plugins load MapBlock`.
+3. On first load `MapBlock.example.json` is copied to `MapBlock.json`; add your own layouts to that file.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_mapblock_reload` | `MapBlock.json` dosyasını yeniden yükler ve yerleşimleri uygular | `@css/root` |
+| `css_mapblock_reload` | Reloads the `MapBlock.json` file and applies the layouts | `@css/root` |
 
-## Yapılandırma
+## Configuration
 
-Config dosyası:
+Config file:
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/MapBlock/MapBlock.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `mapblock_mode` | int | `1` | `0`: kapalı, `1`: CT sayısına bak, `2`: T+CT sayısına bak |
-| `mapblock_count` | int | `5` | Eşik; sayı bu değerin **altındayken** çitler kurulur (`0` = her zaman kur) |
+| `mapblock_mode` | int | `1` | `0`: off, `1`: look at the CT count, `2`: look at the T+CT count |
+| `mapblock_count` | int | `5` | Threshold; fences are placed while the count is **below** this value (`0` = always place) |
 
-### Yerleşim Dosyası (eklenti klasöründeki `MapBlock.json`)
+### Layout File (`MapBlock.json` in the plugin folder)
 
-Harita adı → yerleşim listesi biçimindedir:
+Formatted as map name → layout list:
 
 ```json
 {
-  "jb_harita_adi": [
+  "jb_map_name": [
     {
       "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_128_capped.vmdl",
       "Origin": [512.0, -128.0, 64.0],
@@ -61,18 +63,18 @@ Harita adı → yerleşim listesi biçimindedir:
 }
 ```
 
-| Alan | Açıklama |
+| Field | Description |
 | --- | --- |
-| `Model` | Precache edilen çit modellerinden biri (64/128/256 boyutları) |
-| `Origin` | `[x, y, z]` dünya koordinatı |
-| `Angles` | `[pitch, yaw, roll]` açı değerleri |
+| `Model` | One of the precached fence models (64/128/256 sizes) |
+| `Origin` | `[x, y, z]` world coordinate |
+| `Angles` | `[pitch, yaw, roll]` angle values |
 
-## Kullanım Örneği
+## Usage Example
 
-- `mapblock_mode: 1`, `mapblock_count: 5` → sunucuda 5'ten az CT varken çitler kurulur; 5. CT geldiğinde bir sonraki raunt başında çitler kaldırılır.
-- Yerleşim koordinatlarını belirlemek için [Cit](../Cit) eklentisiyle çit yerleştirip konumu `MapBlock.json`'a taşıyabilirsiniz.
+- `mapblock_mode: 1`, `mapblock_count: 5` → fences are placed while there are fewer than 5 CTs on the server; when the 5th CT joins the fences are removed at the start of the next round.
+- To work out layout coordinates you can place a fence with the [Cit](../Cit) plugin and move the position into `MapBlock.json`.
 
-## Notlar
+## Notes
 
-- Çitler `bydexter_mapblock` adıyla etiketlenir; temizleme yalnızca bu propları hedefler.
-- Harita adı eşleşmesi büyük/küçük harf duyarsızdır.
+- Fences are tagged with the name `bydexter_mapblock`; cleanup only targets those props.
+- Map name matching is case insensitive.

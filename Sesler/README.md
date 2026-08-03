@@ -1,53 +1,55 @@
-# Sesler
+# Sesler (Sounds)
 
-Oyuncuların duymak istemediği oyun seslerini kategori bazında kapatmasını sağlar. Tercihler oyuncu bazında veritabanında saklanır ve tekrar girişte otomatik uygulanır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Lets players mute game sounds they do not want to hear, by category. Preferences are stored per player in a database and applied automatically when they rejoin.
 
-- 5 ses kategorisi: **Bıçak**, **Silah**, **Ayak sesi**, **Oyuncu sesleri**, **MVP müziği**
-- Her kategori için 4 mod: **Açık**, **Düşmanı Sustur**, **Takımı Sustur**, **Kapalı** (MVP için yalnızca Açık/Kapalı)
-- CenterHtml menü ile kolay yönetim; aktif seçenek ► işareti ve renkle vurgulanır
-- **JSON (varsayılan) veya MySQL** depolama; MySQL bağlantısı başarısız olursa JSON'a düşer, tablo otomatik oluşturulur
-- Ses engelleme sunucu tarafında UserMessage alıcı filtrelemesiyle yapılır — diğer oyuncular sesleri normal duyar
-- MVP susturması `StopSoundEvents.StopAllMusic` ile yalnızca ilgili oyuncuda çalışır
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- 5 sound categories: **Knife**, **Weapon**, **Footsteps**, **Player sounds**, **MVP music**
+- 4 modes per category: **On**, **Mute Enemy**, **Mute Team**, **Off** (MVP only has On/Off)
+- Easy management through a CenterHtml menu; the active option is highlighted with a ► marker and color
+- **JSON (default) or MySQL** storage; falls back to JSON if the MySQL connection fails, the table is created automatically
+- Sound blocking is done server side by filtering UserMessage recipients — other players hear the sounds normally
+- MVP muting works only on the player in question via `StopSoundEvents.StopAllMusic`
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
-- (MySQL kullanılacaksa) MySQL 8+ sunucusu
+- (If MySQL will be used) MySQL 8+ server
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `Sesler` klasörünü **tüm bağımlılık DLL'leriyle birlikte** sunucuya kopyalayın:
+1. Copy the compiled `Sesler` folder to the server **together with all dependency DLLs**:
    ```
    csgo/addons/counterstrikesharp/plugins/Sesler/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load Sesler` komutunu çalıştırın.
-3. Varsayılan olarak JSON kullanılır (eklenti klasöründe `players.json`); MySQL için config'i düzenleyin.
+2. Restart the server or run `css_plugins load Sesler`.
+3. JSON is used by default (`players.json` in the plugin folder); edit the config for MySQL.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_ses` / `css_sesler` | Ses tercihleri menüsünü açar | — (herkes) |
+| `css_ses` / `css_sesler` | Opens the sound preferences menu | — (everyone) |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/Sesler/Sesler.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `Database.provider` | string | `"json"` | `"json"` veya `"mysql"` |
-| `Database.host` | string | `"localhost"` | MySQL sunucu adresi |
-| `Database.name` | string | `"bydexter_sesler"` | Veritabanı adı (yoksa oluşturulur) |
-| `Database.port` | string | `"3306"` | MySQL portu |
-| `Database.user` | string | `"root"` | MySQL kullanıcısı |
-| `Database.password` | string | `""` | MySQL şifresi |
+| `Database.provider` | string | `"json"` | `"json"` or `"mysql"` |
+| `Database.host` | string | `"localhost"` | MySQL server address |
+| `Database.name` | string | `"bydexter_sesler"` | Database name (created if missing) |
+| `Database.port` | string | `"3306"` | MySQL port |
+| `Database.user` | string | `"root"` | MySQL user |
+| `Database.password` | string | `""` | MySQL password |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -57,12 +59,12 @@ csgo/addons/counterstrikesharp/configs/plugins/Sesler/Sesler.json
     "name": "bydexter_sesler",
     "port": "3306",
     "user": "cs2",
-    "password": "gizli"
+    "password": "secret"
   }
 }
 ```
 
-## Notlar
+## Notes
 
-- Ses hash listeleri oyun güncellemeleriyle değişebilir; yeni sesler duyulmaya başlarsa hash listelerinin güncellenmesi gerekir.
-- Veritabanı işlemleri arka planda yürütülür, oyun akışını bloklamaz.
+- Sound hash lists can change with game updates; if new sounds start coming through, the hash lists need updating.
+- Database operations run in the background and do not block the game loop.

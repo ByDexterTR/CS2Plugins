@@ -1,40 +1,42 @@
 # CTKov
 
-Tek komutla, warden yetkisi olmayan tüm CT oyuncularını T takımına gönderir. Jailbreak'te "CT kovma" etkinliği için kullanılır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Sends every CT player without warden permission to the T team with a single command. Used for the "kick the guards" event in Jailbreak.
 
-- Warden (`@jailbreak/warden`) yetkisine sahip oyuncular korunur — takımda kalır
-- Botlar işleme dahil edilmez
-- Taşınan gardiyan sayısı tüm sunucuya duyurulur
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- Players with the warden permission (`@jailbreak/warden`) are protected — they stay on the team
+- Bots are not included
+- The number of moved guards is announced to the whole server
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `CTKov` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `CTKov` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/CTKov/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load CTKov` komutunu çalıştırın.
+2. Restart the server or run `css_plugins load CTKov`.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_ctkov` | Warden olmayan tüm CT'leri T takımına taşır | `@css/generic` **veya** `@jailbreak/warden` |
+| `css_ctkov` | Moves every non-warden CT to the T team | `@css/generic` **or** `@jailbreak/warden` |
 
-## Yapılandırma
+## Configuration
 
-Mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Messages can be edited through `lang/tr.json` / `lang/en.json`.
 
-## Kullanım Örneği
+## Usage Example
 
 ```
 !ctkov
 ```
 
-> `[ByDexter] AdminAdı tüm gardiyanları kovdu! (5 oyuncu T takımına taşındı)`
+> `[ByDexter] AdminName kicked all guards! (5 players moved to the T team)`

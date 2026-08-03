@@ -1,61 +1,63 @@
 # BringGoto
 
-Yetkililerin oyuncuları nişangâhındaki noktaya ışınlamasını (`!bring`) veya bir oyuncunun yanına ışınlanmasını (`!goto`) sağlar. Işınlama noktası native trace ile anlık hesaplanır.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Özellikler
+Lets admins teleport players to the point under their crosshair (`!bring`) or teleport themselves next to a player (`!goto`). The teleport point is calculated live with a native trace.
 
-- `!bring <hedef>` ile hedef(ler)i tam olarak baktığın noktaya ışınlar; nokta native trace (CNavPhysicsInterface) ile bulunur
-- `!goto <hedef>` ile hedef oyuncunun yanına ışınlanır
-- Çoklu hedef desteği: `@all`, `@t`, `@ct`, `#userid`, tam veya kısmi isim
-- Dokunulmazlık (immunity) kontrolü: hedefin immunity değeri sizinkinden yüksekse ışınlama engellenir (`ignore_immunity` ile kapatılabilir)
-- Komut adları ve yetki flag'leri config'ten değiştirilebilir
-- Işınlanan oyunculara bilgi mesajı gönderilir; botlar hedeflenebilir
-- Türkçe / İngilizce dil desteği (`lang/`)
+## Features
 
-## Gereksinimler
+- `!bring <target>` teleports the target(s) exactly to the point you are looking at; the point is found with a native trace (CNavPhysicsInterface)
+- `!goto <target>` teleports you next to the target player
+- Multi-target support: `@all`, `@t`, `@ct`, `#userid`, full or partial name
+- Immunity check: the teleport is blocked if the target's immunity is higher than yours (can be disabled with `ignore_immunity`)
+- Command names and permission flags can be changed from the config
+- Teleported players receive an info message; bots can be targeted
+- Turkish / English language support (`lang/`)
+
+## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
 
-## Kurulum
+## Installation
 
-1. Derlenmiş `BringGoto` klasörünü sunucuya kopyalayın:
+1. Copy the compiled `BringGoto` folder to the server:
    ```
    csgo/addons/counterstrikesharp/plugins/BringGoto/
    ```
-2. Sunucuyu yeniden başlatın veya `css_plugins load BringGoto` komutunu çalıştırın.
-3. İlk yüklemede config dosyası otomatik oluşturulur.
+2. Restart the server or run `css_plugins load BringGoto`.
+3. The config file is created automatically on first load.
 
-## Komutlar
+## Commands
 
-| Komut | Açıklama | Yetki |
+| Command | Description | Permission |
 | --- | --- | --- |
-| `css_bring` / `css_gel <hedef/@t/@ct/@all>` | Hedef(ler)i nişangâhındaki noktaya ışınlar | `@css/cheats` |
-| `css_goto` / `css_git <hedef>` | Hedef oyuncunun yanına ışınlanır | `@css/generic` |
+| `css_bring` / `css_gel <target/@t/@ct/@all>` | Teleports the target(s) to the point under your crosshair | `@css/cheats` |
+| `css_goto` / `css_git <target>` | Teleports you next to the target player | `@css/generic` |
 
-## Yapılandırma
+## Configuration
 
 ```
 csgo/addons/counterstrikesharp/configs/plugins/BringGoto/BringGoto.json
 ```
 
-| Ayar | Tip | Varsayılan | Açıklama |
+| Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bring_cmd` | string | `"css_bring,css_gel"` | Virgülle ayrılmış bring komutu adları |
-| `goto_cmd` | string | `"css_goto,css_git"` | Virgülle ayrılmış goto komutu adları |
-| `bring_flag` | string | `"@css/cheats"` | Bring için gereken yetki (boş = herkes) |
-| `goto_flag` | string | `"@css/generic"` | Goto için gereken yetki (boş = herkes) |
-| `ignore_immunity` | bool | `false` | `true` iken immunity kontrolü yapılmaz |
+| `bring_cmd` | string | `"css_bring,css_gel"` | Comma separated bring command names |
+| `goto_cmd` | string | `"css_goto,css_git"` | Comma separated goto command names |
+| `bring_flag` | string | `"@css/cheats"` | Permission required for bring (empty = everyone) |
+| `goto_flag` | string | `"@css/generic"` | Permission required for goto (empty = everyone) |
+| `ignore_immunity` | bool | `false` | When `true` the immunity check is skipped |
 
-### Immunity Davranışı
+### Immunity Behavior
 
-| `ignore_immunity` | Kullanan | Hedef | Sonuç |
+| `ignore_immunity` | User | Target | Result |
 | --- | --- | --- | --- |
-| `false` | 90 | 100 | Engellenir |
-| `false` | 90 | 90 | Işınlanır |
-| `false` | 90 | 80 | Işınlanır |
-| `true` | 90 | 100 | Işınlanır |
+| `false` | 90 | 100 | Blocked |
+| `false` | 90 | 90 | Teleported |
+| `false` | 90 | 80 | Teleported |
+| `true` | 90 | 100 | Teleported |
 
-### Örnek Config
+### Example Config
 
 ```json
 {
@@ -67,11 +69,11 @@ csgo/addons/counterstrikesharp/configs/plugins/BringGoto/BringGoto.json
 }
 ```
 
-## Notlar
+## Notes
 
-- Her iki komut için de kullanan oyuncunun hayatta olması gerekir; ölü ve GOTV oyuncular hedeflenemez.
-- Bring'de nişangâh noktası bulunamazsa (açık gökyüzü / trace hatası) hedef 128 birim önüne ışınlanır; noktadan 24 birim geri çekilip 6 birim yukarı alınarak duvara gömülme önlenir.
-- Çoklu bring'de tüm hedefler aynı noktaya gelir; immunity'si yüksek hedefler sessizce atlanır, hiçbiri uygun değilse mesajla bildirilir.
-- Goto'da hedefin 80 birim üzerine ışınlanılır, böylece iki oyuncu iç içe takılmaz.
-- Botlarda immunity kontrolü yapılmaz; goto ile kendinizi hedef alamazsınız.
-- Komut adı değişiklikleri eklenti yeniden başlatıldığında etkinleşir.
+- Both commands require the player using them to be alive; dead and GOTV players cannot be targeted.
+- If the crosshair point cannot be found in bring (open sky / trace error) the target is teleported 128 units in front of you; the point is pulled back 24 units and raised 6 units to avoid getting stuck in a wall.
+- In a multi-target bring every target arrives at the same point; targets with higher immunity are skipped silently, and if none are eligible a message is shown.
+- Goto teleports you 80 units above the target, so the two players do not get stuck inside each other.
+- Immunity is not checked on bots; you cannot target yourself with goto.
+- Command name changes take effect when the plugin is restarted.

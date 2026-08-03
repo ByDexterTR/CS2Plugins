@@ -1,93 +1,96 @@
 # CS2Plugins
 
-Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe bağımsız bir proje olarak durur ve kendi `README.md` dosyasıyla belgelenmiştir.
+*Read this in [Turkish / Türkçe](README.tr.md).*
 
-## Eklentiler
+Every plugin ships with Turkish/English language support, lives in its own folder as a standalone project, and is documented with its own `README.md`.
+
+## Plugins
 
 ### 🔒 Jailbreak
 
-| Eklenti | Açıklama |
+| Plugin | Description |
 | --- | --- |
-| [CTBan](CTBan/README.md) | Oyunculara süreli CT (gardiyan) yasağı verir |
-| [CTKit](CTKit/README.md) | CT'lere spawn'da otomatik verilen silah kiti |
-| [CTKov](CTKov/README.md) | Warden olmayan tüm CT'leri tek komutla T'ye taşır |
-| [CTPerk](CTPerk/README.md) | T sayısına göre hak tanınan raunt bazlı CT güçlendirmeleri |
-| [CTRev](CTRev/README.md) | Ölen CT'leri menüden/otomatik canlandırma |
-| [CTSpawnKill](CTSpawnKill/README.md) | CT'lere spawn sonrası kısa süreli hasar koruması |
-| [GoBhop](GoBhop/README.md) | Ölü T'leri gizli bhop noktasına ışınlar |
-| [JBDoors](JBDoors/README.md) | Tüm hücre kapılarını tek komutla açar/kapatır |
-| [JBRace](JBRace/README.md) | Başlangıç/bitiş noktalı yarış etkinliği |
-| [JBTeams](JBTeams/README.md) | Canlı T'leri renkli takımlara böler |
-| [Meslekmenu](Meslekmenu/README.md) | T'lere raunt başına bir meslek: Doktor, Flash, Bombacı, Rambo, Zeus |
-| [Sustum](Sustum/README.md) | Kelime yazma etkinliği; 4 mod (CTSustum, TSustum, DSustum, ÖlüSustum) |
-| [Cit](Cit/README.md) | Baktığın noktaya çit/barikat modeli yerleştirme menüsü |
-| [Silahsil](Silahsil/README.md) | Yerdeki sahipsiz silahları tek komutla temizler |
-| [Cekilis](Cekilis/README.md) | Takım/durum filtreli rastgele oyuncu çekilişi |
+| [CTBan](CTBan/README.md) | Temporarily bans players from the CT (guard) team |
+| [CTKit](CTKit/README.md) | Weapon kit given to CTs automatically on spawn |
+| [CTKov](CTKov/README.md) | Moves every CT except the warden to T with a single command |
+| [CTPerk](CTPerk/README.md) | Round-based CT perks unlocked according to the T count |
+| [CTRev](CTRev/README.md) | Revives dead CTs from a menu or automatically |
+| [CTSpawnKill](CTSpawnKill/README.md) | Short damage protection for CTs after spawn |
+| [GoBhop](GoBhop/README.md) | Teleports dead Ts to a hidden bhop area |
+| [JBDoors](JBDoors/README.md) | Opens/closes every cell door with a single command |
+| [JBRace](JBRace/README.md) | Race event with start and finish points |
+| [JBTeams](JBTeams/README.md) | Splits living Ts into colored teams |
+| [Meslekmenu](Meslekmenu/README.md) | One job per round for Ts: Doctor, Flash, Bomber, Rambo, Zeus |
+| [Sustum](Sustum/README.md) | Typing event with 4 modes (CTSustum, TSustum, DSustum, DeadSustum) |
+| [Cit](Cit/README.md) | Menu for placing fence/barricade models where you are looking |
+| [Silahsil](Silahsil/README.md) | Clears unowned weapons on the ground with a single command |
+| [Cekilis](Cekilis/README.md) | Random player raffle filtered by team/state |
 
-### ⚙️ Genel / Yardımcı
+### ⚙️ General / Utility
 
-| Eklenti | Açıklama |
+| Plugin | Description |
 | --- | --- |
-| [1v1Slay](1v1Slay/README.md) | 1v1 durumunda geri sayım; süre dolunca kalanları öldürür |
-| [AntiCapsLock](AntiCapsLock/README.md) | Sohbetteki aşırı büyük harfi küçültür veya mesajı siler |
-| [AntiTeamFlash](AntiTeamFlash/README.md) | Takım arkadaşı flash'larının kör etmesini engeller |
-| [BhopDoorFix](BhopDoorFix/README.md) | Bhop/KZ haritalarındaki kapıları dondurur |
-| [ChatCleaner](ChatCleaner/README.md) | Kendi ekranını veya tüm sunucu sohbetini temizleme |
-| [CommandMaker](CommandMaker/README.md) | JSON ile kod yazmadan özel sunucu komutları oluşturma |
-| [FortniteArmor](FortniteArmor/README.md) | Hasar önce zırhtan düşer, zırh bitmeden can azalmaz |
-| [HideTeammates](HideTeammates/README.md) | Takım arkadaşlarını (veya rakipleri/herkesi) gizler |
-| [Lazer](Lazer/README.md) | Ölü oyunculara canlıların baktığı yeri lazerle gösterir |
-| [MapBlock](MapBlock/README.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır |
-| [PlayerRGB](PlayerRGB/README.md) | Oyuncu modeline RGB (gökkuşağı) efekti |
-| [Postprocessing](Postprocessing/README.md) | Oyuncuya özel post processing efekti; 106 hazır efekt (bloom, blur, renk, zoom) |
-| [PrivateMessage](PrivateMessage/README.md) | Oyuncular arası özel mesaj (!pm) |
-| [Redbull](Redbull/README.md) | Süreli hız artışı; limit ve cooldown destekli |
-| [ScreenText](ScreenText/README.md) | Ekranın istenen noktasına JSON'dan tanımlı kalıcı yazılar |
-| [Sesler](Sesler/README.md) | Bıçak/silah/ayak/oyuncu/MVP seslerini kategori bazında susturma |
-| [Slowmode](Slowmode/README.md) | Sohbete genel yavaş mod; mesajlar arasına saniye sınırı koyar |
-| [SpawnkillProtection](SpawnkillProtection/README.md) | Flag ve takım bazlı, renk geçişli spawn koruması |
-| [Speedometer](Speedometer/README.md) | HUD'da renk geçişli anlık hız göstergesi (u/s) |
-| [Thirdperson](Thirdperson/README.md) | Üçüncü şahıs kamera; duvar engelleme |
+| [1v1Slay](1v1Slay/README.md) | Countdown during a 1v1; slays the remaining players when time runs out |
+| [AntiCapsLock](AntiCapsLock/README.md) | Lowercases excessive caps in chat or deletes the message |
+| [AntiTeamFlash](AntiTeamFlash/README.md) | Stops teammate flashbangs from blinding you |
+| [BhopDoorFix](BhopDoorFix/README.md) | Freezes doors on bhop/KZ maps |
+| [ChatCleaner](ChatCleaner/README.md) | Clears your own screen or the whole server chat |
+| [CommandMaker](CommandMaker/README.md) | Creates custom server commands from JSON without writing code |
+| [FortniteArmor](FortniteArmor/README.md) | Damage hits armor first; health only drops once armor is gone |
+| [HideTeammates](HideTeammates/README.md) | Hides teammates (or enemies/everyone) |
+| [Lazer](Lazer/README.md) | Shows dead players where living players are aiming with a laser |
+| [MapBlock](MapBlock/README.md) | Fences off map areas while the player count is low |
+| [PlayerRGB](PlayerRGB/README.md) | RGB (rainbow) effect on the player model |
+| [Postprocessing](Postprocessing/README.md) | Per-player post processing effect; 106 ready-made effects (bloom, blur, color, zoom) |
+| [PrivateMessage](PrivateMessage/README.md) | Private messages between players (!pm) |
+| [Redbull](Redbull/README.md) | Timed speed boost with limit and cooldown support |
+| [ScreenText](ScreenText/README.md) | Persistent text defined in JSON, placed anywhere on screen |
+| [Sesler](Sesler/README.md) | Mutes knife/weapon/footstep/player/MVP sounds by category |
+| [Slowmode](Slowmode/README.md) | Server-wide chat slow mode; enforces a second limit between messages |
+| [SpawnkillProtection](SpawnkillProtection/README.md) | Flag and team based spawn protection with color transitions |
+| [Speedometer](Speedometer/README.md) | Live speed readout (u/s) on the HUD with color transitions |
+| [Thirdperson](Thirdperson/README.md) | Third person camera with wall blocking |
 
-### 🛡️ Altyapı / Yönetim
+### 🛡️ Infrastructure / Administration
 
-| Eklenti | Açıklama |
+| Plugin | Description |
 | --- | --- |
-| [AdminList](AdminList/README.md) | Çevrimiçi yetkilileri grup etiketi ve renkleriyle listeler; gruplar config'ten |
-| [BringGoto](BringGoto/README.md) | Oyuncuları ışınlama (bring) ve oyuncuya ışınlanma (goto) |
-| [DiscordLogger](DiscordLogger/README.md) | 35+ sunucu olayını 10 Discord webhook kanalına ve günlük dosyaya loglar |
-| [PlayerHourCheck](PlayerHourCheck/README.md) | CS2 oynama saati kontrolü; kademeli kick/ban cezaları |
-| [VIPCore](VIPCore/README.md) | 75+ modüllü, grup tabanlı, JSON/MySQL destekli VIP sistemi |
-| [TABServerName](TABServerName/README.md) | Skorboardda sol üstteki harita ismini istediğiniz gibi değiştirme |
+| [AdminList](AdminList/README.md) | Lists online admins with group tags and colors; groups come from config |
+| [BringGoto](BringGoto/README.md) | Teleport players to you (bring) and teleport to a player (goto) |
+| [DiscordLogger](DiscordLogger/README.md) | Logs 35+ server events to 10 Discord webhook channels and a daily file |
+| [PlayerHourCheck](PlayerHourCheck/README.md) | CS2 playtime check with tiered kick/ban punishments |
+| [VIPCore](VIPCore/README.md) | Group based VIP system with 75+ modules and JSON/MySQL support |
+| [TABServerName](TABServerName/README.md) | Changes the map name shown in the top left of the scoreboard |
 
-## Kurulum (Sunucu)
+## Installation (Server)
 
-1. Sunucuda CounterStrikeSharp kurulu olmalıdır.
-2. İstediğiniz eklentinin derlenmiş klasörünü kopyalayın:
+1. CounterStrikeSharp must be installed on the server.
+2. Copy the compiled folder of the plugin you want:
    ```
-   csgo/addons/counterstrikesharp/plugins/<EklentiAdı>/
+   csgo/addons/counterstrikesharp/plugins/<PluginName>/
    ```
-3. Sunucuyu yeniden başlatın veya `css_plugins load <EklentiAdı>` komutunu çalıştırın.
-4. Eklentiye özel ayarlar için ilgili eklentinin README dosyasına bakın.
+3. Restart the server or run `css_plugins load <PluginName>`.
+4. See the plugin's own README for its specific settings.
 
-## Derleme
+## Building
 
 ```powershell
-# Tek eklenti
+# Single plugin
 dotnet build 1v1Slay/1v1Slay.csproj -c Debug
 
-# Çıktı: <Eklenti>/bin/Debug/ → sunucuya kopyalanmaya hazır
+# Output: <Plugin>/bin/Debug/ → ready to copy to the server
 ```
 
-## Repository Yapısı
+## Repository Layout
 
 ```
 CS2Plugins/
-├── <EklentiAdı>/            # Her eklenti kendi klasöründe
-│   ├── <EklentiAdı>.csproj
-│   ├── <EklentiAdı>.cs
-│   ├── README.md            # Eklentiye özel dokümantasyon
-│   └── lang/                # tr.json / en.json dil dosyaları
-├── img/                     # HUD/menü ikonları (raw URL ile kullanılır)
+├── <PluginName>/            # Every plugin in its own folder
+│   ├── <PluginName>.csproj
+│   ├── <PluginName>.cs
+│   ├── README.md            # Plugin documentation (English)
+│   ├── README.tr.md         # Plugin documentation (Turkish)
+│   └── lang/                # tr.json / en.json language files
+├── img/                     # HUD/menu icons (used via raw URL)
 └── LICENSE                  # MIT
 ```
