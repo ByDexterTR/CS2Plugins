@@ -3,6 +3,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
+using Microsoft.Extensions.Logging;
 
 namespace VIPCore;
 
@@ -18,6 +19,57 @@ public partial class VIPCore
         Register(Config.Commands.Reload, OnVipReloadCommand);
         Register(Config.Commands.UpdateUser, OnUpdateVipCommand);
         Register(Config.Commands.HideVip, OnHideVipCommand);
+        RegisterModuleCommands();
+    }
+
+    private void RegisterModuleCommands()
+    {
+        foreach (var (moduleName, names) in Config.ModuleCommands)
+        {
+            if (string.IsNullOrWhiteSpace(names))
+                continue;
+
+            var module = FindModule(moduleName);
+            if (module == null)
+            {
+                Logger.LogWarning("VIPCore: module_commands icinde bilinmeyen modul: {0}", moduleName);
+                continue;
+            }
+
+            var target = module;
+            Register(names, (player, info) => OnModuleCommand(player, target, info));
+        }
+    }
+
+    private void OnModuleCommand(CCSPlayerController? player, VipModule module, CommandInfo info)
+    {
+        if (player == null || !player.IsValid || player.IsBot)
+            return;
+
+        if (!IsGranted(player, module.Name))
+        {
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.no_access"]}");
+            return;
+        }
+
+        if (IsForced(player, module.Name))
+        {
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.feature_forced"]}");
+            return;
+        }
+
+        if (module.MenuType == VipFeatureType.Toggle && module.SelectCategories(player).Count == 0)
+        {
+            string next = GetSetting(player.SteamID, module.Name) == "off" ? "on" : "off";
+            SetSetting(player, module.Name, next);
+            module.OnSelect(player, next);
+
+            string label = next == "on" ? Localizer["vip.option_on"] : Localizer["vip.option_off"];
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.setting_changed", module.DisplayName, label]}");
+            return;
+        }
+
+        OpenFeatureMenu(player, module);
     }
 
     public void OnHideVipCommand(CCSPlayerController? player, CommandInfo info)

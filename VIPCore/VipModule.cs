@@ -111,6 +111,19 @@ public abstract class VipModule
         return count;
     }
 
+    protected void AddSpectators(CCSPlayerController target, List<CCSPlayerController> listeners)
+    {
+        foreach (var viewer in Core.Players)
+        {
+            if (viewer == null || !viewer.IsValid || viewer.IsBot || viewer.Slot == target.Slot || IsAlive(viewer))
+                continue;
+
+            var observed = PawnController(viewer.Pawn.Value?.ObserverServices?.ObserverTarget.Value);
+            if (observed != null && observed.Slot == target.Slot)
+                listeners.Add(viewer);
+        }
+    }
+
     protected static CCSPlayerController? PawnController(CEntityInstance? ent)
     {
         if (ent == null || !ent.IsValid || ent.DesignerName != "player")

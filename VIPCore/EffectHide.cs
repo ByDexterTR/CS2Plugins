@@ -14,11 +14,12 @@ public static class EffectHide
     public const int PlayerGlow = 4;
     public const int GrenadeTrail = 5;
     public const int SaySound = 6;
-    public const int ModuleCount = 7;
+    public const int PlayerParticle = 7;
+    public const int ModuleCount = 8;
 
     public static readonly string[] Names =
     {
-        "BulletTrail", "C4Effect", "KillEffect", "PlayerTrail", "PlayerGlow", "GrenadeTrail", "SaySound"
+        "BulletTrail", "C4Effect", "KillEffect", "PlayerTrail", "PlayerGlow", "GrenadeTrail", "SaySound", "PlayerParticle"
     };
 
     public const byte ModeAll = 0;

@@ -527,6 +527,12 @@ public partial class VIPCore
       {
         "name": "Back",
         "path": "sounds/ui/menu_back.vsnd"
+      },
+      {
+        "name": "Ping",
+        "emit": "UI.PlayerPing",
+        "volume": 1,
+        "hs": true
       }
     ],
     "InfiniteAmmo": {
@@ -797,6 +803,45 @@ public partial class VIPCore
         "Mor #A020F0"
       ]
     },
+    "Postprocessing": [
+      {
+        "name": "Kanli",
+        "file": "lighting/postprocessing/effects/death_cam_phase1.vpost",
+        "fade": 0.25
+      },
+      {
+        "name": "Soguk",
+        "file": "lighting/postprocessing/correction/cc_freeze_ct.vpost",
+        "fade": 0.25
+      },
+      {
+        "name": "Sicak",
+        "file": "lighting/postprocessing/correction/cc_freeze_t.vpost",
+        "fade": 0.25
+      },
+      {
+        "name": "Aydinlik",
+        "file": "lighting/postprocessing/effects/hltv_replay.vpost",
+        "fade": 0.25
+      },
+      {
+        "name": "Filmik",
+        "file": "lighting/postprocessing/basepostprocess_filmic.vpost",
+        "fade": 0.25
+      }
+    ],
+    "PlayerParticle": [
+      {
+        "name": "Duman",
+        "particle": "particles/ambient_fx/ambient_smokestack.vpcf",
+        "offset": 10
+      },
+      {
+        "name": "Su",
+        "particle": "particles/water_impact/water_splash_02_continuous.vpcf",
+        "offset": 5
+      }
+    ],
     "PlayerModel": {
       "ct": [
         {
@@ -929,6 +974,11 @@ public partial class VIPCore
         {
           "name": "Dong",
           "path": "sounds/ui/deathnotice.vsnd"
+        },
+        {
+          "name": "Sohbet",
+          "emit": "UI.Lobby.Chat",
+          "volume": 1
         }
       ]
     },

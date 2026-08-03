@@ -39,6 +39,18 @@ public class VipConfig
         ["usp"] = "css_usp,css_usps"
     };
 
+    [JsonPropertyName("module_commands")]
+    public Dictionary<string, string> ModuleCommands { get; set; } = new()
+    {
+        ["GiveWeapon"] = "css_weapons,css_kit",
+        ["GlueGrenade"] = "css_glue,css_gluegrenade",
+        ["PlayerModel"] = "css_vipmodel",
+        ["PlayerParticle"] = "css_particle",
+        ["Aura"] = "css_aura",
+        ["HitSound"] = "css_hitsound",
+        ["SaySound"] = "css_saysound"
+    };
+
     [JsonPropertyName("hide")]
     public Dictionary<string, string> Hide { get; set; } = new()
     {
@@ -48,7 +60,8 @@ public class VipConfig
         ["PlayerTrail"] = "all",
         ["PlayerGlow"] = "self",
         ["GrenadeTrail"] = "all",
-        ["SaySound"] = "all"
+        ["SaySound"] = "all",
+        ["PlayerParticle"] = "all"
     };
 
     [JsonPropertyName("mysql")]

@@ -90,6 +90,10 @@ public partial class VIPCore
                 WasdScroll(session, -1);
             else if (Pressed(PlayerButtons.Back))
                 WasdScroll(session, 1);
+            else if (Pressed(PlayerButtons.Moveleft))
+                WasdPage(session, -1);
+            else if (Pressed(PlayerButtons.Moveright))
+                WasdPage(session, 1);
             else if (Pressed(PlayerButtons.Use))
             {
                 WasdSelect(session);
@@ -116,6 +120,24 @@ public partial class VIPCore
             return;
 
         session.Selected = next;
+        session.Html = BuildWasdHtml(session);
+    }
+
+    private void WasdPage(WasdSession session, int direction)
+    {
+        int count = session.Items.Count;
+        if (count <= WasdPerPage)
+            return;
+
+        int totalPages = (count + WasdPerPage - 1) / WasdPerPage;
+        int page = session.Selected / WasdPerPage + direction;
+
+        if (page < 0)
+            page = totalPages - 1;
+        else if (page >= totalPages)
+            page = 0;
+
+        session.Selected = Math.Min(page * WasdPerPage, count - 1);
         session.Html = BuildWasdHtml(session);
     }
 
@@ -158,8 +180,12 @@ public partial class VIPCore
                 : $"<font color='#7f7f7f'>{text}</font><br>");
         }
 
+        builder.Append($"<font class='fontSize-s' color='#4AC7EE'>W/S {Localizer["vip.wasd_scroll"]}</font> | ");
+
+        if (totalPages > 1)
+            builder.Append($"<font class='fontSize-s' color='#C79BE0'>A/D {Localizer["vip.wasd_page"]}</font> | ");
+
         builder.Append(
-            $"<font class='fontSize-s' color='#4AC7EE'>W/S {Localizer["vip.wasd_scroll"]}</font> | " +
             $"<font class='fontSize-s' color='#76C97A'>E {Localizer["vip.wasd_select"]}</font> | " +
             $"<font class='fontSize-s' color='#FF8077'>R {Localizer["vip.wasd_exit"]}</font>");
 

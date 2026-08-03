@@ -1,6 +1,6 @@
 {
   "storage": "json",
-  "menu_type": "hud",
+  "menu_type": "wasd",
   "admin_flag": "@css/root",
   "commands": {
     "menu": "css_vip,css_vipmenu",
@@ -33,6 +33,15 @@
     "mp9": "css_mp9",
     "usp": "css_usp,css_usps"
   },
+  "module_commands": {
+    "GiveWeapon": "css_weapons,css_kit",
+    "GlueGrenade": "css_glue,css_gluegrenade",
+    "PlayerModel": "css_vipmodel",
+    "PlayerParticle": "css_particle",
+    "Aura": "css_aura",
+    "HitSound": "css_hitsound",
+    "SaySound": "css_saysound"
+  },
   "hide": {
     "BulletTrail": "all",
     "C4Effect": "all",
@@ -40,7 +49,8 @@
     "PlayerTrail": "all",
     "PlayerGlow": "self",
     "GrenadeTrail": "all",
-    "SaySound": "all"
+    "SaySound": "all",
+    "PlayerParticle": "all"
   },
   "mysql": {
     "host": "",

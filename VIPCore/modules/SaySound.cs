@@ -10,6 +10,8 @@ public class SaySound : VipModule
     {
         public string Name { get; set; } = "";
         public string Path { get; set; } = "";
+        public string Emit { get; set; } = "";
+        public float Volume { get; set; } = 1f;
     }
 
     private class Cfg
@@ -36,7 +38,7 @@ public class SaySound : VipModule
 
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
     {
-        return GetCfg(player).Sounds.Where(e => e.Name.Length > 0 && e.Path.Length > 0)
+        return GetCfg(player).Sounds.Where(e => e.Name.Length > 0 && (e.Path.Length > 0 || e.Emit.Length > 0))
             .Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
     }
 
@@ -63,11 +65,12 @@ public class SaySound : VipModule
             return HookResult.Continue;
 
         var entry = cfg.Sounds.FirstOrDefault(e => e.Name == Setting(player));
-        if (entry == null || entry.Path.Length == 0)
+        if (entry == null || (entry.Path.Length == 0 && entry.Emit.Length == 0))
             return HookResult.Continue;
 
         _lastPlay[slot] = Server.CurrentTime;
 
+        var listeners = new List<CCSPlayerController>();
         foreach (var target in Utilities.GetPlayers())
         {
             if (target == null || !target.IsValid || target.IsBot)
@@ -81,9 +84,10 @@ public class SaySound : VipModule
             if (mode == EffectHide.ModeSelf && target.Slot != player.Slot)
                 continue;
 
-            target.ExecuteClientCommand($"play {entry.Path}");
+            listeners.Add(target);
         }
 
+        SoundUtil.PlayFor(player, listeners, entry.Path, entry.Emit, entry.Volume);
         return HookResult.Continue;
     }
 }
