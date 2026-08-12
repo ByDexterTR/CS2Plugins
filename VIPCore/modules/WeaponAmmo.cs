@@ -21,9 +21,15 @@ public class WeaponAmmo : VipModule
         public bool ManageClip;
         public bool ManageReserve;
         public bool WasReloading;
+        public string Weapon = "";
+        public int OwnerSlot = -1;
     }
 
+    private const float CarryWindow = 3f;
+
     private readonly Dictionary<uint, State> _states = new();
+    private readonly Dictionary<(int Slot, string Weapon), (int Clip, int Reserve, float Time, int Life)> _carry = new();
+    private readonly int[] _life = new int[64];
     private static WeaponAmmo? _instance;
 
     public static bool Manages(uint weaponIndex) => _instance?._states.ContainsKey(weaponIndex) == true;
@@ -40,12 +46,17 @@ public class WeaponAmmo : VipModule
         Core.RegisterEventHandler<EventRoundStart>((_, __) =>
         {
             _states.Clear();
+            _carry.Clear();
             return HookResult.Continue;
         });
         Core.RegisterListener<OnTick>(OnTick);
     }
 
-    public override void OnUnload() => _states.Clear();
+    public override void OnUnload()
+    {
+        _states.Clear();
+        _carry.Clear();
+    }
 
     public override void OnSelect(CCSPlayerController player, string value)
     {
@@ -58,11 +69,36 @@ public class WeaponAmmo : VipModule
     private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)
     {
         var player = ev.Userid;
+        int slot = player?.Slot ?? -1;
+        if (slot >= 0 && slot < 64)
+        {
+            _life[slot]++;
+            DropCarry(slot);
+        }
+
         if (!Active(player))
             return HookResult.Continue;
 
         Server.NextFrame(() => ApplyAll(player));
         return HookResult.Continue;
+    }
+
+    private void DropCarry(int slot)
+    {
+        if (_carry.Count == 0)
+            return;
+
+        foreach (var key in _carry.Keys.Where(k => k.Slot == slot).ToList())
+            _carry.Remove(key);
+    }
+
+    private void Snapshot(State state)
+    {
+        if (state.OwnerSlot < 0 || state.OwnerSlot >= 64 || state.Weapon.Length == 0)
+            return;
+
+        _carry[(state.OwnerSlot, state.Weapon)] =
+            (state.Clip, state.Reserve, Server.CurrentTime, _life[state.OwnerSlot]);
     }
 
     private HookResult OnPickup(EventItemPickup ev, GameEventInfo info)
@@ -184,12 +220,25 @@ public class WeaponAmmo : VipModule
 
         var state = new State
         {
+            Weapon = name!,
+            OwnerSlot = player.Slot,
             ManageClip = entry.Ammo > 0,
             ManageReserve = entry.Reserve >= 0 && weapon.ReserveAmmo.Length > 0,
             FullClip = entry.Ammo,
             Clip = entry.Ammo > 0 ? entry.Ammo : weapon.Clip1,
             Reserve = entry.Reserve >= 0 && weapon.ReserveAmmo.Length > 0 ? entry.Reserve : 0
         };
+
+        if (_carry.TryGetValue((player.Slot, name!), out var carried)
+            && carried.Life == _life[player.Slot]
+            && Server.CurrentTime - carried.Time <= CarryWindow)
+        {
+            if (state.ManageClip)
+                state.Clip = Math.Clamp(carried.Clip, 0, state.FullClip);
+            if (state.ManageReserve)
+                state.Reserve = Math.Clamp(carried.Reserve, 0, entry.Reserve);
+        }
+
         _states[weapon.Index] = state;
 
         if (state.ManageClip && weapon.Clip1 != state.Clip)
@@ -237,7 +286,7 @@ public class WeaponAmmo : VipModule
 
     private void OnTick()
     {
-        if (++_reAdoptTick >= 64)
+        if (++_reAdoptTick >= 16)
         {
             _reAdoptTick = 0;
             ReAdopt();
@@ -257,7 +306,20 @@ public class WeaponAmmo : VipModule
                 continue;
             }
 
+            string? live = WeaponName(weapon);
+            if (live != null && live != state.Weapon)
+            {
+                _deadStates.Add(index);
+                continue;
+            }
+
             var owner = PawnController(weapon.OwnerEntity.Value);
+            if (owner != null && owner.Slot != state.OwnerSlot)
+            {
+                _deadStates.Add(index);
+                continue;
+            }
+
             if (owner == null || owner.IsBot || !IsAlive(owner) || !Active(owner))
                 continue;
 
@@ -288,6 +350,8 @@ public class WeaponAmmo : VipModule
                 weapon.ReserveAmmo[0] = state.Reserve;
                 Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
             }
+
+            Snapshot(state);
         }
 
         foreach (var index in _deadStates)

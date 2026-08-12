@@ -72,7 +72,7 @@ public class ExtraJump : VipModule
             {
                 _airJumps[slot] = 0;
             }
-            else if (jumpPressed)
+            else if (jumpPressed && !Dash.DashedThisTick(slot))
             {
                 var cfg = GroupValue<Cfg>(player) ?? new Cfg();
                 int total = cfg.Limit > 0 ? cfg.Count * cfg.Limit : 0;

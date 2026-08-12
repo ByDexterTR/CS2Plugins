@@ -55,7 +55,7 @@ public class VipConfig
     public Dictionary<string, string> Hide { get; set; } = new()
     {
         ["BulletTrail"] = "all",
-        ["C4Effect"] = "all",
+        ["C4Effect"] = "team",
         ["KillEffect"] = "all",
         ["PlayerTrail"] = "all",
         ["PlayerGlow"] = "self",

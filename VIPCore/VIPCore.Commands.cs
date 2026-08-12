@@ -96,6 +96,8 @@ public partial class VIPCore
             byte mode = EffectHide.Mode(player.Slot, module);
             string label = mode switch
             {
+                EffectHide.ModeTeam => $"{CC.Blue}{Localizer["vip.hide.teammates"]}{CC.Default}",
+                EffectHide.ModeEnemy => $"{CC.Orange}{Localizer["vip.hide.enemies"]}{CC.Default}",
                 EffectHide.ModeSelf => $"{CC.Yellow}{Localizer["vip.hide.self"]}{CC.Default}",
                 EffectHide.ModeOff => $"{CC.Red}{Localizer["vip.hide.off"]}{CC.Default}",
                 _ => $"{CC.Green}{Localizer["vip.hide.all"]}{CC.Default}"
@@ -103,7 +105,7 @@ public partial class VIPCore
 
             items.Add(($"{display}: {label}", p =>
             {
-                byte next = (byte)((EffectHide.Mode(p.Slot, module) + 1) % 3);
+                byte next = (byte)((EffectHide.Mode(p.Slot, module) + 1) % EffectHide.ModeCount);
                 EffectHide.SetMode(p, module, next);
                 OpenHideVipMenu(p);
             }));

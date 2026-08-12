@@ -68,6 +68,10 @@ public class SaySound : VipModule
         if (entry == null || (entry.Path.Length == 0 && entry.Emit.Length == 0))
             return HookResult.Continue;
 
+        byte mode = EffectHide.Mode(slot, EffectHide.SaySound);
+        if (mode == EffectHide.ModeOff)
+            return HookResult.Continue;
+
         _lastPlay[slot] = Server.CurrentTime;
 
         var listeners = new List<CCSPlayerController>();
@@ -77,11 +81,7 @@ public class SaySound : VipModule
                 continue;
             if (teamOnly && target.Team != player.Team)
                 continue;
-
-            byte mode = EffectHide.Mode(target.Slot, EffectHide.SaySound);
-            if (mode == EffectHide.ModeOff)
-                continue;
-            if (mode == EffectHide.ModeSelf && target.Slot != player.Slot)
+            if (!EffectHide.CanSee(mode, player, target))
                 continue;
 
             listeners.Add(target);

@@ -12,7 +12,7 @@ Modular VIP system. Provides a complete VIP infrastructure with more than 75 bui
 - **3 menu types** — `hud` (CenterHtml), `chat`, `wasd` (menu navigated with the W/S/E/R keys)
 - Timed or permanent VIP; when it expires every feature of the player is turned off and the VIP record **and** the player settings are deleted from storage (JSON/MySQL) automatically
 - Per-player feature settings (toggle or selection) are stored persistently
-- **Effect visibility** (`css_hidefx`) — every player can turn trail/particle/glow/sound effects off for themselves
+- **Effect visibility** (`css_hidefx`) — every player decides who sees their own trail/particle/glow/sound effects (everyone, teammates, enemies, only themselves, nobody)
 - Every command name can be changed from the config
 - Turkish / English language support (`lang/`)
 
@@ -44,7 +44,7 @@ Command names can be changed from the `commands` section of `settings.json`; the
 | `css_reloadvip` / `css_vipreload` | Reloads the config, groups and VIP data | `admin_flag` |
 | `css_tp` / `css_thirdperson` | Toggles the third person camera (Thirdperson module) | VIP (if defined in the group) |
 | `css_updatevip <steamid64>` / `css_vipupdate` | Re-reads the player's VIP record from storage (JSON/MySQL); applies a change written from a web panel without restarting the server | `admin_flag` |
-| `css_hidevip` / `css_hidefx` | Effect visibility menu (BulletTrail, C4Effect, KillEffect, PlayerTrail, PlayerGlow, GrenadeTrail, SaySound, PlayerParticle); cycles Everyone → Myself → Off, the preference is stored persistently | — (everyone) |
+| `css_hidevip` / `css_hidefx` | Effect visibility menu; the player picks who sees their own effect: Everyone → Teammates → Enemies → Myself → Off. The preference is stored persistently | — (everyone) |
 | *(module commands)* | Defined with `module_commands` in `settings.json`; a Toggle module is turned on/off instantly, a selection/category module opens its menu. Can be bound (`bind x "css_fall"`) | VIP (if defined in the group) |
 
 Time units: `s` seconds, `m` minutes (default), `h` hours, `d` days, `w` weeks, `mo` months, `y` years.
@@ -61,7 +61,7 @@ Time units: `s` seconds, `m` minutes (default), `h` hours, `d` days, `w` weeks, 
 | `commands` | object | — | Command names (multiple aliases separated with commas) |
 | `buy_commands` | object | — | BuyTeamWeapon command names; weapon key → comma separated commands (e.g. `"ak47": "css_ak47,css_ak"`) |
 | `module_commands` | object | — | Binds a command directly to a module (can be bound). Toggle modules are turned on/off instantly by the command, selection/category modules open their menu. Delete a line you do not want, add a new one as `"ModuleName": "css_command,css_alias"`; if left empty no command is added |
-| `hide` | object | — | Effect visibility module defaults: `all` everyone's is visible, `self` only their own, `hidden` none, `off` the feature is locked (everyone sees it, the player cannot change it, it does not appear in the menu). A player preference stored in the database overrides the default |
+| `hide` | object | — | Effect visibility defaults — who sees that player's own effect: `all` everyone, `team` teammates, `enemy` enemies, `self` only themselves, `hidden` nobody, `off` locked (does not appear in the menu). The player's own preference overrides the default |
 | `mysql` | object | — | MySQL connection settings (`host`, `port`, `database`, `user`, `password`, `table_prefix`) |
 
 ```json
@@ -90,7 +90,7 @@ Time units: `s` seconds, `m` minutes (default), `h` hours, `d` days, `w` weeks, 
   },
   "hide": {
     "BulletTrail": "all",
-    "C4Effect": "all",
+    "C4Effect": "team",
     "KillEffect": "all",
     "PlayerTrail": "all",
     "PlayerGlow": "self",
@@ -159,8 +159,10 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Dash` | Pressing jump while airborne dashes you toward the direction key you are holding (forward if none); `limit`: budget per round (0 = unlimited), `unit`: push speed | `{ "limit": 3, "unit": 600 }` |
 | `DecoyTeleport` | Teleport to where the decoy landed | `{ "limit": 3 }` |
 | `DefuseKit` | Defuse kit on spawn (CT) | `true` |
+| `DuckEndurance` | Unlimited crouching; crouching repeatedly never slows down | `true` |
+| `DuckSpeed` | Movement speed while crouched; `percent` is how much of the normal run speed is kept. The game's own value is `34`, `100` = crouching does not slow you down | `{ "percent": 100 }` |
 | `ExtraHP` | Spawn HP value | `150` |
-| `ExtraJump` | Multi jump; `count` is the extra jumps per airtime, total budget = `count × limit` (`limit: 0` = unlimited) | `{ "count": 2, "limit": 0 }` |
+| `ExtraJump` | Multi jump; `count` is the extra jumps per airtime, total budget = `count × limit` (`limit: 0` = unlimited). `Dash` takes priority when both are on | `{ "count": 2, "limit": 0 }` |
 | `ExtraKillAwards` | Extra money by kill type: `headshot`, `noscope`, `inair`, `blind`, `weapon_*` (weapon specific), `distance` (`money` per `unit` units of distance) | `{ "headshot": 150, "noscope": 100, "inair": 200, "blind": 50, "distance": { "unit": 2048, "money": 100 }, "weapon_knife": 1000 }` |
 | `ExtraMoney` | Extra money on spawn | `{ "amount": 4000 }` |
 | `ExtraSpeed` | Speed multiplier | `{ "multiplier": 1.3, "only_with_weapon": "" }` |
@@ -180,7 +182,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `GrenadeTrail` | Grenade trail effect | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
 | `HealthRegen` | Health regeneration | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Healthshot on spawn | `2` |
-| `HitSound` | Plays the selected sound when hitting an enemy (does not play on a teammate while FFA is off); spectators watching the player hear it too. 2 categories: entries with `hs: true` play on a headshot, the rest on a normal hit; if no HS category is selected the normal sound plays. An empty category is hidden from the menu. `path` is a file path or `emit` is a soundevent name (`volume` only applies to `emit`) | `[{ "name": "Killcard", "path": "sounds/ui/killcard_1.vsnd" }, { "name": "Ping", "emit": "UI.PlayerPing", "volume": 1, "hs": true }]` |
+| `HitSound` | Plays a sound when you hit an enemy; spectators hear it too. 2 categories: `hs: true` entries on headshots, the rest on normal hits. If no HS sound is picked the normal one plays. `path` is a file path, `emit` a soundevent name | `[{ "name": "Killcard", "path": "sounds/ui/killcard_1.vsnd" }, { "name": "Ping", "emit": "UI.PlayerPing", "volume": 1, "hs": true }]` |
 | `InfiniteAmmo` | Infinite ammo | `{ "only_weapon": "" }` |
 | `Invisibility` | Invisibility (not transmitted to enemies) | `{ "only_stopped": true, "dmg_after_invis": 2.0, "only_with_weapon": "" }` |
 | `Jammer` | Disables the radar of approaching players (`radius` range); if a dead spectator is watching someone jammed their radar is disabled too | `{ "radius": 500, "ignore_teammates": true, "ignore_enemy": false }` |
@@ -194,14 +196,14 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `PistolRoundDisable` | The listed modules are disabled on pistol rounds (a group setting, not a module) | `["GiveWeapon", "WeaponAmmo"]` |
 | `Force` | The listed **Toggle** modules are always active; they are not shown in the menu and the player cannot toggle them (a group setting, not a module; the module must be defined in the group; selection/command based modules are not affected) | `["Dash", "ExtraHP"]` |
 | `PlayerGlow` | Player glow (glow through walls) | `{ "range": 300, "team": -1, "colors": [...] }` |
-| `Postprocessing` | Applies a `.vpost` post-processing effect to the screen (color/tone/bloom). The effect is only rendered on the player's own screen; **spectators watching the player see the same effect**. While the effect is active the map's own post-processing volumes are hidden for that player. `fade` is the transition time (s) | `[{ "name": "Solgun", "file": "lighting/postprocessing/effects/death_cam_phase1.vpost", "fade": 0.25 }]` |
-| `PlayerParticle` | A particle effect attached to the player; created on spawn, follows the player, removed on death/at round start (can be hidden with `css_hidefx`). `offset` is how many units above foot level the particle sits. **Only continuously emitting (loop) particles follow** — one-shot burst effects are created once and stay in place | `[{ "name": "Duman", "particle": "particles/ambient_fx/ambient_smokestack.vpcf", "offset": 10 }]` |
+| `Postprocessing` | Applies a colour/tone effect to the screen; only the player and whoever spectates them sees it. `fade` is the transition time in seconds | `[{ "name": "Kanli", "file": "lighting/postprocessing/effects/death_cam_phase1.vpost", "fade": 0.25 }]` |
+| `PlayerParticle` | A particle attached to the player that follows them; removed on death and at round start (can be hidden with `css_hidefx`). `offset` is its height above the ground. Pick a continuously emitting (loop) particle, one-shot bursts do not follow | `[{ "name": "Duman", "particle": "particles/ambient_fx/ambient_smokestack.vpcf", "offset": 10 }]` |
 | `PlayerModel` | Team based player model selection (separate CT/T menus); `leg: false` hides the first person legs, `arm` is only precached; applied on spawn only | `{ "ct": [{ "name": "Special Agent Ava", "model": "agents/models/ctm_swat/ctm_swat_variante.vmdl", "arm": "", "leg": true }], "t": [...] }` |
 | `PlayerSize` | Player size selection; applied on spawn only; left alone if the size was already changed by another plugin | `[0.5, 0.75, 1.25, 1.5]` |
 | `PlayerTrail` | Player movement trail | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
 | `Pyro` | The VIP's molotov/incendiary restores health instead of dealing damage (`multiplier` × damage; above 1 it nets health) | `{ "multiplier": 1.5, "ignore_teammates": false, "ignore_enemy": true, "ignore_self": false, "limit": 0 }` |
 | `RadarHack` | Shows every enemy (and the C4) on the radar; blinks with `duration_on`/`duration_off` (`duration_off: 0` = always on, `duration_on` at least 1 s) | `{ "duration_on": 1, "duration_off": 0 }` |
-| `RapidFire` | Weapons fire with no cooldown; `norecoil: true` also zeroes the recoil/shake | `{ "only_with_weapon": "", "norecoil": true }` |
+| `RapidFire` | `firepercent` is the fire rate (`0.1` – `2.0`): `1.0` normal, `2.0` fastest, below that is slower. `recoilpercent` is the recoil left (`0.0` – `1.0`): `0.0` none, `1.0` normal | `{ "only_with_weapon": "", "recoilpercent": 0.0, "firepercent": 2.0 }` |
 | `ReflectDamage` | Damage reflection | `{ "reflect_percent": 50, "max_per_shot": 100, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `Respawn` | A dead player respawns after `time` seconds; `limit` is the budget per round (0 = unlimited), cancelled when the round changes | `{ "limit": 1, "time": 3 }` |
 | `Sacrifice` | When the VIP dies, gives living teammates health (capped at their own MaxHealth), armor (+helmet with `helmet`) and the weapons in the `weapons` list | `{ "hp": 25, "armor": 25, "helmet": false, "weapons": "weapon_hegrenade,weapon_flashbang" }` |
@@ -216,7 +218,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Thirdperson` | Third person camera | `{ "distance": 120 }` |
 | `Vampire` | Steals health equal to the damage dealt | `{ "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120, "ignore_teammates": true }` |
 | `VIPChat` | Private chat channel for VIPs | `true` |
-| `WeaponAmmo` | Per-weapon custom magazine/reserve ammo; (on most weapons reserve = number of magazines; on nova/sawedoff/xm1014 it is the number of shells). | `[{ "weapon_name": "weapon_ak47", "ammo": 30, "reserve": 3 }]` |
+| `WeaponAmmo` | Per-weapon custom magazine/reserve ammo (on most weapons reserve = number of magazines; on nova/sawedoff/xm1014 it is shells). Works with plugins that destroy and re-give weapons (WeaponPaints `css_wp`), the ammo is kept | `[{ "weapon_name": "weapon_ak47", "ammo": 30, "reserve": 3 }]` |
 | `ZeusCooldown` | Shortens the Zeus recharge time (`limit`: budget per round, 0 = unlimited) | `{ "cooldown": 5, "limit": 0 }` |
 
 ## Usage Examples
@@ -234,5 +236,5 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 - The config files are **inside the plugin folder** (`settings.json`, `vipgroups.json`), not in CounterStrikeSharp's `configs/plugins` directory.
 - A module that is not defined in any group is never loaded (zero cost).
 - If trail modules are used the beam sprite is precached automatically.
-- Two methods are supported in the sound modules (`HitSound`, `SaySound`): `path` plays a file path on the client (`play <path>`, `.vsnd`), while `emit` plays the game's soundevent name (like `SolidMetal.BulletImpact`, `UIPanorama.tab_mainmenu_news` — no precache needed). If both are written `emit` takes priority. **Not every soundevent works with `emit`:** sounds with `use_world_position = false` in the game's `soundevents/game_sounds_ui.vsndevts` file (most `UIPanorama.*`) cannot be played from the server and stay silent — pick ones with `use_world_position = true` (like `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept`, `UI.CoinLevelUp`). An `emit` sound comes from the player's pawn but is only sent to the target players, so `css_hidefx` preferences and the `say_team` filter work with both.
+- The sound modules (`HitSound`, `SaySound`) support two methods: `path` plays a file path, `emit` plays one of the game's built-in sound names (no precache needed). If both are given, `emit` wins. Not every sound name works with `emit`; ones that do include `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept` and `UI.CoinLevelUp`. The sound is only sent to the target players, so `css_hidefx` preferences and the `say_team` filter work with both.
 - The `"Rainbow rainbow"` and `"Rastgele random"` entries can be used in the color lists (`ColoredModel`, `PlayerGlow`, `PlayerTrail`, `BulletTrail`, `GrenadeTrail`, `SmokeColor`). If random is selected the player is assigned one shared color per round — the model, glow, trails and smoke all use the same color that round.

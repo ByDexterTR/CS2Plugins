@@ -40,6 +40,9 @@ public partial class VIPCore
       "limit": 3
     },
     "DefuseKit": true,
+    "DuckSpeed": {
+      "percent": 60
+    },
     "ExtraHP": 110,
     "ExtraJump": {
       "count": 1,
@@ -407,6 +410,10 @@ public partial class VIPCore
       "limit": 0
     },
     "DefuseKit": true,
+    "DuckEndurance": true,
+    "DuckSpeed": {
+      "percent": 100
+    },
     "Force": [
       "Dash",
       "ExtraHP"
@@ -936,7 +943,8 @@ public partial class VIPCore
     },
     "RapidFire": {
       "only_with_weapon": "",
-      "norecoil": true
+      "recoilpercent": 0.0,
+      "firepercent": 2.0
     },
     "ReflectDamage": {
       "reflect_percent": 50,

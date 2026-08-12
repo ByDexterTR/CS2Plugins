@@ -23,12 +23,15 @@ public static class EffectHide
     };
 
     public const byte ModeAll = 0;
-    public const byte ModeSelf = 1;
-    public const byte ModeOff = 2;
+    public const byte ModeTeam = 1;
+    public const byte ModeEnemy = 2;
+    public const byte ModeSelf = 3;
+    public const byte ModeOff = 4;
+    public const byte ModeCount = 5;
 
     private static VIPCore? _owner;
     private static readonly byte[,] _mode = new byte[64, ModuleCount];
-    private static readonly bool[] _viewerHasTransmitPref = new bool[64];
+    private static readonly int[] _team = new int[64];
     private static readonly bool[] _locked = new bool[ModuleCount];
     private static int _transmitNonDefault;
     private static readonly Dictionary<uint, (int Module, int OwnerSlot)> _entities = new();
@@ -43,7 +46,7 @@ public static class EffectHide
         _owner = core;
         _entities.Clear();
         Array.Clear(_mode);
-        Array.Clear(_viewerHasTransmitPref);
+        Array.Clear(_team);
         _transmitNonDefault = 0;
 
         for (int m = 0; m < ModuleCount; m++)
@@ -78,24 +81,23 @@ public static class EffectHide
 
     public static bool AnyViewer(int module, int ownerSlot)
     {
-        var core = _owner;
-        if (core == null || _locked[module] || _transmitNonDefault == 0)
+        if (_owner == null || _locked[module] || ownerSlot < 0 || ownerSlot >= 64)
             return true;
 
-        foreach (var viewer in core.Players)
-        {
-            if (viewer == null || !viewer.IsValid || viewer.IsBot || viewer.Slot >= 64)
-                continue;
-
-            byte mode = _mode[viewer.Slot, module];
-            if (mode == ModeAll)
-                return true;
-            if (mode == ModeSelf && viewer.Slot == ownerSlot)
-                return true;
-        }
-
-        return false;
+        return _mode[ownerSlot, module] != ModeOff;
     }
+
+    public static bool CanSee(byte mode, CCSPlayerController owner, CCSPlayerController viewer) =>
+        CanSee(mode, owner.Slot, owner.TeamNum, viewer.Slot, viewer.TeamNum);
+
+    private static bool CanSee(byte mode, int ownerSlot, int ownerTeam, int viewerSlot, int viewerTeam) => mode switch
+    {
+        ModeOff => false,
+        ModeSelf => viewerSlot == ownerSlot,
+        ModeTeam => viewerSlot == ownerSlot || (ownerTeam > 1 && viewerTeam == ownerTeam),
+        ModeEnemy => viewerSlot == ownerSlot || (ownerTeam > 1 && viewerTeam > 1 && viewerTeam != ownerTeam),
+        _ => true
+    };
 
     public static void Track(int module, uint entityIndex, int ownerSlot)
     {
@@ -118,7 +120,7 @@ public static class EffectHide
             }
 
             string raw = core.GetSetting(player.SteamID, "HideVip@" + Names[m]);
-            if (raw is not ("all" or "self" or "hidden"))
+            if (raw is not ("all" or "team" or "enemy" or "self" or "hidden"))
                 raw = core.HideDefault(Names[m]);
 
             SetModeInternal(player.Slot, m, Parse(raw));
@@ -132,15 +134,25 @@ public static class EffectHide
             return;
 
         SetModeInternal(player.Slot, module, mode);
-        core.SetSetting(player, "HideVip@" + Names[module],
-            mode == ModeSelf ? "self" : mode == ModeOff ? "hidden" : "all");
+        core.SetSetting(player, "HideVip@" + Names[module], Serialize(mode));
     }
 
     private static byte Parse(string value) => value switch
     {
+        "team" => ModeTeam,
+        "enemy" => ModeEnemy,
         "self" => ModeSelf,
         "hidden" => ModeOff,
         _ => ModeAll
+    };
+
+    private static string Serialize(byte mode) => mode switch
+    {
+        ModeTeam => "team",
+        ModeEnemy => "enemy",
+        ModeSelf => "self",
+        ModeOff => "hidden",
+        _ => "all"
     };
 
     private static void SetModeInternal(int slot, int module, byte mode)
@@ -158,37 +170,37 @@ public static class EffectHide
         bool isNonDefault = mode != ModeAll;
         if (wasNonDefault != isNonDefault)
             _transmitNonDefault += isNonDefault ? 1 : -1;
-
-        bool any = false;
-        for (int m = 0; m < ModuleCount; m++)
-        {
-            if (m != SaySound && _mode[slot, m] != ModeAll)
-            {
-                any = true;
-                break;
-            }
-        }
-        _viewerHasTransmitPref[slot] = any;
     }
 
     private static void OnCheckTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
     {
-        if (_transmitNonDefault == 0 || _entities.Count == 0)
+        var core = _owner;
+        if (core == null || _transmitNonDefault == 0 || _entities.Count == 0)
             return;
 
-        foreach (var (info, player) in infoList)
+        Array.Clear(_team);
+        foreach (var p in core.Players)
+            if (p != null && p.IsValid && p.Slot < 64)
+                _team[p.Slot] = p.TeamNum;
+
+        foreach (var (info, viewer) in infoList)
         {
-            if (player == null || !player.IsValid || player.Slot >= 64 || !_viewerHasTransmitPref[player.Slot])
+            if (viewer == null || !viewer.IsValid || viewer.Slot >= 64)
                 continue;
 
-            int viewerSlot = player.Slot;
+            int viewerSlot = viewer.Slot;
+            int viewerTeam = _team[viewerSlot];
 
             foreach (var (index, entry) in _entities)
             {
-                byte mode = _mode[viewerSlot, entry.Module];
+                int ownerSlot = entry.OwnerSlot;
+                if (ownerSlot < 0 || ownerSlot >= 64)
+                    continue;
+
+                byte mode = _mode[ownerSlot, entry.Module];
                 if (mode == ModeAll)
                     continue;
-                if (mode == ModeSelf && entry.OwnerSlot == viewerSlot)
+                if (CanSee(mode, ownerSlot, _team[ownerSlot], viewerSlot, viewerTeam))
                     continue;
 
                 if (info.TransmitEntities.Contains(index))

@@ -22,9 +22,21 @@ public class Dash : VipModule
     }
 
     private readonly State?[] _states = new State?[64];
+    private static readonly int[] _dashTick = CreateTickBuffer();
+
+    private static int[] CreateTickBuffer()
+    {
+        var buffer = new int[64];
+        Array.Fill(buffer, int.MinValue);
+        return buffer;
+    }
+
+    public static bool DashedThisTick(int slot) =>
+        slot >= 0 && slot < 64 && _dashTick[slot] == Server.TickCount;
 
     public override string Name => "Dash";
     public override string DisplayName => Core.Localizer["vip.module.dash"];
+    public override int Priority => 100;
 
     public override void OnLoad()
     {
@@ -71,6 +83,7 @@ public class Dash : VipModule
                 {
                     state.Dashed = true;
                     state.Used++;
+                    _dashTick[slot] = Server.TickCount;
 
                     float moveX = 0f;
                     float moveY = 0f;

@@ -11,6 +11,8 @@ public abstract class VipModule
     public abstract string Name { get; }
     public abstract string DisplayName { get; }
 
+    public virtual int Priority => 0;
+
     public virtual VipFeatureType MenuType => VipFeatureType.Toggle;
     public virtual bool ShowInMenu => true;
     public virtual List<VipFeatureOption> SelectOptions(CCSPlayerController player) => new();
