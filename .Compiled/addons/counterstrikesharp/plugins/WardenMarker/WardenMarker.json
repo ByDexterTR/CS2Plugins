@@ -1,0 +1,15 @@
+{
+  "76561198843494248": {
+    "key": "ping",
+    "ring": {
+      "color": "#FF004B",
+      "size": 150,
+      "width": 2
+    },
+    "disc": {
+      "enabled": true,
+      "glow": true,
+      "alpha": 178
+    }
+  }
+}

@@ -25,6 +25,7 @@ Every plugin ships with Turkish/English language support, lives in its own folde
 | [Cit](Cit/README.md) | Menu for placing fence/barricade models where you are looking |
 | [Silahsil](Silahsil/README.md) | Clears unowned weapons on the ground with a single command |
 | [Cekilis](Cekilis/README.md) | Random player raffle filtered by team/state |
+| [WardenMarker](WardenMarker/README.md) | A single glowing ring marker the warden keeps moving to the point they look at |
 
 ### ⚙️ General / Utility
 

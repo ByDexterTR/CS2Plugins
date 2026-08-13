@@ -25,6 +25,7 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 | [Cit](Cit/README.tr.md) | Baktığın noktaya çit/barikat modeli yerleştirme menüsü |
 | [Silahsil](Silahsil/README.tr.md) | Yerdeki sahipsiz silahları tek komutla temizler |
 | [Cekilis](Cekilis/README.tr.md) | Takım/durum filtreli rastgele oyuncu çekilişi |
+| [WardenMarker](WardenMarker/README.tr.md) | Warden'ın baktığı noktaya taşıdığı tek parlayan halka marker |
 
 ### ⚙️ Genel / Yardımcı
 
