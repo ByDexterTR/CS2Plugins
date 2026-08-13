@@ -31,6 +31,7 @@ Tüm eklentiler Türkçe/İngilizce dil desteğiyle gelir, kendi klasöründe ba
 | Eklenti | Açıklama |
 | --- | --- |
 | [1v1Slay](1v1Slay/README.tr.md) | 1v1 durumunda geri sayım; süre dolunca kalanları öldürür |
+| [Ads](Ads/README.tr.md) | Haritaya prop, ekrana ScreenText ve HudSay, sohbete duyuru; olay bazlı reklamlar, JSON/MySQL |
 | [AntiCapsLock](AntiCapsLock/README.tr.md) | Sohbetteki aşırı büyük harfi küçültür veya mesajı siler |
 | [AntiTeamFlash](AntiTeamFlash/README.tr.md) | Takım arkadaşı flash'larının kör etmesini engeller |
 | [BhopDoorFix](BhopDoorFix/README.tr.md) | Bhop/KZ haritalarındaki kapıları dondurur |

@@ -1,0 +1,23 @@
+{
+  "ads_storage": "json",
+  "ads_queue_mode": "channel",
+  "ads_flag": "@css/root",
+  "ads_cmd": "css_ads",
+  "ads_rotate_step": 90,
+  "ads_move_step": 5,
+  "ads_scale_step": 0.25,
+  "ads_reload_cmd": "css_adsreload",
+  "ads_importsql_cmd": "css_adsimportsql",
+  "ads_exportsql_cmd": "css_adsexportsql",
+  "ads_font": "Arial Bold",
+  "ads_forward": 7,
+  "ads_units_per_px": 0.012,
+  "mysql": {
+    "host": "",
+    "port": 3306,
+    "database": "",
+    "user": "",
+    "password": "",
+    "table_prefix": "ads_"
+  }
+}

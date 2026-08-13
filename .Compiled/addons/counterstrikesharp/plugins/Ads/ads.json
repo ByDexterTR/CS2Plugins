@@ -1,0 +1,177 @@
+{
+  "screentexts": [
+    {
+      "text": "bydexter.net\nGitHub: github.com/ByDexterTR",
+      "life": 8,
+      "timer": 30,
+      "x": -6.4,
+      "y": 1.3,
+      "size": 32,
+      "color": "#FFFFFF",
+      "justify": "left",
+      "background": true
+    },
+    {
+      "text": "Sunucumuza <br> destek olun",
+      "life": 6,
+      "timer": 20,
+      "x": -6.4,
+      "y": 1.3,
+      "size": 28,
+      "color": "#7CFC00",
+      "justify": "left",
+      "background": false,
+      "ignoreflag": "@css/vip"
+    }
+  ],
+  "hudsays": [
+    {
+      "text": "<font color='#7CFC00' class='fontSize-m'>bydexter.net</font><br>GitHub: github.com/ByDexterTR",
+      "life": 6,
+      "timer": 45
+    },
+    {
+      "text": "<font color='#FF6347' class='fontSize-m'>Kurallara uyun</font><br>Iyi oyunlar",
+      "life": 5,
+      "timer": 60
+    }
+  ],
+  "chatsays": [
+    {
+      "text": "{Orchid}[Reklam]{Default} Sunucumuza destek olmak icin {Lime}bydexter.net{Default} adresini ziyaret edin.",
+      "timer": 60
+    },
+    {
+      "text": "{Orchid}[Reklam]{Default} GitHub: {Blue}github.com/ByDexterTR",
+      "timer": 90,
+      "ignoreflag": "@css/vip"
+    },
+    {
+      "text": "{Orchid}[VIP]{Default} VIP komutlari icin {Lime}!vip{Default} yazin.",
+      "timer": 120,
+      "flag": "@css/vip"
+    }
+  ],
+  "events": [
+    {
+      "event": "player_death",
+      "target": "attacker",
+      "type": "hudsay",
+      "text": "<font color='#7CFC00' class='fontSize-m'>{victim} oldurdun</font><br>bydexter.net",
+      "life": 3,
+      "cooldown": 5,
+      "chance": 100,
+      "x": 0,
+      "y": 0,
+      "size": 32,
+      "color": "#FFFFFF",
+      "justify": "left",
+      "background": false
+    },
+    {
+      "event": "player_hurt",
+      "target": "attacker",
+      "type": "screentext",
+      "text": "-{damage} HP\nbydexter.net",
+      "life": 2,
+      "cooldown": 1,
+      "chance": 100,
+      "x": 0,
+      "y": -1.2,
+      "size": 24,
+      "color": "#FF6347",
+      "justify": "center",
+      "background": false
+    },
+    {
+      "event": "round_start",
+      "target": "all",
+      "type": "chatsay",
+      "text": "{Orchid}[Reklam]{Default} Iyi raundlar! {Lime}bydexter.net",
+      "life": 4,
+      "cooldown": 0,
+      "chance": 35,
+      "x": 0,
+      "y": 0,
+      "size": 32,
+      "color": "#FFFFFF",
+      "justify": "left",
+      "background": false
+    },
+    {
+      "event": "round_end",
+      "target": "all",
+      "type": "hudsay",
+      "text": "<font color='#FFD700' class='fontSize-m'>{winner} kazandi</font><br>bydexter.net",
+      "life": 4,
+      "cooldown": 0,
+      "chance": 100,
+      "x": 0,
+      "y": 0,
+      "size": 32,
+      "color": "#FFFFFF",
+      "justify": "left",
+      "background": false
+    },
+    {
+      "event": "bomb_planted",
+      "target": "all",
+      "type": "chatsay",
+      "text": "{Orchid}[Reklam]{Default} Bomba {Red}{site}{Default} bolgesine kuruldu. {Lime}bydexter.net",
+      "life": 4,
+      "cooldown": 0,
+      "chance": 100,
+      "x": 0,
+      "y": 0,
+      "size": 32,
+      "color": "#FFFFFF",
+      "justify": "left",
+      "background": false
+    },
+    {
+      "event": "bomb_defused",
+      "target": "all",
+      "type": "chatsay",
+      "text": "{Orchid}[Reklam]{Default} {player} bombayi etkisiz hale getirdi. {Lime}bydexter.net",
+      "life": 4,
+      "cooldown": 0,
+      "chance": 100,
+      "x": 0,
+      "y": 0,
+      "size": 32,
+      "color": "#FFFFFF",
+      "justify": "left",
+      "background": false
+    },
+    {
+      "event": "player_connect_full",
+      "target": "player",
+      "type": "chatsay",
+      "text": "{Orchid}[Reklam]{Default} Hos geldin {Lime}{player}{Default}! GitHub: {Blue}github.com/ByDexterTR",
+      "life": 4,
+      "cooldown": 0,
+      "chance": 100,
+      "x": 0,
+      "y": 0,
+      "size": 32,
+      "color": "#FFFFFF",
+      "justify": "left",
+      "background": false
+    },
+    {
+      "event": "player_team",
+      "target": "player",
+      "type": "chatsay",
+      "text": "{Orchid}[Reklam]{Default} {team} takimina gectin. Iyi oyunlar! {Lime}bydexter.net",
+      "life": 4,
+      "cooldown": 30,
+      "chance": 100,
+      "x": 0,
+      "y": 0,
+      "size": 32,
+      "color": "#FFFFFF",
+      "justify": "left",
+      "background": false
+    }
+  ]
+}

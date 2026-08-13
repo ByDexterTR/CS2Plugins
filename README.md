@@ -31,6 +31,7 @@ Every plugin ships with Turkish/English language support, lives in its own folde
 | Plugin | Description |
 | --- | --- |
 | [1v1Slay](1v1Slay/README.md) | Countdown during a 1v1; slays the remaining players when time runs out |
+| [Ads](Ads/README.md) | Props on the map, ScreenText and HudSay on screen, chat announcements; event driven ads, JSON/MySQL |
 | [AntiCapsLock](AntiCapsLock/README.md) | Lowercases excessive caps in chat or deletes the message |
 | [AntiTeamFlash](AntiTeamFlash/README.md) | Stops teammate flashbangs from blinding you |
 | [BhopDoorFix](BhopDoorFix/README.md) | Freezes doors on bhop/KZ maps |

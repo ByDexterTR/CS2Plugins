@@ -10,6 +10,7 @@ public class WasdItem
   public string Text = "";
   public Action<CCSPlayerController>? OnSelect;
   public bool Enabled = true;
+  public string? Color;
 }
 
 public class WasdMenuManager
@@ -190,9 +191,12 @@ public class WasdMenuManager
     for (int i = offset; i < end; i++)
     {
       var item = session.Items[i];
-      builder.Append(i == session.Selected
-        ? $"<font color='#ffb300'>▸ </font><font color='#ffffff'>{item.Text}</font><br>"
-        : $"<font color='#7f7f7f'>{item.Text}</font><br>");
+      bool selected = i == session.Selected;
+      string color = item.Color ?? (selected ? "#ffffff" : "#7f7f7f");
+
+      builder.Append(selected
+        ? $"<font color='#ffb300'>▸ </font><font color='{color}'>{item.Text}</font><br>"
+        : $"<font color='{color}'>{item.Text}</font><br>");
     }
 
     builder.Append(

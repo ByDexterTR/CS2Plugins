@@ -1,0 +1,22 @@
+{
+  "Tavuk": {
+    "path": "models/chicken/chicken.vmdl",
+    "scale": 1,
+    "skins": [
+      0
+    ]
+  },
+  "Otomat": {
+    "path": "models/props/cs_office/vending_machine.vmdl",
+    "scale": 1
+  },
+  "Tas heykel": {
+    "path": "models/generic/stone_statue_01/stone_statue_01.vmdl",
+    "scale": 1
+  },
+  "Sos sisesi (sadece VIP)": {
+    "path": "models/de_mirage/food/magixx_sauce_01a/magixx_sauce_bottle_01a.vmdl",
+    "scale": 1,
+    "flag": "@css/vip"
+  }
+}

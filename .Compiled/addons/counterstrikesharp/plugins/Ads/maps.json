@@ -1,0 +1,17 @@
+{
+  "de_mirage": [
+    {
+      "path": "models/props/cs_office/vending_machine.vmdl",
+      "pos": "1376 -16 -144",
+      "angle": "0 180 0",
+      "scale": 2.25,
+      "solid": true
+    },
+    {
+      "path": "models/generic/stone_statue_01/stone_statue_01.vmdl",
+      "pos": "-1972 -1988 -264",
+      "angle": "0 45 0",
+      "scale": 3
+    }
+  ]
+}
