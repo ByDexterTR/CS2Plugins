@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.1.3";
+    public override string ModuleVersion => "1.1.4";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -756,16 +756,13 @@ public partial class VIPCore : BasePlugin
         {
             foreach (var (id, ops) in batches)
             {
-                foreach (var (feature, value) in ops)
+                try
                 {
-                    try
-                    {
-                        if (value == null)
-                            storage.DeleteSetting(id, feature);
-                        else
-                            storage.UpsertSetting(id, feature, value);
-                    }
-                    catch { }
+                    storage.ApplySettings(id, ops);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning("Settings save failed for {SteamId}: {Message}", id, ex.Message);
                 }
             }
         }

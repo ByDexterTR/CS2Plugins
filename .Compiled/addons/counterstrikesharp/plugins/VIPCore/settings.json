@@ -44,7 +44,7 @@
   },
   "hide": {
     "BulletTrail": "all",
-    "C4Effect": "all",
+    "C4Effect": "team",
     "KillEffect": "all",
     "PlayerTrail": "all",
     "PlayerGlow": "self",

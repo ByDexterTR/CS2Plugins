@@ -11,6 +11,7 @@ public class Dash : VipModule
     {
         public int Limit { get; set; } = 3;
         public float Unit { get; set; } = 600f;
+        public float SoundVolume { get; set; } = 1f;
     }
 
     private class State
@@ -20,6 +21,8 @@ public class Dash : VipModule
         public int JumpReleasedTicks = 10;
         public bool Dashed;
     }
+
+    private const string JumpSound = "Default.WalkJump";
 
     private readonly State?[] _states = new State?[64];
     private static readonly int[] _dashTick = CreateTickBuffer();
@@ -105,6 +108,9 @@ public class Dash : VipModule
                     pawn.AbsVelocity.X = forward.X * cfg.Unit;
                     pawn.AbsVelocity.Y = forward.Y * cfg.Unit;
                     pawn.AbsVelocity.Z = Math.Max(pawn.AbsVelocity.Z, 150f);
+
+                    if (cfg.SoundVolume > 0f)
+                        pawn.EmitSound(JumpSound, volume: cfg.SoundVolume);
                 }
             }
 

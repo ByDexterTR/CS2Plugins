@@ -11,7 +11,10 @@ public class ExtraJump : VipModule
     {
         public int Count { get; set; } = 1;
         public int Limit { get; set; } = 0;
+        public float SoundVolume { get; set; } = 1f;
     }
+
+    private const string JumpSound = "Default.WalkJump";
 
     private readonly int[] _airJumps = new int[64];
     private readonly int[] _usedThisLife = new int[64];
@@ -83,6 +86,9 @@ public class ExtraJump : VipModule
                     _airJumps[slot]++;
                     _usedThisLife[slot]++;
                     pawn.AbsVelocity.Z = 300f;
+
+                    if (cfg.SoundVolume > 0f)
+                        pawn.EmitSound(JumpSound, volume: cfg.SoundVolume);
                 }
             }
 

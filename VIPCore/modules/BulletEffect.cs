@@ -13,6 +13,7 @@ public class BulletEffect : VipModule
         public int Damage { get; set; } = 2;
         public float Tick { get; set; } = 0.5f;
         public float Duration { get; set; } = 3f;
+        public float SoundVolume { get; set; } = 0.3f;
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
         public bool IgnoreEnemy { get; set; } = false;
@@ -57,6 +58,7 @@ public class BulletEffect : VipModule
         public float NextTick;
         public float SlowFactor;
         public bool SizeApplied;
+        public float SoundVolume;
     }
 
     private readonly Effect?[] _active = new Effect?[64];
@@ -141,6 +143,7 @@ public class BulletEffect : VipModule
                     pe.ExpireAt += pDur;
                     pe.Damage = cfg.Poison.Damage;
                     pe.Interval = interval;
+                    pe.SoundVolume = cfg.Poison.SoundVolume;
                 }
                 else
                 {
@@ -149,6 +152,7 @@ public class BulletEffect : VipModule
                         Mode = "poison",
                         Damage = cfg.Poison.Damage,
                         Interval = interval,
+                        SoundVolume = cfg.Poison.SoundVolume,
                         NextTick = now + interval,
                         ExpireAt = now + pDur
                     };
@@ -255,7 +259,7 @@ public class BulletEffect : VipModule
                     {
                         pawn.Health = Math.Max(pawn.Health - e.Damage, 1);
                         Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
-                        player.EmitSound("Player.DamageBody.Onlooker");
+                        SoundUtil.EmitToPlayer(player, "Player.DamageBody.Victim", e.SoundVolume);
                     }
                     break;
 

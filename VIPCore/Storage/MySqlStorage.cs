@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MySqlConnector;
 
 namespace VIPCore;
@@ -41,11 +42,88 @@ public class MySqlStorage : IVipStorage
             `expires` BIGINT NOT NULL,
             PRIMARY KEY (`steamid`));");
 
-        Exec(conn, $@"CREATE TABLE IF NOT EXISTS `{_settings}` (
+        Migrate(conn);
+
+        Exec(conn, $"CREATE TABLE IF NOT EXISTS `{_settings}` {SettingsSchema}");
+    }
+
+    private const string SettingsSchema = @"(
             `steamid` BIGINT UNSIGNED NOT NULL,
-            `feature` VARCHAR(64) NOT NULL,
-            `value` VARCHAR(64) NOT NULL,
-            PRIMARY KEY (`steamid`, `feature`));");
+            `settings` JSON NOT NULL,
+            PRIMARY KEY (`steamid`));";
+
+    private void Migrate(MySqlConnection conn)
+    {
+        if (!HasColumn(conn, _settings, "feature"))
+            return;
+
+        var packed = new Dictionary<ulong, Dictionary<string, string>>();
+        using (var cmd = new MySqlCommand($"SELECT steamid, feature, value FROM `{_settings}`;", conn))
+        using (var reader = cmd.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                ulong steamId = reader.GetUInt64(0);
+                if (!packed.TryGetValue(steamId, out var dict))
+                {
+                    dict = new();
+                    packed[steamId] = dict;
+                }
+                dict[reader.GetString(1)] = reader.GetString(2);
+            }
+        }
+
+        string staging = _settings + "_migrating";
+        Exec(conn, $"DROP TABLE IF EXISTS `{staging}`;");
+        Exec(conn, $"CREATE TABLE `{staging}` {SettingsSchema}");
+
+        foreach (var (steamId, dict) in packed)
+        {
+            if (dict.Count == 0)
+                continue;
+
+            using var cmd = new MySqlCommand($"INSERT INTO `{staging}` (steamid, settings) VALUES (@s, @d);", conn);
+            cmd.Parameters.AddWithValue("@s", steamId);
+            cmd.Parameters.AddWithValue("@d", Pack(dict));
+            cmd.ExecuteNonQuery();
+        }
+
+        Exec(conn, $"DROP TABLE `{_settings}`;");
+        Exec(conn, $"RENAME TABLE `{staging}` TO `{_settings}`;");
+    }
+
+    private bool HasColumn(MySqlConnection conn, string table, string column)
+    {
+        using var cmd = new MySqlCommand(
+            @"SELECT COUNT(*) FROM information_schema.COLUMNS
+              WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @t AND COLUMN_NAME = @c;", conn);
+        cmd.Parameters.AddWithValue("@db", _database);
+        cmd.Parameters.AddWithValue("@t", table);
+        cmd.Parameters.AddWithValue("@c", column);
+        return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
+    }
+
+    private static readonly JsonSerializerOptions PackOpts = new()
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
+    private static string Pack(Dictionary<string, string> settings) =>
+        JsonSerializer.Serialize(settings, PackOpts);
+
+    private static Dictionary<string, string> Unpack(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return new();
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+        }
+        catch (JsonException)
+        {
+            return new();
+        }
     }
 
     public Dictionary<ulong, VipEntry> LoadVips()
@@ -68,18 +146,10 @@ public class MySqlStorage : IVipStorage
         using var conn = new MySqlConnection(_connString);
         conn.Open();
 
-        using var cmd = new MySqlCommand($"SELECT steamid, feature, value FROM `{_settings}`;", conn);
+        using var cmd = new MySqlCommand($"SELECT steamid, settings FROM `{_settings}`;", conn);
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
-        {
-            ulong steamId = reader.GetUInt64(0);
-            if (!result.TryGetValue(steamId, out var dict))
-            {
-                dict = new();
-                result[steamId] = dict;
-            }
-            dict[reader.GetString(1)] = reader.GetString(2);
-        }
+            result[reader.GetUInt64(0)] = Unpack(reader.GetString(1));
 
         return result;
     }
@@ -103,15 +173,15 @@ public class MySqlStorage : IVipStorage
         using var conn = new MySqlConnection(_connString);
         conn.Open();
 
-        using var cmd = new MySqlCommand($"SELECT feature, value FROM `{_settings}` WHERE steamid = @s;", conn);
+        return LoadSettings(conn, steamId);
+    }
+
+    private Dictionary<string, string> LoadSettings(MySqlConnection conn, ulong steamId)
+    {
+        using var cmd = new MySqlCommand($"SELECT settings FROM `{_settings}` WHERE steamid = @s;", conn);
         cmd.Parameters.AddWithValue("@s", steamId);
-        using var reader = cmd.ExecuteReader();
 
-        var result = new Dictionary<string, string>();
-        while (reader.Read())
-            result[reader.GetString(0)] = reader.GetString(1);
-
-        return result;
+        return cmd.ExecuteScalar() is string json ? Unpack(json) : new Dictionary<string, string>();
     }
 
     public void UpsertVip(ulong steamId, VipEntry entry)
@@ -145,17 +215,51 @@ public class MySqlStorage : IVipStorage
         }
     }
 
-    public void UpsertSetting(ulong steamId, string feature, string value)
+    public void ApplySettings(ulong steamId, Dictionary<string, string?> ops)
     {
+        if (ops.Count == 0)
+            return;
+
         using var conn = new MySqlConnection(_connString);
         conn.Open();
 
+        var settings = LoadSettings(conn, steamId);
+        bool changed = false;
+
+        foreach (var (feature, value) in ops)
+        {
+            if (value == null)
+            {
+                changed |= settings.Remove(feature);
+                continue;
+            }
+
+            if (settings.TryGetValue(feature, out var current) && current == value)
+                continue;
+
+            settings[feature] = value;
+            changed = true;
+        }
+
+        if (changed)
+            Save(conn, steamId, settings);
+    }
+
+    private void Save(MySqlConnection conn, ulong steamId, Dictionary<string, string> settings)
+    {
+        if (settings.Count == 0)
+        {
+            using var delete = new MySqlCommand($"DELETE FROM `{_settings}` WHERE steamid = @s;", conn);
+            delete.Parameters.AddWithValue("@s", steamId);
+            delete.ExecuteNonQuery();
+            return;
+        }
+
         using var cmd = new MySqlCommand(
-            $@"INSERT INTO `{_settings}` (steamid, feature, value) VALUES (@s, @f, @v)
-               ON DUPLICATE KEY UPDATE value = @v;", conn);
+            $@"INSERT INTO `{_settings}` (steamid, settings) VALUES (@s, @d)
+               ON DUPLICATE KEY UPDATE settings = @d;", conn);
         cmd.Parameters.AddWithValue("@s", steamId);
-        cmd.Parameters.AddWithValue("@f", feature);
-        cmd.Parameters.AddWithValue("@v", value);
+        cmd.Parameters.AddWithValue("@d", Pack(settings));
         cmd.ExecuteNonQuery();
     }
 
@@ -169,17 +273,6 @@ public class MySqlStorage : IVipStorage
             Exec(conn, $"CREATE DATABASE IF NOT EXISTS `{_database}`;");
         }
         catch { }
-    }
-
-    public void DeleteSetting(ulong steamId, string feature)
-    {
-        using var conn = new MySqlConnection(_connString);
-        conn.Open();
-
-        using var cmd = new MySqlCommand($"DELETE FROM `{_settings}` WHERE steamid = @s AND feature = @f;", conn);
-        cmd.Parameters.AddWithValue("@s", steamId);
-        cmd.Parameters.AddWithValue("@f", feature);
-        cmd.ExecuteNonQuery();
     }
 
     private static void Exec(MySqlConnection conn, string sql)

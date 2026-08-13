@@ -46,7 +46,8 @@ public partial class VIPCore
     "ExtraHP": 110,
     "ExtraJump": {
       "count": 1,
-      "limit": 3
+      "limit": 3,
+      "sound_volume": 1
     },
     "ExtraMoney": {
       "amount": 500
@@ -404,7 +405,47 @@ public partial class VIPCore
     },
     "Dash": {
       "limit": 3,
-      "unit": 600
+      "unit": 600,
+      "sound_volume": 1
+    },
+    "DecoyEffect": {
+      "poison": {
+        "minhp": 10,
+        "damage": 2,
+        "tick": 0.5,
+        "sound_volume": 0.3,
+        "radius": 200,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "limit": 0
+      },
+      "heal": {
+        "heal": 2,
+        "tick": 0.5,
+        "sound_volume": 0.5,
+        "radius": 200,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true,
+        "limit": 0
+      },
+      "slow": {
+        "percent": 30,
+        "minspeed": 100,
+        "tick": 0.1,
+        "radius": 200,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false,
+        "limit": 0
+      },
+      "wallhack": {
+        "tick": 0.25,
+        "radius": 200,
+        "color": "#612D53",
+        "see_teammates": false,
+        "limit": 0
+      }
     },
     "DecoyTeleport": {
       "limit": 0
@@ -421,7 +462,8 @@ public partial class VIPCore
     "ExtraHP": 150,
     "ExtraJump": {
       "count": 2,
-      "limit": 0
+      "limit": 0,
+      "sound_volume": 1
     },
     "ExtraKillAwards": {
       "headshot": 150,
@@ -903,6 +945,7 @@ public partial class VIPCore
         "damage": 2,
         "tick": 0.5,
         "duration": 3,
+        "sound_volume": 0.3,
         "ignore_teammates": true,
         "ignore_self": true,
         "ignore_enemy": false
@@ -940,6 +983,12 @@ public partial class VIPCore
     "RadarHack": {
       "duration_on": 1,
       "duration_off": 0
+    },
+    "WallHack": {
+      "duration_on": 1,
+      "duration_off": 3,
+      "color": "#612D53",
+      "see_teammates": false
     },
     "RapidFire": {
       "only_with_weapon": "",
@@ -1008,6 +1057,7 @@ public partial class VIPCore
         "damage": 2,
         "time": 20,
         "tick": 0.5,
+        "sound_volume": 0.3,
         "radius": 180,
         "smokecolor": [
           255,
@@ -1022,6 +1072,7 @@ public partial class VIPCore
         "heal": 2,
         "time": 20,
         "tick": 0.5,
+        "sound_volume": 0.5,
         "radius": 180,
         "smokecolor": [
           0,
@@ -1047,6 +1098,19 @@ public partial class VIPCore
         "ignore_self": true,
         "ignore_enemy": false,
         "limit": 0
+      },
+      "wallhack": {
+        "time": 20,
+        "tick": 0.25,
+        "radius": 180,
+        "smokecolor": [
+          97,
+          45,
+          83
+        ],
+        "color": "#612D53",
+        "see_teammates": false,
+        "limit": 0
       }
     },
     "SpawnProtection": {
@@ -1063,6 +1127,7 @@ public partial class VIPCore
     "TeamHeal": {
       "minhp": 5,
       "percent": 50,
+      "sound_volume": 0.5,
       "only_with_weapon": ""
     },
     "Thirdperson": {

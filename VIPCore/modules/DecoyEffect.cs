@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
@@ -6,18 +7,15 @@ using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
-public class SmokeEffect : VipModule
+public class DecoyEffect : VipModule
 {
     private class PoisonCfg
     {
         [JsonPropertyName("minhp")]
         public int MinHp { get; set; } = 1;
         public int Damage { get; set; } = 2;
-        public float Time { get; set; } = 20f;
         public float Tick { get; set; } = 0.5f;
         public float SoundVolume { get; set; } = 0.3f;
-        [JsonPropertyName("smokecolor")]
-        public List<int> SmokeColor { get; set; } = new() { 255, 0, 255 };
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
@@ -27,11 +25,8 @@ public class SmokeEffect : VipModule
     private class HealCfg
     {
         public int Heal { get; set; } = 2;
-        public float Time { get; set; } = 20f;
         public float Tick { get; set; } = 0.5f;
         public float SoundVolume { get; set; } = 0.5f;
-        [JsonPropertyName("smokecolor")]
-        public List<int> SmokeColor { get; set; } = new() { 0, 255, 0 };
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = false;
         public bool IgnoreSelf { get; set; } = false;
@@ -42,11 +37,9 @@ public class SmokeEffect : VipModule
     private class SlowCfg
     {
         public int Percent { get; set; } = 30;
-        public float Time { get; set; } = 20f;
         [JsonPropertyName("minspeed")]
         public float MinSpeed { get; set; } = 100f;
-        [JsonPropertyName("smokecolor")]
-        public List<int> SmokeColor { get; set; } = new() { 0, 0, 255 };
+        public float Tick { get; set; } = 0.1f;
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
@@ -56,10 +49,7 @@ public class SmokeEffect : VipModule
 
     private class WallhackCfg
     {
-        public float Time { get; set; } = 20f;
         public float Tick { get; set; } = 0.25f;
-        [JsonPropertyName("smokecolor")]
-        public List<int> SmokeColor { get; set; } = new() { 97, 45, 83 };
         public string Color { get; set; } = GlowPool.DefaultColor;
         public float Radius { get; set; } = 180f;
         public bool SeeTeammates { get; set; }
@@ -74,26 +64,22 @@ public class SmokeEffect : VipModule
         public WallhackCfg? Wallhack { get; set; }
     }
 
-    private class ActiveSmoke
+    private class ActiveDecoy
     {
-        public Vector Pos = null!;
+        public required Vector Pos;
         public int OwnerSlot;
         public string Mode = "";
         public float NextTick;
-        public float ExpireAt;
         public ulong Seen;
     }
 
-    private bool _glowUser;
-
-    private readonly List<ActiveSmoke> _smokes = new();
-    private readonly int[] _used = new int[64];
-    private readonly int[] _armed = new int[64];
+    private readonly Dictionary<int, ActiveDecoy> _decoys = new();
     private readonly HashSet<int> _slowed = new();
     private readonly HashSet<int> _slowedThisTick = new();
+    private bool _glowUser;
 
-    public override string Name => "SmokeEffect";
-    public override string DisplayName => Core.Localizer["vip.module.smokeeffect"];
+    public override string Name => "DecoyEffect";
+    public override string DisplayName => Core.Localizer["vip.module.decoyeffect"];
     public override VipFeatureType MenuType => VipFeatureType.Select;
 
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
@@ -101,13 +87,13 @@ public class SmokeEffect : VipModule
         var cfg = GroupValue<Cfg>(player) ?? new Cfg();
         var options = new List<VipFeatureOption>();
         if (cfg.Poison != null)
-            options.Add(new VipFeatureOption(Core.Localizer["vip.smoke.poison"], "poison"));
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.poison"], "poison"));
         if (cfg.Heal != null)
-            options.Add(new VipFeatureOption(Core.Localizer["vip.smoke.heal"], "heal"));
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.heal"], "heal"));
         if (cfg.Slow != null)
-            options.Add(new VipFeatureOption(Core.Localizer["vip.smoke.slow"], "slow"));
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.slow"], "slow"));
         if (cfg.Wallhack != null)
-            options.Add(new VipFeatureOption(Core.Localizer["vip.smoke.wallhack"], "wallhack"));
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.wallhack"], "wallhack"));
         return options;
     }
 
@@ -120,42 +106,18 @@ public class SmokeEffect : VipModule
             _glowUser = true;
         }
 
-        Core.RegisterListener<OnEntitySpawned>(OnEntitySpawned);
-        Core.RegisterEventHandler<EventSmokegrenadeDetonate>(OnDetonate);
-        Core.RegisterEventHandler<EventSmokegrenadeExpired>(OnExpired);
-        Core.RegisterEventHandler<EventRoundStart>((_, __) =>
-        {
-            _smokes.Clear();
-            Array.Clear(_used);
-            Array.Clear(_armed);
-            return HookResult.Continue;
-        });
-        Core.RegisterListener<OnMapStart>(_ =>
-        {
-            _smokes.Clear();
-            Array.Clear(_used);
-            Array.Clear(_armed);
-            _slowed.Clear();
-            _slowedThisTick.Clear();
-        });
+        Core.RegisterListener<OnServerPrecacheResources>(m => m.AddResource(DecoyRing.DiscModel));
+        Core.RegisterEventHandler<EventDecoyStarted>(OnStarted);
+        Core.RegisterEventHandler<EventDecoyDetonate>((ev, _) => { Remove(ev.Entityid); return HookResult.Continue; });
+        Core.RegisterEventHandler<EventRoundStart>((_, __) => { Clear(); return HookResult.Continue; });
+        Core.RegisterListener<OnMapStart>(_ => Clear());
         Core.RegisterListener<OnTick>(OnTick);
-    }
-
-    private (List<int>? color, int limit) ModeInfo(CCSPlayerController player, string mode)
-    {
-        var cfg = GroupValue<Cfg>(player) ?? new Cfg();
-        return mode switch
-        {
-            "poison" when cfg.Poison != null => (cfg.Poison.SmokeColor, cfg.Poison.Limit),
-            "heal" when cfg.Heal != null => (cfg.Heal.SmokeColor, cfg.Heal.Limit),
-            "slow" when cfg.Slow != null => (cfg.Slow.SmokeColor, cfg.Slow.Limit),
-            "wallhack" when cfg.Wallhack != null => (cfg.Wallhack.SmokeColor, cfg.Wallhack.Limit),
-            _ => (null, 0)
-        };
     }
 
     public override void OnUnload()
     {
+        Clear();
+
         if (!_glowUser)
             return;
 
@@ -163,88 +125,65 @@ public class SmokeEffect : VipModule
         GlowPool.Release();
     }
 
-    private void OnEntitySpawned(CEntityInstance entity)
+    private void Clear()
     {
-        if (entity == null || !entity.IsValid || entity.DesignerName != "smokegrenade_projectile")
-            return;
+        foreach (int id in _decoys.Keys.ToList())
+            DecoyRing.Hide(id);
 
-        var smoke = entity.As<CSmokeGrenadeProjectile>();
-        Server.NextFrame(() =>
-        {
-            if (smoke == null || !smoke.IsValid)
-                return;
-
-            var player = smoke.Thrower.Value?.Controller.Value?.As<CCSPlayerController>();
-            if (!Active(player))
-                return;
-
-            string mode = Setting(player!);
-            var (color, limit) = ModeInfo(player!, mode);
-            if (color == null)
-                return;
-
-            int slot = player!.Slot;
-            if (limit > 0 && _used[slot] >= limit)
-                return;
-
-            _used[slot]++;
-            _armed[slot]++;
-
-            if (color.Count != 3)
-                return;
-
-            smoke.SmokeColor.X = color[0];
-            smoke.SmokeColor.Y = color[1];
-            smoke.SmokeColor.Z = color[2];
-        });
+        _decoys.Clear();
+        _slowed.Clear();
+        _slowedThisTick.Clear();
     }
 
-    private HookResult OnDetonate(EventSmokegrenadeDetonate ev, GameEventInfo info)
+    private void Remove(int entityId)
+    {
+        if (_decoys.Remove(entityId))
+            DecoyRing.Hide(entityId);
+    }
+
+    private (float radius, int limit, Color color) ModeInfo(Cfg cfg, string mode) => mode switch
+    {
+        "poison" when cfg.Poison != null => (cfg.Poison.Radius, cfg.Poison.Limit, Color.FromArgb(255, 255, 0, 255)),
+        "heal" when cfg.Heal != null => (cfg.Heal.Radius, cfg.Heal.Limit, Color.FromArgb(255, 0, 255, 0)),
+        "slow" when cfg.Slow != null => (cfg.Slow.Radius, cfg.Slow.Limit, Color.FromArgb(255, 0, 128, 255)),
+        "wallhack" when cfg.Wallhack != null => (cfg.Wallhack.Radius, cfg.Wallhack.Limit, TrailBeam.Resolve(cfg.Wallhack.Color)),
+        _ => (0f, 0, Color.White)
+    };
+
+    private HookResult OnStarted(EventDecoyStarted ev, GameEventInfo info)
     {
         var player = ev.Userid;
         if (!Active(player))
             return HookResult.Continue;
 
+        string mode = Setting(player!);
+        var cfg = GroupValue<Cfg>(player!) ?? new Cfg();
+        var (radius, limit, color) = ModeInfo(cfg, mode);
+        if (radius <= 0f)
+            return HookResult.Continue;
+
         int slot = player!.Slot;
-        if (_armed[slot] <= 0)
+        if (LimitReached(slot, limit))
             return HookResult.Continue;
 
-        string mode = Setting(player);
-        if (ModeInfo(player, mode).color == null)
-            return HookResult.Continue;
+        LimitUse(slot);
 
-        var cfg = GroupValue<Cfg>(player) ?? new Cfg();
-        float time = mode switch
+        var pos = new Vector(ev.X, ev.Y, ev.Z);
+        _decoys[ev.Entityid] = new ActiveDecoy
         {
-            "poison" when cfg.Poison != null => cfg.Poison.Time,
-            "heal" when cfg.Heal != null => cfg.Heal.Time,
-            "slow" when cfg.Slow != null => cfg.Slow.Time,
-            "wallhack" when cfg.Wallhack != null => cfg.Wallhack.Time,
-            _ => 0f
-        };
-
-        _armed[slot]--;
-        _smokes.Add(new ActiveSmoke
-        {
-            Pos = new Vector(ev.X, ev.Y, ev.Z),
+            Pos = pos,
             OwnerSlot = slot,
             Mode = mode,
-            NextTick = Server.CurrentTime,
-            ExpireAt = time > 0 ? Server.CurrentTime + time : float.MaxValue
-        });
+            NextTick = Server.CurrentTime
+        };
 
-        return HookResult.Continue;
-    }
-
-    private HookResult OnExpired(EventSmokegrenadeExpired ev, GameEventInfo info)
-    {
-        _smokes.RemoveAll(s => s.Pos.X == ev.X && s.Pos.Y == ev.Y && s.Pos.Z == ev.Z);
+        DecoyRing.Show(Core, ev.Entityid, pos, radius, color);
         return HookResult.Continue;
     }
 
     private void OnTick()
     {
-        if (_smokes.Count == 0)
+        if (_decoys.Count == 0)
         {
             ResetStaleSlows();
             return;
@@ -253,33 +192,31 @@ public class SmokeEffect : VipModule
         _slowedThisTick.Clear();
         float now = Server.CurrentTime;
 
-        _smokes.RemoveAll(s => now >= s.ExpireAt);
-
         if (_glowUser)
             GlowPool.Build();
 
-        foreach (var smoke in _smokes)
+        foreach (var decoy in _decoys.Values)
         {
-            if (smoke.Mode == "wallhack")
-            {
-                ApplyWallhack(smoke, now);
-                continue;
-            }
-
-            if (smoke.NextTick > now)
-                continue;
-
-            var owner = Utilities.GetPlayerFromSlot(smoke.OwnerSlot);
+            var owner = Utilities.GetPlayerFromSlot(decoy.OwnerSlot);
             if (!Active(owner))
                 continue;
 
             var cfg = GroupValue<Cfg>(owner!) ?? new Cfg();
 
-            switch (smoke.Mode)
+            if (decoy.Mode == "wallhack")
+            {
+                ApplyWallhack(decoy, cfg.Wallhack, owner!, now);
+                continue;
+            }
+
+            if (decoy.NextTick > now)
+                continue;
+
+            switch (decoy.Mode)
             {
                 case "poison" when cfg.Poison != null:
-                    smoke.NextTick = now + Math.Max(cfg.Poison.Tick, 0.05f);
-                    Apply(smoke, owner!, cfg.Poison.Radius, cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, false, pawn =>
+                    decoy.NextTick = now + Math.Max(cfg.Poison.Tick, 0.05f);
+                    Apply(decoy, owner!, cfg.Poison.Radius, cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, false, pawn =>
                     {
                         if (pawn.Health <= cfg.Poison.MinHp)
                             return;
@@ -290,8 +227,8 @@ public class SmokeEffect : VipModule
                     break;
 
                 case "heal" when cfg.Heal != null:
-                    smoke.NextTick = now + Math.Max(cfg.Heal.Tick, 0.05f);
-                    Apply(smoke, owner!, cfg.Heal.Radius, cfg.Heal.IgnoreTeammates, cfg.Heal.IgnoreSelf, cfg.Heal.IgnoreEnemy, pawn =>
+                    decoy.NextTick = now + Math.Max(cfg.Heal.Tick, 0.05f);
+                    Apply(decoy, owner!, cfg.Heal.Radius, cfg.Heal.IgnoreTeammates, cfg.Heal.IgnoreSelf, cfg.Heal.IgnoreEnemy, pawn =>
                     {
                         int maxHp = pawn.MaxHealth > 0 ? pawn.MaxHealth : 100;
                         if (pawn.Health >= maxHp)
@@ -303,11 +240,11 @@ public class SmokeEffect : VipModule
                     break;
 
                 case "slow" when cfg.Slow != null:
-                    smoke.NextTick = now + 0.1f;
+                    decoy.NextTick = now + Math.Max(cfg.Slow.Tick, 0.05f);
                     float factor = Math.Max(1f - cfg.Slow.Percent / 100f, 0f);
                     if (cfg.Slow.MinSpeed > 0)
                         factor = Math.Max(factor, cfg.Slow.MinSpeed / 250f);
-                    Apply(smoke, owner!, cfg.Slow.Radius, cfg.Slow.IgnoreTeammates, cfg.Slow.IgnoreSelf, cfg.Slow.IgnoreEnemy, pawn =>
+                    Apply(decoy, owner!, cfg.Slow.Radius, cfg.Slow.IgnoreTeammates, cfg.Slow.IgnoreSelf, cfg.Slow.IgnoreEnemy, pawn =>
                     {
                         var controller = pawn.Controller.Value?.As<CCSPlayerController>();
                         if (controller != null && controller.IsValid)
@@ -323,48 +260,43 @@ public class SmokeEffect : VipModule
         ResetStaleSlows();
     }
 
-    private void ApplyWallhack(ActiveSmoke smoke, float now)
+    private void ApplyWallhack(ActiveDecoy decoy, WallhackCfg? cfg, CCSPlayerController owner, float now)
     {
-        var owner = Utilities.GetPlayerFromSlot(smoke.OwnerSlot);
-        if (!Active(owner) || !IsAlive(owner))
+        if (cfg == null || !IsAlive(owner))
             return;
 
-        var cfg = (GroupValue<Cfg>(owner!) ?? new Cfg()).Wallhack;
-        if (cfg == null)
-            return;
-
-        if (smoke.NextTick <= now)
+        if (decoy.NextTick <= now)
         {
-            smoke.NextTick = now + Math.Max(cfg.Tick, 0.05f);
-            smoke.Seen = 0;
+            decoy.NextTick = now + Math.Max(cfg.Tick, 0.05f);
+            decoy.Seen = 0;
 
-            float radius = cfg.Radius > 0 ? cfg.Radius : 180f;
+            float radius = cfg.Radius > 0f ? cfg.Radius : 180f;
             foreach (var target in Core.Players)
             {
-                if (target == null || !target.IsValid || target.Slot >= 64 || target.Slot == smoke.OwnerSlot || !IsAlive(target))
+                if (target == null || !target.IsValid || target.Slot >= 64 || target.Slot == decoy.OwnerSlot || !IsAlive(target))
                     continue;
-                if (!cfg.SeeTeammates && target.Team == owner!.Team)
+                if (!cfg.SeeTeammates && target.Team == owner.Team)
                     continue;
 
                 var pawn = target.PlayerPawn.Value;
                 if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                     continue;
 
-                if (TrailBeam.Distance(smoke.Pos, pawn.AbsOrigin) > radius)
+                if (TrailBeam.Distance(decoy.Pos, pawn.AbsOrigin) > radius)
                     continue;
 
-                smoke.Seen |= 1UL << target.Slot;
+                decoy.Seen |= 1UL << target.Slot;
             }
         }
 
-        if (smoke.Seen == 0)
+        if (decoy.Seen == 0)
             return;
 
         var color = TrailBeam.Resolve(cfg.Color);
 
         for (int target = 0; target < 64; target++)
-            if ((smoke.Seen & (1UL << target)) != 0)
-                GlowPool.Show(smoke.OwnerSlot, target, color);
+            if ((decoy.Seen & (1UL << target)) != 0)
+                GlowPool.Show(decoy.OwnerSlot, target, color);
     }
 
     private void ResetStaleSlows()
@@ -394,16 +326,17 @@ public class SmokeEffect : VipModule
             _slowed.Add(slot);
     }
 
-    private void Apply(ActiveSmoke smoke, CCSPlayerController owner, float radius, bool ignoreTeammates, bool ignoreSelf, bool ignoreEnemy, Action<CCSPlayerPawn> effect)
+    private void Apply(ActiveDecoy decoy, CCSPlayerController owner, float radius, bool ignoreTeammates, bool ignoreSelf, bool ignoreEnemy, Action<CCSPlayerPawn> effect)
     {
-        if (radius <= 0)
+        if (radius <= 0f)
             radius = 180f;
+
         foreach (var target in Core.Players)
         {
             if (target == null || !target.IsValid || !IsAlive(target))
                 continue;
 
-            bool isSelf = target.Slot == smoke.OwnerSlot;
+            bool isSelf = target.Slot == decoy.OwnerSlot;
             bool isTeammate = !isSelf && target.Team == owner.Team;
             bool isEnemy = !isSelf && !isTeammate;
 
@@ -418,7 +351,7 @@ public class SmokeEffect : VipModule
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                 continue;
 
-            if (TrailBeam.Distance(smoke.Pos, pawn.AbsOrigin) > radius)
+            if (TrailBeam.Distance(decoy.Pos, pawn.AbsOrigin) > radius)
                 continue;
 
             effect(pawn);

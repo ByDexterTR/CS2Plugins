@@ -12,6 +12,7 @@ public class TeamHeal : VipModule
         [JsonPropertyName("minhp")]
         public int MinHp { get; set; } = 1;
         public int Percent { get; set; } = 50;
+        public float SoundVolume { get; set; } = 0.5f;
         public string OnlyWithWeapon { get; set; } = "";
 
         private List<string>? _allow;
@@ -57,7 +58,7 @@ public class TeamHeal : VipModule
         {
             victimPawn.Health = newHp;
             Utilities.SetStateChanged(victimPawn, "CBaseEntity", "m_iHealth");
-            victim.EmitSound("Healthshot.Success");
+            SoundUtil.EmitToPlayer(victim, "Healthshot.Success", cfg.SoundVolume);
         }
 
         return HookResult.Handled;

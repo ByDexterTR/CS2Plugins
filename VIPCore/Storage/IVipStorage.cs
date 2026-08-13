@@ -15,6 +15,5 @@ public interface IVipStorage
     void UpsertVip(ulong steamId, VipEntry entry);
     void DeleteVip(ulong steamId);
 
-    void UpsertSetting(ulong steamId, string feature, string value);
-    void DeleteSetting(ulong steamId, string feature);
+    void ApplySettings(ulong steamId, Dictionary<string, string?> ops);
 }

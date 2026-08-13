@@ -86,31 +86,44 @@ public class JsonStorage : IVipStorage
         }
     }
 
-    public void UpsertSetting(ulong steamId, string feature, string value)
+    public void ApplySettings(ulong steamId, Dictionary<string, string?> ops)
     {
-        lock (_ioLock)
-        {
-            var all = LoadSettingsUnlocked();
-            if (!all.TryGetValue(steamId.ToString(), out var dict))
-            {
-                dict = new();
-                all[steamId.ToString()] = dict;
-            }
-            dict[feature] = value;
-            File.WriteAllText(_settingsPath, JsonSerializer.Serialize(all, Opts));
-        }
-    }
+        if (ops.Count == 0)
+            return;
 
-    public void DeleteSetting(ulong steamId, string feature)
-    {
         lock (_ioLock)
         {
             var all = LoadSettingsUnlocked();
-            if (!all.TryGetValue(steamId.ToString(), out var dict) || !dict.Remove(feature))
+            string key = steamId.ToString();
+            all.TryGetValue(key, out var dict);
+            bool changed = false;
+
+            foreach (var (feature, value) in ops)
+            {
+                if (value == null)
+                {
+                    changed |= dict != null && dict.Remove(feature);
+                    continue;
+                }
+
+                if (dict == null)
+                {
+                    dict = new();
+                    all[key] = dict;
+                }
+
+                if (dict.TryGetValue(feature, out var current) && current == value)
+                    continue;
+
+                dict[feature] = value;
+                changed = true;
+            }
+
+            if (!changed)
                 return;
 
-            if (dict.Count == 0)
-                all.Remove(steamId.ToString());
+            if (dict is { Count: 0 })
+                all.Remove(key);
 
             File.WriteAllText(_settingsPath, JsonSerializer.Serialize(all, Opts));
         }

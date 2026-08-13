@@ -129,7 +129,7 @@ A mapping of group name → module name → module value. A module that is **not
 | Storage | Location |
 | --- | --- |
 | JSON | `vips.json` (VIP records) and `players.json` (player settings) in the plugin folder |
-| MySQL | Tables are created automatically with the `table_prefix` prefix; the record is refreshed live when the player joins |
+| MySQL | Tables are created automatically with the `table_prefix` prefix; the record is refreshed live when the player joins. `vip_users` holds one row per player, `vip_settings` keeps all of a player’s settings in a single JSON column. An old install with one row per setting is migrated to the new layout on startup |
 
 ## Modules
 
@@ -143,36 +143,37 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `AntiHS` | Reduces headshot damage | `{ "percent": 0, "only_with_weapon": "", "limit": 0 }` |
 | `Armor` | Armor (+helmet) on spawn | `{ "value": 100, "helmet": true }` |
 | `ArmorRegen` | Armor regeneration | `{ "armor_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2, "max_armor": 100, "give_helmet_when_full": true }` |
-| `Aura` | Continuously active area effect (heal/poison/slow/speed), the radius is visualized with a rotating env_beam following the player; `duration_on`/`duration_off` for blinking | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true } }` |
+| `Aura` | A constant area effect around the player (heal/poison/slow/speed); the area is shown with a ring and blinks with `duration_on`/`duration_off` | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true } }` |
 | `AutoHS` | Hits count as headshots | `{ "multiplier": 4, "only_with_weapon": "", "ignore_teammates": true, "limit": 0 }` |
 | `Berserk` | The damage multiplier grows per kill; `dpk` is the multiplier added per kill, `maxdpk` the cap | `{ "dpk": 0.2, "maxdpk": 5.0 }` |
 | `Bhop` | Bunny hop (+optional autostrafe) | `{ "autostrafe": true, "max_speed": 500, "jump_boost": 1.1, "jump_velocity": 300 }` |
 | `BombsiteAnnouncer` | HUD image (visual only) + chat message to CTs when the bomb is planted | `{ "img_a": "...Site-A.png", "img_b": "...Site-B.png", "duration": 5.0 }` |
-| `BulletEffect` | The mode picked from the menu is applied to the target that is hit (Select): `poison` periodic damage, `slow` slowdown, `lower` shrink, `upper` grow; every new hit extends the `duration` (stacks), size modes return to 1 when it expires; weapon filter with `only_with_weapon` | `{ "poison": { "damage": 2, "tick": 0.5, "duration": 3, "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false }, "slow": { "percent": 20, "duration": 3 }, "lower": { "size": 0.85, "duration": 5 }, "upper": { "size": 1.25, "duration": 5 }, "only_with_weapon": "" }` |
+| `BulletEffect` | The effect picked from the menu is applied to whoever you hit: `poison`, `slow`, `lower` (shrink), `upper` (enlarge). Hitting again extends the duration | `{ "poison": { "damage": 2, "tick": 0.5, "duration": 3, "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false }, "slow": { "percent": 20, "duration": 3 }, "lower": { "size": 0.85, "duration": 5 }, "upper": { "size": 1.25, "duration": 5 }, "only_with_weapon": "" }` |
 | `BulletTrail` | Bullet trail effect | `{ "width": 1.5, "lifetime": 0.6, "colors": [...] }` |
 | `BuyTeamWeapon` | Buying the other team's weapons (only inside the buyzone and before `mp_buytime` expires); command names come from `buy_commands` in `settings.json` | `{ "ak47": true, "m4a4": true, ... }` |
-| `C4Effect` | 2 categories — plant effect (`defuse: false`, follows the bomb, removed after `time` s or on defuse/explosion) and defuse effect (`defuse: true`, plays on the defuser for `time` s); an empty category is hidden from the menu | `[{ "name": "Duman", "particle": "...", "time": 6, "defuse": false }]` |
+| `C4Effect` | Particle effect while planting and defusing the bomb; two separate categories, an empty one is hidden from the menu | `[{ "name": "Duman", "particle": "...", "time": 6, "defuse": false }]` |
 | `ColoredModel` | Colored player model; backs off if another plugin (e.g. jRandomSkills) changes the color | `["Rainbow rainbow", "Mavi #0000FF"]` |
-| `CustomWeaponModel` | Custom weapon model; if `model` is a number it is a ChangeSubclass (appearance + viewmodel), if it is a path only the world model changes; reverts to native if the weapon is dropped and picked up by someone else | `[{ "name": "M4A4 - AK47", "weapon": "weapon_m4a1", "model": "weapons/models/ak47/weapon_rif_ak47.vmdl" }]` |
+| `CustomWeaponModel` | Custom look for a weapon; a number also changes the model in your hands, a file path only changes the one on the ground | `[{ "name": "M4A4 - AK47", "weapon": "weapon_m4a1", "model": "weapons/models/ak47/weapon_rif_ak47.vmdl" }]` |
 | `DamageDealt` | Increases the damage dealt; **negative `percent` = debuff** (`-50` halves the damage dealt) | `{ "percent": 50, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `DamageResist` | Reduces the damage taken; **negative `percent` = debuff** (`-50` increases the damage taken by 50%) | `{ "percent": 40, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
-| `Dash` | Pressing jump while airborne dashes you toward the direction key you are holding (forward if none); `limit`: budget per round (0 = unlimited), `unit`: push speed | `{ "limit": 3, "unit": 600 }` |
+| `Dash` | Pressing jump while airborne dashes you toward the direction key you are holding (forward if none); `limit`: budget per round (0 = unlimited), `unit`: push speed, `sound_volume`: jump sound volume (0 = silent) | `{ "limit": 3, "unit": 600, "sound_volume": 1 }` |
+| `DecoyEffect` | Gives the decoy a feature: poison, healing, slowing or wallhack. The area is shown with a ring on the ground that grows with `radius` | `{ "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 200, "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "wallhack": { "tick": 0.25, "radius": 200, "color": "#612D53", "see_teammates": false, "limit": 0 } }` |
 | `DecoyTeleport` | Teleport to where the decoy landed | `{ "limit": 3 }` |
 | `DefuseKit` | Defuse kit on spawn (CT) | `true` |
 | `DuckEndurance` | Unlimited crouching; crouching repeatedly never slows down | `true` |
 | `DuckSpeed` | Movement speed while crouched; `percent` is how much of the normal run speed is kept. The game's own value is `34`, `100` = crouching does not slow you down | `{ "percent": 100 }` |
 | `ExtraHP` | Spawn HP value | `150` |
-| `ExtraJump` | Multi jump; `count` is the extra jumps per airtime, total budget = `count × limit` (`limit: 0` = unlimited). `Dash` takes priority when both are on | `{ "count": 2, "limit": 0 }` |
-| `ExtraKillAwards` | Extra money by kill type: `headshot`, `noscope`, `inair`, `blind`, `weapon_*` (weapon specific), `distance` (`money` per `unit` units of distance) | `{ "headshot": 150, "noscope": 100, "inair": 200, "blind": 50, "distance": { "unit": 2048, "money": 100 }, "weapon_knife": 1000 }` |
+| `ExtraJump` | Multi jump; `count` is the extra jumps per airtime, total budget = `count × limit` (`limit: 0` = unlimited). `Dash` takes priority when both are on. `sound_volume`: jump sound volume (0 = silent) | `{ "count": 2, "limit": 0, "sound_volume": 1 }` |
+| `ExtraKillAwards` | Extra money by how you killed: headshot, noscope, in the air, blinded enemy, per weapon and by distance | `{ "headshot": 150, "noscope": 100, "inair": 200, "blind": 50, "distance": { "unit": 2048, "money": 100 }, "weapon_knife": 1000 }` |
 | `ExtraMoney` | Extra money on spawn | `{ "amount": 4000 }` |
 | `ExtraSpeed` | Speed multiplier | `{ "multiplier": 1.3, "only_with_weapon": "" }` |
 | `FallDamage` | Takes `percent` of the fall damage (`0` = none, `100` = normal); **negative = debuff** (`-50` increases fall damage by 50%); `limit` is how many times per round (0 = unlimited) | `{ "percent": 0, "limit": 0 }` |
 | `FastDefuse` | Fast bomb defuse; with `immune_while_burning: false` the speed advantage is disabled while burning / near fire or an airborne molotov | `{ "time": 1, "immune_while_burning": true }` |
 | `FastPlant` | Fast bomb plant; with `immune_while_burning: false` the speed advantage is disabled while burning / near fire or an airborne molotov | `{ "time": 1, "immune_while_burning": true }` |
 | `FastReload` | The magazine empties normally; on the last bullet it refills instantly from the reserve (1 magazine is taken from the reserve) | `{ "only_with_weapon": "", "limit": 0 }` |
-| `FortniteArmor` | Armor covers `percent` of the damage and the rest goes to health (`100` = health does not drop until armor is gone, `50` = half comes off armor); if the armor is not enough the remaining damage hits health; `absorb_fall_damage` makes armor absorb fall damage too | `{ "percent": 100, "absorb_fall_damage": false }` |
+| `FortniteArmor` | Damage hits armor first. `percent` is how much of the damage goes to armor; once armor runs out the rest goes to health | `{ "percent": 100, "absorb_fall_damage": false }` |
 | `Fov` | FOV options | `[50, 60, 70, 80, 90]` |
-| `GiveWeapon` | Weapon selection on spawn; category based (one pick per category, `rifle`/`pistol`), with "Always Give" enabled in the menu the existing weapon in the slot is removed and replaced; an empty category is hidden from the menu | `{ "rifle": ["weapon_ak47", "weapon_awp"], "pistol": ["weapon_deagle"] }` |
+| `GiveWeapon` | Weapon selection on spawn, one per category. With "Force Give" on in the menu the weapon in that slot is replaced | `{ "rifle": ["weapon_ak47", "weapon_awp"], "pistol": ["weapon_deagle"] }` |
 | `GiveZeus` | Taser on spawn | `true` |
 | `Glaz` | See through smoke | `true` |
 | `GlueGrenade` | Thrown grenades stick on first contact (if you add decoy, there is a risk of teleporting inside a wall with DecoyTeleport) | `{ "only_grenades": "flashbang,hegrenade", "limit": 0 }` |
@@ -187,7 +188,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Invisibility` | Invisibility (not transmitted to enemies) | `{ "only_stopped": true, "dmg_after_invis": 2.0, "only_with_weapon": "" }` |
 | `Jammer` | Disables the radar of approaching players (`radius` range); if a dead spectator is watching someone jammed their radar is disabled too | `{ "radius": 500, "ignore_teammates": true, "ignore_enemy": false }` |
 | `JoinMessage` | Join/leave announcement | `{ "join_message": "...", "leave_message": "..." }` |
-| `KillEffect` | Particle on a kill (plays for `time` s); 3 categories — normal, HS (`hs: true`), last kill (`lastkill: true`). If a category has no selection it falls back step by step (last → hs → normal), an empty category is hidden from the menu (does not play on a teammate while FFA is off) | `[{ "name": "Simsek", "particle": "...", "time": 3, "hs": false, "lastkill": false }]` |
+| `KillEffect` | Particle effect on a kill; separate categories for normal, headshot and last kill. With nothing picked it falls back to the previous category | `[{ "name": "Simsek", "particle": "...", "time": 3, "hs": false, "lastkill": false }]` |
 | `KillHeal` | Restores health by kill type: an `hp` (or `money`) key inside `distance` | `{ "headshot": 15, "noscope": 10, "inair": 20, "blind": 5, "distance": { "unit": 2048, "hp": 10 }, "weapon_knife": 50 }` |
 | `KillScreen` | Kill screen effect (does not work on a teammate while FFA is off) | `{ "duration": 1.0 }` |
 | `MagneticDecoy` | While the decoy is on the ground and beeping it pulls everyone within `radius` toward it; the pull weakens with distance (`strength` is the base force); `limit` is how many decoys per round | `{ "radius": 180, "strength": 30, "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
@@ -198,7 +199,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `PlayerGlow` | Player glow (glow through walls) | `{ "range": 300, "team": -1, "colors": [...] }` |
 | `Postprocessing` | Applies a colour/tone effect to the screen; only the player and whoever spectates them sees it. `fade` is the transition time in seconds | `[{ "name": "Kanli", "file": "lighting/postprocessing/effects/death_cam_phase1.vpost", "fade": 0.25 }]` |
 | `PlayerParticle` | A particle attached to the player that follows them; removed on death and at round start (can be hidden with `css_hidefx`). `offset` is its height above the ground. Pick a continuously emitting (loop) particle, one-shot bursts do not follow | `[{ "name": "Duman", "particle": "particles/ambient_fx/ambient_smokestack.vpcf", "offset": 10 }]` |
-| `PlayerModel` | Team based player model selection (separate CT/T menus); `leg: false` hides the first person legs, `arm` is only precached; applied on spawn only | `{ "ct": [{ "name": "Special Agent Ava", "model": "agents/models/ctm_swat/ctm_swat_variante.vmdl", "arm": "", "leg": true }], "t": [...] }` |
+| `PlayerModel` | Player model selection per team (separate CT and T menus); `leg: false` hides the first person legs. Applied on spawn only | `{ "ct": [{ "name": "Special Agent Ava", "model": "agents/models/ctm_swat/ctm_swat_variante.vmdl", "arm": "", "leg": true }], "t": [...] }` |
 | `PlayerSize` | Player size selection; applied on spawn only; left alone if the size was already changed by another plugin | `[0.5, 0.75, 1.25, 1.5]` |
 | `PlayerTrail` | Player movement trail | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
 | `Pyro` | The VIP's molotov/incendiary restores health instead of dealing damage (`multiplier` × damage; above 1 it nets health) | `{ "multiplier": 1.5, "ignore_teammates": false, "ignore_enemy": true, "ignore_self": false, "limit": 0 }` |
@@ -210,12 +211,13 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `SaySound` | Plays a sound when a chat message is sent (`say` to everyone, `say_team` to the team); `cooldown` in seconds, `0` = no wait; `path` is a file path or `emit` is a soundevent name (`volume` only applies to `emit`); the old flat list is also supported | `{ "cooldown": 2, "sounds": [{ "name": "Beep", "path": "sounds/ui/beepclear.vsnd" }, { "name": "Sohbet", "emit": "UI.Lobby.Chat", "volume": 1 }] }` |
 | `Silent` | Hides footsteps from other players | `{ "only_with_weapon": "" }` |
 | `SmokeColor` | Colored smoke grenade; left alone if another plugin already set the smoke color | `["Beyaz #FFFFFF", "Kirmizi #FF0000"]` |
-| `SmokeEffect` | Smoke feature; picks a poison / healing / slowing smoke (only modes defined in the config are listed; `time`: how many seconds after the smoke pops the effect ends, 0 = until the smoke fades; `limit`: budget per round, 0 = unlimited; `radius`: area of effect) | `{ "poison": { "minhp": 10, "damage": 2, "time": 20, "tick": 0.5, "radius": 180, "smokecolor": [255, 0, 255], "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "heal": { "heal": 2, "time": 20, "tick": 0.5, "radius": 180, "smokecolor": [0, 255, 0], "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true, "limit": 0 }, "slow": { "percent": 30, "time": 20, "minspeed": 100, "radius": 180, "smokecolor": [0, 0, 255], "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false, "limit": 0 } }` |
+| `SmokeEffect` | Gives smoke a feature: poison, healing, slowing or wallhack smoke. `time` is how long the effect lasts (0 = until the smoke fades), `radius` the area, `limit` the per-round budget | `{ "poison": { "minhp": 10, "damage": 2, "time": 20, "tick": 0.5, "radius": 180, "smokecolor": [255, 0, 255], "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "heal": { "heal": 2, "time": 20, "tick": 0.5, "radius": 180, "smokecolor": [0, 255, 0], "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true, "limit": 0 }, "slow": { "percent": 30, "time": 20, "minspeed": 100, "radius": 180, "smokecolor": [0, 0, 255], "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false, "limit": 0 }, "wallhack": { "time": 20, "tick": 0.25, "radius": 180, "smokecolor": [97, 45, 83], "color": "#612D53", "see_teammates": false, "limit": 0 } }` |
 | `SpawnProtection` | Spawn protection; `time` seconds, `limit` how many times per round (0 = unlimited) | `{ "time": 4, "limit": 0 }` |
 | `Spy` | Wears the model of a random enemy | `true` |
 | `Tag` | Chat tag/colors + scoreboard (TAB) tag (if `tab` is empty TAB is left alone) | `{ "tag": "{Gold}[{Orchid}PLUS{Gold}]", "name_color": "gold", "chat_color": "default", "tab": "[PLUS]" }` |
-| `TeamHeal` | Healing instead of damage when shooting a teammate | `{ "minhp": 5, "percent": 50, "only_with_weapon": "" }` |
+| `TeamHeal` | Healing instead of damage when shooting a teammate | `{ "minhp": 5, "percent": 50, "sound_volume": 0.5, "only_with_weapon": "" }` |
 | `Thirdperson` | Third person camera | `{ "distance": 120 }` |
+| `WallHack` | Shows enemies glowing through walls. Blinks with `duration_on`/`duration_off` (`duration_off: 0` = always on), `see_teammates` also shows teammates, `color` is the glow colour | `{ "duration_on": 1, "duration_off": 3, "color": "#612D53", "see_teammates": false }` |
 | `Vampire` | Steals health equal to the damage dealt | `{ "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120, "ignore_teammates": true }` |
 | `VIPChat` | Private chat channel for VIPs | `true` |
 | `WeaponAmmo` | Per-weapon custom magazine/reserve ammo (on most weapons reserve = number of magazines; on nova/sawedoff/xm1014 it is shells). Works with plugins that destroy and re-give weapons (WeaponPaints `css_wp`), the ammo is kept | `[{ "weapon_name": "weapon_ak47", "ammo": 30, "reserve": 3 }]` |
@@ -237,4 +239,5 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 - A module that is not defined in any group is never loaded (zero cost).
 - If trail modules are used the beam sprite is precached automatically.
 - The sound modules (`HitSound`, `SaySound`) support two methods: `path` plays a file path, `emit` plays one of the game's built-in sound names (no precache needed). If both are given, `emit` wins. Not every sound name works with `emit`; ones that do include `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept` and `UI.CoinLevelUp`. The sound is only sent to the target players, so `css_hidefx` preferences and the `say_team` filter work with both.
+- Effect sounds (poison, healing, jump) are only heard by the affected player and their volume is set with `sound_volume`; `0` plays nothing.
 - The `"Rainbow rainbow"` and `"Rastgele random"` entries can be used in the color lists (`ColoredModel`, `PlayerGlow`, `PlayerTrail`, `BulletTrail`, `GrenadeTrail`, `SmokeColor`). If random is selected the player is assigned one shared color per round — the model, glow, trails and smoke all use the same color that round.
