@@ -2,7 +2,7 @@
 
 *Bu dosyanın [İngilizcesi / English](README.md).*
 
-CS2 sunucuları için 43 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngilizce dil desteğiyle gelir, her biri tek başına kurulabilir ve kendi README dosyasında anlatılmıştır.
+CS2 sunucuları için 44 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngilizce dil desteğiyle gelir, her biri tek başına kurulabilir ve kendi README dosyasında anlatılmıştır.
 
 ## Eklentiler
 
@@ -42,6 +42,7 @@ CS2 sunucuları için 43 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 | [Redbull](Redbull/README.tr.md) | Süreli hız artışı; limit ve cooldown destekli | Genel | CounterStrikeSharp |
 | [ScreenText](ScreenText/README.tr.md) | Ekranın istenen noktasına JSON'dan tanımlı kalıcı yazılar | Genel | CounterStrikeSharp |
 | [Sesler](Sesler/README.tr.md) | Bıçak/silah/ayak/oyuncu/MVP seslerini kategori bazında susturma | Genel | CounterStrikeSharp, MySQL (opsiyonel) |
+| [ShowPlayerClips](ShowPlayerClips/README.tr.md) | Haritanın görünmez clip fırçalarını (playerclip, npcclip, grenadeclip, sky) renkli çizgilerle gösterir | Yönetim | CounterStrikeSharp |
 | [Silahsil](Silahsil/README.tr.md) | Yerdeki sahipsiz silahları tek komutla temizler | Jailbreak | CounterStrikeSharp |
 | [Slowmode](Slowmode/README.tr.md) | Sohbete genel yavaş mod; mesajlar arasına saniye sınırı koyar | Genel | CounterStrikeSharp |
 | [SpawnkillProtection](SpawnkillProtection/README.tr.md) | Flag ve takım bazlı, renk geçişli spawn koruması | Genel | CounterStrikeSharp |

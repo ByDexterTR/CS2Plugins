@@ -2,7 +2,7 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-43 CounterStrikeSharp plugins for CS2 servers. All of them ship with Turkish and English language support, each one can be installed on its own, and each has its own README.
+44 CounterStrikeSharp plugins for CS2 servers. All of them ship with Turkish and English language support, each one can be installed on its own, and each has its own README.
 
 ## Plugins
 
@@ -42,6 +42,7 @@
 | [Redbull](Redbull/README.md) | Timed speed boost with limit and cooldown support | General | CounterStrikeSharp |
 | [ScreenText](ScreenText/README.md) | Persistent text defined in JSON, placed anywhere on screen | General | CounterStrikeSharp |
 | [Sesler](Sesler/README.md) | Mutes knife/weapon/footstep/player/MVP sounds by category | General | CounterStrikeSharp, MySQL (optional) |
+| [ShowPlayerClips](ShowPlayerClips/README.md) | Shows the map's invisible clip brushes (playerclip, npcclip, grenadeclip, sky) as colored lines | Admin | CounterStrikeSharp |
 | [Silahsil](Silahsil/README.md) | Clears unowned weapons on the ground with a single command | Jailbreak | CounterStrikeSharp |
 | [Slowmode](Slowmode/README.md) | Server-wide chat slow mode; enforces a second limit between messages | General | CounterStrikeSharp |
 | [SpawnkillProtection](SpawnkillProtection/README.md) | Flag and team based spawn protection with color transitions | General | CounterStrikeSharp |

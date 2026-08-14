@@ -1,0 +1,8 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "showclips.enabled": "Clip gösterimi açıldı. {0} çizgi hazır ({1}).",
+  "showclips.disabled": "Clip gösterimi kapatıldı.",
+  "showclips.loading": "Harita clip verisi hâlâ çıkarılıyor, birkaç saniye sonra tekrar dene.",
+  "showclips.unavailable": "Bu harita için clip verisi yok: {0}",
+  "showclips.no_access": "Bu komut için yetkin yok."
+}

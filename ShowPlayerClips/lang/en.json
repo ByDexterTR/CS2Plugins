@@ -1,0 +1,8 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "showclips.enabled": "Clip display enabled. {0} lines ready ({1}).",
+  "showclips.disabled": "Clip display disabled.",
+  "showclips.loading": "Map clip data is still being extracted, try again in a few seconds.",
+  "showclips.unavailable": "No clip data for this map: {0}",
+  "showclips.no_access": "You do not have access to this command."
+}
