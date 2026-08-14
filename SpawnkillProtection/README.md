@@ -9,7 +9,7 @@ Gives spawning players damage protection for a configurable duration. This is th
 - **Flag based protection takes priority** over team protection — e.g. longer protection for VIPs
 - Team protection that can be enabled/disabled per T and CT with customizable duration and color
 - During the protection the player's color **fades gradually back to normal** — the fading color shows how much protection is left, so everyone can see when it ends
-- All damage is zeroed while the protection lasts (`OnEntityTakeDamagePre`)
+- Every kind of damage is blocked while the protection lasts
 - The start and end of the protection are reported to the player in chat
 - State is cleaned up safely at round start and when a player leaves
 - Turkish / English language support (`lang/`)

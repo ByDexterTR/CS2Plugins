@@ -2,19 +2,19 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-Places props on the map, draws ScreenText and HudSay messages on screen and sends announcements to chat. Besides timed ads it also fires instant ads on game events (kills, damage, bomb, round, connect, team change). When several ads of the same kind are defined they never overlap: each kind rotates one by one through a single global scheduler. Ads are stored in JSON and can optionally be pushed to MySQL and read from there.
+Places props on the map, draws messages on screen and sends announcements to chat. Besides timed ads it also fires instant ads on game events; when several ads of the same kind are defined they queue up instead of overlapping.
 
 ## Features
 
-- **Prop ad**: places a model where you are aiming through the `css_ads` menu; `prop_physics_override` + `DisableMotion` keeps the prop fixed in place, and it is precached through `OnServerPrecacheResources`
+- **Prop ad**: places a model where you are aiming through the `css_ads` menu; the prop stays fixed in place, it never falls or gets pushed around
 - **Split file layout**: ads in `ads.json`, the prop catalog in `props.json`, everything placed on a map in `maps.json`, settings in `settings.json`
 - **In game editing**: the `css_ads` menu places props and edits their axis-based rotation/movement, scale, collision, skin and flags
-- **Flag system**: every ad kind takes `flag` (only these players see it) and `ignoreflag` (these players do not); props are not transmitted at all via `CheckTransmit`
+- **Flag system**: every ad kind takes `flag` (only these players see it) and `ignoreflag` (these players do not); a player who should not see a prop is never sent it at all
 - **ScreenText**: world text pinned to the player's screen; position (x/y), size, color, justification and background are adjustable
 - **HudSay**: HTML capable text in the center of the screen (`<br>`, `<font color>`, `class='fontSize-m'`)
 - **ChatSay**: color coded (`{Lime}`, `{Orchid}` …) chat announcements
-- **Event ads**: instant ChatSay, HudSay or ScreenText on 10 game events, aimed at a target (victim / attacker / team / everyone); per-player cooldown, percentage chance and variables such as `{victim}`, `{damage}`, `{winner}`
-- **Modular runtime**: an unused subsystem never registers its listener; with no screen ads and no events the plugin takes no tick at all
+- **Event ads**: instant ChatSay, HudSay or ScreenText on 10 game events, aimed at a target (victim / attacker / team / everyone); per-player cooldown, percentage chance and placeholders such as `{victim}`, `{damage}`, `{winner}`
+- **Modular**: only the parts you actually use are activated
 - **Collision free queue system**: each channel (ScreenText / HudSay / ChatSay) shows only one ad at a time; `ads_queue_mode: "global"` merges all three into a single queue; an event ad takes precedence over the rotating ad for that one player only, for as long as it lasts
 - Per map filter (`map`), `*` for every map
 - Two way JSON ↔ MySQL transfer (`css_adsimportsql` / `css_adsexportsql`)
@@ -44,14 +44,7 @@ All four files live in `csgo/addons/counterstrikesharp/plugins/Ads/`; the plugin
 
 ## Queue System (Collision Prevention)
 
-The problem: with three ScreenTexts, two HudSays and two ChatSays defined, running each on its own `timer` independently makes them pile up on top of each other. In this plugin every ad enters a **queue** and the queue is advanced by a single global scheduler.
-
-A queue's state machine runs every tick like this:
-
-```
-idle  --( wait the next ad's timer )-->  showing
-showing  --( when the ad's life expires )-->  idle
-```
+When several ads are defined they all enter a **queue**, so they never pile up on top of each other. The queue rotates like this: it waits for `timer`, shows the ad for `life`, then moves on to the next one.
 
 Rules:
 
@@ -110,7 +103,7 @@ Next to the rotating ads, instant ads bound to game events are defined in the `e
 | `event` | — | One of the event names above |
 | `target` | `"all"` | Target |
 | `type` | `"chatsay"` | Display kind: `chatsay`, `hudsay`, `screentext` |
-| `text` | — | Message; supports variables and color tags |
+| `text` | — | Message; supports placeholders and color tags |
 | `life` | `4` | How long the HudSay/ScreenText stays (unused for ChatSay) |
 | `cooldown` | `10` | Seconds before this ad may fire **again** for the same player; `0` = no limit. Re-triggering while the ad is still on that player's screen skips the cooldown and refreshes the text instead (names stay current on back-to-back kills) |
 | `chance` | `100` | Trigger chance in percent (0-100) |
@@ -119,9 +112,9 @@ Next to the rotating ads, instant ads bound to game events are defined in the `e
 
 `player_hurt` can fire dozens of times per second; always set `cooldown` on it.
 
-### Variables
+### Event placeholders
 
-| Variable | Where |
+| Placeholder | Where |
 | --- | --- |
 | `{victim}` | `player_hurt`, `player_death` — name of the damaged/killed player |
 | `{attacker}` | `player_hurt`, `player_death` — name of the attacking player |
@@ -134,6 +127,36 @@ Next to the rotating ads, instant ads bound to game events are defined in the `e
 | `{kit}` | `bomb_defuse` (`1` / `0`) |
 | `{team}` | `player_team` (`T` / `CT` / `Spectator`) |
 | `{map}` | Every event |
+
+## Placeholders
+
+These work everywhere: ScreenText, HudSay, ChatSay and event ads.
+
+| Placeholder | Value |
+| --- | --- |
+| `{map}` `{hostname}` `{ip}` `{port}` `{maxplayers}` | Server info |
+| `{players}` `{bots}` | Human / bot count |
+| `{alive}` `{dead}` | Alive / dead |
+| `{t_count}` `{ct_count}` `{spec_count}` | Team sizes |
+| `{alive_t}` `{alive_ct}` `{dead_t}` `{dead_ct}` | Alive / dead per team |
+| `{round}` `{t_score}` `{ct_score}` | Round and score |
+| `{time}` `{date}` | `HH:mm` and `dd.MM.yyyy` |
+| `{player}` `{steamid}` `{team}` | The player seeing the ad |
+| `{kills}` `{deaths}` `{assists}` `{score}` | Stats of the player seeing the ad |
+
+`{players}` counts humans only, the other counts include bots.
+
+Values are calculated at different times depending on the channel:
+
+| Channel | When |
+| --- | --- |
+| ChatSay | While the ad is printed — live value |
+| HudSay | Every `ads_hud_tick` — keeps updating |
+| ScreenText | Once when the ad appears — stays fixed for that ad |
+
+So `{time}` and the counters do not change in ScreenText; use HudSay for live values.
+
+Unknown `{...}` tokens are left untouched, so color tags (`{Orchid}` etc.) are not broken. If the text has no `{`, nothing is processed.
 
 ## Commands
 
@@ -219,7 +242,7 @@ Selecting the flag/ignoreflag row closes the menu, and the first message you typ
 
 The skin list comes from `props.json` → `models` → `skins` (`"skins": [0, 1, 2]`). The row warns you when the list is missing.
 
-Scale, collision and skin changes recreate the entity (a brief flicker). Rotation and movement move the prop instantly with no respawn. `maps.json` is saved on every step. The selection is per player and is cleared on map change.
+On scale, collision and skin changes the prop briefly disappears and comes back. Rotation and movement move the prop instantly with no respawn. `maps.json` is saved on every step. The selection is per player and is cleared on map change.
 
 #### SQL Operations and Plugin Management
 
@@ -253,6 +276,7 @@ Settings are per server: `css_adsimportsql` / `css_adsexportsql` never touch thi
 | `ads_reload_cmd` | string | `"css_adsreload"` | Comma separated command names |
 | `ads_importsql_cmd` | string | `"css_adsimportsql"` | Comma separated command names |
 | `ads_exportsql_cmd` | string | `"css_adsexportsql"` | Comma separated command names |
+| `ads_hud_tick` | int | `4` | How many ticks between HudSay refreshes (4 = 16 per second) |
 | `ads_font` | string | `"Arial Bold"` | ScreenText font |
 | `ads_forward` | float | `7` | ScreenText distance from the eye (minimum 1) |
 | `ads_units_per_px` | float | `0.012` | ScreenText pixel scale |
@@ -277,6 +301,7 @@ Settings are per server: `css_adsimportsql` / `css_adsexportsql` never touch thi
   "ads_reload_cmd": "css_adsreload",
   "ads_importsql_cmd": "css_adsimportsql",
   "ads_exportsql_cmd": "css_adsexportsql",
+  "ads_hud_tick": 4,
   "ads_font": "Arial Bold",
   "ads_forward": 7,
   "ads_units_per_px": 0.012,
@@ -351,7 +376,7 @@ The model list shown in the Place Prop menu. This file is edited by hand only; t
 
 | Section | Field | Description |
 | --- | --- | --- |
-| `props` | `path` | Model path (`.vmdl`); added to the precache list automatically |
+| `props` | `path` | Path of the model file (`.vmdl`) |
 | | `map` | Map the prop appears on; `*` for every map, comma separated for several |
 | | `pos` / `angle` | Position and angle as `"X Y Z"`; `angle` is in `"pitch yaw roll"` order |
 | | `scale` / `skin` | Model scale and skin index |
@@ -489,29 +514,9 @@ When `ads_storage` is set to `mysql`, every JSON section maps to its own table. 
 | `ads_propmodels` | `props.json` → `models` | Prop catalog |
 | `ads_props` | `maps.json` → `props` | Placed props |
 
-The table prefix comes from `mysql.table_prefix`. Every table carries `id`, `sort_order` (the order within its section), `flag` and `ignoreflag`; the remaining columns match that section's JSON fields one to one.
+The table prefix comes from `mysql.table_prefix`. The table columns match the fields in the JSON files one to one, so you can edit the same settings straight from the database.
 
-```sql
-CREATE TABLE IF NOT EXISTS `ads_props` (
-  `id` INT NOT NULL AUTO_INCREMENT, `sort_order` INT NOT NULL DEFAULT 0,
-  `path` VARCHAR(255), `map` VARCHAR(64), `pos` VARCHAR(64), `angle` VARCHAR(64),
-  `scale` FLOAT, `skin` INT, `solid` TINYINT,
-  `flag` VARCHAR(128), `ignoreflag` VARCHAR(128),
-  PRIMARY KEY (`id`), KEY `order` (`sort_order`)
-);
-
-CREATE TABLE IF NOT EXISTS `ads_events` (
-  `id` INT NOT NULL AUTO_INCREMENT, `sort_order` INT NOT NULL DEFAULT 0,
-  `event` VARCHAR(32), `target` VARCHAR(16), `type` VARCHAR(16),
-  `text` TEXT, `life` FLOAT, `cooldown` FLOAT, `chance` INT,
-  `x` FLOAT, `y` FLOAT, `size` FLOAT,
-  `color` VARCHAR(32), `justify` VARCHAR(16), `background` TINYINT,
-  `flag` VARCHAR(128), `ignoreflag` VARCHAR(128),
-  PRIMARY KEY (`id`), KEY `order` (`sort_order`)
-);
-```
-
-Writes are separate as well: the menu only rewrites the `maps.json` group (`ads_props`) and never touches the catalog, screen, chat or event tables.
+Writes are separate as well: the menu only rewrites the placed prop table (`ads_props`) and never touches the catalog, screen, chat or event tables.
 
 The database and the tables are created automatically on first load. The workflow is:
 
@@ -524,15 +529,14 @@ While `ads_storage` is `mysql` the menu catalogs and the placed entries are read
 
 ## Notes
 
-- Precaching happens during map load through `OnServerPrecacheResources`, and the files are refreshed from disk at that moment; the menu catalog (`models`) is precached as well. A model path newly added to the file is only ready on the next map load.
-- The menus use the center HTML area; while one is open no HudSay ad is printed to that player.
-- The Prop Angle menu rotates yaw (left/right) and pitch (up/down). For roll, edit the third value of the `angle` field in `maps.json` by hand.
-- The default catalog uses stock CS2 models only, so no extra package is needed. If you add your own model, the file must exist both on the server and on the clients (workshop map or addon package), otherwise the prop stays invisible.
-- A `player_death` ad cannot combine `target: "victim"` with `type: "screentext"`; no world text is created for a dead player. Send `chatsay` or `hudsay` to the dead player instead.
-- The `ignoreflag` check does not apply the root wildcard: a root player still sees the ad unless that flag is actually assigned to them. The `flag` check always covers root.
-- ScreenText entities are parented to the player's own pawn and hidden from everyone else with `CheckTransmit`, so each player only sees their own. No text is created for dead players.
-- HudSay uses the game's center HTML area; if another plugin (menu, warning) uses the same area, the two are printed alternately and may flicker.
-- Props are created as `prop_dynamic_override`; with `solid: false` collision is disabled after spawn so players walk through them.
-- `settings.json` is refreshed instantly from Plugin Management → **Reload settings**; only command names, `ads_storage` and the MySQL connection need a plugin reload.
-- The plugin runs modularly: `OnTick` is registered only when a ScreenText, HudSay or event ad exists, and `CheckTransmit` only when a ScreenText/event exists or a placed prop carries `flag`/`ignoreflag`. On a props-only server the plugin does no per-tick work at all. Listeners are re-synced after every reload.
-- The chat prompt for flag/ignoreflag is per player: nobody else's message can change your setting, and the sender's permission is re-checked at the moment they type.
+- Props stay fixed in place, they never fall or get pushed around. Set `solid: false` and players walk through them.
+- When you add a new model to `props.json`, it only becomes usable on the next map change.
+- The default catalog uses models that ship with CS2 only, so no extra package is needed. If you add your own model, the file must exist both on the server and on the players' side (workshop map or addon package), otherwise the prop stays invisible.
+- While a menu is open no HudSay ad is printed to that player.
+- The Prop Angle menu rotates left/right and up/down. To tilt sideways, edit the third value of the `angle` field in `maps.json` by hand.
+- A `player_death` ad cannot combine `target: "victim"` with `type: "screentext"`; screen text cannot be shown to a dead player. Use `chatsay` or `hudsay` instead.
+- `ignoreflag` does not cover root: a root player still sees the ad unless that flag is actually assigned to them. The `flag` check always covers root.
+- Every player only sees their own ScreenText on their own screen. No screen text is shown to dead players.
+- HudSay uses the center area of the screen; if another plugin (menu, warning) uses the same area, the two are printed alternately and may flicker.
+- `settings.json` is refreshed instantly from **Reload settings**; only command names, `ads_storage` and the MySQL connection need a plugin reload.
+- When entering a flag/ignoreflag through chat, nobody else's message can change your setting.

@@ -7,8 +7,6 @@ namespace WardenMarker;
 
 public partial class WardenMarker
 {
-  private const string BackColor = "#FF8077";
-
   private void OnMarkerCommand(CCSPlayerController? player, CommandInfo info)
   {
     if (player == null || !player.IsValid)
@@ -73,7 +71,7 @@ public partial class WardenMarker
 
     var items = new List<WasdItem>
     {
-      new() { Text = Localizer["marker.back"], Color = BackColor, OnSelect = ShowMainMenu },
+      WasdItem.Back(Localizer["marker.back"], ShowMainMenu),
       new()
       {
         Text = Localizer["marker.color", Hex(settings.Ring.Color)],
@@ -119,7 +117,7 @@ public partial class WardenMarker
 
     var items = new List<WasdItem>
     {
-      new() { Text = Localizer["marker.back"], Color = BackColor, OnSelect = ShowMainMenu },
+      WasdItem.Back(Localizer["marker.back"], ShowMainMenu),
       new()
       {
         Text = Localizer["marker.disc", StateLabel(settings.Disc.Enabled)],

@@ -1,5 +1,7 @@
 # JBTeams
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Hayattaki T oyuncularını renkli takımlara bölen etkinlik eklentisi. Aynı takımdaki oyuncular birbirine hasar veremez; son takım ayakta kalana kadar mücadele sürer.
 
 ## Özellikler
@@ -34,7 +36,7 @@ Hayattaki T oyuncularını renkli takımlara bölen etkinlik eklentisi. Aynı ta
 
 ## Yapılandırma
 
-Takım renkleri ve isimleri kaynak kodda tanımlıdır; mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+Takım renkleri ve isimleri sabittir; mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Kullanım Örneği
 

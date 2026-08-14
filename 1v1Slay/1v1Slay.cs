@@ -28,9 +28,11 @@ public class OneVOneSlayConfig : BasePluginConfig
 public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 {
   public override string ModuleName => "1v1Slay";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+  private const int HudTickRate = 4;
 
   private string ChatPrefix => Localizer["chat_prefix"];
 
@@ -53,6 +55,7 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+    HudGuard.Install(this);
     RegisterListener<OnTick>(OnTickHud);
   }
 
@@ -100,11 +103,14 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 
   private void OnTickHud()
   {
+    if (Server.TickCount % HudTickRate != 0)
+      return;
+
     if (_showHud && Config.EnableHudAnnounce && _hudHtml.Length > 0)
     {
       foreach (var player in Utilities.GetPlayers())
       {
-        if (player.IsValid && !player.IsBot)
+        if (player.IsValid && !player.IsBot && !HudGuard.Blocked(player))
         {
           player.PrintToCenterHtml(_hudHtml);
         }

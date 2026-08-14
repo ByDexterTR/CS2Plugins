@@ -5,6 +5,25 @@ using MySqlConnector;
 
 namespace Ads;
 
+public class AdsFileException : Exception
+{
+  public string FileName { get; }
+
+  public AdsFileException(string path, JsonException inner)
+    : base(Describe(path, inner), inner)
+  {
+    FileName = Path.GetFileName(path);
+  }
+
+  private static string Describe(string path, JsonException inner)
+  {
+    string name = Path.GetFileName(path);
+    return inner.LineNumber.HasValue
+      ? $"{name}: satir {inner.LineNumber + 1} - {inner.Message}"
+      : $"{name}: {inner.Message}";
+  }
+}
+
 public class LegacyPropModel : PropModel
 {
   [JsonPropertyName("name")] public string LegacyName { get; set; } = "";
@@ -130,7 +149,16 @@ public class AdsJsonStorage : IAdsStorage
         return created;
       }
 
-      var config = JsonSerializer.Deserialize<AdsConfig>(File.ReadAllText(_settingsPath)) ?? new AdsConfig();
+      AdsConfig config;
+      try
+      {
+        config = JsonSerializer.Deserialize<AdsConfig>(File.ReadAllText(_settingsPath)) ?? new AdsConfig();
+      }
+      catch (JsonException ex)
+      {
+        throw new AdsFileException(_settingsPath, ex);
+      }
+
       File.WriteAllText(_settingsPath, JsonSerializer.Serialize(config, Opts));
       return config;
     }
@@ -148,11 +176,18 @@ public class AdsJsonStorage : IAdsStorage
 
       string json = File.ReadAllText(_propsPath);
 
-      if (HasKey(json, "models"))
-        return JsonSerializer.Deserialize<LegacyPropsData>(json)?.Upgrade() ?? new PropsData();
+      try
+      {
+        if (HasKey(json, "models"))
+          return JsonSerializer.Deserialize<LegacyPropsData>(json)?.Upgrade() ?? new PropsData();
 
-      var raw = JsonSerializer.Deserialize<Dictionary<string, PropModel>>(json);
-      return raw == null ? new PropsData() : PropsData.FromJson(raw);
+        var raw = JsonSerializer.Deserialize<Dictionary<string, PropModel>>(json);
+        return raw == null ? new PropsData() : PropsData.FromJson(raw);
+      }
+      catch (JsonException ex)
+      {
+        throw new AdsFileException(_propsPath, ex);
+      }
     }
   }
 
@@ -167,11 +202,18 @@ public class AdsJsonStorage : IAdsStorage
 
       string json = File.ReadAllText(_mapsPath);
 
-      if (HasKey(json, "props"))
-        return JsonSerializer.Deserialize<LegacyMapsData>(json)?.Upgrade() ?? new MapsData();
+      try
+      {
+        if (HasKey(json, "props"))
+          return JsonSerializer.Deserialize<LegacyMapsData>(json)?.Upgrade() ?? new MapsData();
 
-      var raw = JsonSerializer.Deserialize<Dictionary<string, List<PropAd>>>(json);
-      return raw == null ? new MapsData() : MapsData.FromJson(raw);
+        var raw = JsonSerializer.Deserialize<Dictionary<string, List<PropAd>>>(json);
+        return raw == null ? new MapsData() : MapsData.FromJson(raw);
+      }
+      catch (JsonException ex)
+      {
+        throw new AdsFileException(_mapsPath, ex);
+      }
     }
   }
 
@@ -199,7 +241,14 @@ public class AdsJsonStorage : IAdsStorage
       if (!File.Exists(path))
         return new T();
 
-      return JsonSerializer.Deserialize<T>(File.ReadAllText(path)) ?? new T();
+      try
+      {
+        return JsonSerializer.Deserialize<T>(File.ReadAllText(path)) ?? new T();
+      }
+      catch (JsonException ex)
+      {
+        throw new AdsFileException(path, ex);
+      }
     }
   }
 

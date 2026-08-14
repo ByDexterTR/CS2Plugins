@@ -1,15 +1,17 @@
 # Sesler
 
-Oyuncuların duymak istemediği oyun seslerini kategori bazında kapatmasını sağlar. Tercihler oyuncu bazında veritabanında saklanır ve tekrar girişte otomatik uygulanır.
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
+Oyuncuların duymak istemediği oyun seslerini kategori bazında kapatmasını sağlar. Tercihler oyuncu bazında database'de saklanır ve tekrar girişte otomatik uygulanır.
 
 ## Özellikler
 
 - 5 ses kategorisi: **Bıçak**, **Silah**, **Ayak sesi**, **Oyuncu sesleri**, **MVP müziği**
 - Her kategori için 4 mod: **Açık**, **Düşmanı Sustur**, **Takımı Sustur**, **Kapalı** (MVP için yalnızca Açık/Kapalı)
-- CenterHtml menü ile kolay yönetim; aktif seçenek ► işareti ve renkle vurgulanır
+- Ekran menüsüyle kolay yönetim; aktif seçenek ► işareti ve renkle vurgulanır
 - **JSON (varsayılan) veya MySQL** depolama; MySQL bağlantısı başarısız olursa JSON'a düşer, tablo otomatik oluşturulur
-- Ses engelleme sunucu tarafında UserMessage alıcı filtrelemesiyle yapılır — diğer oyuncular sesleri normal duyar
-- MVP susturması `StopSoundEvents.StopAllMusic` ile yalnızca ilgili oyuncuda çalışır
+- Susturma yalnızca o oyuncuya özeldir — diğer oyuncular sesleri normal duymaya devam eder
+- MVP müziği susturulduğunda yalnızca susturan oyuncunun müziği kesilir
 - Türkçe / İngilizce dil desteği (`lang/`)
 
 ## Gereksinimler
@@ -42,7 +44,7 @@ csgo/addons/counterstrikesharp/configs/plugins/Sesler/Sesler.json
 | --- | --- | --- | --- |
 | `Database.provider` | string | `"json"` | `"json"` veya `"mysql"` |
 | `Database.host` | string | `"localhost"` | MySQL sunucu adresi |
-| `Database.name` | string | `"bydexter_sesler"` | Veritabanı adı (yoksa oluşturulur) |
+| `Database.name` | string | `"bydexter_sesler"` | Database adı (yoksa oluşturulur) |
 | `Database.port` | string | `"3306"` | MySQL portu |
 | `Database.user` | string | `"root"` | MySQL kullanıcısı |
 | `Database.password` | string | `""` | MySQL şifresi |
@@ -64,5 +66,4 @@ csgo/addons/counterstrikesharp/configs/plugins/Sesler/Sesler.json
 
 ## Notlar
 
-- Ses hash listeleri oyun güncellemeleriyle değişebilir; yeni sesler duyulmaya başlarsa hash listelerinin güncellenmesi gerekir.
-- Veritabanı işlemleri arka planda yürütülür, oyun akışını bloklamaz.
+- Bir CS2 güncellemesinden sonra kapattığınız kategorideki bazı sesler yeniden duyulmaya başlarsa, eklentinin güncellenmesi gerekiyor demektir.

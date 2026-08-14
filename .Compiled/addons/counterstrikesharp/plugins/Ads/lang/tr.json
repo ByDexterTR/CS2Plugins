@@ -9,6 +9,7 @@
   "ads.imported": "MySQL'e aktarıldı. Prop: {0} | Event: {1} | Reklam: {2}",
   "ads.exported": "MySQL'den dosyalara aktarıldı. Prop: {0} | Event: {1} | Reklam: {2}. Eski dosyalar .backup olarak saklandı.",
   "ads.sql_error": "MySQL işlemi başarısız: {0}",
+  "ads.file_error": "Dosya okunamadı: {0}",
   "ads.save_error": "Kayıt başarısız: {0}",
   "ads.added": "Reklam eklendi: {0}",
   "ads.removed": "Reklam silindi.",

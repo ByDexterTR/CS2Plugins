@@ -1,5 +1,7 @@
 # CTKov
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Tek komutla, warden yetkisi olmayan tüm CT oyuncularını T takımına gönderir. Jailbreak'te "CT kovma" etkinliği için kullanılır.
 
 ## Özellikler

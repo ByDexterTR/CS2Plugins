@@ -1,16 +1,17 @@
 # Cit (Çit)
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Baktığınız noktaya çit (tel örgü) veya kapalı panel modeli yerleştirmenizi sağlar. Jailbreak sunucularında alan kapatma / oyun alanı belirleme için tasarlanmıştır.
 
 ## Özellikler
 
-- CenterHtml menü ile tek komuttan yönetim
+- Tek komutla açılan ekran menüsünden yönetim
 - 3 farklı boyut: Küçük (64x128), Orta (128x128), Büyük (256x128)
 - 2 farklı tip: **Çit** (tel örgü, arkası görünür) ve **Barikat** (panel)
-- Bakılan noktaya native ray-trace ile hassas yerleştirme (`NativeTrace`)
+- Tam olarak baktığınız noktaya hassas yerleştirme
 - Yerleştirilen model bakış yönüne göre otomatik hizalanır
 - Baktığınız çiti silme veya tüm çitleri tek seferde temizleme
-- Modeller sunucu tarafından otomatik precache edilir
 - Türkçe / İngilizce dil desteği (`lang/`)
 
 ## Gereksinimler
@@ -43,10 +44,10 @@ Baktığınız noktaya çit (tel örgü) veya kapalı panel modeli yerleştirmen
 
 ## Yapılandırma
 
-Model yolları ve boyutlar kaynak kodda `FenceOptions` sözlüğünde tanımlıdır.
+Ayar dosyası yoktur; boyut ve tip menüden seçilir.
 
 ## Notlar
 
-- Yerleştirilen entity'ler `prop_physics_override` olarak oluşturulur, hareketi kapatılır (`DisableMotion`) ve `bydexter_pluginfence` adıyla etiketlenir — "Hepsini Sil" yalnızca bu etiketli propları kaldırır, harita proplarına dokunmaz.
-- Ray-trace kullanılamıyorsa oyuncuya hata mesajı gösterilir (`NativeTrace.LastError`).
+- Yerleştirdiğiniz çitler yerinde sabit durur, itilmez. "Hepsini Sil" yalnızca bu eklentiyle koyulan çitleri kaldırır, haritanın kendi nesnelerine dokunmaz.
+- Yerleştirme noktası hesaplanamazsa oyuncuya hata mesajı gösterilir.
 - Kullanılan modeller `de_nuke` chainlink fence modelleridir; tüm resmi haritalarda kullanılabilir.

@@ -97,7 +97,7 @@ csgo/addons/counterstrikesharp/plugins/GoBhop/positions.json
 
 ## Notes
 
-- Showing as dead on the scoreboard is done with the `m_bPawnIsAlive` field; if the game reverts the value it is reapplied every tick.
+- The player keeps showing as dead on TAB; even if the game tries to undo it the plugin reapplies it.
 - Round end, plugin unload and `css_offbhop` remove everyone in GoBhop safely; these deaths are not shown in the kill feed.
 - While disabled (`css_offbhop` or the last T), if another plugin revives a player in GoBhop they are caught at spawn and removed.
 - Command name changes take effect when the server/plugin is restarted.

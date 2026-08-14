@@ -1,5 +1,7 @@
 # Meslekmenu
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 T oyuncularının raunt başına bir kez "meslek" seçmesini sağlar. Her meslek farklı bir avantaj verir. Jailbreak sunucuları için tasarlanmıştır.
 
 ## Özellikler

@@ -55,7 +55,7 @@ public class GoBhopConfig : BasePluginConfig
 public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
 {
   public override string ModuleName => "GoBhop";
-  public override string ModuleVersion => "1.0.1";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

@@ -1,5 +1,7 @@
 # MapBlock
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Oyuncu sayısı düşükken haritanın belirli bölgelerini çit modelleriyle otomatik kapatır. Sunucu kalabalıklaştığında engeller kendiliğinden kalkar.
 
 ## Özellikler
@@ -10,7 +12,6 @@ Oyuncu sayısı düşükken haritanın belirli bölgelerini çit modelleriyle ot
 - Her raunt başında durum yeniden değerlendirilir
 - Örnek yerleşim dosyası (`MapBlock.example.json`) ilk çalıştırmada otomatik kopyalanır
 - JSON'u elle düzenledikten sonra sunucuyu yeniden başlatmadan yeniden yükleme komutu
-- Çit modelleri otomatik precache edilir
 - Türkçe / İngilizce dil desteği (`lang/`)
 
 ## Gereksinimler
@@ -63,7 +64,7 @@ Harita adı → yerleşim listesi biçimindedir:
 
 | Alan | Açıklama |
 | --- | --- |
-| `Model` | Precache edilen çit modellerinden biri (64/128/256 boyutları) |
+| `Model` | Kullanılabilir çit modellerinden biri (64/128/256 boyutları) |
 | `Origin` | `[x, y, z]` dünya koordinatı |
 | `Angles` | `[pitch, yaw, roll]` açı değerleri |
 

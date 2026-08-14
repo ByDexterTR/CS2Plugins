@@ -1,6 +1,8 @@
 # HideTeammates
 
-Oyuncuların diğer oyuncu modellerini komutla gizlemesini sağlar. Gizlenen oyuncular istemciye hiç gönderilmez (`CheckTransmit`), istenirse çıkardıkları sesler de duyulmaz. Tercihler SteamID bazında JSON'a yazılır; kayıtlı oyuncu sunucuya girdiğinde gizleme otomatik açılır.
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
+Oyuncuların diğer oyuncu modellerini komutla gizlemesini sağlar. Gizlenen oyuncular ekranda hiç görünmez, istenirse çıkardıkları sesler de duyulmaz. Tercihler SteamID bazında JSON'a yazılır; kayıtlı oyuncu sunucuya girdiğinde gizleme otomatik açılır.
 
 ## Özellikler
 
@@ -8,7 +10,7 @@ Oyuncuların diğer oyuncu modellerini komutla gizlemesini sağlar. Gizlenen oyu
 - Yetki (flag) kontrolü — boş bırakılırsa herkes kullanabilir
 - 3 gizleme modu: takım arkadaşları, rakip takım veya herkes (`mode_hide`)
 - Gizlenen oyuncunun modeli ve elindeki silahlar istemciye gönderilmez
-- `disable_sound` ile gizlenen oyuncuların ayak sesi, beden sesi, bıçak ve silah sesleri de susturulur (257 ses hash'i)
+- `disable_sound` ile gizlenen oyuncuların ayak sesi, beden sesi, bıçak ve silah sesleri de susturulur
 - Tercihler `players.json` içinde SteamID dizisi olarak saklanır; girişte otomatik uygulanır
 - Ölüyken/izlerken gizleme uygulanmaz, izlenen oyuncunun görüntüsü bozulmaz
 - Türkçe / İngilizce dil desteği (`lang/`)
@@ -75,7 +77,7 @@ Dosyadaki SteamID'ler gizlemesi açık oyunculardır; komutla açıp kapattıkç
 
 - Gizleme yalnızca **hayattayken** uygulanır; ölü/izleyici durumundayken tüm oyuncular görünür kalır, böylece izlenen oyuncunun görüntüsü bozulmaz.
 - Gizlenen oyuncular yalnızca görünmez olur; çarpışma (collision) ve mermi engelleme devam eder.
-- Ses susturma `208` (soundevent), `369` (weapon sound) ve `452` (weapon event) user message'ları üzerinden yapılır; ayak sesi/beden sesi/bıçak hash listesi Sesler, VIPCore `Silent` ve jRandomSkills kaynaklarının birleşimidir.
-- `disable_sound` değeri sunucu/eklenti yeniden başlatıldığında etkinleşir (hook'lar yüklemede bağlanır).
+- Ses susturma ayak sesi, beden sesi, bıçak ve silah seslerini kapsar. Bir CS2 güncellemesinden sonra bazı sesler yeniden duyulmaya başlarsa eklentinin güncellenmesi gerekiyor demektir.
+- `disable_sound` değeri sunucu/eklenti yeniden başlatıldığında etkinleşir.
 - Komut adı değişikliği (`cmd_hide`) sunucu/eklenti yeniden başlatıldığında etkinleşir.
 - Sesleri kategori bazında kendisi ayarlamak isteyen oyuncular için [Sesler](../Sesler) eklentisine bakın.

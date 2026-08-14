@@ -30,7 +30,7 @@ public class JBRaceConfig : BasePluginConfig
 public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 {
   public override string ModuleName => "JBRace";
-  public override string ModuleVersion => "1.0.6";
+  public override string ModuleVersion => "1.0.7";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -72,6 +72,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
       () => Localizer["menu.scroll"],
       () => Localizer["menu.select"],
       () => Localizer["menu.exit"]);
+    HudGuard.Install(this);
     RegisterListener<OnTick>(OnTickCheckFinish);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterListener<OnServerPrecacheResources>(OnServerPrecacheResources);
@@ -304,11 +305,11 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 
   private void OnTickCheckFinish()
   {
-    if (_showHud)
+    if (_showHud && Util.IsHudFrame())
     {
       foreach (var p in Utilities.GetPlayers())
       {
-        if (p != null && p.IsValid)
+        if (p != null && p.IsValid && !HudGuard.Blocked(p))
           p.PrintToCenterHtml(_hudHtml);
       }
     }

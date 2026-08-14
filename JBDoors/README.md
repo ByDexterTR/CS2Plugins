@@ -6,8 +6,8 @@ Opens or closes every door on the map with a single command. Used for cell doors
 
 ## Features
 
-- Opens every door type with one command: `func_door`, `func_movelinear`, `func_door_rotating`, `prop_door_rotating`
-- The open command also breaks `func_breakable` entities (for breakable cell doors)
+- Opens every kind of door on the map with one command (sliding, rotating, moving)
+- The open command also breaks breakable cell doors
 - The close command closes the same door types
 - The name of the player who ran the command is announced to the whole server
 - Turkish / English language support (`lang/`)
@@ -44,5 +44,5 @@ Messages can be edited through `lang/tr.json` / `lang/en.json`.
 
 ## Notes
 
-- Broken `func_breakable` entities do not come back until the round restarts (map behavior).
-- The command targets **every** matching entity on the map; it does not distinguish between specific doors.
+- Broken doors do not come back until the round restarts; that is the map's own behavior.
+- The command affects **every** door on the map; you cannot pick individual doors.

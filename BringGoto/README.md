@@ -2,11 +2,11 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-Lets admins teleport players to the point under their crosshair (`!bring`) or teleport themselves next to a player (`!goto`). The teleport point is calculated live with a native trace.
+Lets admins teleport players to the point under their crosshair (`!bring`) or teleport themselves next to a player (`!goto`). The teleport point is worked out live from exactly where you are aiming.
 
 ## Features
 
-- `!bring <target>` teleports the target(s) exactly to the point you are looking at; the point is found with a native trace (CNavPhysicsInterface)
+- `!bring <target>` teleports the target(s) exactly to the point you are looking at
 - `!goto <target>` teleports you next to the target player
 - Multi-target support: `@all`, `@t`, `@ct`, `#userid`, full or partial name
 - Immunity check: the teleport is blocked if the target's immunity is higher than yours (can be disabled with `ignore_immunity`)
@@ -72,7 +72,7 @@ csgo/addons/counterstrikesharp/configs/plugins/BringGoto/BringGoto.json
 ## Notes
 
 - Both commands require the player using them to be alive; dead and GOTV players cannot be targeted.
-- If the crosshair point cannot be found in bring (open sky / trace error) the target is teleported 128 units in front of you; the point is pulled back 24 units and raised 6 units to avoid getting stuck in a wall.
+- If you are aiming at open sky and no point can be found, the target is teleported just in front of you instead. Targets are always placed slightly short of the surface so they do not get stuck inside a wall.
 - In a multi-target bring every target arrives at the same point; targets with higher immunity are skipped silently, and if none are eligible a message is shown.
 - Goto teleports you 80 units above the target, so the two players do not get stuck inside each other.
 - Immunity is not checked on bots; you cannot target yourself with goto.

@@ -1,5 +1,7 @@
 # SpawnkillProtection
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Spawn olan oyunculara yapılandırılabilir süreli hasar koruması verir. [CTSpawnKill](../CTSpawnKill)'in kapsamlı sürümüdür: takım bazlı **ve** yetki (flag) bazlı koruma, renkli görsel geri bildirim ve koruma süresince **yavaşça normale dönen renk geçişi** içerir.
 
 ## Özellikler
@@ -7,7 +9,7 @@ Spawn olan oyunculara yapılandırılabilir süreli hasar koruması verir. [CTSp
 - **Flag bazlı koruma** takım korumasından **önceliklidir** — ör. VIP'lere daha uzun koruma
 - T ve CT için ayrı ayrı açılıp kapatılabilen, süresi ve rengi özelleştirilebilen takım koruması
 - Koruma süresince oyuncunun rengi koruma renginden **kademeli olarak normale döner** — rengin solması korumanın ne kadar kaldığını gösterir, bitişi herkes anlar
-- Koruma boyunca tüm hasar sıfırlanır (`OnEntityTakeDamagePre`)
+- Koruma boyunca her türlü hasar engellenir
 - Koruma başlangıcı ve bitişi oyuncuya sohbetten bildirilir
 - Raunt başında ve oyuncu ayrıldığında durum güvenle temizlenir
 - Türkçe / İngilizce dil desteği (`lang/`)

@@ -51,7 +51,7 @@ public class CTKitConfig : BasePluginConfig
 public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
 {
   public override string ModuleName => "CTKit";
-  public override string ModuleVersion => "1.0.6";
+  public override string ModuleVersion => "1.0.7";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

@@ -92,4 +92,3 @@ Key = violation count, value = punishment. `type`: `"kick"` or `"ban"`, `time`: 
 ## Notes
 
 - Punishments are applied with the `css_kick` / `css_ban` console commands; if those commands are not defined on the server no punishment happens.
-- All database operations run in the background and do not block the game loop.

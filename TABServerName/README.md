@@ -2,15 +2,19 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-Customizes the map part of the `{mod} | {map}` label on the TAB scoreboard by replacing `CNetworkGameServer::m_MapName` with the text from the config at map start (through the engine's own `tier0` allocator, via `CUtlString::Set`).
+Replaces the map part of the `{mod} | {map}` label at the top of the TAB scoreboard with the text you write in the config. That way, when players press TAB they see your server name, your IP or any text you like next to the map name.
+
+```
+Normally:            Competitive | Mirage
+With this plugin:    Competitive | de_mirage | bydexter.net | 5v5 RETAKE
+```
 
 ## Features
 
-- Applied automatically on every `OnMapStart`, before players connect (the client only reads this value once, at connect time)
-- The `{MAP}` placeholder in the config text is replaced with the real map name
-- Never touches the mod name (Competitive/Casual/etc.), it stays natively correct
-- Uses the engine's own memory manager (`tier0` export), so it does not crash on a live map change
-- No offsets or export names are baked into the code, they live in a `gamedata` file (CounterStrikeSharp's own native gamedata system); if a CS2/CounterStrikeSharp update shifts these values the file can be fixed without waiting for a new plugin version
+- Applied automatically at the start of every map
+- The text can include placeholders for the map name, server name, IP and port
+- Never touches the mod name (Competitive / Casual / etc.), that part stays as it is
+- Does not affect the server across live map changes
 
 ## Requirements
 
@@ -28,6 +32,8 @@ Customizes the map part of the `{mod} | {map}` label on the TAB scoreboard by re
    ```
 3. Restart the server or run `css_plugins load TABServerName`.
 
+> The second step is required. That file goes into the shared `gamedata` folder, not into the plugin folder.
+
 ## Configuration
 
 ```
@@ -36,16 +42,16 @@ csgo/addons/counterstrikesharp/configs/plugins/TABServerName/TABServerName.json
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `servername_text` | string | `"{MAP} \| github.com/ByDexterTR/CS2Plugins"` | Text shown in the map area on TAB; placeholders are replaced with real values |
+| `servername_text` | string | `"{MAP} \| github.com/ByDexterTR/CS2Plugins"` | Text shown in the map area on TAB |
 
 ### Placeholders
 
 | Placeholder | Value |
 | --- | --- |
 | `{MAP}` | Map name |
-| `{HOSTNAME}` | The `hostname` convar (server name) |
-| `{IP}` | The `ip` convar (server IP address) |
-| `{PORT}` | The `hostport` convar (server port) |
+| `{HOSTNAME}` | Server name (`hostname`) |
+| `{IP}` | Server IP address |
+| `{PORT}` | Server port |
 
 ### Example Config
 
@@ -57,10 +63,11 @@ csgo/addons/counterstrikesharp/configs/plugins/TABServerName/TABServerName.json
 
 ## Notes
 
-- The `offsets` (`INetworkServerService_GetIGameServer`, `CNetworkGameServer_MapName`) and `signatures` (`CUtlString_Set`, tier0's real export name) values in `gamedata/TABServerName.gamedata.json` were found by reverse engineering; if a CS2/CounterStrikeSharp/tier0 update breaks them the plugin disables itself silently (writing `[TABServerName] DEVRE DISI: ...` to the console) rather than crashing the server.
-- The change is only visible on the top label of the TAB scoreboard; it does not affect the Steam server browser / A2S query (that is a separate data path).
+- The change is only visible on the TAB scoreboard. Your name in the Steam server browser and the replies to server queries are not affected.
+- If the text stops changing after a CS2 or CounterStrikeSharp update, the `gamedata` file needs updating. In that case the plugin disables itself and writes `[TABServerName] DEVRE DISI: ...` to the server console; your server will not crash.
 
 ## Known Issues
 
-- `CNetworkGameServer::m_MapName` is a single field; it is not only what the client TAB reads — CounterStrikeSharp's own `Server.MapName` / `NativeAPI.GetMapName()` call (and other plugins relying on it) may read the same field. Because TABServerName replaces this field with its own text (`{MAP} | ...`), another plugin that uses the map name somewhere like a file/folder name will now get this spoofed text instead of the real map name.
-- Workaround: avoid characters that are problematic for the file system (`/`, `\`, `:`, `|`) in the `servername_text` value, AND test any other plugins on the same server that read the map name for files/APIs. There is no permanent fix yet; this is an inherent limitation of the method of writing directly to `CNetworkGameServer::m_MapName`.
+- Because this plugin changes where the map name is stored, **other plugins** that use the map name read this new text too. For example, a plugin that creates a file per map will try to use your text as the file name instead of the real map name, and may throw an error.
+- For that reason, avoid characters that cause trouble in file names — `/`, `\`, `:` and `|` — in `servername_text`. If your server runs other plugins that use the map name (stats, spawn saving, map voting and so on), be sure to test them after enabling this plugin.
+- There is no permanent fix for this; it is an inherent limitation of the method used.

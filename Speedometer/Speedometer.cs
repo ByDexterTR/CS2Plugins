@@ -12,13 +12,14 @@ namespace Speedometer;
 public class Speedometer : BasePlugin
 {
     public override string ModuleName => "Speedometer";
-    public override string ModuleVersion => "1.0.2";
+    public override string ModuleVersion => "1.0.3";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
     private string ChatPrefix => Localizer["chat_prefix"];
 
     private const int MaxSlots = 64;
+    private const int HudTickRate = 4;
 
     private static readonly (float Speed, byte R, byte G, byte B)[] ColorStops =
     {
@@ -41,6 +42,7 @@ public class Speedometer : BasePlugin
     {
         LoadSaved();
 
+        HudGuard.Install(this);
         RegisterListener<OnTick>(OnTick);
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
@@ -174,6 +176,9 @@ public class Speedometer : BasePlugin
         if (_enabledCount == 0)
             return;
 
+        if (Server.TickCount % HudTickRate != 0)
+            return;
+
         for (int slot = 0; slot < MaxSlots; slot++)
         {
             if (!_enabled[slot])
@@ -183,7 +188,7 @@ public class Speedometer : BasePlugin
             if (player == null || !player.IsValid)
                 continue;
 
-            if (CoreMenuManager.GetActiveMenu(player) != null)
+            if (CoreMenuManager.GetActiveMenu(player) != null || HudGuard.Blocked(slot))
                 continue;
 
             var targetPawn = GetDisplayPawn(player);

@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Globalization;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 
@@ -7,6 +8,10 @@ namespace ByDexter.Shared;
 
 public static class Util
 {
+  public const int HudTickRate = 4;
+
+  public static bool IsHudFrame() => Server.TickCount % HudTickRate == 0;
+
   public static string[] Split(string names) =>
     names.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -32,6 +37,25 @@ public static class Util
     }
 
     return false;
+  }
+
+  public static bool TryGetButtons(CCSPlayerController? player, out PlayerButtons buttons)
+  {
+    buttons = 0;
+
+    var pawn = player?.Pawn.Value;
+    if (pawn == null || !pawn.IsValid || pawn.MovementServices == null)
+      return false;
+
+    try
+    {
+      buttons = (PlayerButtons)pawn.MovementServices.Buttons.ButtonStates[0];
+      return true;
+    }
+    catch
+    {
+      return false;
+    }
   }
 
   public static bool IsAlive(CCSPlayerController? player)

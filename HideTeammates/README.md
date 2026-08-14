@@ -2,7 +2,7 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-Lets players hide other player models with a command. Hidden players are never sent to the client (`CheckTransmit`), and optionally the sounds they make are muted too. Preferences are written to JSON per SteamID; hiding is enabled automatically when a saved player joins the server.
+Lets players hide other player models with a command. Hidden players are never drawn on screen at all, and optionally the sounds they make are muted too. Preferences are written to JSON per SteamID; hiding is enabled automatically when a saved player joins the server.
 
 ## Features
 
@@ -10,7 +10,7 @@ Lets players hide other player models with a command. Hidden players are never s
 - Permission (flag) check — leave it empty and everyone can use it
 - 3 hiding modes: teammates, the enemy team or everyone (`mode_hide`)
 - The hidden player's model and the weapons in their hands are not sent to the client
-- With `disable_sound` the hidden players' footsteps, body sounds, knife and weapon sounds are muted too (257 sound hashes)
+- With `disable_sound` the hidden players' footsteps, body sounds, knife and weapon sounds are muted too
 - Preferences are stored in `players.json` as a SteamID array; applied automatically on join
 - Hiding is not applied while dead/spectating, so the spectated player's view is not broken
 - Turkish / English language support (`lang/`)
@@ -77,7 +77,7 @@ The SteamIDs in the file are the players who have hiding enabled; the file is up
 
 - Hiding is only applied **while alive**; while dead/spectating every player stays visible, so the spectated player's view is not broken.
 - Hidden players only become invisible; collision and bullet blocking still apply.
-- Sound muting is done through the `208` (soundevent), `369` (weapon sound) and `452` (weapon event) user messages; the footstep/body sound/knife hash list is a combination of the Sesler, VIPCore `Silent` and jRandomSkills sources.
-- The `disable_sound` value takes effect when the server/plugin is restarted (hooks are bound at load).
+- Sound muting covers footsteps, body sounds, knife and weapon sounds. If some sounds start coming through again after a CS2 update, the plugin needs an update.
+- The `disable_sound` value takes effect when the server/plugin is restarted.
 - Command name changes (`cmd_hide`) take effect when the server/plugin is restarted.
 - For players who want to set sounds by category themselves, see the [Sesler](../Sesler) plugin.

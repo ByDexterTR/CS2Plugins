@@ -1,5 +1,7 @@
 # AdminList
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Oyuncuların `css_admins` komutuyla o an çevrimiçi olan yetkilileri grup etiketleriyle görmesini sağlar. Gruplar config'ten tanımlanır; her grubun etiketi, etiket rengi, isim rengi ve yetki bayrağı vardır.
 
 ```

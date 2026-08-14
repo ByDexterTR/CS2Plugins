@@ -1,12 +1,14 @@
 # Lazer
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Ölü oyunculara ve izleyicilere, canlı oyuncuların o an baktığı yönü lazer ışını olarak gösterir. Işın, oyuncunun gözünden bakış yönünde ilk engele (duvar, zemin, oyuncu) kadar uzanır; canlı oyuncular ışınları göremez.
 
 ## Özellikler
 
-- Her canlı oyuncunun bakış yönü gerçek zamanlı (her tick) lazerle çizilir
-- Native ray-trace ile ışın ilk engelde biter (duvar arkasına taşmaz)
-- Işınlar yalnızca lazeri açık olan ölü oyunculara/izleyicilere gönderilir (`CheckTransmit`); canlı oyuncular ve GOTV hiçbir şekilde görmez
+- Her canlı oyuncunun baktığı yön anlık olarak lazerle çizilir
+- Işın ilk engelde biter, duvarın arkasına taşmaz
+- Işınları yalnızca lazeri açık olan ölü oyuncular ve izleyiciler görür; canlı oyuncular ve GOTV hiçbir şekilde göremez
 - `css_lazer` ile oyuncu bazında aç/kapat; varsayılan durum config'ten ayarlanabilir
 - Takım bazlı ışın rengi (T / CT ayrı, config'ten `R G B` veya `#RRGGBB`)
 - Işın kalınlığı ve maksimum mesafe ayarlanabilir
@@ -62,7 +64,6 @@ csgo/addons/counterstrikesharp/configs/plugins/Lazer/Lazer.json
 
 ## Notlar
 
-- Işın kesme, oyun motorunun trace fonksiyonuna imza taramasıyla bağlanır (`CNavPhysicsInterface`). Oyun güncellemesi sonrası imza kırılırsa eklenti çalışmaya devam eder ancak ışınlar engelde kesilmek yerine maksimum mesafeye uzanır (konsola hata yazılır).
-- Lazeri açık ölü oyuncu yoksa hiç ışın oluşturulmaz ve trace çağrılmaz; performans maliyeti sıfıra iner.
+- Bir CS2 güncellemesinden sonra ışınlar duvarda kesilmek yerine sonuna kadar uzuyorsa, eklentinin güncellenmesi gerekiyor demektir; eklenti bu durumda da çalışmaya devam eder.
 - Oyuncu takım değiştirdiğinde ışın rengi bir sonraki canlanışta otomatik güncellenir.
 - Komut adı değişikliği (`lazer_cmd`) sunucu/eklenti yeniden başlatıldığında etkinleşir.

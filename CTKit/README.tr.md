@@ -1,10 +1,12 @@
 # CTKit
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 CT oyuncularının her spawn'da otomatik alacağı birincil ve ikincil silahı menüden seçmesini sağlar. Jailbreak gardiyan kiti sistemidir.
 
 ## Özellikler
 
-- CenterHtml menü ile birincil / ikincil silah seçimi
+- Ekrandaki menüden birincil / ikincil silah seçimi
 - Seçimler oyuncu bazında hatırlanır (oyuncu ayrılana kadar)
 - Seçim yapmayanlara config'teki varsayılan silahlar verilir
 - Spawn'da bıçak hariç tüm silahlar temizlenip kit verilir
@@ -50,7 +52,7 @@ Her silah kaydı iki alandan oluşur:
 
 | Alan | Açıklama |
 | --- | --- |
-| `weapon_name` | Oyun içi entity adı (`weapon_` ön ekiyle) |
+| `weapon_name` | Oyun içindeki silah adı (`weapon_` ön ekiyle) |
 | `display_name` | Menüde gösterilecek isim |
 
 ### Örnek Config

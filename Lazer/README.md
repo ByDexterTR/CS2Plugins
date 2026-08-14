@@ -6,9 +6,9 @@ Shows dead players and spectators where living players are currently aiming, as 
 
 ## Features
 
-- Every living player's view direction is drawn as a laser in real time (every tick)
-- Native ray-trace ends the beam at the first obstacle (it does not go through walls)
-- Beams are only sent to dead players/spectators who have the laser enabled (`CheckTransmit`); living players and GOTV never see them
+- Every living player's aim direction is drawn as a laser in real time
+- The beam stops at the first obstacle, it never goes through walls
+- Only dead players and spectators with the laser enabled can see the beams; living players and GOTV never see them
 - Toggle per player with `css_lazer`; the default state can be set from the config
 - Team based beam color (separate T / CT, `R G B` or `#RRGGBB` from the config)
 - Beam width and maximum distance are adjustable
@@ -64,7 +64,6 @@ csgo/addons/counterstrikesharp/configs/plugins/Lazer/Lazer.json
 
 ## Notes
 
-- Beam cutting is bound to the game engine's trace function via a signature scan (`CNavPhysicsInterface`). If a game update breaks the signature the plugin keeps working but the beams extend to the maximum distance instead of being cut at obstacles (an error is written to the console).
-- If no dead player has the laser enabled, no beams are created and trace is never called; the performance cost drops to zero.
+- If after a CS2 update the beams stretch all the way out instead of stopping at walls, the plugin needs an update; it keeps working in the meantime.
 - When a player changes team the beam color updates automatically on their next spawn.
 - Command name changes (`lazer_cmd`) take effect when the server/plugin is restarted.

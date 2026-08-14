@@ -10,7 +10,7 @@ Makes incoming damage hit armor first, like in Fortnite: as long as there is arm
 - The vanilla kevlar ratio (partial absorption) is disabled — armor absorbs damage 1 to 1
 - Can be restricted with a permission flag; works for everyone when the flag is empty
 - Fall damage does not come off armor by default (can be enabled in the config)
-- Intervenes **before** the damage is applied (`OnEntityTakeDamagePre`) — the death/health calculation is always correct
+- Steps in **before** the damage reaches the player, so the health and death calculation is always correct
 - Works on every damage type including bullets, HE, molotov and knife
 
 ## Requirements
@@ -48,7 +48,7 @@ csgo/addons/counterstrikesharp/configs/plugins/FortniteArmor/FortniteArmor.json
 
 ## Notes
 
-- The `player_hurt` event fires after the damage is applied, so this cannot be done there; if the player already died by the vanilla calculation it is too late by the time the event runs. That is why a pre-damage hook is used.
+- The plugin catches the damage before it is taken off the player's health. Otherwise the player would already have died by the normal calculation.
 - When the damage is fully absorbed by armor the engine sees 0 damage, so hit feedback (aim punch, the `player_hurt` event) may not happen.
 - The helmet is not tracked separately; once armor drops to 0 the vanilla behavior (unprotected) applies.
 - When `armor_flag` is set, players without the permission get the vanilla armor behavior. The `@css/root` flag is always treated as valid.

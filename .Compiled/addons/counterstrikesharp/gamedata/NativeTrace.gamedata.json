@@ -1,0 +1,32 @@
+{
+  "CNavPhysicsInterface_ClassName": {
+    "signatures": {
+      "windows": "CNavPhysicsInterface",
+      "linux": "CNavPhysicsInterface"
+    }
+  },
+  "CNavPhysicsInterface_TraceShape": {
+    "offsets": {
+      "windows": 3,
+      "linux": 5
+    }
+  },
+  "CTraceFilter_ClassName": {
+    "signatures": {
+      "windows": "CTraceFilter",
+      "linux": "CTraceFilter"
+    }
+  },
+  "CTraceFilter_Vtable": {
+    "signatures": {
+      "windows": "4C 8D 2D ? ? ? ? 24 C9 89 5D",
+      "linux": "48 8D 0D ? ? ? ? 66 89 95"
+    }
+  },
+  "CTraceFilter_Vtable_Displacement": {
+    "offsets": {
+      "windows": 3,
+      "linux": 3
+    }
+  }
+}

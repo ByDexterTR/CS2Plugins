@@ -1,13 +1,15 @@
 # BhopDoorFix
 
-Bhop / KZ haritalarındaki `func_door` kapılarının hareket etmesini engeller. Kapıların oyuncuyu fırlatması veya hareket ederek exploit oluşturması önlenir.
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
+Bhop / KZ haritalarındaki kapıların hareket etmesini engeller. Böylece kapılar oyuncuyu fırlatamaz ve hareket ederek haritada istismar açığı oluşturamaz.
 
 ## Özellikler
 
-- Haritadaki tüm `func_door` entity'lerini dondurur (`Speed = 0` + `Lock` input)
-- Yeni spawn olan kapıları da otomatik yakalar (`OnEntitySpawned`)
+- Haritadaki tüm kapıları yerinde dondurur ve kilitler
+- Harita sırasında sonradan ortaya çıkan kapıları da otomatik yakalar
 - Her raunt başında tüm kapılar yeniden dondurulur
-- Hot reload destekli — eklenti yeniden yüklendiğinde mevcut kapılar anında dondurulur
+- Eklentiyi harita ortasında yeniden yüklersen haritadaki kapılar anında dondurulur
 - Config gerektirmez
 
 ## Gereksinimler

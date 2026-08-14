@@ -69,5 +69,5 @@ csgo/addons/counterstrikesharp/configs/plugins/Redbull/Redbull.json
 
 ## Notes
 
-- If another plugin lowers the speed while the effect is running, Redbull reapplies it (`VelocityModifier` is checked every tick).
+- If another plugin lowers the speed while the effect is running, Redbull reapplies it straight away.
 - The effect only works on living players; if the player dies the effect ends by itself.

@@ -1,5 +1,7 @@
 # GoBhop
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Ölü T oyuncularını haritada belirlenen gizli bhop noktasına ışınlar. Oyuncu gerçekte yaşar ama TAB'da ölü gözükür, kimse onu izleyemez ve göremez; hasar almaz ve silahsız doğar. T takımında son kişi kalınca GoBhop'takiler otomatik öldürülür ve GoBhop o raunt için kapanır. CSGO'daki [csgo_GoBhop](https://github.com/ByDexterTR/csgo_GoBhop) eklentisinin CS2 uyarlamasıdır.
 
 ## Özellikler
@@ -95,7 +97,7 @@ csgo/addons/counterstrikesharp/plugins/GoBhop/positions.json
 
 ## Notlar
 
-- Skorbordda ölü gösterme `m_bPawnIsAlive` alanıyla yapılır; oyun değeri geri çevirirse her tick yeniden uygulanır.
+- Oyuncu TAB'da sürekli ölü görünür; oyun bunu geri almaya çalışsa bile eklenti tekrar uygular.
 - Raunt sonu, eklenti kapanışı ve `css_offbhop` GoBhop'taki herkesi güvenle çıkarır; bu ölümler kill feed'de gösterilmez.
 - Kapalıyken (`css_offbhop` veya son T) başka bir eklenti GoBhop'taki oyuncuyu canlandırırsa spawn anında yakalanıp çıkarılır.
 - Komut adı değişiklikleri sunucu/eklenti yeniden başlatıldığında etkinleşir.

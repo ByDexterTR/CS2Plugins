@@ -1,12 +1,14 @@
 # ScreenText
 
-Oyuncunun ekranında sabit duran, config'ten tamamen özelleştirilebilir yazılar gösterir (`point_worldtext`). Yazılar oyuncunun pawn'ına bağlanır (hareket client prediction ile taşınır, koşarken sürüklenmez) ve her tick bakış açısına hizalanır; `CheckTransmit` ile yalnızca sahibine gönderilir, diğer oyuncular, izleyiciler ve GOTV hiçbir şekilde göremez.
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
+Oyuncunun ekranında sabit duran, config'ten tamamen özelleştirilebilir yazılar gösterir. Yazı koşarken ve zıplarken ekranda sabit kalır, oyuncuyla birlikte döner. Her oyuncu yalnızca kendi yazısını görür; diğer oyuncular, izleyiciler ve GOTV hiçbir şekilde göremez.
 
 ## Özellikler
 
 - Sınırsız sayıda yazı; her biri için ekran konumu (X/Y), boyut, renk, hizalama ve arka plan ayrı ayrı ayarlanabilir
-- Pawn'a bağlandığı için koşarken/zıplarken yazı ekranda sabit durur; bakış dönüşü her tick hizalanır
-- Yazılar yalnızca sahibinin ekranında görünür (`CheckTransmit`); dışarıdan bakan kimse göremez
+- Koşarken ve zıplarken yazı ekranda sabit durur, sürüklenmez
+- Yazılar yalnızca sahibinin ekranında görünür; dışarıdan bakan kimse göremez
 - `css_hidetext` ile oyuncu bazında aç/kapat; tercih JSON'a kaydedilir, yeniden bağlanınca hatırlanır
 - `\n` ile çok satırlı yazı desteği
 - Font, ekrana uzaklık ve piksel ölçeği config'ten ayarlanabilir
@@ -79,7 +81,7 @@ csgo/addons/counterstrikesharp/configs/plugins/ScreenText/ScreenText.json
       "background": false
     },
     {
-      "text": "bydexter.com",
+      "text": "bydexter.net",
       "x": 6.4,
       "y": 2.3,
       "size": 32,
@@ -93,7 +95,7 @@ csgo/addons/counterstrikesharp/configs/plugins/ScreenText/ScreenText.json
 
 ## Koordinat Sistemi
 
-Ekran merkezi `(0, 0)` kabul edilir; `x` sağa doğru, `y` yukarı doğru artar. Değerler `screentext_forward` uzaklığındaki düzleme yerleştirilir: varsayılan `7` uzaklıkta 90° FOV ile yatayda yaklaşık `±7`, dikeyde (16:9) yaklaşık `±3.9` birim görünür. Köşeye yaslarken kenar taşmasını `justify` ile çözün: sol kenar için `left`, sağ kenar için `right`.
+Ekran merkezi `(0, 0)` kabul edilir; `x` sağa doğru, `y` yukarı doğru artar. Varsayılan ayarlarda yatayda yaklaşık `-7` ile `+7`, dikeyde yaklaşık `-3.9` ile `+3.9` arası görünür. Köşeye yaslarken yazının kenardan taşmasını `justify` ile çözün: sol kenar için `left`, sağ kenar için `right`.
 
 ## Notlar
 
@@ -101,5 +103,5 @@ Ekran merkezi `(0, 0)` kabul edilir; `x` sağa doğru, `y` yukarı doğru artar.
 - `css_hidetext` tercihi `plugins/ScreenText/ScreenText.json` dosyasına SteamID olarak kaydedilir; `screentext_default_on: false` iken açma tercihi oturumluk kalır.
 - Yazı listesi değişiklikleri eklenti yeniden yüklenince (`css_plugins reload ScreenText`) etkinleşir.
 - Yazı görünürlüğü izleyicilere de kapalıdır: bir oyuncuyu birinci şahıs izleyen kişi o oyuncunun yazılarını görmez.
-- Çok hızlı bakış savurmalarında (flick) yazı bir anlığına kayıp toparlanabilir; bu, sunucu tick + istemci interpolasyonundan kaynaklanır ve normaldir.
+- Çok hızlı bakış savurmalarında yazı bir anlığına kayıp hemen toparlanabilir; bu normaldir.
 - Üçüncü şahıs kameradayken (ör. Thirdperson eklentisi) yazı karakterin göz hizasında havada görünür.

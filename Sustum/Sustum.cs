@@ -45,7 +45,7 @@ public class SustumConfig : BasePluginConfig
 public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 {
     public override string ModuleName => "Sustum";
-    public override string ModuleVersion => "1.0.7";
+    public override string ModuleVersion => "1.0.8";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -80,6 +80,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
         AddCommandListener("say_team", OnPlayerChat);
         RegisterEventHandler<EventWeaponFire>(OnWeaponFire, HookMode.Post);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        HudGuard.Install(this);
         RegisterListener<OnTick>(OnTickHud);
 
         foreach (var name in Util.Split(Config.CtSustumCommands))
@@ -190,11 +191,12 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
     private void OnTickHud()
     {
-        if (_showHud)
+        if (_showHud && Util.IsHudFrame())
         {
             foreach (var player in Utilities.GetPlayers())
             {
-                player.PrintToCenterHtml(_hudHtml);
+                if (!HudGuard.Blocked(player))
+                    player.PrintToCenterHtml(_hudHtml);
             }
         }
     }

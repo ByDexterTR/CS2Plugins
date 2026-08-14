@@ -1,5 +1,7 @@
 # Redbull
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Komut kullanan oyuncuya kısa süreli hız artışı verir ("Redbull kanatlandırır"). Süre, hız, takım kısıtı, raunt limiti ve bekleme süresi config'ten yönetilir.
 
 ## Özellikler
@@ -67,5 +69,5 @@ csgo/addons/counterstrikesharp/configs/plugins/Redbull/Redbull.json
 
 ## Notlar
 
-- Efekt sırasında başka bir eklenti hızı düşürürse Redbull hızı tekrar uygular (`VelocityModifier` her tick kontrol edilir).
+- Efekt sürerken başka bir eklenti hızı düşürürse Redbull hızı anında tekrar uygular.
 - Efekt yalnızca hayattaki oyuncularda çalışır; oyuncu ölürse efekt kendiliğinden sonlanır.

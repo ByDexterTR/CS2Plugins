@@ -9,6 +9,7 @@
   "ads.imported": "Imported into MySQL. Prop: {0} | Event: {1} | Ad: {2}",
   "ads.exported": "Exported from MySQL into the files. Prop: {0} | Event: {1} | Ad: {2}. The old files were kept as .backup.",
   "ads.sql_error": "MySQL operation failed: {0}",
+  "ads.file_error": "Could not read file: {0}",
   "ads.save_error": "Save failed: {0}",
   "ads.added": "Ad added: {0}",
   "ads.removed": "Ad removed.",

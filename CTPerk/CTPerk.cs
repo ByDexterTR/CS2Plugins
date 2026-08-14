@@ -78,7 +78,7 @@ public enum PerkType
 public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 {
   public override string ModuleName => "CTPerk";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

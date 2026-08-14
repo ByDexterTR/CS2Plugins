@@ -1,10 +1,12 @@
 # CTRev
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Ölen CT oyuncularını menüden veya otomatik olarak canlandırır (respawn). Jailbreak'te gardiyan dengesini korumak için raunt başına sınırlı hak sistemiyle çalışır.
 
 ## Özellikler
 
-- Ölen CT'leri listeleyen CenterHtml menü — canlandırılabilir oyuncular yeşil, bekleme süresindekiler gri gösterilir
+- Ölen CT'leri listeleyen ekran menüsü — canlandırılabilir oyuncular yeşil, bekleme süresindekiler gri gösterilir
 - Ölümden sonra **bekleme süresi (cooldown)** — süre dolmadan canlandırma yapılamaz
 - Raunt başına **sınırlı canlandırma hakkı**; her raunt başında otomatik yenilenir
 - **Otomatik canlandırma modu** — açıldığında bekleme süresi dolan CT'ler hak bitene kadar kendiliğinden doğar

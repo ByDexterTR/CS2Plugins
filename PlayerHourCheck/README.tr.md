@@ -1,12 +1,14 @@
 # PlayerHourCheck
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Sunucuya bağlanan oyuncuların CS2 oynama saatini kontrol eder; yetersiz saati olan veya profili gizli oyunculara kademeli ceza (kick/ban) uygular.
 
 ## Özellikler
 
 - 3 aşamalı oynama saati sorgusu: **Steam Web API** → **DecAPI** → **ByDexter API** (ilk başarılı sonuç kullanılır)
 - **JSON (varsayılan) veya MySQL** depolama; MySQL bağlantısı başarısız olursa JSON'a düşer
-- Sonuçlar veritabanında önbelleğe alınır — eksik saat dolmadan tekrar API sorgusu yapılmaz
+- Sonuçlar database'de önbelleğe alınır — eksik saat dolmadan tekrar API sorgusu yapılmaz
 - Profili gizli oyunculara yapılandırılabilir sayıda **uyarı**, ardından ceza
 - İhlal sayısına göre **kademeli ceza sistemi** (ör. 1. ihlal kick, 3. ihlal 1 saat ban, 5. ihlal 1 gün ban)
 - Yetki bayrağı veya SteamID ile muafiyet listesi
@@ -71,11 +73,11 @@ csgo/addons/counterstrikesharp/configs/plugins/PlayerHourCheck/PlayerHourCheck.j
 ```
 
 - `provider`: `"json"` (varsayılan, eklenti klasöründe `players.json`) veya `"mysql"`
-- MySQL seçiliyse veritabanı ve tablo otomatik oluşturulur.
+- MySQL seçiliyse database ve tablo otomatik oluşturulur.
 
 ### `phc_penalty`
 
-Anahtar = ihlal sayısı, değer = ceza. `type`: `"kick"` veya `"ban"`, `time`: ban süresi (dakika), `reason` içinde `{PlayerPlaytime}` ve `{RequiredPlaytime}` yer tutucuları kullanılabilir:
+Anahtar = ihlal sayısı, değer = ceza. `type`: `"kick"` veya `"ban"`, `time`: ban süresi (dakika), `reason` içinde `{PlayerPlaytime}` ve `{RequiredPlaytime}` placeholder'ları kullanılabilir:
 
 ```json
 "phc_penalty": {
@@ -90,4 +92,3 @@ Anahtar = ihlal sayısı, değer = ceza. `type`: `"kick"` veya `"ban"`, `time`: 
 ## Notlar
 
 - Cezalar `css_kick` / `css_ban` konsol komutlarıyla uygulanır; bu komutlar sunucuda tanımlı değilse ceza gerçekleşmez.
-- Tüm veritabanı işlemleri arka planda yürütülür, oyun akışı bloklanmaz.

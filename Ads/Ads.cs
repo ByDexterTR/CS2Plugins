@@ -50,6 +50,9 @@ public class AdsConfig
   [JsonPropertyName("ads_exportsql_cmd")]
   public string ExportSqlCommands { get; set; } = "css_adsexportsql";
 
+  [JsonPropertyName("ads_hud_tick")]
+  public int HudTick { get; set; } = 4;
+
   [JsonPropertyName("ads_font")]
   public string Font { get; set; } = "Arial Bold";
 
@@ -66,7 +69,7 @@ public class AdsConfig
 public partial class Ads : BasePlugin
 {
   public override string ModuleName => "Ads";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -122,6 +125,8 @@ public partial class Ads : BasePlugin
       () => Localizer["menu.scroll"],
       () => Localizer["menu.select"],
       () => Localizer["menu.exit"]);
+
+    HudGuard.Install(this);
 
     if (Config.Storage.Equals("mysql", StringComparison.OrdinalIgnoreCase))
     {

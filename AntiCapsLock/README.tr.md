@@ -1,5 +1,7 @@
 # AntiCapsLock
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Sohbette aşırı büyük harf kullanımını engeller; mesajın büyük harf oranı eşiği aşarsa mesaj otomatik küçültülür veya silinir.
 
 ## Özellikler

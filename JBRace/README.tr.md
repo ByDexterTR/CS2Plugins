@@ -1,10 +1,12 @@
 # JBRace
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Jailbreak sunucuları için yarış etkinliği. Warden başlangıç ve bitiş noktası belirler, T oyuncuları bitişe ilk ulaşan olmak için yarışır.
 
 ## Özellikler
 
-- CenterHtml menü ile tam yarış yönetimi: başlat, iptal, başlangıç/bitiş noktası, kazanan sayısı, işaretçileri temizle
+- Ekran menüsüyle tam yarış yönetimi: başlat, iptal, başlangıç/bitiş noktası, kazanan sayısı, işaretçileri temizle
 - Bitiş noktasında dönen **coin modeli** ve gökyüzüne uzanan **yeşil ışın** işaretçisi
 - 3 saniyelik HUD geri sayımı; yarışçılar başlangıç noktasına ışınlanıp dondurulur
 - Yarışan T'ler kırmızı, bitişe ulaşanlar yeşil renge boyanır
@@ -52,4 +54,3 @@ Jailbreak sunucuları için yarış etkinliği. Warden başlangıç ve bitiş no
 ## Notlar
 
 - Yalnızca **hayattaki T oyuncuları** yarışa katılır.
-- Coin modeli (`models/coop/challenge_coin.vmdl`) sunucu tarafından otomatik precache edilir.

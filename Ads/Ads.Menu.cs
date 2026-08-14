@@ -18,8 +18,6 @@ public partial class Ads
   private readonly PendingInput[] _awaiting = new PendingInput[MaxSlots];
   private readonly int[] _axis = new int[MaxSlots];
 
-  private const string BackColor = "#FF8077";
-
   private void ShowMainMenu(CCSPlayerController player)
   {
     var items = new List<WasdItem>
@@ -144,14 +142,14 @@ public partial class Ads
       BackItem(ShowMainMenu),
       Action("ads.menu_reload_props", p =>
       {
-        ReloadProps();
-        Reply(p, Localizer["ads.reloaded_props", _data.Props.Count]);
+        if (ReloadProps(p))
+          Reply(p, Localizer["ads.reloaded_props", _data.Props.Count]);
       }, ShowManageMenu),
       Action("ads.menu_reload_ads", p =>
       {
-        ReloadAds();
-        Reply(p, Localizer["ads.reloaded_ads",
-          _data.ScreenTexts.Count, _data.HudSays.Count, _data.ChatSays.Count, _data.Events.Count]);
+        if (ReloadAds(p))
+          Reply(p, Localizer["ads.reloaded_ads",
+            _data.ScreenTexts.Count, _data.HudSays.Count, _data.ChatSays.Count, _data.Events.Count]);
       }, ShowManageMenu),
       Action("ads.menu_reload_settings", ReloadSettings, ShowManageMenu)
     };
@@ -159,12 +157,8 @@ public partial class Ads
     _menus.Open(player, Localizer["ads.menu_manage"], items);
   }
 
-  private WasdItem BackItem(Action<CCSPlayerController> back) => new()
-  {
-    Text = Localizer["ads.menu_back"],
-    Color = BackColor,
-    OnSelect = p => back(p)
-  };
+  private WasdItem BackItem(Action<CCSPlayerController> back) =>
+    WasdItem.Back(Localizer["ads.menu_back"], p => back(p));
 
   private WasdItem Action(string text, Action<CCSPlayerController> run, Action<CCSPlayerController>? reopen) => new()
   {

@@ -12,8 +12,7 @@ Forwards server events to Discord webhooks and optionally keeps a daily file log
 - **Detailed round summary** — winner, end reason, **MVP**, player count
 - **Daily file log** — when `log_to_file` is enabled every active category is also written to `logs/DiscordLogger-YYYY-MM-DD.log`
 - **No timestamps/durations in Discord messages** — since Discord already shows the message time no time prefix is added; playtime and round duration are only written to the file log
-- **Zero wasted overhead** — event handlers are never registered for a category whose webhook is empty
-- Messages are collected in a 3 second buffer and sent in one go (rate-limit friendly, respects the 2000 character limit)
+- Messages are sent to Discord in small groups every few seconds
 - **Blacklist** for commands and chat; warmup rounds are not logged
 - Every message template can be customized from the `lang/` files (including emoji)
 
@@ -50,7 +49,7 @@ After a config change `css_plugins reload DiscordLogger` is enough.
 | `webhook_bomb` | `bomb_planted`, `bomb_defused`, `bomb_exploded`, `bomb_dropped`, `bomb_pickup` |
 | `webhook_activity` | `player_ping`, `weapon_zoom`, `item_purchase` |
 
-> A category with an empty webhook (and file logging off) is **completely disabled** — its event handlers are not registered and nothing is processed.
+> A category with an empty webhook (and file logging off) is **completely disabled**.
 
 ## Configuration
 
@@ -114,4 +113,3 @@ In the file log the links are flattened into `Name (profile-url)` and duration i
 - Fake `player_blind` events with a duration of 0 are not logged.
 - Players affected by a flash land in the `webhook_grenade` channel through the `player_blind` event.
 - If the round end reason hits an unknown code, the game's raw notice (a trimmed `#SFUI_Notice_...`) is shown.
-- The file log is written in the background on the same 3 second cycle as the Discord send; it does not block the game loop.

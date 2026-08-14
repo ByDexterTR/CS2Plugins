@@ -1,11 +1,13 @@
 # 1v1Slay
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Rauntta her iki takımdan da yalnızca **1'er canlı oyuncu** kaldığında otomatik geri sayım başlatan ve süre dolduğunda kalan oyuncuları öldürür. Raundun 1v1 durumunda kilitlenmesini engeller.
 
 ## Özellikler
 
 - 1 T vs 1 CT durumunu otomatik algılar ve geri sayımı başlatır
-- Geri sayım sohbet mesajı ve/veya CenterHtml HUD üzerinde gösterilir
+- Geri sayım sohbette ve/veya ekranın ortasında gösterilir
 - Sayaç; raunt başında, raunt sonunda veya 1v1 durumu bozulduğunda otomatik iptal edilir
 - Minimum oyuncu sayısı şartı (varsayılan: 3) — az kişiyle sayaç devreye girmez
 - Süre dolduğunda hayatta kalan oyuncular slay edilir
@@ -43,7 +45,7 @@ csgo/addons/counterstrikesharp/configs/plugins/1v1Slay/1v1Slay.json
 | `min_players` | int | `3` | Sayaç için gereken minimum oyuncu sayısı (T + CT + izleyici) |
 | `countdown_time` | int | `30` | Geri sayım süresi (saniye) |
 | `enable_chat_announce` | bool | `true` | Sohbet duyurularını aç/kapat |
-| `enable_hud_announce` | bool | `true` | HUD (CenterHtml) sayacını aç/kapat |
+| `enable_hud_announce` | bool | `true` | Ekrandaki sayacı aç/kapat |
 
 ### Örnek Config
 

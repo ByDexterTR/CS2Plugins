@@ -1,14 +1,20 @@
 # TABServerName
 
-Harita başında `CNetworkGameServer::m_MapName`'i (motorun kendi `tier0` allocator'ı üzerinden, `CUtlString::Set` ile) config'teki metinle değiştirerek TAB skor tablosundaki `{mod} | {harita}` etiketinin harita kısmını özelleştirir.
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
+TAB skor tablosunun üstünde yazan `{mod} | {harita}` etiketinin harita kısmını, config'te yazdığınız metinle değiştirir. Böylece oyuncular TAB'a bastığında harita adının yanında sunucu adınızı, IP'nizi veya istediğiniz herhangi bir yazıyı görürler.
+
+```
+Normalde:   Rekabetçi | Mirage
+Bu eklentiyle:   Rekabetçi | de_mirage | bydexter.net | 5v5 RETAKE
+```
 
 ## Özellikler
 
-- Her `OnMapStart`'ta otomatik uygulanır, oyuncular bağlanmadan önce çalışır (client bu değeri sadece bağlantı anında bir kez okur)
-- `{MAP}` placeholder'ı config metninde gerçek harita adıyla değiştirilir
-- Mod ismine (Rekabetçi/Basit Eğlence/vb.) hiç dokunmaz, native olarak doğru kalır
-- Motorun kendi bellek yöneticisini kullanır (`tier0` export), canlı harita değişiminde çökmez
-- Tüm offset ve export isimleri koda gömülü değil, `gamedata` dosyasında tutulur (CounterStrikeSharp'ın kendi native gamedata sistemi); CS2/CounterStrikeSharp güncellemesi bu değerleri kaydırırsa yeni eklenti sürümü beklemeden dosya düzeltilebilir
+- Her harita başında otomatik uygulanır
+- Metin içinde harita adı, sunucu adı, IP ve port placeholder'ları kullanılabilir
+- Mod ismine (Rekabetçi / Basit Eğlence / vb.) dokunmaz, o kısım olduğu gibi kalır
+- Canlı harita değişimlerinde sunucuyu etkilemez
 
 ## Gereksinimler
 
@@ -20,11 +26,13 @@ Harita başında `CNetworkGameServer::m_MapName`'i (motorun kendi `tier0` alloca
    ```
    csgo/addons/counterstrikesharp/plugins/TABServerName/
    ```
-2. `gamedata/TABServerName.gamedata.json` dosyasını, CounterStrikeSharp'ın paylaşılan gamedata klasörüne kopyalayın:
+2. `gamedata/TABServerName.gamedata.json` dosyasını, CounterStrikeSharp'ın ortak gamedata klasörüne kopyalayın:
    ```
    csgo/addons/counterstrikesharp/gamedata/TABServerName.gamedata.json
    ```
 3. Sunucuyu yeniden başlatın veya `css_plugins load TABServerName` komutunu çalıştırın.
+
+> İkinci adım zorunludur. Bu dosya eklenti klasörüne değil, ortak `gamedata` klasörüne konulmalıdır.
 
 ## Yapılandırma
 
@@ -34,16 +42,16 @@ csgo/addons/counterstrikesharp/configs/plugins/TABServerName/TABServerName.json
 
 | Ayar | Tip | Varsayılan | Açıklama |
 | --- | --- | --- | --- |
-| `servername_text` | string | `"{MAP} \| github.com/ByDexterTR/CS2Plugins"` | TAB'da harita kısmında görünecek metin; placeholder'lar gerçek değerle değiştirilir |
+| `servername_text` | string | `"{MAP} \| github.com/ByDexterTR/CS2Plugins"` | TAB'da harita kısmında görünecek metin |
 
 ### Placeholder'lar
 
-| Placeholder | Karşılık |
+| Placeholder | Karşılığı |
 | --- | --- |
 | `{MAP}` | Harita ismi |
-| `{HOSTNAME}` | `hostname` convar'ı (sunucu ismi) |
-| `{IP}` | `ip` convar'ı (sunucu ip adresi) |
-| `{PORT}` | `hostport` convar'ı (sunucu port adresi) |
+| `{HOSTNAME}` | Sunucu ismi (`hostname`) |
+| `{IP}` | Sunucu IP adresi |
+| `{PORT}` | Sunucu portu |
 
 ### Örnek Config
 
@@ -55,10 +63,11 @@ csgo/addons/counterstrikesharp/configs/plugins/TABServerName/TABServerName.json
 
 ## Notlar
 
-- `gamedata/TABServerName.gamedata.json` içindeki `offsets` (`INetworkServerService_GetIGameServer`, `CNetworkGameServer_MapName`) ve `signatures` (`CUtlString_Set`, tier0'ın gerçek export ismi) değerleri ters mühendislikle bulunmuştur; bir CS2/CounterStrikeSharp/tier0 güncellemesi bunları bozarsa eklenti sessizce devre dışı kalır (konsola `[TABServerName] DEVRE DISI: ...` yazar), sunucuyu çökertmez.
-- Değişiklik sadece TAB skor tablosunun üst etiketinde görünür; Steam sunucu listesi/A2S sorgusuna yansımaz (bu, ayrı bir veri yoludur).
+- Değişiklik yalnızca TAB skor tablosunda görünür. Steam sunucu listesindeki adınız veya sunucu sorgularına verilen cevaplar etkilenmez.
+- Bir CS2 veya CounterStrikeSharp güncellemesinden sonra yazı değişmiyorsa, `gamedata` dosyasının güncellenmesi gerekiyor demektir. Eklenti bu durumda kendini kapatır ve sunucu konsoluna `[TABServerName] DEVRE DISI: ...` satırını yazar; sunucunuz çökmez.
 
 ## Bilinen Sorunlar
 
-- `CNetworkGameServer::m_MapName` tek bir alan; sadece client TAB'ının okuduğu yer değil, CounterStrikeSharp'ın kendi `Server.MapName` / `NativeAPI.GetMapName()` çağrısı da (ve buna dayanan başka eklentiler) aynı alanı okuyor olabilir. TABServerName bu alanı kendi metniyle (`{MAP} | ...`) değiştirdiği için, harita adını dosya/klasör ismi gibi bir yerde kullanan başka bir eklenti artık gerçek harita adı yerine bu spoof edilmiş metni alır.
-- Geçici çözüm: `servername_text` değerinde dosya sistemi için sorunlu karakterlerden (`/`, `\`, `:`, `|`) kaçının VE aynı sunucuda harita adını dosya/API için okuyan başka eklentiler varsa bunları test edin. Kalıcı çözüm henüz yok; bu, `CNetworkGameServer::m_MapName`'i doğrudan yazan yöntemin doğasında olan bir sınırlama.
+- Bu eklenti harita adının yazıldığı yeri değiştirdiği için, harita adını kullanan **başka eklentiler de** bu yeni metni okur. Örneğin harita başına dosya oluşturan bir eklenti, dosya adı olarak gerçek harita adı yerine sizin yazdığınız metni kullanmaya çalışır ve hata verebilir.
+- Bu yüzden `servername_text` içinde `/`, `\`, `:` ve `|` gibi dosya adlarında sorun çıkaran karakterlerden kaçının. Sunucunuzda harita adını kullanan başka eklentiler varsa (istatistik, spawn kaydı, harita oylaması gibi) bu eklentiyi açtıktan sonra onları mutlaka test edin.
+- Bunun kalıcı bir çözümü yok; kullandığımız yöntemin doğasında olan bir sınırlama.

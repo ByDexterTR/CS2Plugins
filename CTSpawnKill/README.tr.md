@@ -1,5 +1,7 @@
 # CTSpawnKill
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 CT oyuncularına spawn olduktan sonra kısa süreli hasar koruması verir. Jailbreak'te raunt başı gardiyan avlamayı (spawn kill) engeller.
 
 ## Özellikler
@@ -44,6 +46,6 @@ csgo/addons/counterstrikesharp/configs/plugins/CTSpawnKill/CTSpawnKill.json
 ## Notlar
 
 - Koruma yalnızca **CT takımı** için geçerlidir.
-- Hasar engelleme `OnEntityTakeDamagePre` üzerinden yapılır; her türlü hasar kaynağı (silah, bıçak, patlama) sıfırlanır.
+- Her türlü hasar engellenir: silah, bıçak, patlama, düşme.
 - Flag bazlı koruma, T desteği ve renk geçişli kapsamlı sürüm için [SpawnkillProtection](../SpawnkillProtection) eklentisine bakın; iki eklentiyi aynı anda kullanmayın.
 

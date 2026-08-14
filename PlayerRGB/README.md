@@ -6,10 +6,9 @@ Colors the player model with a smooth RGB (rainbow) cycle. Toggled with a comman
 
 ## Features
 
-- The model color transitions smoothly through red → green → blue every tick
+- The model color cycles smoothly through red → green → blue
 - The preference is stored in the `PlayerRGB.json` file — it turns back on automatically when the player rejoins the server
 - The model color returns to normal instantly when turned off
-- Tick cost is near zero while no player has RGB active
 - Turkish / English language support (`lang/`)
 
 ## Requirements

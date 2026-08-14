@@ -15,7 +15,7 @@ The Jailbreak "sustum" (typing) event: the first player to type the word shown o
 
 ## Features
 
-- After a 3 second countdown a phrase made of 1-4 random words appears on screen (HUD/CenterHtml)
+- After a 3 second countdown a phrase made of 1-4 random words appears in the middle of the screen
 - The word pool is read from the `sustum.json` file (the repo ships with ~1000+ Turkish words)
 - Word comparison is case insensitive
 - Only one event runs at a time; the winner/loser is announced on the HUD and in chat

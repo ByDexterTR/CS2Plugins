@@ -8,6 +8,8 @@ namespace VIPCore;
 public partial class VIPCore
 {
     private const int WasdPerPage = 5;
+    private const int WasdHudTickRate = 4;
+    private const string WasdTag = "<VIPCore/>";
 
     private readonly Dictionary<int, WasdSession> _wasd = new();
     private readonly Dictionary<int, Dictionary<string, int>> _wasdMemory = new();
@@ -21,6 +23,7 @@ public partial class VIPCore
         public int Selected;
         public PlayerButtons OldButtons;
         public string Html = "";
+        public bool Dirty = true;
     }
 
     private void OpenWasdMenu(CCSPlayerController player, string title,
@@ -77,7 +80,7 @@ public partial class VIPCore
 
             if (!TryGetButtons(player, out var buttons))
             {
-                player.PrintToCenterHtml(session.Html);
+                DrawWasd(session, player);
                 continue;
             }
 
@@ -105,8 +108,17 @@ public partial class VIPCore
                 continue;
             }
 
-            player.PrintToCenterHtml(session.Html);
+            DrawWasd(session, player);
         }
+    }
+
+    private static void DrawWasd(WasdSession session, CCSPlayerController player)
+    {
+        if (!session.Dirty && Server.TickCount % WasdHudTickRate != 0)
+            return;
+
+        session.Dirty = false;
+        player.PrintToCenterHtml(session.Html);
     }
 
     private void WasdScroll(WasdSession session, int direction)
@@ -121,6 +133,7 @@ public partial class VIPCore
 
         session.Selected = next;
         session.Html = BuildWasdHtml(session);
+        session.Dirty = true;
     }
 
     private void WasdPage(WasdSession session, int direction)
@@ -139,6 +152,7 @@ public partial class VIPCore
 
         session.Selected = Math.Min(page * WasdPerPage, count - 1);
         session.Html = BuildWasdHtml(session);
+        session.Dirty = true;
     }
 
     private void WasdSelect(WasdSession session)
@@ -155,7 +169,7 @@ public partial class VIPCore
         _wasdMemory.Remove(session.Player.Slot);
 
         if (clear && session.Player.IsValid)
-            session.Player.PrintToCenterHtml(" ");
+            session.Player.PrintToCenterHtml(WasdTag + " ");
     }
 
     private string BuildWasdHtml(WasdSession session)
@@ -167,6 +181,7 @@ public partial class VIPCore
         int end = Math.Min(offset + WasdPerPage, count);
 
         var builder = new StringBuilder();
+        builder.Append(WasdTag);
         builder.Append($"<font color='#ffb300'>{session.Title}</font>");
         if (totalPages > 1)
             builder.Append($" ({page + 1}/{totalPages})");

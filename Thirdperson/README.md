@@ -10,7 +10,7 @@ Standalone plugin that puts the player's camera into a third person (over the sh
 - Permission (flag) check — leave it empty and everyone can use it
 - Adjustable camera distance
 - **Wall blocking (`thirdperson_blockwall`)** — while enabled the camera cannot pass behind walls; native ray-trace pulls it toward the player at the point it hits the wall (prevents seeing through walls / wallhack abuse)
-- The camera follows the player's view every tick (invisible `prop_dynamic` + `ViewEntity`)
+- The camera follows the player's view with no lag
 - Every third person camera is force-disabled **at round start and round end**
 - The camera safely returns to its old state on death, disconnect and plugin unload
 - Turkish / English language support (`lang/`)
@@ -60,7 +60,7 @@ csgo/addons/counterstrikesharp/configs/plugins/Thirdperson/Thirdperson.json
 
 ## Notes
 
-- Wall blocking is bound to the game engine's trace function via a signature scan (`CNavPhysicsInterface`). If a game update breaks the signature the plugin keeps working but the camera wall restriction is disabled (an error is written to the console).
+- If after a CS2 update the camera starts passing behind walls, the plugin needs an update; it keeps working in the meantime.
 - While wall blocking is on, the camera stops at the first obstacle between the eye and the target point (leaving a 16 unit margin); if the obstacle is very close the camera is pulled to eye level.
 - Command name changes (`thirdperson_cmd`) take effect when the server/plugin is restarted.
 - If you want to give third person to your VIP members on a per-group basis, use the `Thirdperson` module in [VIPCore](../VIPCore); do not use both systems on the same player at the same time.

@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.1.4";
+    public override string ModuleVersion => "1.1.5";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -130,6 +130,7 @@ public partial class VIPCore : BasePlugin
     public override void Load(bool hotReload)
     {
         Current = this;
+        VipHudGuard.Install(this);
         RollRoundColors();
         LoadConfig();
         DiscoverModules();

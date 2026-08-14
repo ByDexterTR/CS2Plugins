@@ -1,12 +1,13 @@
 # AntiTeamFlash
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Takım arkadaşlarının attığı flash bombalarının kör etme etkisini iptal eder. Düşman flash'ları normal şekilde çalışmaya devam eder.
 
 ## Özellikler
 
 - Takım arkadaşından gelen flash etkisini anında sıfırlar
 - Düşmandan gelen ve hâlâ süren "meşru" körlük varsa onu geri yükler (takım flash'ı meşru körlüğü silemez)
-- Slot bazlı hafif durum takibi — tick döngüsü yok, yalnızca event tabanlı
 - Config gerektirmez
 
 ## Gereksinimler

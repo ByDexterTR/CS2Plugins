@@ -6,7 +6,7 @@ Clears unowned weapons on the ground with a single command. Used in Jailbreak to
 
 ## Features
 
-- Removes every unowned (`weapon_*`) entity on the map
+- Removes every unowned weapon lying on the map
 - Does not touch weapons held or carried by players
 - The number of removed weapons is reported to the player who used the command
 - Turkish / English language support (`lang/`)

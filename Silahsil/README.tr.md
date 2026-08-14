@@ -1,10 +1,12 @@
 # Silahsil
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Yerdeki sahipsiz silahları tek komutla temizler. Jailbreak'te hücre açılışı öncesi silah temizliği için kullanılır.
 
 ## Özellikler
 
-- Haritadaki tüm sahipsiz (`weapon_*`) entity'lerini kaldırır
+- Haritada yerde duran, sahibi olmayan tüm silahları kaldırır
 - Oyuncuların elindeki/üzerindeki silahlara dokunmaz
 - Kaldırılan silah sayısı komutu kullanan oyuncuya bildirilir
 - Türkçe / İngilizce dil desteği (`lang/`)

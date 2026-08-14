@@ -1,10 +1,12 @@
 # BringGoto
 
-Yetkililerin oyuncuları nişangâhındaki noktaya ışınlamasını (`!bring`) veya bir oyuncunun yanına ışınlanmasını (`!goto`) sağlar. Işınlama noktası native trace ile anlık hesaplanır.
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
+Yetkililerin oyuncuları nişangâhındaki noktaya ışınlamasını (`!bring`) veya bir oyuncunun yanına ışınlanmasını (`!goto`) sağlar. Işınlama noktası tam olarak baktığınız yere göre anlık hesaplanır.
 
 ## Özellikler
 
-- `!bring <hedef>` ile hedef(ler)i tam olarak baktığın noktaya ışınlar; nokta native trace (CNavPhysicsInterface) ile bulunur
+- `!bring <hedef>` ile hedef(ler)i tam olarak baktığın noktaya ışınlar
 - `!goto <hedef>` ile hedef oyuncunun yanına ışınlanır
 - Çoklu hedef desteği: `@all`, `@t`, `@ct`, `#userid`, tam veya kısmi isim
 - Dokunulmazlık (immunity) kontrolü: hedefin immunity değeri sizinkinden yüksekse ışınlama engellenir (`ignore_immunity` ile kapatılabilir)
@@ -70,7 +72,7 @@ csgo/addons/counterstrikesharp/configs/plugins/BringGoto/BringGoto.json
 ## Notlar
 
 - Her iki komut için de kullanan oyuncunun hayatta olması gerekir; ölü ve GOTV oyuncular hedeflenemez.
-- Bring'de nişangâh noktası bulunamazsa (açık gökyüzü / trace hatası) hedef 128 birim önüne ışınlanır; noktadan 24 birim geri çekilip 6 birim yukarı alınarak duvara gömülme önlenir.
+- Gökyüzüne bakıyorsan ve bir nokta bulunamazsa hedef senin biraz önüne ışınlanır. Hedefler duvara gömülmemesi için yüzeyden biraz geride bırakılır.
 - Çoklu bring'de tüm hedefler aynı noktaya gelir; immunity'si yüksek hedefler sessizce atlanır, hiçbiri uygun değilse mesajla bildirilir.
 - Goto'da hedefin 80 birim üzerine ışınlanılır, böylece iki oyuncu iç içe takılmaz.
 - Botlarda immunity kontrolü yapılmaz; goto ile kendinizi hedef alamazsınız.

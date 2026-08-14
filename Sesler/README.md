@@ -8,10 +8,10 @@ Lets players mute game sounds they do not want to hear, by category. Preferences
 
 - 5 sound categories: **Knife**, **Weapon**, **Footsteps**, **Player sounds**, **MVP music**
 - 4 modes per category: **On**, **Mute Enemy**, **Mute Team**, **Off** (MVP only has On/Off)
-- Easy management through a CenterHtml menu; the active option is highlighted with a ► marker and color
+- Easy management through an on-screen menu; the active option is highlighted with a ► marker and color
 - **JSON (default) or MySQL** storage; falls back to JSON if the MySQL connection fails, the table is created automatically
-- Sound blocking is done server side by filtering UserMessage recipients — other players hear the sounds normally
-- MVP muting works only on the player in question via `StopSoundEvents.StopAllMusic`
+- Muting only applies to that one player — everyone else keeps hearing the sounds normally
+- When MVP music is muted, only the muting player's music stops
 - Turkish / English language support (`lang/`)
 
 ## Requirements
@@ -66,5 +66,4 @@ csgo/addons/counterstrikesharp/configs/plugins/Sesler/Sesler.json
 
 ## Notes
 
-- Sound hash lists can change with game updates; if new sounds start coming through, the hash lists need updating.
-- Database operations run in the background and do not block the game loop.
+- If some sounds in a category you muted start coming through again after a CS2 update, the plugin needs an update.

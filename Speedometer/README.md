@@ -6,12 +6,11 @@ Shows the player's live speed (u/s) in the middle of the screen. As speed increa
 
 ## Features
 
-- Live horizontal speed readout (`u/s`) on the CenterHtml HUD
-- Color transition by speed: 0 white → 1000 blue → 2000 orange → 3000+ red (values in between are interpolated)
+- Live speed readout (`u/s`) in the middle of the screen
+- Color transition by speed: 0 white → 1000 blue → 2000 orange → 3000+ red, with smooth shades in between
 - In spectator mode the spectated player's speed is shown
 - The preference is persistent — players who turn it off are saved to the `Speedometer.json` file
 - The readout is hidden automatically while a menu is open
-- Slot based tracking; tick cost is minimal while nobody is using it
 - Turkish / English language support (`lang/`)
 
 ## Requirements

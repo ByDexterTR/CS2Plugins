@@ -14,6 +14,8 @@ public class BombsiteAnnouncer : VipModule
         public float Duration { get; set; } = 5f;
     }
 
+    private const int HudTickRate = 4;
+
     private string? _site;
     private float _plantTime;
     private float _hideAt;
@@ -69,9 +71,15 @@ public class BombsiteAnnouncer : VipModule
             return;
         }
 
+        if (Server.TickCount % HudTickRate != 0)
+            return;
+
         foreach (var player in Core.Players)
         {
             if (player == null || !player.IsValid || player.IsBot || player.Team != CsTeam.CounterTerrorist || !Active(player))
+                continue;
+
+            if (VipHudGuard.Blocked(player))
                 continue;
 
             var cfg = GroupValue<Cfg>(player) ?? new Cfg();

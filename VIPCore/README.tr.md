@@ -1,13 +1,15 @@
 # VIPCore
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Modüler VIP sistemi. 75'ten fazla yerleşik VIP özelliği (modül), grup tabanlı yetkilendirme, JSON veya MySQL depolama ve üç farklı menü tipiyle eksiksiz bir VIP altyapısı sunar.
 
 ## Özellikler
 
-- **75+ yerleşik modül** — hepsi tek DLL içinde, otomatik keşfedilir (reflection)
+- **75+ hazır modül** — hepsi eklentinin içinde gelir, ayrıca kurulum gerektirmez
 - **Grup sistemi** — `vipgroups.json` içinde sınırsız grup; her grup hangi modülleri hangi değerlerle alacağını belirler
 - **Depolama** — JSON (varsayılan) veya MySQL; MySQL bağlantısı koparsa otomatik JSON'a düşer
-- **3 menü tipi** — `hud` (CenterHtml), `chat`, `wasd` (W/S/E/R tuşlarıyla gezilen menü)
+- **3 menü tipi** — `hud` (ekranda), `chat`, `wasd` (W/S/E/R tuşlarıyla gezilen menü)
 - Süreli veya kalıcı VIP; süresi dolan oyuncunun tüm özellikleri kapanır, VIP kaydı **ve** oyuncu ayarları depolamadan (JSON/MySQL) otomatik silinir
 - Oyuncu bazlı özellik ayarları (aç/kapat veya seçim) kalıcı olarak saklanır
 - **Efekt görünürlüğü** (`css_hidefx`) — her oyuncu kendi trail/partikül/glow/ses efektini kimin göreceğini seçer (herkes, takım, rakipler, sadece kendisi, hiç kimse)
@@ -234,9 +236,8 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 ## Notlar
 
 - Config dosyası CounterStrikeSharp'ın `configs/plugins` dizininde değil, **eklenti klasörünün içindedir** (`settings.json`, `vipgroups.json`).
-- Bir modül hiçbir grupta tanımlı değilse hiç yüklenmez (sıfır maliyet).
-- Trail modülleri kullanılıyorsa beam sprite'ı otomatik precache edilir.
-- Ses modüllerinde (`HitSound`, `SaySound`) iki yöntem var: `path` bir dosya yolu çalar, `emit` oyunun hazır ses adını çalar (precache gerekmez). İkisi birden yazılırsa `emit` önceliklidir. Her ses adı `emit` ile çalışmaz; çalışanlara örnek: `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept`, `UI.CoinLevelUp`. Ses yalnız hedef oyunculara gönderilir, yani `css_hidefx` tercihleri ve `say_team` filtresi ikisinde de çalışır.
+- Bir modül hiçbir grupta tanımlı değilse hiç çalışmaz.
+- Ses modüllerinde (`HitSound`, `SaySound`) iki yöntem var: `path` kendi ses dosyanızı çalar, `emit` ise oyunun hazır seslerinden birini çalar. İkisi birden yazılırsa `emit` geçerli olur. Her hazır ses adı `emit` ile çalışmaz; çalıştığı bilinenler: `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept`, `UI.CoinLevelUp`. Her iki yöntemde de ses yalnız gitmesi gereken oyunculara gider, yani `css_hidefx` tercihleri ve `say_team` filtresi ikisinde de çalışır.
 - Efekt sesleri (zehir, iyileştirme, zıplama) sadece etkilenen oyuncuya duyulur, seviyesi `sound_volume` ile ayarlanır; `0` hiç çalmaz.
 - Renk listelerinde (`ColoredModel`, `PlayerGlow`, `PlayerTrail`, `BulletTrail`, `GrenadeTrail`, `SmokeColor`) `"Rainbow rainbow"` ve `"Rastgele random"` girdileri kullanılabilir. Rastgele seçiliyse oyuncuya her el tek bir ortak renk atanır — model, glow, izler ve sis aynı elde aynı rengi kullanır.
 

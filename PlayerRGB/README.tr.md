@@ -1,13 +1,14 @@
 # PlayerRGB
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Oyuncu modelini akıcı bir RGB (gökkuşağı) döngüsüyle renklendirir. Komutla açılıp kapatılır ve tercih kalıcı olarak saklanır.
 
 ## Özellikler
 
-- Model rengi her tick'te kırmızı → yeşil → mavi döngüsüyle yumuşak geçiş yapar
+- Model rengi kırmızı → yeşil → mavi döngüsüyle yumuşak geçiş yapar
 - Tercih `PlayerRGB.json` dosyasında saklanır — oyuncu sunucuya tekrar girdiğinde otomatik açılır
 - Kapatıldığında model rengi anında normale döner
-- RGB aktif oyuncu yokken tick maliyeti sıfıra yakındır
 - Türkçe / İngilizce dil desteği (`lang/`)
 
 ## Gereksinimler

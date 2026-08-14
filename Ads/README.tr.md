@@ -2,19 +2,19 @@
 
 *Bu dosyanın [İngilizcesi / English](README.md).*
 
-Haritaya prop yerleştirir, ekrana ScreenText ve HudSay yazıları basar, sohbete duyuru gönderir. Zamanlı reklamların yanında oyun olaylarına (öldürme, hasar, bomba, raunt, bağlantı, takım değişimi) bağlı anlık reklamlar da basar. Aynı türden birden fazla reklam tanımlandığında bunlar çakışmaz: her tür kendi sırasına göre tek tek, global bir zamanlayıcı üzerinden döner. Reklamlar JSON'da tutulur, istenirse MySQL'e aktarılıp oradan okunur.
+Haritaya prop yerleştirir, ekrana yazı basar ve sohbete duyuru gönderir. Zamanlı reklamların yanında oyun olaylarına bağlı anlık reklamlar da gösterir; aynı türden birden fazla reklam tanımlandığında bunlar sıraya girer ve üst üste binmez.
 
 ## Özellikler
 
-- **Prop reklamı**: `css_ads` menüsüyle baktığın noktaya model yerleştirir; `prop_physics_override` + `DisableMotion` ile prop sabit kalır, `OnServerPrecacheResources` ile precache edilir
+- **Prop reklamı**: `css_ads` menüsüyle baktığınız noktaya model yerleştirir; prop olduğu yerde sabit kalır, düşmez ve itilmez
 - **Ayrık dosya düzeni**: reklamlar `ads.json`, prop kataloğu `props.json`, haritaya yerleştirilenler `maps.json`, ayarlar `settings.json`
 - **Oyun içi düzenleme**: `css_ads` menüsüyle prop koyma, eksen bazlı döndürme/taşıma, boyut, collision, skin ve flag ayarı
-- **Flag sistemi**: her reklam türünde `flag` (yalnızca bu yetkidekiler görür) ve `ignoreflag` (bu yetkidekiler görmez); propta `CheckTransmit` ile sunucudan hiç gönderilmez
+- **Flag sistemi**: her reklam türünde `flag` (yalnızca bu yetkidekiler görür) ve `ignoreflag` (bu yetkidekiler görmez); görmemesi gereken oyuncuya prop hiç gönderilmez
 - **ScreenText**: oyuncunun ekranına sabitlenen dünya yazısı; konum (x/y), boyut, renk, hizalama ve arka plan ayarlanabilir
 - **HudSay**: ekran ortasına HTML destekli yazı (`<br>`, `<font color>`, `class='fontSize-m'`)
 - **ChatSay**: sohbete renk kodlu (`{Lime}`, `{Orchid}` …) duyuru
-- **Event reklamları**: 10 oyun olayında hedefe (kurban / saldırgan / takım / herkes) anlık ChatSay, HudSay veya ScreenText; oyuncu bazlı cooldown, yüzdelik şans ve `{victim}` `{damage}` `{winner}` gibi değişkenler
-- **Modüler çalışma**: kullanılmayan alt sistemin listener'ı hiç kaydedilmez; hiç ekran reklamı ve event yoksa eklenti tick almaz
+- **Event reklamları**: 10 oyun olayında hedefe (kurban / saldırgan / takım / herkes) anlık ChatSay, HudSay veya ScreenText; oyuncu bazlı cooldown, yüzdelik şans ve `{victim}` `{damage}` `{winner}` gibi placeholder'lar
+- **Modüler**: yalnızca kullandığınız bölümler devreye girer
 - **Çakışma önleyici sıra sistemi**: her kanal (ScreenText / HudSay / ChatSay) aynı anda yalnızca tek reklam gösterir; `ads_queue_mode: "global"` ile üç kanal tek sıraya indirilir; event reklamları süresi boyunca sadece o oyuncuda dönen reklamın önüne geçer
 - Harita bazlı filtre (`map`), tüm haritalar için `*`
 - JSON ↔ MySQL çift yönlü aktarım (`css_adsimportsql` / `css_adsexportsql`)
@@ -44,14 +44,7 @@ Dört dosyanın tamamı `csgo/addons/counterstrikesharp/plugins/Ads/` içindedir
 
 ## Sıralama Sistemi (Çakışma Önleme)
 
-Sorun şu: üç ScreenText, iki HudSay ve iki ChatSay tanımlandığında hepsi kendi `timer` süresine göre bağımsız çalışırsa üst üste biner. Bu eklentide her reklam bir **sıraya (queue)** girer ve sıra tek bir global zamanlayıcı ile döner.
-
-Bir sıranın durumu her tick şöyle işler:
-
-```
-boşta  --( sıradaki reklamın timer'ı kadar bekle )-->  gösteriliyor
-gösteriliyor  --( reklamın life süresi dolunca )-->  boşta
-```
+Birden fazla reklam tanımlandığında hepsi bir **sıraya** girer, böylece üst üste binmezler. Sıra şöyle döner: `timer` süresi kadar beklenir, reklam `life` süresi kadar gösterilir, sonra sıradaki reklama geçilir.
 
 Kurallar:
 
@@ -110,7 +103,7 @@ Dönen reklamların yanında, oyun olaylarına bağlı anlık reklamlar `events`
 | `event` | — | Yukarıdaki olay adı |
 | `target` | `"all"` | Hedef |
 | `type` | `"chatsay"` | Gösterim türü: `chatsay`, `hudsay`, `screentext` |
-| `text` | — | Mesaj; değişken ve renk etiketi destekler |
+| `text` | — | Mesaj; placeholder ve renk etiketi destekler |
 | `life` | `4` | HudSay/ScreenText'in ekranda kalma süresi (ChatSay'de kullanılmaz) |
 | `cooldown` | `10` | Aynı oyuncuya bu reklamın **yeniden** basılması için beklenecek saniye; `0` = sınırsız. Reklam o oyuncunun ekranındayken tekrar tetiklenirse cooldown beklenmez, metin anında güncellenir (peşpeşe öldürmede isim taze kalır) |
 | `chance` | `100` | Tetiklenme yüzdesi (0-100) |
@@ -119,9 +112,9 @@ Dönen reklamların yanında, oyun olaylarına bağlı anlık reklamlar `events`
 
 `player_hurt` saniyede onlarca kez tetiklenebilir; `cooldown` alanını mutlaka kullanın.
 
-### Değişkenler
+### Olay placeholder'ları
 
-| Değişken | Nerede |
+| Placeholder | Nerede |
 | --- | --- |
 | `{victim}` | `player_hurt`, `player_death` — hasar alan/ölen oyuncunun adı |
 | `{attacker}` | `player_hurt`, `player_death` — vuran oyuncunun adı |
@@ -134,6 +127,36 @@ Dönen reklamların yanında, oyun olaylarına bağlı anlık reklamlar `events`
 | `{kit}` | `bomb_defuse` (`1` / `0`) |
 | `{team}` | `player_team` (`T` / `CT` / `Spectator`) |
 | `{map}` | Her olayda |
+
+## Placeholder
+
+Aşağıdakiler her yerde çalışır: ScreenText, HudSay, ChatSay ve olay reklamları.
+
+| Placeholder | Değer |
+| --- | --- |
+| `{map}` `{hostname}` `{ip}` `{port}` `{maxplayers}` | Sunucu bilgisi |
+| `{players}` `{bots}` | İnsan / bot sayısı |
+| `{alive}` `{dead}` | Hayatta / ölü |
+| `{t_count}` `{ct_count}` `{spec_count}` | Takım mevcutları |
+| `{alive_t}` `{alive_ct}` `{dead_t}` `{dead_ct}` | Takım bazlı hayatta / ölü |
+| `{round}` `{t_score}` `{ct_score}` | Raunt ve skor |
+| `{time}` `{date}` | `HH:mm` ve `dd.MM.yyyy` |
+| `{player}` `{steamid}` `{team}` | Reklamı gören oyuncu |
+| `{kills}` `{deaths}` `{assists}` `{score}` | Gören oyuncunun istatistikleri |
+
+`{players}` yalnızca insanları sayar, diğer sayılar botları da içerir.
+
+Değerler kanala göre farklı zamanda hesaplanır:
+
+| Kanal | Ne zaman |
+| --- | --- |
+| ChatSay | Reklam basılırken — anlık değer |
+| HudSay | `ads_hud_tick`'te bir — canlı güncellenir |
+| ScreenText | Reklam ekrana gelirken bir kez — o reklam boyunca sabit kalır |
+
+Bu yüzden `{time}` ve sayaçlar ScreenText'te değişmez; canlı değer için HudSay kullanın.
+
+Tanımsız `{...}` ifadeleri olduğu gibi bırakılır, renk etiketleri (`{Orchid}` vb.) bozulmaz. Metinde `{` yoksa hiçbir işlem yapılmaz.
 
 ## Komutlar
 
@@ -219,7 +242,7 @@ Flag/Ignoreflag satırını seçince menü kapanır ve sohbete yazdığın ilk m
 
 Skin listesi `props.json` → `models` → `skins` alanından gelir (`"skins": [0, 1, 2]`). Liste yoksa satır uyarı verir.
 
-Boyut, collision ve skin değişiklikleri entity'yi yeniden oluşturur (kısa bir kaybolma olur). Döndürme ve taşıma propu anında hareket ettirir, yeniden oluşturma yoktur. Her adımda `maps.json` kaydedilir. Seçim oyuncu bazlıdır; harita değişiminde sıfırlanır.
+Boyut, collision ve skin değişikliklerinde prop bir an kaybolup geri gelir. Döndürme ve taşıma propu anında hareket ettirir, yeniden oluşturma yoktur. Her adımda `maps.json` kaydedilir. Seçim oyuncu bazlıdır; harita değişiminde sıfırlanır.
 
 #### SQL İşlemleri ve Eklenti Yönetimi
 
@@ -239,7 +262,7 @@ Boyut, collision ve skin değişiklikleri entity'yi yeniden oluşturur (kısa bi
 csgo/addons/counterstrikesharp/plugins/Ads/settings.json
 ```
 
-Ayarlar sunucuya özeldir; `css_adsimportsql` / `css_adsexportsql` bu dosyaya dokunmaz ve MySQL'de karşılığı yoktur. Aynı veritabanını paylaşan sunucular farklı komut adı, sıralama modu ve yetki kullanabilir.
+Ayarlar sunucuya özeldir; `css_adsimportsql` / `css_adsexportsql` bu dosyaya dokunmaz ve MySQL'de karşılığı yoktur. Aynı database'i paylaşan sunucular farklı komut adı, sıralama modu ve yetki kullanabilir.
 
 | Ayar | Tip | Varsayılan | Açıklama |
 | --- | --- | --- | --- |
@@ -253,12 +276,13 @@ Ayarlar sunucuya özeldir; `css_adsimportsql` / `css_adsexportsql` bu dosyaya do
 | `ads_reload_cmd` | string | `"css_adsreload"` | Virgülle ayrılmış komut adları |
 | `ads_importsql_cmd` | string | `"css_adsimportsql"` | Virgülle ayrılmış komut adları |
 | `ads_exportsql_cmd` | string | `"css_adsexportsql"` | Virgülle ayrılmış komut adları |
+| `ads_hud_tick` | int | `4` | HudSay kaç tick'te bir yenilenir (4 = saniyede 16) |
 | `ads_font` | string | `"Arial Bold"` | ScreenText yazı tipi |
 | `ads_forward` | float | `7` | ScreenText'in göze uzaklığı (minimum 1) |
 | `ads_units_per_px` | float | `0.012` | ScreenText piksel ölçeği |
 | `mysql.host` | string | `""` | MySQL sunucu adresi |
 | `mysql.port` | uint | `3306` | MySQL portu |
-| `mysql.database` | string | `""` | Veritabanı adı (yoksa oluşturulur) |
+| `mysql.database` | string | `""` | Database adı (yoksa oluşturulur) |
 | `mysql.user` | string | `""` | Kullanıcı adı |
 | `mysql.password` | string | `""` | Şifre |
 | `mysql.table_prefix` | string | `"ads_"` | Tablo öneki; `ads_props`, `ads_events` … şeklinde |
@@ -277,6 +301,7 @@ Ayarlar sunucuya özeldir; `css_adsimportsql` / `css_adsexportsql` bu dosyaya do
   "ads_reload_cmd": "css_adsreload",
   "ads_importsql_cmd": "css_adsimportsql",
   "ads_exportsql_cmd": "css_adsexportsql",
+  "ads_hud_tick": 4,
   "ads_font": "Arial Bold",
   "ads_forward": 7,
   "ads_units_per_px": 0.012,
@@ -351,7 +376,7 @@ Prop Yerleştir menüsünde çıkan model listesi. Bu dosya yalnızca elle düze
 
 | Bölüm | Alan | Açıklama |
 | --- | --- | --- |
-| `props` | `path` | Model yolu (`.vmdl`); precache listesine otomatik eklenir |
+| `props` | `path` | Model dosyasının yolu (`.vmdl`) |
 | | `map` | Propun çıkacağı harita; `*` tüm haritalar, virgülle çoklu harita |
 | | `pos` / `angle` | `"X Y Z"` biçiminde konum ve açı; `angle` `"pitch yaw roll"` sırasındadır |
 | | `scale` / `skin` | Model ölçeği ve deri (skin) indeksi |
@@ -364,7 +389,7 @@ Prop Yerleştir menüsünde çıkan model listesi. Bu dosya yalnızca elle düze
 csgo/addons/counterstrikesharp/plugins/Ads/ads.json
 ```
 
-Ekrana ve sohbete basılan reklamlar ile event reklamları burada tutulur. `ads_storage` `mysql` olsa bile bu dosya oluşturulur; reklamlar buraya yazılır ve `css_adsimportsql` ile veritabanına aktarılır. Proplar için [props.json](#katalog-dosyası) ve [maps.json](#harita-dosyası) kullanılır.
+Ekrana ve sohbete basılan reklamlar ile event reklamları burada tutulur. `ads_storage` `mysql` olsa bile bu dosya oluşturulur; reklamlar buraya yazılır ve `css_adsimportsql` ile database'e aktarılır. Proplar için [props.json](#katalog-dosyası) ve [maps.json](#harita-dosyası) kullanılır.
 
 ```json
 {
@@ -478,7 +503,7 @@ Ekrana ve sohbete basılan reklamlar ile event reklamları burada tutulur. `ads_
 
 ## MySQL
 
-`ads_storage` `mysql` yapıldığında her JSON bölümü kendi tablosuna karşılık gelir. Dosya düzeni veritabanında birebir korunur: `ads.json`, `props.json` ve `maps.json` üç ayrı grup olarak aktarılır ve hiçbir grup diğerinin yazımında etkilenmez. `settings.json`'ın karşılığı yoktur.
+`ads_storage` `mysql` yapıldığında her JSON bölümü kendi tablosuna karşılık gelir. Dosya düzeni database'de birebir korunur: `ads.json`, `props.json` ve `maps.json` üç ayrı grup olarak aktarılır ve hiçbir grup diğerinin yazımında etkilenmez. `settings.json`'ın karşılığı yoktur.
 
 | Tablo | Kaynak | İçerik |
 | --- | --- | --- |
@@ -489,51 +514,29 @@ Ekrana ve sohbete basılan reklamlar ile event reklamları burada tutulur. `ads_
 | `ads_propmodels` | `props.json` → `models` | Prop kataloğu |
 | `ads_props` | `maps.json` → `props` | Yerleştirilmiş proplar |
 
-Tablo öneki `mysql.table_prefix` ile değişir. Her tabloda `id`, `sort_order` (bölüm içindeki sıra), `flag` ve `ignoreflag` sütunları bulunur; kalan sütunlar o bölümün JSON alanlarıyla birebir aynıdır.
+Tablo öneki `mysql.table_prefix` ile değişir. Tabloların sütunları JSON dosyalarındaki alanlarla birebir aynıdır, yani database üzerinden de aynı ayarları düzenleyebilirsiniz.
 
-```sql
-CREATE TABLE IF NOT EXISTS `ads_props` (
-  `id` INT NOT NULL AUTO_INCREMENT, `sort_order` INT NOT NULL DEFAULT 0,
-  `path` VARCHAR(255), `map` VARCHAR(64), `pos` VARCHAR(64), `angle` VARCHAR(64),
-  `scale` FLOAT, `skin` INT, `solid` TINYINT,
-  `flag` VARCHAR(128), `ignoreflag` VARCHAR(128),
-  PRIMARY KEY (`id`), KEY `order` (`sort_order`)
-);
+Yazma işlemleri de ayrı: menü yalnızca yerleştirilmiş prop tablosunu (`ads_props`) yeniden yazar; katalog, ekran, sohbet ve event tablolarına hiç dokunmaz.
 
-CREATE TABLE IF NOT EXISTS `ads_events` (
-  `id` INT NOT NULL AUTO_INCREMENT, `sort_order` INT NOT NULL DEFAULT 0,
-  `event` VARCHAR(32), `target` VARCHAR(16), `type` VARCHAR(16),
-  `text` TEXT, `life` FLOAT, `cooldown` FLOAT, `chance` INT,
-  `x` FLOAT, `y` FLOAT, `size` FLOAT,
-  `color` VARCHAR(32), `justify` VARCHAR(16), `background` TINYINT,
-  `flag` VARCHAR(128), `ignoreflag` VARCHAR(128),
-  PRIMARY KEY (`id`), KEY `order` (`sort_order`)
-);
-```
-
-Yazma işlemleri de ayrı: menü yalnızca `maps.json` grubunu (`ads_props`) yeniden yazar; katalog, ekran, sohbet ve event tablolarına hiç dokunmaz.
-
-Tablo ve veritabanı ilk yüklemede otomatik oluşturulur. Akış:
+Tablo ve database ilk yüklemede otomatik oluşturulur. Akış:
 
 1. Ekran/sohbet/event reklamlarını `ads.json`, katalogları `props.json` içine yazın.
 2. `css_adsimportsql` ile MySQL'e aktarın (ilgili tablolar temizlenip yeniden doldurulur).
 3. `ads_storage` değerini `mysql` yapın ve `css_adsreload` çalıştırın.
-4. Veritabanındaki kayıtları dosyalara geri almak için `css_adsexportsql` kullanın; `ads.json`, `props.json` ve `maps.json` aynı düzende yeniden yazılır.
+4. Database'deki kayıtları dosyalara geri almak için `css_adsexportsql` kullanın; `ads.json`, `props.json` ve `maps.json` aynı düzende yeniden yazılır.
 
-`ads_storage` `mysql` iken menü katalogları ve yerleştirilmiş kayıtlar da veritabanından okunur; JSON dosyaları yalnızca aktarım kaynağı/hedefi olarak kullanılır. `settings.json` her durumda dosyadan okunur.
+`ads_storage` `mysql` iken menü katalogları ve yerleştirilmiş kayıtlar da database'den okunur; JSON dosyaları yalnızca aktarım kaynağı/hedefi olarak kullanılır. `settings.json` her durumda dosyadan okunur.
 
 ## Notlar
 
-- Precache `OnServerPrecacheResources` ile harita yüklenirken yapılır ve dosyalar o anda diskten tazelenir; menü kataloğu (`models`) da precache edilir. Dosyaya yeni eklenen bir model yolu ancak sonraki harita yüklemesinde hazır olur.
-- Proplar `prop_physics_override` + `DisableMotion` ile oluşturulur, yani düşmez/itilmez. `solid: false` ile oyuncular içinden geçer.
-- Menüler ekranın orta HTML alanını kullanır; menü açıkken o oyuncuya HudSay reklamı basılmaz.
-- Prop Açı menüsü yaw (sağ/sol) ve pitch (yukarı/aşağı) döndürür. Roll gerekiyorsa `maps.json` içindeki `angle` alanının üçüncü değerini elle yaz.
-- Varsayılan katalog yalnızca stock CS2 modelleri kullanır, ek paket gerekmez. Kendi modelini eklersen dosyanın hem sunucuda hem istemcide bulunması gerekir (workshop haritası veya addon paketi); yoksa prop görünmez.
-- `player_death` reklamı `target: "victim"` ve `type: "screentext"` ile birlikte kullanılamaz; ölü oyuncuya dünya yazısı oluşturulmaz. Ölen oyuncuya `chatsay` veya `hudsay` gönderin.
-- `ignoreflag` kontrolü root joker'ini uygulamaz: root yetkili oyuncu, kendi yetki listesinde o flag tanımlı değilse reklamı görür. `flag` kontrolünde ise root her zaman kapsanır.
-- ScreenText yazıları oyuncunun kendi pawn'ına bağlanır ve `CheckTransmit` ile diğer oyunculardan gizlenir; her oyuncu yalnızca kendi yazısını görür. Ölü oyunculara yazı oluşturulmaz.
-- HudSay, oyunun merkez HTML alanını kullanır; aynı alanı kullanan başka bir eklenti varsa (menü, uyarı) ikisi sırayla ekrana basılıp titreme yapabilir.
-- Proplar `prop_dynamic_override` ile oluşturulur; `solid: false` iken çarpışma spawn sonrası kapatılır, oyuncular içinden geçer.
-- `settings.json` Eklenti Yönetimi → **Ayarları yenile** ile anında tazelenir; yalnızca komut adları, `ads_storage` ve MySQL bağlantısı eklenti yeniden yüklenince etkinleşir.
-- Eklenti modüler çalışır: `OnTick` yalnızca ScreenText, HudSay veya event reklamı tanımlıysa; `CheckTransmit` yalnızca ScreenText/event varsa ya da `flag`/`ignoreflag` taşıyan bir prop yerleştirilmişse kaydedilir. Sadece prop kullanan bir sunucuda eklenti her tick hiçbir iş yapmaz. Listener'lar her yenilemeden sonra otomatik güncellenir.
-- Flag/Ignoreflag'i sohbetten girerken bekleme durumu oyuncu bazlıdır; başka birinin yazdığı mesaj senin ayarını değiştiremez, mesaj sahibinin yetkisi de yazma anında tekrar kontrol edilir.
+- Proplar olduğu yerde sabit durur, düşmez ve itilmez. `solid: false` yaparsan oyuncular içinden geçer.
+- `props.json` dosyasına yeni bir model eklediğinde, o model ancak bir sonraki harita değişiminde kullanılabilir hale gelir.
+- Varsayılan katalog yalnızca CS2 ile birlikte gelen modelleri kullanır, ek paket gerekmez. Kendi modelini eklersen dosyanın hem sunucuda hem oyuncunun tarafında bulunması gerekir (workshop haritası veya addon paketi); yoksa prop görünmez.
+- Menü açıkken o oyuncuya HudSay reklamı basılmaz.
+- Prop Açı menüsü sağ/sol ve yukarı/aşağı döndürür. Yana yatırmak istersen `maps.json` içindeki `angle` alanının üçüncü değerini elle yaz.
+- `player_death` reklamı `target: "victim"` ve `type: "screentext"` ile birlikte kullanılamaz; ölen oyuncuya ekran yazısı gösterilemez. Onun yerine `chatsay` veya `hudsay` kullanın.
+- `ignoreflag` root yetkisini kapsamaz: root yetkili bir oyuncu, kendi yetki listesinde o flag yoksa reklamı görür. `flag` kontrolünde ise root her zaman kapsanır.
+- ScreenText yazılarını her oyuncu yalnızca kendi ekranında görür. Ölü oyunculara ekran yazısı gösterilmez.
+- HudSay, ekranın orta bölgesini kullanır; aynı bölgeyi kullanan başka bir eklenti varsa (menü, uyarı) ikisi sırayla basılıp titreme yapabilir.
+- **Ayarları yenile** ile `settings.json` anında tazelenir; yalnızca komut adları, `ads_storage` ve MySQL bağlantısı için eklentiyi yeniden yüklemek gerekir.
+- Flag/Ignoreflag'i sohbetten girerken başka birinin yazdığı mesaj senin ayarını değiştiremez.

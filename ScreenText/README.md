@@ -2,13 +2,13 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-Shows fully config-customizable text fixed on the player's screen (`point_worldtext`). The text is attached to the player's pawn (movement is carried by client prediction, so it does not drag while running) and aligned to the view angle every tick; with `CheckTransmit` it is only sent to its owner, so other players, spectators and GOTV can never see it.
+Shows fully config-customizable text fixed on the player's screen. The text stays put while running and jumping and turns with the player. Every player only sees their own text; other players, spectators and GOTV can never see it.
 
 ## Features
 
 - Unlimited number of texts; screen position (X/Y), size, color, alignment and background can be set separately for each
-- Because it is attached to the pawn the text stays fixed on screen while running/jumping; view rotation is aligned every tick
-- Texts only appear on their owner's screen (`CheckTransmit`); nobody watching from outside can see them
+- The text stays fixed on screen while running and jumping, it never drags behind
+- Texts only appear on their owner's screen; nobody watching from outside can see them
 - Per-player toggle with `css_hidetext`; the preference is saved to JSON and remembered on reconnect
 - Multi-line text support with `\n`
 - Font, distance from the screen and pixel scale can be set from the config
@@ -81,7 +81,7 @@ csgo/addons/counterstrikesharp/configs/plugins/ScreenText/ScreenText.json
       "background": false
     },
     {
-      "text": "bydexter.com",
+      "text": "bydexter.net",
       "x": 6.4,
       "y": 2.3,
       "size": 32,
@@ -95,7 +95,7 @@ csgo/addons/counterstrikesharp/configs/plugins/ScreenText/ScreenText.json
 
 ## Coordinate System
 
-The center of the screen is treated as `(0, 0)`; `x` increases to the right and `y` increases upward. Values are placed on a plane at `screentext_forward` distance: at the default distance of `7` with a 90° FOV roughly `±7` units are visible horizontally and roughly `±3.9` vertically (16:9). When pushing text to a corner, solve edge overflow with `justify`: `left` for the left edge, `right` for the right edge.
+The center of the screen is treated as `(0, 0)`; `x` increases to the right and `y` increases upward. With the default settings roughly `-7` to `+7` is visible horizontally and roughly `-3.9` to `+3.9` vertically. When pushing text to a corner, solve edge overflow with `justify`: `left` for the left edge, `right` for the right edge.
 
 ## Notes
 
@@ -103,5 +103,5 @@ The center of the screen is treated as `(0, 0)`; `x` increases to the right and 
 - The `css_hidetext` preference is saved as a SteamID in `plugins/ScreenText/ScreenText.json`; while `screentext_default_on: false` the enable preference only lasts for the session.
 - Text list changes take effect when the plugin is reloaded (`css_plugins reload ScreenText`).
 - Text visibility is off for spectators too: someone spectating a player in first person does not see that player's texts.
-- On very fast view flicks the text can slip for an instant and then settle; this comes from server tick + client interpolation and is normal.
+- On very fast view flicks the text can slip for an instant and settle right back; this is normal.
 - While in a third person camera (e.g. the Thirdperson plugin) the text appears floating at the character's eye level.

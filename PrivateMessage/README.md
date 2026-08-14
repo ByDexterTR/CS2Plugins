@@ -12,7 +12,7 @@ Sender's screen:   [ByDexter] Message sent to Receiver.
 ## Features
 
 - Private message with `!pm <player> <message>`; the name is matched fully or partially
-- Chat lines starting with `!pm` / `!msg` are not shown to anyone (UserMessage hook)
+- Chat lines starting with `!pm` / `!msg` are not shown to other players
 - Per-player toggle for private messages (`!pmoff` / `!pmon`); a player who turns it off cannot receive or send PMs
 - Per-player toggle for the notification sound (`!pmsound`)
 - Separate sounds are played for the receiver and the sender; the sounds can be changed from the config
@@ -107,7 +107,7 @@ File lines include a timestamp: `[21:45:03] [ByDexter -> Player]: hello`
 
 ## Notes
 
-- `!pm ...` / `/pm ...` lines typed into chat (including every command name in the config) are blocked with a UserMessage hook and are not shown to anyone; the command still runs.
+- `!pm ...` / `/pm ...` lines typed into chat (including every command name in the config) are not shown to anyone; the command still runs normally.
 - Message and sound preferences are persistent per SteamID (default: messages on, sound on); they are saved on every change and when the player disconnects.
 - Name matching tries the full name first, then a partial search; if there are multiple matches no message is sent.
 - Command name changes take effect when the plugin is restarted.

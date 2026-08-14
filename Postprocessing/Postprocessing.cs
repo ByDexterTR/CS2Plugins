@@ -184,7 +184,7 @@ public class PostprocessingConfig : BasePluginConfig
 public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
 {
   public override string ModuleName => "Postprocessing";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -374,7 +374,11 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
       return;
     }
 
-    var items = new List<WasdItem>();
+    var items = new List<WasdItem>
+    {
+      WasdItem.Back(Localizer["menu.back"], ShowMenu)
+    };
+
     foreach (var preset in presets)
     {
       var captured = preset;
@@ -390,12 +394,6 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
         }
       });
     }
-
-    items.Add(new WasdItem
-    {
-      Text = Localizer["menu.back"],
-      OnSelect = ShowMenu
-    });
 
     _menus.Open(player, category, items);
   }

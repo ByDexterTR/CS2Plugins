@@ -23,7 +23,7 @@ public class CTRevConfig : BasePluginConfig
 public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 {
   public override string ModuleName => "CTRev";
-  public override string ModuleVersion => "1.0.6";
+  public override string ModuleVersion => "1.0.7";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

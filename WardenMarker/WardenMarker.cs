@@ -122,7 +122,7 @@ public class MarkerSettings
 public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig>
 {
   public override string ModuleName => "WardenMarker";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -279,7 +279,13 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
         continue;
       }
 
-      ulong buttons = (ulong)player.Buttons;
+      if (!Util.TryGetButtons(player, out var current))
+      {
+        _oldButtons[slot] = 0;
+        continue;
+      }
+
+      ulong buttons = (ulong)current;
       ulong old = _oldButtons[slot];
       _oldButtons[slot] = buttons;
 

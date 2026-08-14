@@ -173,7 +173,7 @@ public partial class Ads
           continue;
 
         _eventCooldown[i, slot] = now + ad.Cooldown;
-        Show(ad, i, recipient, slot, text, now);
+        Show(ad, i, recipient, slot, Fill(text, recipient), now);
       }
     }
   }

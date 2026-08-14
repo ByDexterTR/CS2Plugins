@@ -1,5 +1,7 @@
 # Çekiliş (Cekilis)
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Sunucudaki oyuncular arasından filtreli rastgele çekiliş yapar. Jailbreak etkinlikleri, ödül dağıtımı vb. için idealdir.
 
 ## Özellikler

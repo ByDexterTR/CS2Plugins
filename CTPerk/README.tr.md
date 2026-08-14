@@ -1,5 +1,7 @@
 # CTPerk
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 CT takımına raunt bazlı güçlendirmeler (perk) seçtirir. Jailbreak'te T sayısına göre CT'lere denge sağlamak için tasarlanmıştır.
 
 ## Özellikler

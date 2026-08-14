@@ -111,6 +111,8 @@ public partial class Ads
     }
   }
 
+  private int _tickCounter;
+
   private void OnTick()
   {
     float now = Server.CurrentTime;
@@ -118,7 +120,12 @@ public partial class Ads
     foreach (var queue in _queues)
       TickQueue(queue, now);
 
-    RenderPlayers(now);
+    int every = Config.HudTick < 1 ? 1 : Config.HudTick;
+    _tickCounter++;
+    if (_tickCounter >= every)
+      _tickCounter = 0;
+
+    RenderPlayers(now, _tickCounter == 0);
   }
 
   private void TickQueue(AdQueue queue, float now)
@@ -185,7 +192,7 @@ public partial class Ads
     }
   }
 
-  private void RenderPlayers(float now)
+  private void RenderPlayers(float now, bool renderHud)
   {
     for (int slot = 0; slot < MaxSlots; slot++)
     {
@@ -205,7 +212,9 @@ public partial class Ads
         _overrideHud[slot] = null;
 
       RenderScreenText(slot, player);
-      RenderHud(slot, player);
+
+      if (renderHud)
+        RenderHud(slot, player);
     }
   }
 
@@ -234,7 +243,7 @@ public partial class Ads
     var entity = _screenTexts[slot];
     if (entity == null || !entity.IsValid)
     {
-      CreateScreenText(slot, pawn, ad);
+      CreateScreenText(slot, pawn, ad, player);
       return;
     }
 
@@ -243,7 +252,7 @@ public partial class Ads
 
   private void RenderHud(int slot, CCSPlayerController player)
   {
-    if (_menus.IsOpen(player))
+    if (_menus.IsOpen(player) || HudGuard.Blocked(slot))
       return;
 
     string? html = _overrideHud[slot];
@@ -252,7 +261,7 @@ public partial class Ads
 
     if (html != null)
     {
-      player.PrintToCenterHtml(html);
+      player.PrintToCenterHtml(Fill(html, player));
       _hudShown[slot] = true;
       return;
     }
@@ -269,8 +278,6 @@ public partial class Ads
     if (string.IsNullOrWhiteSpace(ad.Text))
       return;
 
-    var lines = ad.Text.Replace("<br>", "\n").Split('\n');
-
     foreach (var player in Utilities.GetPlayers())
     {
       if (player == null || !player.IsValid || player.IsBot || player.IsHLTV)
@@ -279,12 +286,12 @@ public partial class Ads
       if (!CanSee(player, ad.Flag, ad.IgnoreFlag))
         continue;
 
-      foreach (var line in lines)
+      foreach (var line in Fill(ad.Text, player).Replace("<br>", "\n").Split('\n'))
         player.PrintToChat($" {CC.Parse(line)}");
     }
   }
 
-  private void CreateScreenText(int slot, CCSPlayerPawn pawn, ScreenTextAd ad)
+  private void CreateScreenText(int slot, CCSPlayerPawn pawn, ScreenTextAd ad, CCSPlayerController player)
   {
     if (string.IsNullOrWhiteSpace(ad.Text))
       return;
@@ -293,7 +300,7 @@ public partial class Ads
     if (entity == null || entity.Handle == IntPtr.Zero)
       return;
 
-    entity.MessageText = ad.Text.Replace("<br>", "\n");
+    entity.MessageText = Fill(ad.Text, player).Replace("<br>", "\n");
     entity.Enabled = true;
     entity.Fullbright = true;
     entity.FontSize = ad.Size <= 0f ? 32f : ad.Size;

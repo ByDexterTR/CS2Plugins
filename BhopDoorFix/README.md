@@ -2,14 +2,14 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-Stops `func_door` doors on bhop / KZ maps from moving. Prevents doors from launching players or creating exploits by moving.
+Stops doors on bhop / KZ maps from moving. That way doors cannot launch players or create exploits by moving around.
 
 ## Features
 
-- Freezes every `func_door` entity on the map (`Speed = 0` + `Lock` input)
-- Catches newly spawned doors automatically (`OnEntitySpawned`)
+- Freezes and locks every door on the map in place
+- Also catches doors that appear later during the map
 - Re-freezes every door at the start of each round
-- Hot reload supported — existing doors are frozen instantly when the plugin is reloaded
+- If you reload the plugin mid-map, the doors already on the map are frozen instantly
 - No config required
 
 ## Requirements

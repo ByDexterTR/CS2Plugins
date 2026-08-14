@@ -5,7 +5,7 @@ namespace VIPCore;
 
 public partial class VIPCore
 {
-    private string BackLabel => $"{CC.Yellow}{Localizer["vip.menu_back"]}{CC.Default}";
+    private string BackLabel => $"{CC.LightRed}{Localizer["vip.menu_back"]}{CC.Default}";
 
     private const string VipIcon = "https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/vip.png";
 

@@ -1,5 +1,7 @@
 # CommandMaker
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Kod yazmadan, JSON dosyası üzerinden özel sunucu komutları oluşturmanızı sağlar. Hedefli admin komutları, bilgi komutları, cvar/exec makroları ve oyuncu komutları tek dosyadan tanımlanır.
 
 ## Özellikler
@@ -7,7 +9,7 @@ Kod yazmadan, JSON dosyası üzerinden özel sunucu komutları oluşturmanızı 
 - `commands.json` içinde sınırsız özel komut tanımı; ilk çalıştırmada 11 örnek komutla oluşturulur
 - 4 komut tipi: `default`, `target`, `playertarget`, `execute`
 - 30'a yakın eylem: can/zırh/para/hız/yerçekimi ayarlama, silah verme/alma, ışınlama, dondurma, noclip, godmode, slap, respawn, model/isim değiştirme, ses çalma ve daha fazlası
-- Zengin yer tutucu sistemi: oyuncu/hedef bilgileri, sunucu bilgileri, skorlar, rastgele oyuncu seçimi
+- Zengin placeholder sistemi: oyuncu/hedef bilgileri, sunucu bilgileri, skorlar, rastgele oyuncu seçimi
 - Chat renk etiketleri: `[GOLD]`, `[RED]`, `[GREEN]`, `[ORCHID]` vb.
 - Hedef seçiciler: isim, `#userid`, `@all`, `@ct`, `@t`, `@alive`, `@dead`, `@me`, `@random`
 - Komut başına: yetki bayrakları, takım filtresi, canlı/ölü filtresi, bekleme süresi (cooldown), argüman doğrulama (sayı aralığı / kelime uzunluğu)
@@ -112,7 +114,7 @@ Değer biçimi genellikle `"[TARGET] <değer>"` şeklindedir; örn. `"sethealth"
 | `execute` | Sunucu konsolunda komut çalıştır |
 | `setcvar` | Cvar ayarla (`"mp_warmuptime 60"`) |
 
-#### Yer tutucular
+#### Placeholder'lar
 
 - **Oyuncu:** `[PLAYER]`, `[PLAYERHEALTH]`, `[PLAYERARMOR]`, `[PLAYERMONEY]`, `[PLAYERSTEAMID]`, `[PLAYERTEAM]`, `[PLAYERWEAPON]`, `[PLAYERCOORDINATE]`
 - **Hedef:** `[TARGET]`, `[TARGETHEALTH]`, `[TARGETARMOR]`, `[TARGETMONEY]`, `[TARGETSTEAMID]`, `[TARGETTEAM]`, `[TARGETWEAPON]`, `[TARGETCOORDINATE]`
@@ -134,7 +136,7 @@ Değer biçimi genellikle `"[TARGET] <değer>"` şeklindedir; örn. `"sethealth"
 
 ## Notlar
 
-- `setspeed` / `setgravity` etkileri kalıcıdır (tick bazlı uygulanır); sıfırlamak için `1.0` değerini ayarlayan ikinci bir komut tanımlayın.
+- `setspeed` / `setgravity` etkileri siz değiştirene kadar kalır; sıfırlamak için değeri `1.0` yapan ikinci bir komut tanımlayın.
 - `setgodmode` alan oyuncular sunucudan çıkana veya kapatılana kadar hasar almaz.
 - Grup hedeflerinde (`@all` vb.) mesajlardaki `[TARGET]` grup etiketiyle değiştirilir.
 

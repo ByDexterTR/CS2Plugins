@@ -18,7 +18,7 @@ public class CitConfig : BasePluginConfig
 public class Cit : BasePlugin, IPluginConfig<CitConfig>
 {
   public override string ModuleName => "Cit";
-  public override string ModuleVersion => "1.0.8";
+  public override string ModuleVersion => "1.0.9";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

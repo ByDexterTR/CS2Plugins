@@ -54,7 +54,7 @@ public class ScreenTextConfig : BasePluginConfig
     public List<ScreenTextElement> Texts { get; set; } = new()
     {
         new ScreenTextElement { Text = "github.com/ByDexterTR", X = -6.4f, Y = 1.3f, Size = 32f, Color = "#FFFFFF", Justify = "left" },
-        new ScreenTextElement { Text = "bydexter.com", X = 6.4f, Y = 2.3f, Size = 32f, Color = "#7CFC00", Justify = "right" }
+        new ScreenTextElement { Text = "bydexter.net", X = 6.4f, Y = 2.3f, Size = 32f, Color = "#7CFC00", Justify = "right" }
     };
 }
 

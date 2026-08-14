@@ -8,7 +8,6 @@ Cancels the blinding effect of flashbangs thrown by teammates. Enemy flashes kee
 
 - Instantly clears the flash effect coming from a teammate
 - Restores any still-running "legitimate" blindness caused by an enemy (a team flash cannot wipe legitimate blindness)
-- Lightweight slot based state tracking — no tick loop, event driven only
 - No config required
 
 ## Requirements

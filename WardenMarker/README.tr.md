@@ -1,5 +1,7 @@
 # WardenMarker
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Warden'a tek bir işaret halkası verir; tuşa bastığı anda halka baktığı noktaya taşınır. Halkanın ortasında duvar arkasından da görünen parlayan bir disk durur, böylece mahkumlar nereye toplanacaklarını uzaktan görür.
 
 ## Özellikler

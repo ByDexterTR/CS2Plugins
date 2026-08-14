@@ -28,7 +28,7 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.1.4";
+  public override string ModuleVersion => "1.1.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -356,7 +356,11 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     int maxOptions = mvpOnly ? 2 : 4;
     int step = mvpOnly ? 3 : 1;
 
-    var items = new List<WasdItem>();
+    var items = new List<WasdItem>
+    {
+      WasdItem.Back(Localizer["sesler.back"], p => ShowMainMenu(p))
+    };
+
     for (int i = 0; i < maxOptions; i++)
     {
       var modeIndex = mvpOnly ? i * step : i;
@@ -377,8 +381,6 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
         }
       });
     }
-
-    items.Add(new WasdItem { Text = Localizer["sesler.back"], OnSelect = p => ShowMainMenu(p) });
 
     _menus.Open(player, label, items);
   }

@@ -6,10 +6,10 @@ Modular VIP system. Provides a complete VIP infrastructure with more than 75 bui
 
 ## Features
 
-- **75+ built-in modules** — all in a single DLL, discovered automatically (reflection)
+- **75+ ready-made modules** — all included with the plugin, nothing extra to install
 - **Group system** — unlimited groups in `vipgroups.json`; each group decides which modules it gets and with which values
 - **Storage** — JSON (default) or MySQL; falls back to JSON automatically if the MySQL connection drops
-- **3 menu types** — `hud` (CenterHtml), `chat`, `wasd` (menu navigated with the W/S/E/R keys)
+- **3 menu types** — `hud` (on screen), `chat`, `wasd` (menu navigated with the W/S/E/R keys)
 - Timed or permanent VIP; when it expires every feature of the player is turned off and the VIP record **and** the player settings are deleted from storage (JSON/MySQL) automatically
 - Per-player feature settings (toggle or selection) are stored persistently
 - **Effect visibility** (`css_hidefx`) — every player decides who sees their own trail/particle/glow/sound effects (everyone, teammates, enemies, only themselves, nobody)
@@ -236,8 +236,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 ## Notes
 
 - The config files are **inside the plugin folder** (`settings.json`, `vipgroups.json`), not in CounterStrikeSharp's `configs/plugins` directory.
-- A module that is not defined in any group is never loaded (zero cost).
-- If trail modules are used the beam sprite is precached automatically.
-- The sound modules (`HitSound`, `SaySound`) support two methods: `path` plays a file path, `emit` plays one of the game's built-in sound names (no precache needed). If both are given, `emit` wins. Not every sound name works with `emit`; ones that do include `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept` and `UI.CoinLevelUp`. The sound is only sent to the target players, so `css_hidefx` preferences and the `say_team` filter work with both.
+- A module that is not defined in any group does not run at all.
+- The sound modules (`HitSound`, `SaySound`) support two methods: `path` plays your own sound file, `emit` plays one of the game's built-in sounds. If both are given, `emit` wins. Not every built-in sound name works with `emit`; known working ones are `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept` and `UI.CoinLevelUp`. With both methods the sound only reaches the players it should, so `css_hidefx` preferences and the `say_team` filter work either way.
 - Effect sounds (poison, healing, jump) are only heard by the affected player and their volume is set with `sound_volume`; `0` plays nothing.
 - The `"Rainbow rainbow"` and `"Rastgele random"` entries can be used in the color lists (`ColoredModel`, `PlayerGlow`, `PlayerTrail`, `BulletTrail`, `GrenadeTrail`, `SmokeColor`). If random is selected the player is assigned one shared color per round — the model, glow, trails and smoke all use the same color that round.

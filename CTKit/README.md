@@ -6,7 +6,7 @@ Lets CT players pick from a menu which primary and secondary weapon they get aut
 
 ## Features
 
-- Primary / secondary weapon selection through a CenterHtml menu
+- Primary / secondary weapon selection through an on-screen menu
 - Selections are remembered per player (until the player disconnects)
 - Players who have not chosen get the default weapons from the config
 - On spawn every weapon except the knife is cleared and the kit is given
@@ -52,7 +52,7 @@ Every weapon entry has two fields:
 
 | Field | Description |
 | --- | --- |
-| `weapon_name` | In-game entity name (with the `weapon_` prefix) |
+| `weapon_name` | In-game weapon name (with the `weapon_` prefix) |
 | `display_name` | Name shown in the menu |
 
 ### Example Config

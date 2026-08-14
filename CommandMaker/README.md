@@ -136,6 +136,6 @@ The value format is usually `"[TARGET] <value>"`; e.g. `"sethealth": "[TARGET] [
 
 ## Notes
 
-- `setspeed` / `setgravity` effects are persistent (applied per tick); to reset them define a second command that sets the value to `1.0`.
+- `setspeed` / `setgravity` effects stay on until you change them; to reset one, define a second command that sets the value back to `1.0`.
 - Players given `setgodmode` take no damage until they leave the server or it is turned off.
 - For group targets (`@all` etc.) the `[TARGET]` placeholder in messages is replaced with the group label.

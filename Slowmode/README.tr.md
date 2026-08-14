@@ -1,5 +1,7 @@
 # Slowmode
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Sohbete genel yavaş mod uygular; açıkken oyuncular mesajlar arasında belirlenen saniye kadar beklemek zorunda kalır.
 
 ## Özellikler

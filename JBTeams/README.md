@@ -36,7 +36,7 @@ Event plugin that splits living T players into colored teams. Players on the sam
 
 ## Configuration
 
-Team colors and names are defined in the source code; messages can be edited through `lang/tr.json` / `lang/en.json`.
+Team colors and names are fixed; messages can be edited through `lang/tr.json` / `lang/en.json`.
 
 ## Usage Example
 

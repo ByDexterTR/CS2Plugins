@@ -6,7 +6,7 @@ Revives (respawns) dead CT players from a menu or automatically. Works with a li
 
 ## Features
 
-- CenterHtml menu listing dead CTs — revivable players are shown in green, players still on cooldown in gray
+- An on-screen menu listing dead CTs — revivable players are shown in green, players still on cooldown in gray
 - **Cooldown** after death — a player cannot be revived before it expires
 - **Limited revive budget** per round; refilled automatically at the start of each round
 - **Automatic revive mode** — when enabled, CTs whose cooldown has expired respawn by themselves until the budget runs out

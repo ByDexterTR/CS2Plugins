@@ -1,6 +1,8 @@
 # Postprocessing
 
-Oyunculara kişiye özel post processing efekti (bloom, blur, renk düzeltme, pozlama) uygular. Efektler `post_processing_volume` entity'siyle verilir ve `CheckTransmit` ile yalnızca ilgili oyuncuya gönderilir; diğer oyuncular ekranlarında hiçbir değişiklik görmez.
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
+Oyunculara kişiye özel post processing efekti (bloom, blur, renk düzeltme, pozlama) uygular. Efekt yalnızca ilgili oyuncunun ekranında görünür; diğer oyuncular hiçbir değişiklik görmez.
 
 ## Özellikler
 
@@ -134,9 +136,9 @@ Efekt adları `.vpost` dosya adının kendisidir, yani `css_pp de_fachwerk3_drun
 | `Genel` | 15 | Kök `lighting/postprocessing/` ve `postprocess/` dosyaları — `ar_dizzy`, `filmic_default`, `basepostprocess`, `inspect_laptop`, `graphics_settings` ve FOV efekti `zoom` |
 | `Arayuz` | 4 | `lighting/postprocessing/ui/` — envanter/kasa ikon efektleri |
 | `Haritalar` | 49 | Resmî harita prefab'leri (`de_dust2_prefab`, `de_train_postprocess_v2`, `de_mirage_vanity` …) |
-| `HaritaOzel` | 24 | Harita `.vpk` dosyalarındaki özel efektler |
+| `HaritaOzel` | 24 | Belirli haritalara özel efektler |
 
-`HaritaOzel` efektleri `pak01_dir.vpk` içinde değil, ilgili haritanın kendi `.vpk` dosyasındadır. Menüde her haritada görünürler ancak yalnızca kaynağı olan harita yüklüyken çalışırlar:
+`HaritaOzel` efektleri oyunun geneline değil, tek tek haritalara aittir. Menüde her haritada görünürler ancak yalnızca ait oldukları harita açıkken çalışırlar:
 
 | Kaynak harita | Efektler |
 | --- | --- |
@@ -148,48 +150,12 @@ Efekt adları `.vpost` dosya adının kendisidir, yani `css_pp de_fachwerk3_drun
 | `de_debris` | `de_debris` |
 | `ar_pool_day`, `cs_shelter`, `de_fachwerk`, `de_poseidon` | `basic_linear_post` (dördünde de aynı dosya) |
 
-## Kendi `.vpost` Dosyanı Bulma
-
-Varsayılan config, oyun klasöründeki tüm `.vpk` arşivleri taranarak üretilmiştir; ekleme gerekmez. Atölyeden indirilen yeni bir haritanın kendi dosyalarını bulmak için [Source2Viewer CLI](https://valveresourceformat.github.io/) kullanılır:
-
-```powershell
-# Tek bir arşiv
-Source2Viewer-CLI.exe -i "csgo\pak01_dir.vpk" --vpk_dir | Select-String "vpost"
-
-# Oyun klasörünün tamamı
-Get-ChildItem "C:\cs2\game" -Filter "*.vpk" -Recurse |
-  Where-Object { $_.Name -like "*_dir.vpk" -or $_.Name -notmatch "_\d{3}\.vpk$" } |
-  ForEach-Object { Source2Viewer-CLI.exe -i $_.FullName --vpk_dir | Select-String "\.vpost_c" }
-```
-
-Haritanın hangi efekti kullandığını görmek için entity dökümü alınır:
-
-```powershell
-Source2Viewer-CLI.exe -i "csgo\maps\de_fachwerk.vpk" --vpk_filepath "maps/de_fachwerk/entities" -o out -d
-```
-
-Çıkan `default_ents.vents` dosyasındaki `post_processing_volume` kaydı config'e birebir taşınabilir:
-
-```
-fadetime                       20.0
-exposurespeeddown              1.0
-exposurespeedup                1.0
-enableexposure                 true
-maxexposure                    1.1
-minexposure                    0.8
-master                         true
-postprocessing                 resource_name:"postprocess/de_fachwerk5.vpost"
-classname                      "post_processing_volume"
-```
-
-Bulunan yolu `pp_presets` listesine yeni bir kayıt olarak eklemek yeterlidir.
-
 ## Notlar
 
-- Efekt entity'si `master` olarak spawn edilir, yani oyuncunun konumundan bağımsız olarak tüm haritada geçerlidir. Entity oyuncunun pawn'ına parent edilir, böylece PVS dışında kalıp kaybolmaz.
-- `.vpost` dosyaları harita yüklenirken precache edilir. `HaritaOzel` efektleri yalnızca kaynak haritalarında mevcuttur; başka bir haritada seçilirlerse ekranda değişiklik olmaz ve konsola bir kaynak uyarısı düşer, eklenti çalışmaya devam eder.
-- Oyuncu öldüğünde efekt entity'si kaldırılır, tekrar doğduğunda otomatik geri gelir. Ölüyken izlenen oyuncunun efekti görünmez.
-- `fov` alanı `m_iDesiredFOV` üzerinden çalışır; dürbünlü silahlarda oyunun kendi zoom'u önceliklidir.
+- Efekt oyuncunun bulunduğu yerden bağımsızdır; haritanın her yerinde geçerlidir.
+- `HaritaOzel` efektleri yalnızca kendi haritalarında çalışır. Başka bir haritada seçilirse ekranda hiçbir değişiklik olmaz, eklenti normal çalışmaya devam eder.
+- Oyuncu ölünce efekt kalkar, tekrar doğunca otomatik geri gelir. Ölüyken izlediğin oyuncunun efekti sana görünmez.
+- Dürbünlü silahlarda oyunun kendi zoom'u `fov` ayarının önüne geçer.
 - Efekt adları komutlarda büyük/küçük harf duyarsızdır (`css_pp bloomtest` = `css_pp BloomTest`).
 - Menü iki kademelidir: önce kategori, sonra efekt listesi. Kategori içinde `R` (Geri) üst menüye döner.
 - Efekt listesi config'te değiştirildiğinde mevcut `Postprocessing.json` dosyası **otomatik güncellenmez**. Yeni varsayılan listeyi almak için config dosyasını silip sunucuyu yeniden başlatın.

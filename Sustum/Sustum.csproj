@@ -23,6 +23,7 @@
   <ItemGroup>
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
     <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
+    <Compile Include="..\.Shared\HudGuard.cs" Link=".Shared\HudGuard.cs" />
     <Using Include="ByDexter.Shared" />
   </ItemGroup>
 

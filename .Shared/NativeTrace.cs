@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Utils;
@@ -9,11 +10,19 @@ public static unsafe class NativeTrace
 {
   public const ulong MaskShotPhysics = 0x2C3011;
 
-  private const int TraceShapeVtableOffsetWindows = 3;
-  private const int TraceShapeVtableOffsetLinux = 5;
+  private const string KeyPhysicsClass = "CNavPhysicsInterface_ClassName";
+  private const string KeyTraceShape = "CNavPhysicsInterface_TraceShape";
+  private const string KeyFilterClass = "CTraceFilter_ClassName";
+  private const string KeyFilterVtable = "CTraceFilter_Vtable";
+  private const string KeyFilterVtableDisp = "CTraceFilter_Vtable_Displacement";
 
-  private const string SigFilterVtableWindows = "4C 8D 2D ? ? ? ? 24";
-  private const string SigFilterVtableLinux = "48 8D 0D ? ? ? ? 66 89 95";
+  private const string DefaultPhysicsClass = "CNavPhysicsInterface";
+  private const string DefaultFilterClass = "CTraceFilter";
+  private const int DefaultTraceShapeWindows = 3;
+  private const int DefaultTraceShapeLinux = 5;
+  private const string DefaultFilterVtableWindows = "4C 8D 2D ? ? ? ? 24 C9 89 5D";
+  private const string DefaultFilterVtableLinux = "48 8D 0D ? ? ? ? 66 89 95";
+  private const int DefaultFilterVtableDisp = 3;
 
   private const float MaxWorldCoord = 131072f;
 
@@ -66,11 +75,52 @@ public static unsafe class NativeTrace
 
   public static bool Available => _traceShape != null && !_disabled;
 
+  private static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+  private static void Log(string message)
+  {
+    Console.WriteLine($"[NativeTrace] {message}");
+    try { Server.PrintToConsole($"[NativeTrace] {message}\n"); } catch { }
+  }
+
   private static void SelfDisable(string reason)
   {
     _disabled = true;
     LastError = reason;
-    Console.WriteLine($"[NativeTrace] DEVRE DISI: {reason}");
+    Log($"DEVRE DISI: {reason}");
+    Log($"Duzeltmek icin: addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json");
+  }
+
+  private static string GamedataText(string key, string fallback)
+  {
+    try
+    {
+      string value = GameData.GetSignature(key);
+      if (!string.IsNullOrWhiteSpace(value))
+      {
+        Log($"gamedata '{key}' kullaniliyor.");
+        return value;
+      }
+    }
+    catch { }
+
+    return fallback;
+  }
+
+  private static int GamedataOffset(string key, int fallback)
+  {
+    try
+    {
+      int value = GameData.GetOffset(key);
+      if (value > 0)
+      {
+        Log($"gamedata '{key}' kullaniliyor ({value}).");
+        return value;
+      }
+    }
+    catch { }
+
+    return fallback;
   }
 
   private static bool EnsureInit()
@@ -78,27 +128,28 @@ public static unsafe class NativeTrace
     if (_disabled) return false;
     if (_traceShape != null) return true;
 
+    string platform = IsLinux ? "linux" : "windows";
+    string className = GamedataText(KeyPhysicsClass, DefaultPhysicsClass);
+    string filterClass = GamedataText(KeyFilterClass, DefaultFilterClass);
+
     try
     {
-      bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-
-      IntPtr vtable = NativeAPI.FindVirtualTable(Addresses.ServerPath, "CNavPhysicsInterface");
+      IntPtr vtable = NativeAPI.FindVirtualTable(Addresses.ServerPath, className);
       if (vtable == IntPtr.Zero)
-        throw new Exception("CNavPhysicsInterface vtable bulunamadi.");
+        throw new Exception($"'{className}' vtable bulunamadi ({platform}, {Addresses.ServerPath}). gamedata anahtari: {KeyPhysicsClass}");
 
-      int offset = isLinux ? TraceShapeVtableOffsetLinux : TraceShapeVtableOffsetWindows;
+      int offset = GamedataOffset(KeyTraceShape, IsLinux ? DefaultTraceShapeLinux : DefaultTraceShapeWindows);
       IntPtr fn = *(IntPtr*)(vtable + offset * sizeof(nint));
       if (fn == IntPtr.Zero)
-        throw new Exception("TraceShape vtable girisi bos.");
+        throw new Exception($"TraceShape vtable girisi bos (offset {offset}, {platform}). gamedata anahtari: {KeyTraceShape}");
 
-      IntPtr filterSig = NativeAPI.FindSignature(Addresses.ServerPath,
-        isLinux ? SigFilterVtableLinux : SigFilterVtableWindows);
-      if (filterSig == IntPtr.Zero)
-        throw new Exception("CTraceFilter vtable imzasi bulunamadi.");
+      IntPtr filterVtable = ResolveFilterVtable(filterClass, platform, out string how);
+      if (filterVtable == IntPtr.Zero)
+        throw new Exception($"'{filterClass}' vtable bulunamadi ({platform}). RTTI ve imza taramasi ikisi de basarisiz. gamedata anahtarlari: {KeyFilterClass}, {KeyFilterVtable}");
 
-      _filterVtable = (void*)GetAbsoluteAddress(filterSig, 3, 7);
+      _filterVtable = (void*)filterVtable;
       _traceShape = Marshal.GetDelegateForFunctionPointer<TraceShapeDelegate>(fn);
-      Console.WriteLine("[NativeTrace] Native trace hazir (CNavPhysicsInterface).");
+      Log($"hazir ({className}, {platform}, TraceShape offset {offset}, filter {how}).");
       return true;
     }
     catch (Exception ex)
@@ -106,6 +157,34 @@ public static unsafe class NativeTrace
       SelfDisable(ex.Message);
       return false;
     }
+  }
+
+  private static IntPtr ResolveFilterVtable(string filterClass, string platform, out string how)
+  {
+    how = "";
+
+    IntPtr rtti = NativeAPI.FindVirtualTable(Addresses.ServerPath, filterClass);
+    if (rtti != IntPtr.Zero)
+    {
+      how = "RTTI";
+      return rtti;
+    }
+
+    Log($"'{filterClass}' RTTI ile bulunamadi, imza taramasina dusuluyor.");
+
+    string sigText = GamedataText(KeyFilterVtable,
+      IsLinux ? DefaultFilterVtableLinux : DefaultFilterVtableWindows);
+
+    IntPtr sig = NativeAPI.FindSignature(Addresses.ServerPath, sigText);
+    if (sig == IntPtr.Zero)
+    {
+      Log($"imza da eslesmedi ({platform}: {sigText}).");
+      return IntPtr.Zero;
+    }
+
+    int disp = GamedataOffset(KeyFilterVtableDisp, DefaultFilterVtableDisp);
+    how = "imza";
+    return GetAbsoluteAddress(sig, disp, disp + 4);
   }
 
   private static IntPtr GetAbsoluteAddress(IntPtr addr, int offset, int size)
@@ -174,7 +253,7 @@ public static unsafe class NativeTrace
 
     if (!IsSane(trace))
     {
-      SelfDisable("TraceShape gecersiz sonuc dondurdu (imza/offset kaymis olabilir).");
+      SelfDisable($"TraceShape gecersiz sonuc dondurdu. gamedata anahtarlari: {KeyTraceShape}, {KeyFilterVtable}");
       return null;
     }
 

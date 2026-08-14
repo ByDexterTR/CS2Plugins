@@ -71,4 +71,3 @@ Bans are kept in the `CTBanList.json` file inside the plugin folder:
 ## Notes
 
 - When a ban expires the record is deleted automatically the moment the player connects, changes team or spawns.
-- File writes are done in the background (async) and do not block the game loop.

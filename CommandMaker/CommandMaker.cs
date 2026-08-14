@@ -230,9 +230,11 @@ public class CommandsConfig
 public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 {
     public override string ModuleName => "CommandMaker";
-    public override string ModuleVersion => "1.0.5";
+    public override string ModuleVersion => "1.0.6";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
+
+    private const int HudTickRate = 4;
 
     public CommandMakerConfig Config { get; set; } = new();
     private CommandsConfig? _commandsConfig;
@@ -276,6 +278,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
     {
         base.Load(hotReload);
 
+        HudGuard.Install(this);
         RegisterListener<OnTick>(OnTick);
         RegisterListener<OnEntityTakeDamagePre>(OnEntityDamage);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
@@ -1198,6 +1201,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             return;
 
         var currentTime = Server.CurrentTime;
+        bool hudFrame = Server.TickCount % HudTickRate == 0;
         var affected = new HashSet<ulong>(_playerSpeed.Keys);
         affected.UnionWith(_playerGravity.Keys);
         affected.UnionWith(_playerCenter.Keys);
@@ -1220,7 +1224,10 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             if (_playerCenter.TryGetValue(steamId, out var centerData))
             {
                 if (currentTime < centerData.EndTime)
-                    player.PrintToCenterHtml(centerData.Message);
+                {
+                    if (hudFrame && !HudGuard.Blocked(player))
+                        player.PrintToCenterHtml(centerData.Message);
+                }
                 else
                     (toRemove ??= new List<ulong>()).Add(steamId);
             }

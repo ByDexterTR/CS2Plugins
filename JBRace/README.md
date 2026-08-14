@@ -6,7 +6,7 @@ Race event for Jailbreak servers. The warden sets a start and a finish point, an
 
 ## Features
 
-- Full race management through a CenterHtml menu: start, cancel, start/finish point, winner count, clear markers
+- Full race management through an on-screen menu: start, cancel, start/finish point, winner count, clear markers
 - A spinning **coin model** and a **green beam** reaching to the sky as the finish marker
 - 3 second HUD countdown; racers are teleported to the start point and frozen
 - Racing Ts are colored red, players who reach the finish are colored green
@@ -54,4 +54,3 @@ Race event for Jailbreak servers. The warden sets a start and a finish point, an
 ## Notes
 
 - Only **living T players** join the race.
-- The coin model (`models/coop/challenge_coin.vmdl`) is precached automatically by the server.

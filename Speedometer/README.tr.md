@@ -1,15 +1,16 @@
 # Speedometer
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Oyuncunun anlık hızını (u/s) ekran ortasında gösterir. Hız arttıkça gösterge rengi beyazdan maviye, turuncuya ve kırmızıya geçer. Bhop / surf / kz sunucuları için tasarlanmıştır.
 
 ## Özellikler
 
-- CenterHtml HUD üzerinde anlık yatay hız göstergesi (`u/s`)
-- Hıza göre renk geçişi: 0 beyaz → 1000 mavi → 2000 turuncu → 3000+ kırmızı (ara değerler interpolasyonlu)
+- Ekranın ortasında anlık hız göstergesi (`u/s`)
+- Hıza göre renk geçişi: 0 beyaz → 1000 mavi → 2000 turuncu → 3000+ kırmızı, aradaki değerlerde yumuşak ara tonlar
 - İzleyici (spectator) modunda izlenen oyuncunun hızı gösterilir
 - Tercih kalıcıdır — kapatan oyuncu için `Speedometer.json` dosyasına kaydedilir
 - Menü açıkken gösterge otomatik gizlenir
-- Slot bazlı takip; kimse kullanmıyorken tick maliyeti minimumdur
 - Türkçe / İngilizce dil desteği (`lang/`)
 
 ## Gereksinimler

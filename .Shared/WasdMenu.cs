@@ -7,20 +7,31 @@ namespace ByDexter.Shared;
 
 public class WasdItem
 {
+  public const string BackColor = "#FF8077";
+
   public string Text = "";
   public Action<CCSPlayerController>? OnSelect;
   public bool Enabled = true;
   public string? Color;
+
+  public static WasdItem Back(string text, Action<CCSPlayerController> onSelect) => new()
+  {
+    Text = text,
+    Color = BackColor,
+    OnSelect = onSelect
+  };
 }
 
 public class WasdMenuManager
 {
   private const int PerPage = 5;
+  private const int HudTickRate = 4;
 
   private readonly BasePlugin _plugin;
   private readonly Func<string> _scrollLabel;
   private readonly Func<string> _selectLabel;
   private readonly Func<string> _exitLabel;
+  private readonly string _tag;
 
   private readonly Dictionary<int, Session> _sessions = new();
   private readonly Dictionary<int, Dictionary<string, int>> _memory = new();
@@ -34,6 +45,7 @@ public class WasdMenuManager
     public int Selected;
     public PlayerButtons OldButtons;
     public string Html = "";
+    public bool Dirty = true;
   }
 
   public WasdMenuManager(BasePlugin plugin, Func<string> scrollLabel, Func<string> selectLabel, Func<string> exitLabel)
@@ -42,6 +54,7 @@ public class WasdMenuManager
     _scrollLabel = scrollLabel;
     _selectLabel = selectLabel;
     _exitLabel = exitLabel;
+    _tag = $"<{new string(plugin.ModuleName.Where(char.IsLetterOrDigit).ToArray())}/>";
   }
 
   public void Open(CCSPlayerController player, string title, List<WasdItem> items)
@@ -68,7 +81,9 @@ public class WasdMenuManager
       Title = title,
       Items = items,
       Selected = selected,
-      OldButtons = _sessions.TryGetValue(slot, out var prev) ? prev.OldButtons : player.Buttons
+      OldButtons = _sessions.TryGetValue(slot, out var prev)
+        ? prev.OldButtons
+        : (Util.TryGetButtons(player, out var current) ? current : 0)
     };
     session.Html = BuildHtml(session);
     _sessions[slot] = session;
@@ -93,7 +108,7 @@ public class WasdMenuManager
     foreach (var session in _sessions.Values)
     {
       if (session.Player.IsValid)
-        session.Player.PrintToCenterHtml(" ");
+        session.Player.PrintToCenterHtml(_tag + " ");
     }
     _sessions.Clear();
     _memory.Clear();
@@ -114,7 +129,12 @@ public class WasdMenuManager
         continue;
       }
 
-      var buttons = player.Buttons;
+      if (!Util.TryGetButtons(player, out var buttons))
+      {
+        Draw(session, player);
+        continue;
+      }
+
       var old = session.OldButtons;
       session.OldButtons = buttons;
 
@@ -135,8 +155,17 @@ public class WasdMenuManager
         continue;
       }
 
-      player.PrintToCenterHtml(session.Html);
+      Draw(session, player);
     }
+  }
+
+  private static void Draw(Session session, CCSPlayerController player)
+  {
+    if (!session.Dirty && Server.TickCount % HudTickRate != 0)
+      return;
+
+    session.Dirty = false;
+    player.PrintToCenterHtml(session.Html);
   }
 
   private void Scroll(Session session, int direction)
@@ -151,6 +180,7 @@ public class WasdMenuManager
 
     session.Selected = next;
     session.Html = BuildHtml(session);
+    session.Dirty = true;
   }
 
   private void Select(Session session)
@@ -171,7 +201,7 @@ public class WasdMenuManager
     _memory.Remove(session.Player.Slot);
 
     if (clear && session.Player.IsValid)
-      session.Player.PrintToCenterHtml(" ");
+      session.Player.PrintToCenterHtml(_tag + " ");
   }
 
   private string BuildHtml(Session session)
@@ -183,6 +213,7 @@ public class WasdMenuManager
     int end = Math.Min(offset + PerPage, count);
 
     var builder = new StringBuilder();
+    builder.Append(_tag);
     builder.Append($"<font color='#ffb300'>{session.Title}</font>");
     if (totalPages > 1)
       builder.Append($" ({page + 1}/{totalPages})");

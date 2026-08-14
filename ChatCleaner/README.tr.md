@@ -1,5 +1,7 @@
 # ChatCleaner
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Sohbet temizleme aracı. Oyuncular kendi ekranını, adminler tüm sunucunun sohbetini temizleyebilir.
 
 ## Özellikler

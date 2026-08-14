@@ -1,5 +1,7 @@
 # DiscordLogger
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Sunucu olaylarını Discord webhook'larına iletir ve istenirse günlük dosya logu tutar. 10 bağımsız kategori, 25+ olay türü; her kategori için ayrı kanal (webhook) tanımlanabilir.
 
 ## Özellikler
@@ -10,8 +12,7 @@ Sunucu olaylarını Discord webhook'larına iletir ve istenirse günlük dosya l
 - **Detaylı raunt özeti** — kazanan, bitiş sebebi, **MVP**, oyuncu sayısı
 - **Günlük dosya logu** — `log_to_file` açıldığında tüm aktif kategoriler `logs/DiscordLogger-YYYY-MM-DD.log` dosyasına da yazılır
 - **Discord mesajlarında saat/süre yok** — Discord mesaj saatini zaten gösterdiği için mesajlara saat öneki eklenmez; oynama süresi ve raunt süresi yalnızca dosya loguna yazılır
-- **Sıfır gereksiz yük** — webhook'u boş olan kategorinin event handler'ları hiç kayıt edilmez
-- Mesajlar 3 saniyelik arabellekte toplanıp tek seferde gönderilir (rate-limit dostu, 2000 karakter sınırına uyar)
+- Mesajlar Discord'a birkaç saniyede bir, gruplar halinde gönderilir
 - Komut ve sohbet için **kara liste**; ısınma (warmup) rauntları loglanmaz
 - Tüm mesaj şablonları `lang/` dosyalarından özelleştirilebilir (emoji dahil)
 
@@ -48,7 +49,7 @@ Config değişikliği sonrası `css_plugins reload DiscordLogger` yeterlidir.
 | `webhook_bomb` | `bomb_planted`, `bomb_defused`, `bomb_exploded`, `bomb_dropped`, `bomb_pickup` |
 | `webhook_activity` | `player_ping`, `weapon_zoom`, `item_purchase` |
 
-> Boş bırakılan webhook'un kategorisi (dosya logu da kapalıysa) **tamamen devre dışıdır** — event handler'ları kayıt edilmez, hiçbir işlem yapılmaz.
+> Boş bırakılan webhook'un kategorisi (dosya logu da kapalıysa) **tamamen devre dışıdır**.
 
 ## Yapılandırma
 
@@ -112,4 +113,3 @@ Dosya logunda ise linkler `Ad (profil-url)` biçimine düzleştirilir ve süre b
 - Süresi 0 olan sahte `player_blind` olayları loglanmaz.
 - Flash'tan etkilenen oyuncular `player_blind` olayıyla `webhook_grenade` kanalına düşer.
 - Raunt bitiş sebebi bilinmeyen bir koda denk gelirse oyunun ham bildirimi (`#SFUI_Notice_...` kırpılmış hâli) gösterilir.
-- Dosya logu, Discord gönderimiyle aynı 3 saniyelik döngüde arka planda yazılır; oyun akışını bloklamaz.

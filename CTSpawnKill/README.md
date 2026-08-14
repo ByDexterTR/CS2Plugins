@@ -46,5 +46,5 @@ csgo/addons/counterstrikesharp/configs/plugins/CTSpawnKill/CTSpawnKill.json
 ## Notes
 
 - The protection only applies to the **CT team**.
-- Damage blocking is done through `OnEntityTakeDamagePre`; every damage source (weapon, knife, explosion) is zeroed.
+- Every kind of damage is blocked: weapons, knife, explosions and falling.
 - For a more complete version with flag based protection, T support and color transitions see the [SpawnkillProtection](../SpawnkillProtection) plugin; do not use both plugins at the same time.

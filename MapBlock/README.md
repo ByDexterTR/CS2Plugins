@@ -12,7 +12,6 @@ Automatically closes off certain areas of the map with fence models while the pl
 - The state is re-evaluated at the start of every round
 - The example layout file (`MapBlock.example.json`) is copied automatically on first run
 - Reload command so you can edit the JSON by hand without restarting the server
-- Fence models are precached automatically
 - Turkish / English language support (`lang/`)
 
 ## Requirements
@@ -65,7 +64,7 @@ Formatted as map name → layout list:
 
 | Field | Description |
 | --- | --- |
-| `Model` | One of the precached fence models (64/128/256 sizes) |
+| `Model` | One of the available fence models (64/128/256 sizes) |
 | `Origin` | `[x, y, z]` world coordinate |
 | `Angles` | `[pitch, yaw, roll]` angle values |
 

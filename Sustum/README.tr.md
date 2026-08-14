@@ -1,5 +1,7 @@
 # Sustum
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Jailbreak "sustum" etkinliği: ekranda beliren kelimeyi sohbete ilk yazan oyuncu kazanır (veya CTSustum'da yazamayan kaybeder). 4 farklı oyun modu içerir.
 
 ## Oyun Modları
@@ -13,7 +15,7 @@ Jailbreak "sustum" etkinliği: ekranda beliren kelimeyi sohbete ilk yazan oyuncu
 
 ## Özellikler
 
-- 3 saniyelik geri sayım sonrası ekrana 1-4 rastgele kelimeden oluşan ifade gelir (HUD/CenterHtml)
+- 3 saniyelik geri sayımdan sonra ekranın ortasına 1-4 rastgele kelimeden oluşan bir ifade gelir
 - Kelime havuzu `sustum.json` dosyasından okunur (repo ~1000+ Türkçe kelimeyle gelir)
 - Kelime karşılaştırması büyük/küçük harf duyarsızdır
 - Aynı anda yalnızca bir etkinlik çalışır; kazanan/kaybeden HUD'da ve sohbette duyurulur

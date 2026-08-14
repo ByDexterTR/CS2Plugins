@@ -10,7 +10,7 @@ Gönderenin ekranı:  [ByDexter] Mesaj Alıcı kullanıcısına gönderildi.
 ## Özellikler
 
 - `!pm <oyuncu> <mesaj>` ile özel mesaj; isim tam veya kısmi eşleşmeyle bulunur
-- `!pm` / `!msg` ile başlayan chat yazıları herkese gözükmez (UserMessage hook)
+- `!pm` / `!msg` ile başlayan sohbet yazıları diğer oyunculara gözükmez
 - Oyuncu bazında özel mesajları kapatma/açma (`!pmoff` / `!pmon`); kapatan oyuncu PM alamaz ve gönderemez
 - Oyuncu bazında bildirim sesi açma/kapama (`!pmsound`)
 - Alıcıya ve gönderene ayrı sesler çalınır; sesler config'ten değiştirilebilir
@@ -64,7 +64,7 @@ csgo/addons/counterstrikesharp/configs/plugins/PrivateMessage/PrivateMessage.jso
 | --- | --- | --- |
 | `provider` | `"json"` | `"json"` veya `"mysql"` |
 | `host` | `"localhost"` | MySQL sunucusu |
-| `name` | `"bydexter_pm"` | Veritabanı adı (yoksa oluşturulur) |
+| `name` | `"bydexter_pm"` | Database adı (yoksa oluşturulur) |
 | `port` | `"3306"` | MySQL portu |
 | `user` | `"root"` | MySQL kullanıcısı |
 | `password` | `""` | MySQL şifresi |
@@ -105,7 +105,7 @@ Dosya satırları saat damgası içerir: `[21:45:03] [ByDexter -> Oyuncu]: selam
 
 ## Notlar
 
-- Chat'e yazılan `!pm ...` / `/pm ...` satırları (config'teki tüm komut adları dahil) UserMessage hook ile engellenir, kimseye gözükmez; komut yine de çalışır.
+- Sohbete yazılan `!pm ...` / `/pm ...` satırları (config'teki tüm komut adları dahil) kimseye gözükmez; komut yine de normal çalışır.
 - Mesaj ve ses tercihleri SteamID bazında kalıcıdır (varsayılan: mesajlar açık, ses açık); her değişiklikte ve oyuncu çıkışında kaydedilir.
 - İsim eşleşmesi önce tam ad, yoksa kısmi arama yapar; birden fazla eşleşmede mesaj gönderilmez.
 - Komut adı değişiklikleri eklenti yeniden başlatıldığında etkinleşir.

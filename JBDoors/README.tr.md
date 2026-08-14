@@ -1,11 +1,13 @@
 # JBDoors
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Haritadaki tüm kapıları tek komutla açar veya kapatır. Jailbreak sunucularında hücre kapıları için kullanılır.
 
 ## Özellikler
 
-- Tek komutla tüm kapı türlerini açma: `func_door`, `func_movelinear`, `func_door_rotating`, `prop_door_rotating`
-- Açma komutu ayrıca `func_breakable` entity'lerini kırar (kırılabilir hücre kapıları için)
+- Tek komutla haritadaki her türden kapıyı açar (sürgülü, döner, kayar)
+- Açma komutu kırılabilir hücre kapılarını da kırar
 - Kapatma komutu aynı kapı türlerini kapatır
 - İşlemi yapan oyuncunun adı tüm sunucuya duyurulur
 - Türkçe / İngilizce dil desteği (`lang/`)
@@ -42,5 +44,5 @@ Mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Notlar
 
-- Kırılan `func_breakable` entity'leri raunt yenilenene kadar geri gelmez (harita davranışı).
-- Komut haritadaki **tüm** eşleşen entity'leri hedefler; belirli kapıları ayırt etmez.
+- Kırılan kapılar raunt yenilenene kadar geri gelmez; bu haritanın kendi davranışıdır.
+- Komut haritadaki **bütün** kapıları etkiler; tek tek kapı seçilemez.

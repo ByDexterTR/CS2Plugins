@@ -7,7 +7,7 @@ Starts an automatic countdown when only **1 living player** is left on each team
 ## Features
 
 - Detects a 1 T vs 1 CT situation automatically and starts the countdown
-- Countdown is shown in chat and/or on the CenterHtml HUD
+- The countdown is shown in chat and/or in the middle of the screen
 - The timer is cancelled automatically at round start, at round end, or when the 1v1 situation ends
 - Minimum player count requirement (default: 3) — the timer will not start with too few players
 - Surviving players are slayed when time runs out
@@ -45,7 +45,7 @@ csgo/addons/counterstrikesharp/configs/plugins/1v1Slay/1v1Slay.json
 | `min_players` | int | `3` | Minimum player count required for the timer (T + CT + spectators) |
 | `countdown_time` | int | `30` | Countdown duration (seconds) |
 | `enable_chat_announce` | bool | `true` | Enable/disable chat announcements |
-| `enable_hud_announce` | bool | `true` | Enable/disable the HUD (CenterHtml) timer |
+| `enable_hud_announce` | bool | `true` | Enable/disable the on-screen timer |
 
 ### Example Config
 

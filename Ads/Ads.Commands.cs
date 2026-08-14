@@ -2,6 +2,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace Ads;
 
@@ -122,17 +123,37 @@ public partial class Ads
     }
   }
 
-  private void ReloadProps()
+  private bool ReloadProps(CCSPlayerController? player)
   {
-    _mapsData.Props = _storage.LoadMaps().Props;
+    try
+    {
+      _mapsData.Props = _storage.LoadMaps().Props;
+    }
+    catch (AdsFileException ex)
+    {
+      ReportFileError(player, ex);
+      return false;
+    }
+
     _data.Props = _mapsData.Props;
     SpawnWorldAds();
     SyncListeners();
+    return true;
   }
 
-  private void ReloadAds()
+  private bool ReloadAds(CCSPlayerController? player)
   {
-    var loaded = _storage.Load();
+    AdsData loaded;
+    try
+    {
+      loaded = _storage.Load();
+    }
+    catch (AdsFileException ex)
+    {
+      ReportFileError(player, ex);
+      return false;
+    }
+
     _data.ScreenTexts = loaded.ScreenTexts;
     _data.HudSays = loaded.HudSays;
     _data.ChatSays = loaded.ChatSays;
@@ -142,13 +163,29 @@ public partial class Ads
     BuildQueues();
     BuildEvents();
     SyncListeners();
+    return true;
   }
 
   private void ReloadSettings(CCSPlayerController? player)
   {
-    LoadSettings();
+    try
+    {
+      LoadSettings();
+    }
+    catch (AdsFileException ex)
+    {
+      ReportFileError(player, ex);
+      return;
+    }
+
     SyncListeners();
     Reply(player, Localizer["ads.reloaded_settings", _json.SettingsFilePath]);
+  }
+
+  private void ReportFileError(CCSPlayerController? player, AdsFileException ex)
+  {
+    Logger.LogError("{message}", ex.Message);
+    Reply(player, Localizer["ads.file_error", ex.Message]);
   }
 
   private void PlaceProp(CCSPlayerController player, PropModel model)

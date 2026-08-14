@@ -1,5 +1,7 @@
 # CTBan
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Oyuncuların CT (gardiyan) takımına geçişini süreli olarak yasaklar. Jailbreak sunucularının vazgeçilmez moderasyon aracıdır.
 
 ## Özellikler
@@ -69,4 +71,3 @@ Yasaklar eklenti klasöründeki `CTBanList.json` dosyasında tutulur:
 ## Notlar
 
 - Yasak süresi dolduğunda oyuncu bağlandığı, takım değiştirdiği veya spawn olduğu anda kayıt otomatik silinir.
-- Dosya yazma işlemleri arka planda (async) yapılır, oyun akışını bloklamaz.
