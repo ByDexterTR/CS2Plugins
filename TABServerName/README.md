@@ -19,6 +19,7 @@ With this plugin:    Competitive | de_mirage | bydexter.net | 5v5 RETAKE
 ## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- The `gamedata` file: `addons/counterstrikesharp/gamedata/TABServerName.gamedata.json`
 
 ## Installation
 

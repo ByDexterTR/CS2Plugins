@@ -19,6 +19,7 @@ Bu eklentiyle:   Rekabetçi | de_mirage | bydexter.net | 5v5 RETAKE
 ## Gereksinimler
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- `gamedata` dosyası: `addons/counterstrikesharp/gamedata/TABServerName.gamedata.json`
 
 ## Kurulum
 

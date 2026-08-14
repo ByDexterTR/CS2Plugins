@@ -18,6 +18,7 @@ Gives the warden a single marker ring that jumps to the point they are looking a
 ## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- The `gamedata` file: `addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json`
 
 ## Installation
 

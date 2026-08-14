@@ -17,6 +17,7 @@ Lets admins teleport players to the point under their crosshair (`!bring`) or te
 ## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- The `gamedata` file: `addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json`
 
 ## Installation
 

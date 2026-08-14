@@ -23,6 +23,7 @@ Places props on the map, draws messages on screen and sends announcements to cha
 ## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- The `gamedata` file: `addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json`
 
 ## Installation
 

@@ -17,6 +17,7 @@ Lets you place a fence (chainlink) or solid panel model at the point you are loo
 ## Requirements
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- The `gamedata` file: `addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json`
 
 ## Installation
 
