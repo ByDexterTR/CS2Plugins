@@ -29,7 +29,7 @@ public class HideTeammatesConfig : BasePluginConfig
 public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
 {
   public override string ModuleName => "HideTeammates";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -88,7 +88,7 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
       {
         if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0)
           continue;
-        _hidden[player.Slot] = _saved.Contains(player.SteamID);
+        _hidden[player.Slot] = _saved.Contains(Util.SteamId(player));
       }
     }
   }
@@ -118,9 +118,9 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
     _hidden[slot] = !_hidden[slot];
 
     if (_hidden[slot])
-      _saved.Add(player.SteamID);
+      _saved.Add(Util.SteamId(player));
     else
-      _saved.Remove(player.SteamID);
+      _saved.Remove(Util.SteamId(player));
 
     SavePrefs();
 

@@ -24,7 +24,7 @@ public class MapBlockConfig : BasePluginConfig
 public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 {
 	public override string ModuleName => "MapBlock";
-	public override string ModuleVersion => "1.0.4";
+	public override string ModuleVersion => "1.0.5";
 	public override string ModuleAuthor => "ByDexter";
 	public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -164,9 +164,17 @@ public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
 			return false;
 		}
 
+		string modelPath = placement.ModelPath.EndsWith(".vmdl_c", StringComparison.Ordinal) ? placement.ModelPath[..^2] : placement.ModelPath;
+
 		model.Entity.Name = FenceName;
-		model.DispatchSpawn();
-		model.SetModel(placement.ModelPath);
+
+		using (var keyValues = new CEntityKeyValues())
+		{
+			keyValues.SetString("model", modelPath);
+			keyValues.SetString("targetname", FenceName);
+			model.DispatchSpawn(keyValues);
+		}
+
 		model.AcceptInput("DisableMotion");
 
 		var position = placement.Position;

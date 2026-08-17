@@ -36,7 +36,25 @@ Hayattaki T oyuncularını renkli takımlara bölen etkinlik eklentisi. Aynı ta
 
 ## Yapılandırma
 
-Takım renkleri ve isimleri sabittir; mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
+```
+csgo/addons/counterstrikesharp/configs/plugins/JBTeams/JBTeams.json
+```
+
+| Ayar | Tip | Varsayılan | Açıklama |
+| --- | --- | --- | --- |
+| `teams_cmd` | string | `"css_takim,css_team"` | Çalıştıran komutlar, virgülle ayrılır |
+| `teams_flag` | string | `"@jailbreak/warden,@css/generic"` | Kullanabilecek flagler, virgülle ayrılır |
+| `force_balance` | bool | `true` | Takımların eşit oyuncu sayısıyla çıkması zorunlu olsun mu |
+| `teams` | liste | — | Takım listesi; her kayıtta `name` ve `color` (`[R, G, B]`) bulunur |
+
+```json
+"teams": [
+  { "name": "Kırmızı", "color": [255, 64, 64] },
+  { "name": "Mavi",    "color": [64, 128, 255] }
+]
+```
+
+Mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Kullanım Örneği
 

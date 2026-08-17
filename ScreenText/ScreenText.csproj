@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
     <Using Include="ByDexter.Shared" />
   </ItemGroup>

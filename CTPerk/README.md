@@ -56,6 +56,8 @@ csgo/addons/counterstrikesharp/configs/plugins/CTPerk/CTPerk.json
 | `enabled_perk_damagereducation` | bool | `true` | Whether the damage reduction perk is active |
 | `enabled_perk_damageboost` | bool | `true` | Whether the damage boost perk is active |
 | `selection_rights` | list | below | Perk selection budget by T count |
+| `ctperk_cmd` | string | `"css_ctperk,css_ctp"` | Commands that open the menu, separated by commas |
+| `ctperk_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to use it, separated by commas |
 
 `selection_rights` — the T count threshold (`t_count`) and the budget granted at that threshold (`hak`); the highest matching threshold applies:
 

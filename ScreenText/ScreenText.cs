@@ -61,7 +61,7 @@ public class ScreenTextConfig : BasePluginConfig
 public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
 {
     public override string ModuleName => "ScreenText";
-    public override string ModuleVersion => "1.0.1";
+    public override string ModuleVersion => "1.0.2";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -117,7 +117,7 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
                 if (player == null || !player.IsValid || player.IsBot || player.IsHLTV)
                     continue;
 
-                _hidden[player.Slot] = IsHiddenFor(player.SteamID);
+                _hidden[player.Slot] = IsHiddenFor(Util.SteamId(player));
                 CreateTexts(player);
             }
         }
@@ -182,7 +182,7 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
         if (player == null || !player.IsValid || player.IsBot || player.IsHLTV)
             return HookResult.Continue;
 
-        _hidden[player.Slot] = IsHiddenFor(player.SteamID);
+        _hidden[player.Slot] = IsHiddenFor(Util.SteamId(player));
         return HookResult.Continue;
     }
 
@@ -246,9 +246,9 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
         lock (_saveLock)
         {
             if (_hidden[slot])
-                _savedHidden.Add(player.SteamID);
+                _savedHidden.Add(Util.SteamId(player));
             else
-                _savedHidden.Remove(player.SteamID);
+                _savedHidden.Remove(Util.SteamId(player));
         }
         SaveAsync();
 

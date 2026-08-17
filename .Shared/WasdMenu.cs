@@ -1,6 +1,8 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.UserMessages;
 using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace ByDexter.Shared;
@@ -26,6 +28,11 @@ public class WasdMenuManager
 {
   private const int PerPage = 5;
   private const int HudTickRate = 4;
+  private const int LegacyEventMessageId = 207;
+  private const int ShowCenterHtmlEventId = 226;
+
+  private static readonly Regex HtmlValue = new(@"val_string:\s*""(.*?)""", RegexOptions.Compiled);
+  private static readonly Regex MenuTag = new(@"^<[A-Za-z0-9]+/>", RegexOptions.Compiled);
 
   private readonly BasePlugin _plugin;
   private readonly Func<string> _scrollLabel;
@@ -55,6 +62,36 @@ public class WasdMenuManager
     _selectLabel = selectLabel;
     _exitLabel = exitLabel;
     _tag = $"<{new string(plugin.ModuleName.Where(char.IsLetterOrDigit).ToArray())}/>";
+
+    plugin.HookUserMessage(LegacyEventMessageId, OnCenterHtml);
+  }
+
+  private HookResult OnCenterHtml(UserMessage message)
+  {
+    if (_sessions.Count == 0)
+      return HookResult.Continue;
+
+    if (message.ReadUInt("eventid") != ShowCenterHtmlEventId)
+      return HookResult.Continue;
+
+    var value = HtmlValue.Match(message.DebugString);
+    if (!value.Success)
+      return HookResult.Continue;
+
+    var tag = MenuTag.Match(value.Groups[1].Value);
+    if (!tag.Success || tag.Value == _tag)
+      return HookResult.Continue;
+
+    foreach (var recipient in message.Recipients)
+    {
+      if (recipient == null || !recipient.IsValid)
+        continue;
+
+      if (_sessions.TryGetValue(recipient.Slot, out var session))
+        CloseSession(session, false);
+    }
+
+    return HookResult.Continue;
   }
 
   public void Open(CCSPlayerController player, string title, List<WasdItem> items)

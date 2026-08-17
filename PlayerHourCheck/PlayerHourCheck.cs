@@ -77,7 +77,7 @@ public class PlayerHourCheckConfig : BasePluginConfig
 public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 {
   public override string ModuleName => "PlayerHourCheck";
-  public override string ModuleVersion => "1.0.8";
+  public override string ModuleVersion => "1.0.9";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -379,7 +379,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
   private void BeginConnectCheck(CCSPlayerController player)
   {
-    var steamId = player.SteamID;
+    var steamId = Util.SteamId(player);
     var steamIdStr = steamId.ToString();
 
     Task.Run(() =>
@@ -429,7 +429,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     var player = @event.Userid;
     if (player == null || player.IsBot) return HookResult.Continue;
 
-    var steamId = player.SteamID;
+    var steamId = Util.SteamId(player);
     if (_pendingChecks.TryGetValue(steamId, out var timer))
     {
       timer?.Kill();
@@ -456,7 +456,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
   {
     if (player == null || !player.IsValid) return;
 
-    var steamId = player.SteamID;
+    var steamId = Util.SteamId(player);
     _pendingChecks.Remove(steamId);
 
     try
@@ -573,7 +573,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
   private void HandlePrivateProfile(CCSPlayerController player)
   {
-    var steamId = player.SteamID;
+    var steamId = Util.SteamId(player);
     var steamIdStr = steamId.ToString();
 
     if (Config.WarnEnabled != 1)
@@ -600,7 +600,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
   private void ApplyPrivatePenalty(CCSPlayerController player)
   {
-    var steamIdStr = player.SteamID.ToString();
+    var steamIdStr = Util.SteamId(player).ToString();
 
     Task.Run(() =>
     {
@@ -629,7 +629,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     if (!hasValidSteamIds && !hasValidFlags)
       return false;
 
-    var steamId = player.SteamID.ToString();
+    var steamId = Util.SteamId(player).ToString();
     if (hasValidSteamIds)
     {
       foreach (var id in Config.IgnoreSteamIds!)

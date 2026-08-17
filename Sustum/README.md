@@ -49,6 +49,22 @@ Every command requires `@css/generic` **or** `@jailbreak/warden`:
 
 ## Configuration
 
+```
+csgo/addons/counterstrikesharp/configs/plugins/Sustum/Sustum.json
+```
+
+Every event has its own command and flag setting; several commands can be listed separated by commas.
+
+| Setting | Type | Default |
+| --- | --- | --- |
+| `ctsustum_cmd` / `ctsustum_flag` | string | `"css_ctsustum"` / `"@jailbreak/warden,@css/generic"` |
+| `tsustum_cmd` / `tsustum_flag` | string | `"css_tsustum"` / `"@jailbreak/warden,@css/generic"` |
+| `dsustum_cmd` / `dsustum_flag` | string | `"css_dsustum"` / `"@jailbreak/warden,@css/generic"` |
+| `olusustum_cmd` / `olusustum_flag` | string | `"css_olusustum"` / `"@jailbreak/warden,@css/generic"` |
+| `stop_cmd` / `stop_flag` | string | `"css_ctsustum0,css_dsustum0,css_tsustum0,css_olusustum0,css_sustum0"` / `"@jailbreak/warden,@css/generic"` |
+
+### Word Pool
+
 The word pool is the `sustum.json` file inside the plugin folder — a plain string array:
 
 ```json

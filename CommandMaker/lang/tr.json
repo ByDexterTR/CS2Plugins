@@ -1,5 +1,5 @@
 {
-  "commandmaker.no_permission": "Bu komutu kullanmak için yetkiniz yok.",
+  "commandmaker.no_permission": "Bu komutu kullanmak için yetkin yok.",
   "commandmaker.commands_loaded": "CommandMaker: {0} komut yüklendi.",
   "commandmaker.unknown_type": "Bilinmeyen komut tipi: {0}",
   "commandmaker.usage_player": "Kullanım: {0} <oyuncu>",
@@ -18,6 +18,6 @@
   "commandmaker.group_all": "Herkes",
   "commandmaker.group_ct": "CT Takımı",
   "commandmaker.group_t": "T Takımı",
-  "commandmaker.group_alive": "Canlılar",
-  "commandmaker.group_dead": "Ölüler"
+  "commandmaker.group_alive": "Canlı oyuncular",
+  "commandmaker.group_dead": "Ölü oyuncular"
 }

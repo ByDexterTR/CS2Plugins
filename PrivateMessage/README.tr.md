@@ -1,5 +1,7 @@
 # PrivateMessage
 
+*Bu dosyanın [İngilizcesi / English](README.md).*
+
 Oyuncuların birbirlerine `!pm` / `!msg` ile özel mesaj göndermesini sağlar. Mesaj komutları chat'te diğer oyunculara gözükmez; alıcı ve gönderene ayrı bildirim sesleri çalınır.
 
 ```

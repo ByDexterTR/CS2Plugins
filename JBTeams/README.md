@@ -36,7 +36,25 @@ Event plugin that splits living T players into colored teams. Players on the sam
 
 ## Configuration
 
-Team colors and names are fixed; messages can be edited through `lang/tr.json` / `lang/en.json`.
+```
+csgo/addons/counterstrikesharp/configs/plugins/JBTeams/JBTeams.json
+```
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `teams_cmd` | string | `"css_takim,css_team"` | Commands that run it, separated by commas |
+| `teams_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to use it, separated by commas |
+| `force_balance` | bool | `true` | Whether the teams must come out with an equal number of players |
+| `teams` | list | — | Team list; each entry has a `name` and a `color` (`[R, G, B]`) |
+
+```json
+"teams": [
+  { "name": "Red",  "color": [255, 64, 64] },
+  { "name": "Blue", "color": [64, 128, 255] }
+]
+```
+
+Messages can be edited through `lang/tr.json` / `lang/en.json`.
 
 ## Usage Example
 

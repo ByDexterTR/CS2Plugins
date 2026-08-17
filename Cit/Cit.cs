@@ -18,7 +18,7 @@ public class CitConfig : BasePluginConfig
 public class Cit : BasePlugin, IPluginConfig<CitConfig>
 {
   public override string ModuleName => "Cit";
-  public override string ModuleVersion => "1.0.9";
+  public override string ModuleVersion => "1.1.0";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -174,9 +174,16 @@ public class Cit : BasePlugin, IPluginConfig<CitConfig>
     {
       return;
     }
+    string modelPath = modelpath.EndsWith(".vmdl_c", StringComparison.Ordinal) ? modelpath[..^2] : modelpath;
+
     model.Entity.Name = FenceName;
-    model.DispatchSpawn();
-    model.SetModel(modelpath);
+
+    using (var keyValues = new CEntityKeyValues())
+    {
+      keyValues.SetString("model", modelPath);
+      keyValues.SetString("targetname", FenceName);
+      model.DispatchSpawn(keyValues);
+    }
 
     model.AcceptInput("DisableMotion");
     model.Teleport(new Vector(spawnPos.X, spawnPos.Y, spawnPos.Z), angles, Vector.Zero);

@@ -45,7 +45,7 @@ public class SustumConfig : BasePluginConfig
 public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 {
     public override string ModuleName => "Sustum";
-    public override string ModuleVersion => "1.0.8";
+    public override string ModuleVersion => "1.0.9";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -58,9 +58,8 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
     private bool _showHud = false;
     private string _hudHtml = "";
 
-    private HashSet<ulong> CTSustumPlayers = new();
-    private Dictionary<ulong, bool> DSustumWin = new();
-
+    private HashSet<int> CTSustumPlayers = new();
+    private Dictionary<int, bool> DSustumWin = new();
     public SustumConfig Config { get; set; } = new();
 
     public void OnConfigParsed(SustumConfig config)
@@ -100,8 +99,8 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
         var player = @event.Userid;
         if (player != null)
         {
-            DSustumWin.Remove(player.SteamID);
-            CTSustumPlayers.Remove(player.SteamID);
+            DSustumWin.Remove(Util.UserId(player));
+            CTSustumPlayers.Remove(Util.UserId(player));
         }
         return HookResult.Continue;
     }
@@ -113,16 +112,16 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
 
         var text = message.ArgString.Trim().Trim('"');
 
-        if (SustumType == "CTSustum" && player.Team == CsTeam.CounterTerrorist && CTSustumPlayers.Contains(player.SteamID))
+        if (SustumType == "CTSustum" && player.Team == CsTeam.CounterTerrorist && CTSustumPlayers.Contains(Util.UserId(player)))
         {
             if (string.Equals(text, CurrentWord, StringComparison.OrdinalIgnoreCase))
             {
-                CTSustumPlayers.Remove(player.SteamID);
+                CTSustumPlayers.Remove(Util.UserId(player));
                 if (CTSustumPlayers.Count == 1)
                 {
-                    var lastSteamId = CTSustumPlayers.First();
-                    var lastCT = Utilities.GetPlayerFromSteamId(lastSteamId);
-                    if (lastCT != null && lastCT.IsValid)
+                    var lastUserId = CTSustumPlayers.First();
+                    var lastCT = Utilities.GetPlayerFromUserid(lastUserId);
+                    if (lastCT != null && lastCT.IsValid && Util.UserId(lastCT) == lastUserId)
                     {
                         ShowWinnerHud(lastCT.PlayerName);
                         lastCT.ChangeTeam(CsTeam.Terrorist);
@@ -145,7 +144,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
             {
                 ShowWinnerHud(player.PlayerName);
                 player.GiveNamedItem("weapon_deagle");
-                DSustumWin[player.SteamID] = true;
+                DSustumWin[Util.UserId(player)] = true;
                 var playerPawn = player!.PlayerPawn.Value;
                 if (playerPawn != null)
                 {
@@ -171,13 +170,13 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
         if (player == null || !player.IsValid)
             return HookResult.Continue;
 
-        if (DSustumWin.TryGetValue(player.SteamID, out bool win) && win)
+        if (DSustumWin.TryGetValue(Util.UserId(player), out bool win) && win)
         {
             var activeWeapon = player.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Get();
             if (activeWeapon != null && activeWeapon.DesignerName == "weapon_deagle")
             {
                 activeWeapon.Remove();
-                DSustumWin[player.SteamID] = false;
+                DSustumWin[Util.UserId(player)] = false;
                 var playerPawn = player!.PlayerPawn.Value;
                 if (playerPawn != null)
                 {
@@ -240,14 +239,14 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
             {
                 if (player.Team == CsTeam.CounterTerrorist && player != warden)
                 {
-                    CTSustumPlayers.Add(player.SteamID);
+                    CTSustumPlayers.Add(Util.UserId(player));
                 }
             }
             if (CTSustumPlayers.Count == 1)
             {
-                var lastSteamId = CTSustumPlayers.First();
-                var lastCT = Utilities.GetPlayerFromSteamId(lastSteamId);
-                if (lastCT != null && lastCT.IsValid)
+                var lastUserId = CTSustumPlayers.First();
+                var lastCT = Utilities.GetPlayerFromUserid(lastUserId);
+                if (lastCT != null && lastCT.IsValid && Util.UserId(lastCT) == lastUserId)
                 {
                     ShowWinnerHud(lastCT.PlayerName);
                     lastCT.ChangeTeam(CsTeam.Terrorist);

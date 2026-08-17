@@ -30,7 +30,7 @@ public class JBRaceConfig : BasePluginConfig
 public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 {
   public override string ModuleName => "JBRace";
-  public override string ModuleVersion => "1.0.7";
+  public override string ModuleVersion => "1.0.8";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -373,8 +373,14 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
       if (model != null)
       {
         var pos = new Vector(_finishPos.X, _finishPos.Y, _finishPos.Z + 48f);
-        model.DispatchSpawn();
-        model.SetModel(Config.RaceModel);
+        string modelPath = Config.RaceModel.EndsWith(".vmdl_c", StringComparison.Ordinal) ? Config.RaceModel[..^2] : Config.RaceModel;
+
+        using (var keyValues = new CEntityKeyValues())
+        {
+          keyValues.SetString("model", modelPath);
+          model.DispatchSpawn(keyValues);
+        }
+
         Server.NextWorldUpdate(() => model.AcceptInput("SetAnimation", value: "challenge_coin_idle"));
         model.Teleport(pos, new QAngle(0, 0, 0), Vector.Zero);
         _finishModel = model;

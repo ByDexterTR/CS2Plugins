@@ -230,7 +230,7 @@ public class CommandsConfig
 public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 {
     public override string ModuleName => "CommandMaker";
-    public override string ModuleVersion => "1.0.6";
+    public override string ModuleVersion => "1.0.7";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -240,12 +240,11 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
     private CommandsConfig? _commandsConfig;
     private readonly Dictionary<string, CommandDefinition> _registeredCommands = new();
     private readonly Dictionary<string, CommandInfo.CommandCallback> _commandCallbacks = new();
-    private readonly HashSet<ulong> _godmodePlayers = new();
-    private readonly Dictionary<ulong, float> _playerSpeed = new();
-    private readonly Dictionary<ulong, float> _playerGravity = new();
-    private readonly Dictionary<ulong, (string Message, float EndTime)> _playerCenter = new();
-    private readonly Dictionary<(string Command, ulong SteamId), float> _cooldowns = new();
-
+    private readonly HashSet<int> _godmodePlayers = new();
+    private readonly Dictionary<int, float> _playerSpeed = new();
+    private readonly Dictionary<int, float> _playerGravity = new();
+    private readonly Dictionary<int, (string Message, float EndTime)> _playerCenter = new();
+    private readonly Dictionary<(string Command, int UserId), float> _cooldowns = new();
     public void OnConfigParsed(CommandMakerConfig config)
     {
         Config = config;
@@ -259,9 +258,9 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
     private void ResetTrackedPlayers()
     {
-        foreach (var steamId in _playerSpeed.Keys.Concat(_playerGravity.Keys).Distinct().ToList())
+        foreach (var userId in _playerSpeed.Keys.Concat(_playerGravity.Keys).Distinct().ToList())
         {
-            var pawn = Utilities.GetPlayerFromSteamId(steamId)?.PlayerPawn.Value;
+            var pawn = Utilities.GetPlayerFromUserid(userId)?.PlayerPawn.Value;
             if (pawn == null || !pawn.IsValid)
                 continue;
             pawn.VelocityModifier = 1.0f;
@@ -545,7 +544,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
             if (cmd.Cooldown > 0f)
             {
-                var key = (info.GetArg(0).ToLower(), player.SteamID);
+                var key = (info.GetArg(0).ToLower(), Util.UserId(player));
                 float now = Server.CurrentTime;
 
                 if (_cooldowns.TryGetValue(key, out float lastUse) && now < lastUse + cmd.Cooldown)
@@ -763,7 +762,8 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         if (!string.IsNullOrEmpty(cmd.Center) && player != null)
         {
             var centerMessage = FormatMessage(cmd.Center, player, target, arg1, arg2, arg3, targetLabel);
-            _playerCenter[player.SteamID] = (centerMessage, Server.CurrentTime + cmd.CenterTime);
+            if (Util.UserId(player) >= 0)
+                _playerCenter[Util.UserId(player)] = (centerMessage, Server.CurrentTime + cmd.CenterTime);
         }
 
         if (cmd.ServerChat is { Count: > 0 })
@@ -1032,7 +1032,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             var parts = speedCmd.Split(' ');
             if (parts.Length >= 2 && float.TryParse(parts[1], out float speed))
             {
-                _playerSpeed[target.SteamID] = speed;
+                _playerSpeed[Util.UserId(target)] = speed;
             }
         }
 
@@ -1042,7 +1042,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
             var parts = gravityCmd.Split(' ');
             if (parts.Length >= 2 && float.TryParse(parts[1], out float gravity))
             {
-                _playerGravity[target.SteamID] = gravity;
+                _playerGravity[Util.UserId(target)] = gravity;
             }
         }
 
@@ -1069,11 +1069,11 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
                 bool godmode = parts[1].ToLower() == "true" || parts[1] == "1";
                 if (godmode)
                 {
-                    _godmodePlayers.Add(target.SteamID);
+                    _godmodePlayers.Add(Util.UserId(target));
                 }
                 else
                 {
-                    _godmodePlayers.Remove(target.SteamID);
+                    _godmodePlayers.Remove(Util.UserId(target));
                 }
             }
         }
@@ -1183,13 +1183,13 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         var player = @event.Userid;
         if (player != null)
         {
-            var steamId = player.SteamID;
-            _godmodePlayers.Remove(steamId);
-            _playerSpeed.Remove(steamId);
-            _playerGravity.Remove(steamId);
-            _playerCenter.Remove(steamId);
+            var userId = Util.UserId(player);
+            _godmodePlayers.Remove(userId);
+            _playerSpeed.Remove(userId);
+            _playerGravity.Remove(userId);
+            _playerCenter.Remove(userId);
 
-            foreach (var key in _cooldowns.Keys.Where(k => k.SteamId == steamId).ToList())
+            foreach (var key in _cooldowns.Keys.Where(k => k.UserId == userId).ToList())
                 _cooldowns.Remove(key);
         }
         return HookResult.Continue;
@@ -1202,26 +1202,26 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 
         var currentTime = Server.CurrentTime;
         bool hudFrame = Server.TickCount % HudTickRate == 0;
-        var affected = new HashSet<ulong>(_playerSpeed.Keys);
+        var affected = new HashSet<int>(_playerSpeed.Keys);
         affected.UnionWith(_playerGravity.Keys);
         affected.UnionWith(_playerCenter.Keys);
 
-        List<ulong>? toRemove = null;
+        List<int>? toRemove = null;
 
-        foreach (var steamId in affected)
+        foreach (var userId in affected)
         {
-            var player = Utilities.GetPlayerFromSteamId(steamId);
+            var player = Utilities.GetPlayerFromUserid(userId);
             var pawn = player?.PlayerPawn.Value;
-            if (player?.IsValid != true || pawn == null)
+            if (player?.IsValid != true || pawn == null || Util.UserId(player) != userId)
                 continue;
 
-            if (_playerSpeed.TryGetValue(steamId, out float speed))
+            if (_playerSpeed.TryGetValue(userId, out float speed))
                 pawn.VelocityModifier = speed / 250f;
 
-            if (_playerGravity.TryGetValue(steamId, out float gravity))
+            if (_playerGravity.TryGetValue(userId, out float gravity))
                 pawn.GravityScale = gravity;
 
-            if (_playerCenter.TryGetValue(steamId, out var centerData))
+            if (_playerCenter.TryGetValue(userId, out var centerData))
             {
                 if (currentTime < centerData.EndTime)
                 {
@@ -1229,14 +1229,14 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
                         player.PrintToCenterHtml(centerData.Message);
                 }
                 else
-                    (toRemove ??= new List<ulong>()).Add(steamId);
+                    (toRemove ??= new List<int>()).Add(userId);
             }
         }
 
         if (toRemove != null)
         {
-            foreach (var steamId in toRemove)
-                _playerCenter.Remove(steamId);
+            foreach (var userId in toRemove)
+                _playerCenter.Remove(userId);
         }
     }
 
@@ -1254,7 +1254,7 @@ public class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
         if (victimController == null)
             return HookResult.Continue;
 
-        if (_godmodePlayers.Contains(victimController.SteamID))
+        if (_godmodePlayers.Contains(Util.UserId(victimController)))
         {
             info.Damage = 0f;
         }

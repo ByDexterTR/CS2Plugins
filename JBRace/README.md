@@ -43,6 +43,19 @@ Race event for Jailbreak servers. The warden sets a start and a finish point, an
 | Winner Count (N) | Asks you to type a number into chat; the first N players win |
 | Clear Markers | Removes the finish model/beam |
 
+## Configuration
+
+```
+csgo/addons/counterstrikesharp/configs/plugins/JBRace/JBRace.json
+```
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `race_cmd` | string | `"css_race,css_yaris"` | Commands that open the menu, separated by commas |
+| `race_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to use it, separated by commas |
+| `race_model` | string | `"models/coop/challenge_coin.vmdl"` | The model placed at the finish line |
+| `race_countdown` | int | `3` | Countdown in seconds before the race starts |
+
 ## Usage Example
 
 1. The warden walks to the finish line → `!race` → "Finish Point".

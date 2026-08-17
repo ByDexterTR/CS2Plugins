@@ -44,6 +44,10 @@ csgo/addons/counterstrikesharp/configs/plugins/CTRev/CTRev.json
 | --- | --- | --- | --- |
 | `cooldown` | int | `15` | Ölümden sonra canlandırılabilmek için beklenecek süre (saniye) |
 | `revive_count` | int | `3` | Raunt başına toplam canlandırma hakkı |
+| `ctrev_cmd` | string | `"css_ctrev,css_ctr,css_ctrevmenu"` | Menüyü açan komutlar, virgülle ayrılır |
+| `ctrev_flag` | string | `"@jailbreak/warden,@css/generic"` | Menüyü kullanabilecek flagler |
+| `haksifirla_cmd` | string | `"css_hak0,css_haksifir,css_hakreset"` | Canlandırma hakkını sıfırlayan komutlar |
+| `hak_flag` | string | `"@jailbreak/warden,@css/generic"` | Hakkı sıfırlayabilecek flagler |
 
 ### Örnek Config
 

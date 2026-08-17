@@ -43,6 +43,19 @@ Jailbreak sunucuları için yarış etkinliği. Warden başlangıç ve bitiş no
 | Kazanan Sayısı (N) | Sohbete sayı yazmanızı ister; ilk N kişi kazanır |
 | İşaretçileri Temizle | Bitiş modelini/ışınını kaldırır |
 
+## Yapılandırma
+
+```
+csgo/addons/counterstrikesharp/configs/plugins/JBRace/JBRace.json
+```
+
+| Ayar | Tip | Varsayılan | Açıklama |
+| --- | --- | --- | --- |
+| `race_cmd` | string | `"css_race,css_yaris"` | Menüyü açan komutlar, virgülle ayrılır |
+| `race_flag` | string | `"@jailbreak/warden,@css/generic"` | Kullanabilecek flagler, virgülle ayrılır |
+| `race_model` | string | `"models/coop/challenge_coin.vmdl"` | Bitiş çizgisine konulan model |
+| `race_countdown` | int | `3` | Yarış başlamadan önceki geri sayım (saniye) |
+
 ## Kullanım Örneği
 
 1. Warden bitiş çizgisine gider → `!race` → "Bitiş Noktası".

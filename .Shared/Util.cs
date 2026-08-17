@@ -12,6 +12,32 @@ public static class Util
 
   public static bool IsHudFrame() => Server.TickCount % HudTickRate == 0;
 
+  public static int UserId(CCSPlayerController? player) =>
+    player != null && player.IsValid ? player.UserId ?? -1 : -1;
+
+  public static ulong SteamId(CCSPlayerController? player) =>
+    player == null || !player.IsValid ? 0UL : player.AuthorizedSteamID?.SteamId64 ?? player.SteamID;
+
+  public static CCSPlayerController? FromUserId(int userId)
+  {
+    if (userId < 0)
+      return null;
+
+    var player = Utilities.GetPlayerFromUserid(userId);
+    if (player == null || !player.IsValid || player.UserId != userId)
+      return null;
+
+    return player;
+  }
+
+  public static CCSPlayerController? PawnController(CEntityInstance? entity)
+  {
+    if (entity == null || !entity.IsValid || entity.DesignerName != "player")
+      return null;
+
+    return entity.As<CCSPlayerPawn>().Controller.Value?.As<CCSPlayerController>();
+  }
+
   public static string[] Split(string names) =>
     names.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 

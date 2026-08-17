@@ -2,6 +2,6 @@
   "chat_prefix": "[ByDexter]",
   "thirdperson.enabled": "Üçüncü şahıs görünüm açıldı.",
   "thirdperson.disabled": "Üçüncü şahıs görünüm kapatıldı.",
-  "thirdperson.no_permission": "Bu komut için yetkiniz yok.",
+  "thirdperson.no_permission": "Bu komut için yetkin yok.",
   "thirdperson.alive_only": "Bu komutu yalnızca hayattayken kullanabilirsin."
 }

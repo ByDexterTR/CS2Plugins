@@ -69,7 +69,7 @@ public class AdsConfig
 public partial class Ads : BasePlugin
 {
   public override string ModuleName => "Ads";
-  public override string ModuleVersion => "1.0.1";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

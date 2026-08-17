@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.1.5";
+    public override string ModuleVersion => "1.1.6";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -131,6 +131,7 @@ public partial class VIPCore : BasePlugin
     {
         Current = this;
         VipHudGuard.Install(this);
+        InstallWasdGuard();
         RollRoundColors();
         LoadConfig();
         DiscoverModules();
@@ -419,8 +420,7 @@ public partial class VIPCore : BasePlugin
 
                 PurgeIfExpired(steamId);
 
-                Server.NextFrame(() => SanitizeSettings(
-                    Utilities.GetPlayers().FirstOrDefault(p => p != null && p.IsValid && !p.IsBot && p.SteamID == steamId)));
+                Server.NextFrame(() => SanitizeSettings(Utilities.GetPlayerFromSteamId64(steamId)));
             }
             catch (Exception ex)
             {

@@ -25,7 +25,7 @@ public class CTBanList
 public class CTBan : BasePlugin
 {
     public override string ModuleName => "CTBan";
-    public override string ModuleVersion => "1.0.5";
+    public override string ModuleVersion => "1.0.6";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -46,7 +46,7 @@ public class CTBan : BasePlugin
 
     private CTBanEntry? GetActiveBan(CCSPlayerController player)
     {
-        var steamid = player.SteamID.ToString();
+        var steamid = Util.SteamId(player).ToString();
         if (!BanList.BannedPlayers.TryGetValue(steamid, out var banEntry))
             return null;
 
@@ -171,7 +171,7 @@ public class CTBan : BasePlugin
             info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
             return;
         }
-        var steamid = target.SteamID.ToString();
+        var steamid = Util.SteamId(target).ToString();
 
         var durationStr = info.GetArg(2);
         var durationSec = ParseDuration(durationStr);
@@ -182,7 +182,7 @@ public class CTBan : BasePlugin
         }
 
         var reason = info.ArgCount > 3 ? string.Join(" ", Enumerable.Range(3, info.ArgCount - 3).Select(i => info.GetArg(i))) : Localizer["ctban.no_reason"].ToString();
-        var adminSteamId = player?.SteamID.ToString() ?? "unknown";
+        var adminSteamId = Util.SteamId(player).ToString() ?? "unknown";
         BanList.BannedPlayers[steamid] = new CTBanEntry
         {
             Nickname = target.PlayerName,
@@ -221,7 +221,7 @@ public class CTBan : BasePlugin
             info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
             return;
         }
-        var steamid = target.SteamID.ToString();
+        var steamid = Util.SteamId(target).ToString();
 
         if (BanList.BannedPlayers.Remove(steamid))
         {
@@ -263,7 +263,7 @@ public class CTBan : BasePlugin
         }
 
         var reason = info.ArgCount > 3 ? string.Join(" ", Enumerable.Range(3, info.ArgCount - 3).Select(i => info.GetArg(i))) : Localizer["ctban.no_reason"].ToString();
-        var adminSteamId = player?.SteamID.ToString() ?? "unknown";
+        var adminSteamId = Util.SteamId(player).ToString() ?? "unknown";
         BanList.BannedPlayers[steamid] = new CTBanEntry
         {
             Nickname = steamid,
@@ -342,7 +342,7 @@ public class CTBan : BasePlugin
         CCSPlayerController? player = @event.Userid;
 
         if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return HookResult.Continue;
-        var steamIdStr = player.SteamID.ToString();
+        var steamIdStr = Util.SteamId(player).ToString();
         if (BanList.BannedPlayers.TryGetValue(steamIdStr, out var banEntry))
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

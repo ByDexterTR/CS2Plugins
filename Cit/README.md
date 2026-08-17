@@ -45,7 +45,16 @@ Lets you place a fence (chainlink) or solid panel model at the point you are loo
 
 ## Configuration
 
-There is no config file; size and type are picked from the menu.
+```
+csgo/addons/counterstrikesharp/configs/plugins/Cit/Cit.json
+```
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `menu_cmd` | string | `"css_cit,css_barikat"` | Commands that open the menu, separated by commas |
+| `menu_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to use it, separated by commas |
+
+Size and type are picked from the menu, they are not in the config.
 
 ## Notes
 

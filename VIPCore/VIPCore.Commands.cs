@@ -190,7 +190,7 @@ public partial class VIPCore
 
     private static string? OnlineNameOf(ulong steamId)
     {
-        var p = Utilities.GetPlayers().FirstOrDefault(x => x != null && x.IsValid && !x.IsBot && x.SteamID == steamId);
+        var p = Utilities.GetPlayerFromSteamId64(steamId);
         return p?.PlayerName;
     }
 
@@ -387,7 +387,7 @@ public partial class VIPCore
 
         Server.NextFrame(() =>
         {
-            var p = Utilities.GetPlayers().FirstOrDefault(x => x != null && x.IsValid && !x.IsBot && x.SteamID == steamId);
+            var p = Utilities.GetPlayerFromSteamId64(steamId);
             if (p == null)
                 return;
 

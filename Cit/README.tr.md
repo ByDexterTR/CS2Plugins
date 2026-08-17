@@ -45,7 +45,16 @@ Baktığınız noktaya çit (tel örgü) veya kapalı panel modeli yerleştirmen
 
 ## Yapılandırma
 
-Ayar dosyası yoktur; boyut ve tip menüden seçilir.
+```
+csgo/addons/counterstrikesharp/configs/plugins/Cit/Cit.json
+```
+
+| Ayar | Tip | Varsayılan | Açıklama |
+| --- | --- | --- | --- |
+| `menu_cmd` | string | `"css_cit,css_barikat"` | Menüyü açan komutlar, virgülle ayrılır |
+| `menu_flag` | string | `"@jailbreak/warden,@css/generic"` | Kullanabilecek flagler, virgülle ayrılır |
+
+Boyut ve tip menüden seçilir, config'te yer almaz.
 
 ## Notlar
 

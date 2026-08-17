@@ -28,7 +28,7 @@ public class BringGotoConfig : BasePluginConfig
 public class BringGoto : BasePlugin, IPluginConfig<BringGotoConfig>
 {
   public override string ModuleName => "BringGoto";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

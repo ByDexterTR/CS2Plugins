@@ -55,7 +55,7 @@ public class PrivateMessageConfig : BasePluginConfig
 public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
 {
   public override string ModuleName => "PrivateMessage";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -287,7 +287,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
     if (!_useMySql)
       return HookResult.Continue;
 
-    var steamId = player.SteamID;
+    var steamId = Util.SteamId(player);
 
     Task.Run(async () =>
     {
@@ -324,8 +324,8 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
     if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0)
       return HookResult.Continue;
 
-    if (_prefs.TryGetValue(player.SteamID, out var pref))
-      SavePreference(player.SteamID, pref);
+    if (_prefs.TryGetValue(Util.SteamId(player), out var pref))
+      SavePreference(Util.SteamId(player), pref);
 
     return HookResult.Continue;
   }
@@ -335,10 +335,10 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
     if (p?.IsValid != true || p.SteamID == 0)
       return new Pref();
 
-    if (!_prefs.TryGetValue(p.SteamID, out var pref))
+    if (!_prefs.TryGetValue(Util.SteamId(p), out var pref))
     {
       pref = new Pref();
-      _prefs[p.SteamID] = pref;
+      _prefs[Util.SteamId(p)] = pref;
     }
     return pref;
   }
@@ -433,7 +433,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
 
     var pref = GetPref(player);
     pref.PmOff = true;
-    SavePreference(player.SteamID, pref);
+    SavePreference(Util.SteamId(player), pref);
     Reply(player, Localizer["pm.off"]);
   }
 
@@ -444,7 +444,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
 
     var pref = GetPref(player);
     pref.PmOff = false;
-    SavePreference(player.SteamID, pref);
+    SavePreference(Util.SteamId(player), pref);
     Reply(player, Localizer["pm.on"]);
   }
 
@@ -455,7 +455,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
 
     var pref = GetPref(player);
     pref.SoundOff = !pref.SoundOff;
-    SavePreference(player.SteamID, pref);
+    SavePreference(Util.SteamId(player), pref);
     Reply(player, pref.SoundOff ? Localizer["pm.sound_off"] : Localizer["pm.sound_on"]);
   }
 

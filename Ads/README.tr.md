@@ -172,7 +172,7 @@ Dört komut var; her şey `css_ads` menüsünden yapılır.
 
 ### Menüler
 
-Menülerde gezinme **W/S**, seçme **E**, çıkış **R**. Her seçimden sonra menü açık kalır; arka arkaya işlem yapabilirsin. Alt menülerde **Geri** her zaman ilk satırdır ve kırmızı gösterilir.
+Menülerde gezinme **W/S**, seçme **E**, çıkış **R**. Her seçimden sonra menü açık kalır; arka arkaya işlem yapabilirsiniz. Alt menülerde **Geri** her zaman ilk satırdır ve kırmızı gösterilir.
 
 ```
 css_ads
@@ -236,8 +236,8 @@ Taşıma dünya eksenlerinde olduğu için nereye bakarsan bak aynı satır ayn�
 | Boyutu büyült / küçült | `scale` ± `ads_scale_step` (en az 0.05) | `width` ve `height` aynı oranda ölçeklenir |
 | Collision aç / kapat | `solid` değerini çevirir; satırda güncel durum yazar | — |
 | Skin değiştir | Katalogdaki `skins` listesinde sıradaki değere geçer | — |
-| Flag değiştir | Menü kapanır, yeni değeri **sohbete** yazarsın | aynı |
-| Ignoreflag değiştir | Menü kapanır, yeni değeri **sohbete** yazarsın | aynı |
+| Flag değiştir | Menü kapanır, yeni değeri **sohbete** yazarsınız | aynı |
+| Ignoreflag değiştir | Menü kapanır, yeni değeri **sohbete** yazarsınız | aynı |
 
 Flag/Ignoreflag satırını seçince menü kapanır ve sohbete yazdığın ilk mesaj değer olarak kaydedilir; o mesaj sohbete düşmez. Temizlemek için `-` yaz. Kaydedildikten sonra menü kendiliğinden geri açılır.
 
@@ -483,7 +483,7 @@ Ekrana ve sohbete basılan reklamlar ile event reklamları burada tutulur. `ads_
 }
 ```
 
-Örneklerdeki modellerin hepsi CS2 ile birlikte gelen **stock** modellerdir; hiçbir atölye paketi gerekmez. `maps.json` örneğindeki konumlar de_mirage'ın gerçek spawn bölgelerinden alınmıştır, yani eklentiyi kurar kurmaz de_mirage'da propları görürsün.
+Örneklerdeki modellerin hepsi CS2 ile birlikte gelen **stock** modellerdir; hiçbir atölye paketi gerekmez. `maps.json` örneğindeki konumlar de_mirage'ın gerçek spawn bölgelerinden alınmıştır, yani eklentiyi kurar kurmaz de_mirage'da propları görürsünüz.
 
 ### Alanlar
 

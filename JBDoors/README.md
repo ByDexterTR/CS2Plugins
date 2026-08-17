@@ -33,6 +33,18 @@ Opens or closes every door on the map with a single command. Used for cell doors
 
 ## Configuration
 
+```
+csgo/addons/counterstrikesharp/configs/plugins/JBDoors/JBDoors.json
+```
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `dooropen_cmd` | string | `"css_kapiac,css_dooropen"` | Commands that open the doors, separated by commas |
+| `dooropen_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to open them |
+| `doorclose_cmd` | string | `"css_kapikapat,css_doorclose"` | Commands that close the doors, separated by commas |
+| `doorclose_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to close them |
+| `doorbreak` | bool | `true` | Whether breakable doors are broken as well as opened |
+
 Messages can be edited through `lang/tr.json` / `lang/en.json`.
 
 ## Usage Example

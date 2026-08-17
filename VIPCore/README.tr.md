@@ -51,6 +51,8 @@ Süre birimleri: `s` saniye, `m` dakika (varsayılan), `h` saat, `d` gün, `w` h
 
 ## Yapılandırma
 
+Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebilir; anahtarlar `addvip`, `removevip`, `updateuser`, `viplist`, `hidevip` gibidir. Virgülle ayırarak birden fazla ad yazılabilir.
+
 ### `settings.json` (eklenti klasöründe)
 
 | Ayar | Tip | Varsayılan | Açıklama |
@@ -143,7 +145,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `AntiHS` | Headshot hasarını azaltır | `{ "percent": 0, "only_with_weapon": "", "limit": 0 }` |
 | `Armor` | Spawn'da zırh (+kask) | `{ "value": 100, "helmet": true }` |
 | `ArmorRegen` | Zırh yenilenmesi | `{ "armor_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2, "max_armor": 100, "give_helmet_when_full": true }` |
-| `Aura` | Oyuncunun etrafında sürekli etki alanı (iyileştirme/zehir/yavaşlatma/hız); alan bir halka ile gösterilir, `duration_on`/`duration_off` ile yanıp söner | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true } }` |
+| `Aura` | Oyuncunun etrafında sürekli etki alanı (iyileştirme/zehir/yavaşlatma/hız); alan bir halka ile gösterilir, `duration_on`/`duration_off` ile yanıp söner | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true }, "speed": { "maxspeed": 400, "radius": 180 } }` |
 | `AutoHS` | Vuruşlar Headshot sayılır | `{ "multiplier": 4, "only_with_weapon": "", "ignore_teammates": true, "limit": 0 }` |
 | `Berserk` | Öldürme başına hasar çarpanı artar; `dpk` kill başına eklenen çarpan, `maxdpk` tavan | `{ "dpk": 0.2, "maxdpk": 5.0 }` |
 | `Bhop` | Bunny hop (+opsiyonel autostrafe) | `{ "autostrafe": true, "max_speed": 500, "jump_boost": 1.1, "jump_velocity": 300 }` |

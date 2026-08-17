@@ -22,9 +22,8 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
 
   public CTSpawnKillConfig Config { get; set; } = new();
 
-  private readonly Dictionary<ulong, long> _protectedCTs = new();
-  private readonly Dictionary<ulong, CounterStrikeSharp.API.Modules.Timers.Timer> _timers = new();
-
+  private readonly Dictionary<int, long> _protectedCTs = new();
+  private readonly Dictionary<int, CounterStrikeSharp.API.Modules.Timers.Timer> _timers = new();
   public void OnConfigParsed(CTSpawnKillConfig config)
   {
     if (config.SpawnProtectSeconds < 1)
@@ -45,13 +44,16 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
     if (player == null)
       return HookResult.Continue;
 
-    var steamId = player.SteamID;
-    _protectedCTs.Remove(steamId);
+    int userId = Util.UserId(player);
+    if (userId < 0)
+      return HookResult.Continue;
 
-    if (_timers.TryGetValue(steamId, out var timer))
+    _protectedCTs.Remove(userId);
+
+    if (_timers.TryGetValue(userId, out var timer))
     {
       timer.Kill();
-      _timers.Remove(steamId);
+      _timers.Remove(userId);
     }
 
     return HookResult.Continue;
@@ -77,10 +79,12 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
 
   private void StartProtection(CCSPlayerController player)
   {
-    var steamId = player.SteamID;
+    int userId = Util.UserId(player);
+    if (userId < 0)
+      return;
 
     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-    _protectedCTs[steamId] = now + Config.SpawnProtectSeconds * 1000L;
+    _protectedCTs[userId] = now + Config.SpawnProtectSeconds * 1000L;
     var pawn = player.PlayerPawn.Value;
     if (pawn != null)
     {
@@ -88,25 +92,25 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
       Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
     }
 
-    if (_timers.TryGetValue(steamId, out var t))
+    if (_timers.TryGetValue(userId, out var t))
     {
       t.Kill();
-      _timers.Remove(steamId);
+      _timers.Remove(userId);
     }
 
     player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctspawnkill.protection_active", Config.SpawnProtectSeconds]}");
 
-    var timer = AddTimer(Config.SpawnProtectSeconds, () => EndProtection(steamId), TimerFlags.STOP_ON_MAPCHANGE);
-    _timers[steamId] = timer;
+    var timer = AddTimer(Config.SpawnProtectSeconds, () => EndProtection(userId), TimerFlags.STOP_ON_MAPCHANGE);
+    _timers[userId] = timer;
   }
 
-  private void EndProtection(ulong steamId)
+  private void EndProtection(int userId)
   {
-    _protectedCTs.Remove(steamId);
-    _timers.Remove(steamId);
+    _protectedCTs.Remove(userId);
+    _timers.Remove(userId);
 
-    var player = Utilities.GetPlayers().FirstOrDefault(p => p.SteamID == steamId);
-    if (player == null || !player.IsValid)
+    var player = Utilities.GetPlayerFromUserid(userId);
+    if (player == null || !player.IsValid || Util.UserId(player) != userId)
       return;
 
     var pawn = player.PlayerPawn.Value;
@@ -130,13 +134,14 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
       if (victimController.Team != CsTeam.CounterTerrorist)
         return HookResult.Continue;
 
-      if (!_protectedCTs.TryGetValue(victimController.SteamID, out var until))
+      int userId = Util.UserId(victimController);
+      if (userId < 0 || !_protectedCTs.TryGetValue(userId, out var until))
         return HookResult.Continue;
 
       var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
       if (now > until)
       {
-        EndProtection(victimController.SteamID);
+        EndProtection(userId);
         return HookResult.Continue;
       }
 

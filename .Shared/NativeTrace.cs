@@ -9,6 +9,7 @@ namespace ByDexter.Shared;
 public static unsafe class NativeTrace
 {
   public const ulong MaskShotPhysics = 0x2C3011;
+  public const ulong MaskShotNoPlayers = 0x203011;
 
   private const string KeyPhysicsClass = "CNavPhysicsInterface_ClassName";
   private const string KeyTraceShape = "CNavPhysicsInterface_TraceShape";
@@ -58,10 +59,21 @@ public static unsafe class NativeTrace
   [StructLayout(LayoutKind.Explicit, Size = 0xB8)]
   private struct GameTrace
   {
+    [FieldOffset(0x08)] public IntPtr Entity;
     [FieldOffset(0x78)] public System.Numerics.Vector3 StartPos;
     [FieldOffset(0x84)] public System.Numerics.Vector3 EndPos;
+    [FieldOffset(0x90)] public System.Numerics.Vector3 Normal;
     [FieldOffset(0x9C)] public System.Numerics.Vector3 Position;
     [FieldOffset(0xAC)] public float Fraction;
+  }
+
+  public readonly record struct TraceHit(
+    System.Numerics.Vector3 EndPos,
+    System.Numerics.Vector3 Normal,
+    IntPtr Entity,
+    float Fraction)
+  {
+    public bool DidHit => Fraction < 1f;
   }
 
   [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -205,7 +217,7 @@ public static unsafe class NativeTrace
     return Math.Abs(p.X) <= MaxWorldCoord && Math.Abs(p.Y) <= MaxWorldCoord && Math.Abs(p.Z) <= MaxWorldCoord;
   }
 
-  private static System.Numerics.Vector3? Trace(CCSPlayerPawn pawn, Vector start, Vector end, ulong mask)
+  private static TraceHit? Trace(CCSPlayerPawn pawn, Vector start, Vector end, ulong mask)
   {
     if (!EnsureInit())
       return null;
@@ -257,17 +269,22 @@ public static unsafe class NativeTrace
       return null;
     }
 
-    if (trace->Fraction >= 1.0f)
-      return null;
+    return new TraceHit(trace->EndPos, trace->Normal, trace->Entity, trace->Fraction);
+  }
 
-    return trace->EndPos;
+  public static TraceHit? TraceRay(CCSPlayerPawn pawn, System.Numerics.Vector3 startPos, System.Numerics.Vector3 endPos, ulong mask = MaskShotPhysics)
+  {
+    Vector start = new(startPos.X, startPos.Y, startPos.Z);
+    Vector end = new(endPos.X, endPos.Y, endPos.Z);
+    return Trace(pawn, start, end, mask);
   }
 
   public static System.Numerics.Vector3? TraceLine(CCSPlayerPawn pawn, System.Numerics.Vector3 startPos, System.Numerics.Vector3 endPos, ulong mask = MaskShotPhysics)
   {
     Vector start = new(startPos.X, startPos.Y, startPos.Z);
     Vector end = new(endPos.X, endPos.Y, endPos.Z);
-    return Trace(pawn, start, end, mask);
+    var hit = Trace(pawn, start, end, mask);
+    return hit is { DidHit: true } ? hit.Value.EndPos : null;
   }
 
   public static System.Numerics.Vector3? TraceFromEyes(CCSPlayerPawn pawn, ulong mask = MaskShotPhysics)
@@ -282,6 +299,7 @@ public static unsafe class NativeTrace
     NativeAPI.AngleVectors(eyeAngles.Handle, forward.Handle, 0, 0);
     Vector end = new(eye.X + forward.X * 8192f, eye.Y + forward.Y * 8192f, eye.Z + forward.Z * 8192f);
 
-    return Trace(pawn, eye, end, mask);
+    var hit = Trace(pawn, eye, end, mask);
+    return hit is { DidHit: true } ? hit.Value.EndPos : null;
   }
 }

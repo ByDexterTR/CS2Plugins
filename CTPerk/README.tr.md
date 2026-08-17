@@ -56,6 +56,8 @@ csgo/addons/counterstrikesharp/configs/plugins/CTPerk/CTPerk.json
 | `enabled_perk_damagereducation` | bool | `true` | Hasar azaltma perk'i aktif mi |
 | `enabled_perk_damageboost` | bool | `true` | Hasar artırma perk'i aktif mi |
 | `selection_rights` | liste | aşağıda | T sayısına göre perk seçim hakları |
+| `ctperk_cmd` | string | `"css_ctperk,css_ctp"` | Menüyü açan komutlar, virgülle ayrılır |
+| `ctperk_flag` | string | `"@jailbreak/warden,@css/generic"` | Kullanabilecek flagler, virgülle ayrılır |
 
 `selection_rights` — T sayısı eşiği (`t_count`) ve o eşikte tanınan hak (`hak`); en yüksek eşleşen eşik geçerlidir:
 

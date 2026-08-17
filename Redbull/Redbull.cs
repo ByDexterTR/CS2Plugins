@@ -31,7 +31,7 @@ public class RedbullConfig : BasePluginConfig
 public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 {
   public override string ModuleName => "Redbull";
-  public override string ModuleVersion => "1.0.4";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -39,10 +39,10 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 
   public RedbullConfig Config { get; set; } = new RedbullConfig();
 
-  private readonly Dictionary<ulong, DateTime> _redbullActive = new();
+  private readonly Dictionary<int, DateTime> _redbullActive = new();
   private Color _playerColor = Color.FromArgb(255, 248, 123, 27);
-  private readonly Dictionary<ulong, int> _roundUses = new();
-  private readonly Dictionary<ulong, DateTime> _cooldownUntil = new();
+  private readonly Dictionary<int, int> _roundUses = new();
+  private readonly Dictionary<int, DateTime> _cooldownUntil = new();
 
   public void OnConfigParsed(RedbullConfig config)
   {
@@ -62,10 +62,10 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 
   public override void Unload(bool hotReload)
   {
-    foreach (var steamId in _redbullActive.Keys)
+    foreach (var userId in _redbullActive.Keys)
     {
-      var player = Utilities.GetPlayerFromSteamId(steamId);
-      if (player != null && IsAlive(player))
+      var player = Utilities.GetPlayerFromUserid(userId);
+      if (player != null && Util.UserId(player) == userId && IsAlive(player))
         ResetPlayer(player);
     }
     _redbullActive.Clear();
@@ -86,13 +86,17 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
       }
     }
 
-    if (_redbullActive.ContainsKey(player.SteamID))
+    int userId = Util.UserId(player);
+    if (userId < 0)
+      return;
+
+    if (_redbullActive.ContainsKey(userId))
     {
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.already_active"]}");
       return;
     }
 
-    if (Config.Cooldown > 0 && _cooldownUntil.TryGetValue(player.SteamID, out var until))
+    if (Config.Cooldown > 0 && _cooldownUntil.TryGetValue(userId, out var until))
     {
       var now = DateTime.Now;
       if (until > now)
@@ -106,16 +110,16 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
     var limit = Config.RoundLimiter;
     if (limit > 0)
     {
-      var used = _roundUses.TryGetValue(player.SteamID, out var val) ? val : 0;
+      var used = _roundUses.TryGetValue(userId, out var val) ? val : 0;
       if (used >= limit)
       {
         player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.limit", limit]}");
         return;
       }
-      _roundUses[player.SteamID] = used + 1;
+      _roundUses[userId] = used + 1;
     }
 
-    _redbullActive[player.SteamID] = DateTime.Now.AddSeconds(Config.Duration);
+    _redbullActive[userId] = DateTime.Now.AddSeconds(Config.Duration);
     player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.activated", Config.Duration]}");
   }
 
@@ -125,11 +129,13 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
       return;
 
     var now = DateTime.Now;
-    var expiredPlayers = new List<ulong>();
+    var expiredPlayers = new List<int>();
 
     foreach (var kvp in _redbullActive)
     {
-      var player = Utilities.GetPlayerFromSteamId(kvp.Key);
+      var player = Utilities.GetPlayerFromUserid(kvp.Key);
+      if (player != null && Util.UserId(player) != kvp.Key)
+        player = null;
 
       if (player == null || !IsAlive(player) || now >= kvp.Value)
       {
@@ -140,7 +146,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
           player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.expired"]}");
           if (Config.Cooldown > 0)
           {
-            _cooldownUntil[player.SteamID] = DateTime.Now.AddSeconds(Config.Cooldown);
+            _cooldownUntil[kvp.Key] = DateTime.Now.AddSeconds(Config.Cooldown);
           }
         }
         continue;
@@ -149,8 +155,8 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
       SetPlayerEffects(player);
     }
 
-    foreach (var steamId in expiredPlayers)
-      _redbullActive.Remove(steamId);
+    foreach (var userId in expiredPlayers)
+      _redbullActive.Remove(userId);
   }
 
   private void SetPlayerEffects(CCSPlayerController player)
@@ -195,10 +201,12 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
   private HookResult OnPlayerConnect(EventPlayerConnectFull @event, GameEventInfo info)
   {
     var p = @event.Userid;
-    if (p != null && p.IsValid)
-      _roundUses[p.SteamID] = 0;
-    if (p != null && p.IsValid)
-      _cooldownUntil.Remove(p.SteamID);
+    int userId = Util.UserId(p);
+    if (p != null && p.IsValid && userId >= 0)
+    {
+      _roundUses[userId] = 0;
+      _cooldownUntil.Remove(userId);
+    }
     return HookResult.Continue;
   }
 }

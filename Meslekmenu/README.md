@@ -73,6 +73,7 @@ csgo/addons/counterstrikesharp/configs/plugins/Meslekmenu/Meslekmenu.json
 | `zeus_enabled` | bool | `true` | Whether the Zeus job is active |
 | `zeus_recharge_taser` | int | `30` | Taser recharge time (`mp_taser_recharge_time`) |
 | `zeus_drop_taser` | bool | `true` | Whether the taser drops on death (`mp_death_drop_taser`) |
+| `meslek_cmd` | string | `"css_meslekmenu,css_meslek,css_job,css_jobmenu"` | Commands that open the menu, separated by commas |
 
 ### Example Config
 

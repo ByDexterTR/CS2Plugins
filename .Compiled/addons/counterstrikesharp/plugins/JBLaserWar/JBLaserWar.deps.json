@@ -6,12 +6,12 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v10.0": {
-      "TABServerName/1.0.0": {
+      "JBLaserWar/1.0.0": {
         "dependencies": {
           "CounterStrikeSharp.API": "1.0.371"
         },
         "runtime": {
-          "TABServerName.dll": {}
+          "JBLaserWar.dll": {}
         }
       },
       "CounterStrikeSharp.API/1.0.371": {
@@ -526,7 +526,7 @@
     }
   },
   "libraries": {
-    "TABServerName/1.0.0": {
+    "JBLaserWar/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

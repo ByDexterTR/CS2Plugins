@@ -1,6 +1,6 @@
 {
   "chat_prefix": "[ByDexter]",
-  "no_permission": "Bu komut için yetkiniz yok.",
+  "no_permission": "Bu komut için yetkin yok.",
   "must_alive": "Bu komutu kullanmak için hayatta olmalısın.",
   "not_found": "Hedef bulunamadı.",
   "immunity": "{0} dokunulmazlığı senden yüksek.",

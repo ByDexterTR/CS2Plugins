@@ -184,7 +184,7 @@ public class PostprocessingConfig : BasePluginConfig
 public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
 {
   public override string ModuleName => "Postprocessing";
-  public override string ModuleVersion => "1.0.1";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -622,7 +622,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
     string? name;
     lock (_saveLock)
     {
-      if (!_saved.TryGetValue(player.SteamID, out name))
+      if (!_saved.TryGetValue(Util.SteamId(player), out name))
         return null;
     }
 
@@ -638,9 +638,9 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
     lock (_saveLock)
     {
       if (preset == null)
-        _saved.Remove(player.SteamID);
+        _saved.Remove(Util.SteamId(player));
       else
-        _saved[player.SteamID] = preset.Name;
+        _saved[Util.SteamId(player)] = preset.Name;
     }
 
     SaveAsync();

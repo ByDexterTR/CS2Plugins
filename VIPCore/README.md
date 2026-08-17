@@ -51,6 +51,8 @@ Time units: `s` seconds, `m` minutes (default), `h` hours, `d` days, `w` weeks, 
 
 ## Configuration
 
+Every command name in the table above can be renamed from `settings.json`; the keys are `addvip`, `removevip`, `updateuser`, `viplist`, `hidevip` and so on. Several names can be listed separated by commas.
+
 ### `settings.json` (in the plugin folder)
 
 | Setting | Type | Default | Description |
@@ -143,7 +145,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `AntiHS` | Reduces headshot damage | `{ "percent": 0, "only_with_weapon": "", "limit": 0 }` |
 | `Armor` | Armor (+helmet) on spawn | `{ "value": 100, "helmet": true }` |
 | `ArmorRegen` | Armor regeneration | `{ "armor_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2, "max_armor": 100, "give_helmet_when_full": true }` |
-| `Aura` | A constant area effect around the player (heal/poison/slow/speed); the area is shown with a ring and blinks with `duration_on`/`duration_off` | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true } }` |
+| `Aura` | A constant area effect around the player (heal/poison/slow/speed); the area is shown with a ring and blinks with `duration_on`/`duration_off` | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true }, "speed": { "maxspeed": 400, "radius": 180 } }` |
 | `AutoHS` | Hits count as headshots | `{ "multiplier": 4, "only_with_weapon": "", "ignore_teammates": true, "limit": 0 }` |
 | `Berserk` | The damage multiplier grows per kill; `dpk` is the multiplier added per kill, `maxdpk` the cap | `{ "dpk": 0.2, "maxdpk": 5.0 }` |
 | `Bhop` | Bunny hop (+optional autostrafe) | `{ "autostrafe": true, "max_speed": 500, "jump_boost": 1.1, "jump_velocity": 300 }` |
@@ -160,7 +162,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `DecoyEffect` | Gives the decoy a feature: poison, healing, slowing or wallhack. The area is shown with a ring on the ground that grows with `radius` | `{ "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 200, "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "wallhack": { "tick": 0.25, "radius": 200, "color": "#612D53", "see_teammates": false, "limit": 0 } }` |
 | `DecoyTeleport` | Teleport to where the decoy landed | `{ "limit": 3 }` |
 | `DefuseKit` | Defuse kit on spawn (CT) | `true` |
-| `DuckEndurance` | Unlimited crouching; crouching repeatedly never slows down | `true` |
+| `DuckEndurance` | Infinite crouching; crouching repeatedly never slows down | `true` |
 | `DuckSpeed` | Movement speed while crouched; `percent` is how much of the normal run speed is kept. The game's own value is `34`, `100` = crouching does not slow you down | `{ "percent": 100 }` |
 | `ExtraHP` | Spawn HP value | `150` |
 | `ExtraJump` | Multi jump; `count` is the extra jumps per airtime, total budget = `count × limit` (`limit: 0` = unlimited). `Dash` takes priority when both are on. `sound_volume`: jump sound volume (0 = silent) | `{ "count": 2, "limit": 0, "sound_volume": 1 }` |

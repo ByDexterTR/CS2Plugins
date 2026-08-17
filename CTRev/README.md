@@ -44,6 +44,10 @@ csgo/addons/counterstrikesharp/configs/plugins/CTRev/CTRev.json
 | --- | --- | --- | --- |
 | `cooldown` | int | `15` | Time to wait after death before a player can be revived (seconds) |
 | `revive_count` | int | `3` | Total revive budget per round |
+| `ctrev_cmd` | string | `"css_ctrev,css_ctr,css_ctrevmenu"` | Commands that open the menu, separated by commas |
+| `ctrev_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to use the menu |
+| `haksifirla_cmd` | string | `"css_hak0,css_haksifir,css_hakreset"` | Commands that reset the revive budget |
+| `hak_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to reset the budget |
 
 ### Example Config
 

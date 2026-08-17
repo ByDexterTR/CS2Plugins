@@ -31,6 +31,15 @@ Tek komutla, warden yetkisi olmayan tüm CT oyuncularını T takımına gönderi
 
 ## Yapılandırma
 
+```
+csgo/addons/counterstrikesharp/configs/plugins/CTKov/CTKov.json
+```
+
+| Ayar | Tip | Varsayılan | Açıklama |
+| --- | --- | --- | --- |
+| `ctkov_cmd` | string | `"css_ctkov,css_kovct"` | Çalıştıran komutlar, virgülle ayrılır |
+| `ctkov_flag` | string | `"@jailbreak/warden,@css/generic"` | Kullanabilecek flagler, virgülle ayrılır |
+
 Mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Kullanım Örneği

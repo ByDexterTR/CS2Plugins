@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 public class Silahsil : BasePlugin
 {
   public override string ModuleName => "Silahsil";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

@@ -31,6 +31,15 @@ Sends every CT player without warden permission to the T team with a single comm
 
 ## Configuration
 
+```
+csgo/addons/counterstrikesharp/configs/plugins/CTKov/CTKov.json
+```
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ctkov_cmd` | string | `"css_ctkov,css_kovct"` | Commands that run it, separated by commas |
+| `ctkov_flag` | string | `"@jailbreak/warden,@css/generic"` | Flags allowed to use it, separated by commas |
+
 Messages can be edited through `lang/tr.json` / `lang/en.json`.
 
 ## Usage Example

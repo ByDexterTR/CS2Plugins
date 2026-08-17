@@ -113,9 +113,14 @@ public static class MarkerRing
       collision.SolidFlags = 12;
     }
 
-    disc.SetModel(DiscModel);
+    using (var keyValues = new CEntityKeyValues())
+    {
+      keyValues.SetString("model", DiscModel);
+      keyValues.SetInt("solid", 0);
+      disc.DispatchSpawn(keyValues);
+    }
+
     disc.Teleport(new Vector(center.X, center.Y, center.Z + 1f), new QAngle(), new Vector());
-    disc.DispatchSpawn();
 
     disc.Render = Color.FromArgb(Math.Clamp(alpha, 1, 255), 255, 255, 255);
     Utilities.SetStateChanged(disc, "CBaseModelEntity", "m_clrRender");
@@ -141,11 +146,17 @@ public static class MarkerRing
       collision.SolidFlags = 12;
     }
 
-    glow.SetModel(DiscModel);
-    glow.Spawnflags = 256u;
     glow.Render = Color.FromArgb(1, 255, 255, 255);
+
+    using (var keyValues = new CEntityKeyValues())
+    {
+      keyValues.SetString("model", DiscModel);
+      keyValues.SetInt("solid", 0);
+      keyValues.SetInt("spawnflags", 256);
+      glow.DispatchSpawn(keyValues);
+    }
+
     glow.Teleport(new Vector(center.X, center.Y, center.Z + 1f), new QAngle(), new Vector());
-    glow.DispatchSpawn();
 
     glow.Glow.GlowColorOverride = color;
     glow.Glow.GlowRange = range;

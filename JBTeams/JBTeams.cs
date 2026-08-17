@@ -42,7 +42,7 @@ public class JBTeamsConfig : BasePluginConfig
 public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
 {
   public override string ModuleName => "JBTeams";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -51,7 +51,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
   public JBTeamsConfig Config { get; set; } = new();
 
   private int activeTeams = 0;
-  private readonly Dictionary<ulong, int> playerTeams = new();
+  private readonly Dictionary<int, int> playerTeams = new();
 
   private static readonly char[] ChatPalette =
   [
@@ -97,23 +97,25 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     if (activeTeams == 0)
       return HookResult.Continue;
 
-    CCSPlayerPawn? victimPawn = victimEnt as CCSPlayerPawn ?? new CCSPlayerPawn(victimEnt.Handle);
-    CCSPlayerPawn? attackerPawn = info.Attacker.Value as CCSPlayerPawn;
-
-    var victimController = victimPawn?.OriginalController.Value;
-    var attackerController = attackerPawn?.OriginalController.Value;
+    var victimController = Util.PawnController(victimEnt);
+    var attackerController = Util.PawnController(info.Attacker.Value);
 
     if (victimController == null || attackerController == null)
       return HookResult.Continue;
 
-    if (victimController.SteamID == attackerController.SteamID)
+    if (victimController.Handle == attackerController.Handle)
       return HookResult.Continue;
 
     if (victimController.TeamNum != (int)CsTeam.Terrorist || attackerController.TeamNum != (int)CsTeam.Terrorist)
       return HookResult.Continue;
 
-    if (playerTeams.TryGetValue(attackerController.SteamID, out int aTeam) &&
-        playerTeams.TryGetValue(victimController.SteamID, out int vTeam) &&
+    int aUserId = Util.UserId(attackerController);
+    int vUserId = Util.UserId(victimController);
+    if (aUserId < 0 || vUserId < 0)
+      return HookResult.Continue;
+
+    if (playerTeams.TryGetValue(aUserId, out int aTeam) &&
+        playerTeams.TryGetValue(vUserId, out int vTeam) &&
         aTeam == vTeam)
     {
       info.Damage = 0f;
@@ -181,7 +183,9 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
       int teamIndex = i % teamCount;
 
       var p = shuffled[i];
-      playerTeams[p.SteamID] = teamIndex;
+      int pUserId = Util.UserId(p);
+      if (pUserId >= 0)
+        playerTeams[pUserId] = teamIndex;
       ApplyTeamColor(p, teamIndex);
       p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbteams.team_assigned", GetColoredTeamName(teamIndex)]}");
     }
@@ -247,7 +251,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
       return HookResult.Continue;
 
     ResetPlayerColor(player);
-    playerTeams.Remove(player.SteamID);
+    playerTeams.Remove(Util.UserId(player));
 
     CheckTeamWin();
 
@@ -316,7 +320,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     if (player == null || !player.IsValid)
       return HookResult.Continue;
 
-    playerTeams.Remove(player.SteamID);
+    playerTeams.Remove(Util.UserId(player));
 
     return HookResult.Continue;
   }

@@ -10,7 +10,7 @@ namespace ChatCleaner;
 public class ChatCleaner : BasePlugin
 {
     public override string ModuleName => "ChatCleaner";
-    public override string ModuleVersion => "1.0.4";
+    public override string ModuleVersion => "1.0.5";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 

@@ -28,7 +28,7 @@ public class SeslerConfig : BasePluginConfig
 public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
 {
   public override string ModuleName => "Sesler";
-  public override string ModuleVersion => "1.1.5";
+  public override string ModuleVersion => "1.1.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -258,7 +258,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     if (!_useMySql)
       return HookResult.Continue;
 
-    var steamId = player.SteamID;
+    var steamId = Util.SteamId(player);
 
     Task.Run(async () =>
     {
@@ -296,7 +296,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     var player = @event.Userid;
     if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0) return HookResult.Continue;
 
-    if (_prefs.TryGetValue(player.SteamID, out var pref)) SavePreference(player.SteamID, pref);
+    if (_prefs.TryGetValue(Util.SteamId(player), out var pref)) SavePreference(Util.SteamId(player), pref);
 
     return HookResult.Continue;
   }
@@ -306,10 +306,10 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
     if (p?.IsValid != true || p.SteamID == 0)
       return new Pref();
 
-    if (!_prefs.TryGetValue(p.SteamID, out var pref))
+    if (!_prefs.TryGetValue(Util.SteamId(p), out var pref))
     {
       pref = new Pref();
-      _prefs[p.SteamID] = pref;
+      _prefs[Util.SteamId(p)] = pref;
     }
     return pref;
   }
@@ -376,7 +376,7 @@ public class Sesler : BasePlugin, IPluginConfig<SeslerConfig>
         OnSelect = p =>
         {
           set(pref, mode);
-          SavePreference(p.SteamID, pref);
+          SavePreference(Util.SteamId(p), pref);
           ShowMainMenu(p);
         }
       });

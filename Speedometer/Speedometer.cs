@@ -12,7 +12,7 @@ namespace Speedometer;
 public class Speedometer : BasePlugin
 {
     public override string ModuleName => "Speedometer";
-    public override string ModuleVersion => "1.0.3";
+    public override string ModuleVersion => "1.0.4";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -55,7 +55,7 @@ public class Speedometer : BasePlugin
                 continue;
 
             int slot = player.Slot;
-            if (slot >= 0 && slot < MaxSlots && IsHudEnabledFor(player.SteamID) && !_enabled[slot])
+            if (slot >= 0 && slot < MaxSlots && IsHudEnabledFor(Util.SteamId(player)) && !_enabled[slot])
             {
                 _enabled[slot] = true;
                 _enabledCount++;
@@ -117,7 +117,7 @@ public class Speedometer : BasePlugin
             return HookResult.Continue;
 
         int slot = player.Slot;
-        if (slot >= 0 && slot < MaxSlots && IsHudEnabledFor(player.SteamID) && !_enabled[slot])
+        if (slot >= 0 && slot < MaxSlots && IsHudEnabledFor(Util.SteamId(player)) && !_enabled[slot])
         {
             _enabled[slot] = true;
             _enabledCount++;
@@ -154,9 +154,9 @@ public class Speedometer : BasePlugin
         lock (_saveLock)
         {
             if (_enabled[slot])
-                _savedDisabled.Remove(player.SteamID);
+                _savedDisabled.Remove(Util.SteamId(player));
             else
-                _savedDisabled.Add(player.SteamID);
+                _savedDisabled.Add(Util.SteamId(player));
         }
         SaveAsync();
 

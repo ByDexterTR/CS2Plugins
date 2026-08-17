@@ -73,6 +73,7 @@ csgo/addons/counterstrikesharp/configs/plugins/Meslekmenu/Meslekmenu.json
 | `zeus_enabled` | bool | `true` | Zeus mesleği aktif mi |
 | `zeus_recharge_taser` | int | `30` | Taser şarj süresi (`mp_taser_recharge_time`) |
 | `zeus_drop_taser` | bool | `true` | Ölünce taser düşsün mü (`mp_death_drop_taser`) |
+| `meslek_cmd` | string | `"css_meslekmenu,css_meslek,css_job,css_jobmenu"` | Menüyü açan komutlar, virgülle ayrılır |
 
 ### Örnek Config
 

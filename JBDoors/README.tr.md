@@ -33,6 +33,18 @@ Haritadaki tüm kapıları tek komutla açar veya kapatır. Jailbreak sunucular�
 
 ## Yapılandırma
 
+```
+csgo/addons/counterstrikesharp/configs/plugins/JBDoors/JBDoors.json
+```
+
+| Ayar | Tip | Varsayılan | Açıklama |
+| --- | --- | --- | --- |
+| `dooropen_cmd` | string | `"css_kapiac,css_dooropen"` | Kapıları açan komutlar, virgülle ayrılır |
+| `dooropen_flag` | string | `"@jailbreak/warden,@css/generic"` | Açabilecek flagler |
+| `doorclose_cmd` | string | `"css_kapikapat,css_doorclose"` | Kapıları kapatan komutlar, virgülle ayrılır |
+| `doorclose_flag` | string | `"@jailbreak/warden,@css/generic"` | Kapatabilecek flagler |
+| `doorbreak` | bool | `true` | Kırılabilir kapılar açılmakla kalmayıp kırılsın mı |
+
 Mesajlar `lang/tr.json` / `lang/en.json` üzerinden düzenlenebilir.
 
 ## Kullanım Örneği

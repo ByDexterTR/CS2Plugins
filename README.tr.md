@@ -30,6 +30,7 @@ CS2 sunucuları için 44 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 | [GoBhop](GoBhop/README.tr.md) | Ölü T'leri gizli bhop noktasına ışınlar | Jailbreak | CounterStrikeSharp |
 | [HideTeammates](HideTeammates/README.tr.md) | Takım arkadaşlarını (veya rakipleri/herkesi) gizler | Genel | CounterStrikeSharp |
 | [JBDoors](JBDoors/README.tr.md) | Tüm hücre kapılarını tek komutla açar/kapatır | Jailbreak | CounterStrikeSharp |
+| [JBLaserWar](JBLaserWar/README.tr.md) | Lazer savaşı: mermiler hasar vermez, her atışta sekerek öldüren bir lazer çıkar | Jailbreak | CounterStrikeSharp, gamedata |
 | [JBRace](JBRace/README.tr.md) | Başlangıç/bitiş noktalı yarış etkinliği | Jailbreak | CounterStrikeSharp |
 | [JBTeams](JBTeams/README.tr.md) | Canlı T'leri renkli takımlara böler | Jailbreak | CounterStrikeSharp |
 | [Lazer](Lazer/README.tr.md) | Ölü oyunculara canlıların baktığı yeri lazerle gösterir | Genel | CounterStrikeSharp, gamedata |

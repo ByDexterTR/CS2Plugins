@@ -23,7 +23,7 @@ public class CTRevConfig : BasePluginConfig
 public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 {
   public override string ModuleName => "CTRev";
-  public override string ModuleVersion => "1.0.7";
+  public override string ModuleVersion => "1.0.8";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -33,9 +33,8 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 
   private int _remainingRespawns;
   private bool _autoRespawnEnabled;
-  private readonly Dictionary<ulong, DateTime> _ctDeathEligibleAt = new();
-  private readonly HashSet<ulong> _playersWithMenuOpen = new();
-
+  private readonly Dictionary<int, DateTime> _ctDeathEligibleAt = new();
+  private readonly HashSet<int> _playersWithMenuOpen = new();
   private WasdMenuManager _menus = null!;
 
   public void OnConfigParsed(CTRevConfig config)
@@ -81,7 +80,9 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     if (victim == null || !victim.IsValid || victim.Team != CsTeam.CounterTerrorist)
       return HookResult.Continue;
 
-    _ctDeathEligibleAt[victim.SteamID] = DateTime.UtcNow.AddSeconds(Config.RespawnCooldownSeconds);
+    int victimUserId = Util.UserId(victim);
+    if (victimUserId >= 0)
+      _ctDeathEligibleAt[victimUserId] = DateTime.UtcNow.AddSeconds(Config.RespawnCooldownSeconds);
     return HookResult.Continue;
   }
 
@@ -91,7 +92,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     if (player == null || !player.IsValid)
       return HookResult.Continue;
 
-    _ctDeathEligibleAt.Remove(player.SteamID);
+    _ctDeathEligibleAt.Remove(Util.UserId(player));
     return HookResult.Continue;
   }
 
@@ -105,10 +106,10 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
         if (p == null || !p.IsValid || p.Team != CsTeam.CounterTerrorist || IsAlive(p) || _remainingRespawns <= 0)
           continue;
 
-        if (_ctDeathEligibleAt.TryGetValue(p.SteamID, out var eligibleAt) && now >= eligibleAt)
+        if (_ctDeathEligibleAt.TryGetValue(Util.UserId(p), out var eligibleAt) && now >= eligibleAt)
         {
           p.Respawn();
-          _ctDeathEligibleAt.Remove(p.SteamID);
+          _ctDeathEligibleAt.Remove(Util.UserId(p));
           _remainingRespawns--;
           Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.auto_revived", p.PlayerName, _remainingRespawns]}");
         }
@@ -117,19 +118,19 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 
     if (_playersWithMenuOpen.Count > 0)
     {
-      foreach (var steamId in _playersWithMenuOpen.ToList())
+      foreach (var userId in _playersWithMenuOpen.ToList())
       {
-        var player = Utilities.GetPlayerFromSteamId(steamId);
-        if (player == null || !player.IsValid)
+        var player = Utilities.GetPlayerFromUserid(userId);
+        if (player == null || !player.IsValid || Util.UserId(player) != userId)
         {
-          _playersWithMenuOpen.Remove(steamId);
+          _playersWithMenuOpen.Remove(userId);
           continue;
         }
 
         if (_menus.IsOpen(player))
           ShowMainMenu(player);
         else
-          _playersWithMenuOpen.Remove(steamId);
+          _playersWithMenuOpen.Remove(userId);
       }
     }
   }
@@ -142,7 +143,9 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     if (!Util.HasAccess(player, Config.CtrevFlag))
       return;
 
-    _playersWithMenuOpen.Add(player.SteamID);
+    int menuUserId = Util.UserId(player);
+    if (menuUserId >= 0)
+      _playersWithMenuOpen.Add(menuUserId);
     ShowMainMenu(player);
   }
 
@@ -182,7 +185,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
 
     foreach (var ct in deadCts)
     {
-      var remain = _ctDeathEligibleAt.TryGetValue(ct.SteamID, out var at) ? Math.Max(0, (int)Math.Ceiling((at - now).TotalSeconds)) : 0;
+      var remain = _ctDeathEligibleAt.TryGetValue(Util.UserId(ct), out var at) ? Math.Max(0, (int)Math.Ceiling((at - now).TotalSeconds)) : 0;
       if (remain == 0)
       {
         items.Add(new WasdItem
@@ -224,7 +227,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     }
 
     var now = DateTime.UtcNow;
-    if (_ctDeathEligibleAt.TryGetValue(target.SteamID, out var at) && now < at)
+    if (_ctDeathEligibleAt.TryGetValue(Util.UserId(target), out var at) && now < at)
     {
       var remain = Math.Max(0, (int)Math.Ceiling((at - now).TotalSeconds));
       actor.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.cooldown_wait", remain]}");
@@ -232,7 +235,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     }
 
     target.Respawn();
-    _ctDeathEligibleAt.Remove(target.SteamID);
+    _ctDeathEligibleAt.Remove(Util.UserId(target));
     _remainingRespawns--;
     Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctrev.revived", actor.PlayerName, target.PlayerName, _remainingRespawns]}");
   }

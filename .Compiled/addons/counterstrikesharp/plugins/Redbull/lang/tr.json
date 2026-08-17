@@ -4,6 +4,6 @@
   "redbull.already_active": "Red Bull etkileri zaten aktif!",
   "redbull.cooldown": "Red Bull bekleme süresi: {0} sn kaldı!",
   "redbull.limit": "Red Bull limiti: Her raunt {0} Red Bull içebilirsin.",
-  "redbull.activated": "Redbull: {0} saniye kanatlandın!",
-  "redbull.expired": "Redbull efekti bitti!"
+  "redbull.activated": "Red Bull: {0} saniye kanatlandın!",
+  "redbull.expired": "Red Bull efekti bitti!"
 }

@@ -1,6 +1,8 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.UserMessages;
 using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
@@ -10,6 +12,11 @@ public partial class VIPCore
     private const int WasdPerPage = 5;
     private const int WasdHudTickRate = 4;
     private const string WasdTag = "<VIPCore/>";
+    private const int WasdLegacyEventMessageId = 207;
+    private const int WasdShowCenterHtmlEventId = 226;
+
+    private static readonly Regex WasdHtmlValue = new(@"val_string:\s*""(.*?)""", RegexOptions.Compiled);
+    private static readonly Regex WasdMenuTag = new(@"^<[A-Za-z0-9]+/>", RegexOptions.Compiled);
 
     private readonly Dictionary<int, WasdSession> _wasd = new();
     private readonly Dictionary<int, Dictionary<string, int>> _wasdMemory = new();
@@ -24,6 +31,36 @@ public partial class VIPCore
         public PlayerButtons OldButtons;
         public string Html = "";
         public bool Dirty = true;
+    }
+
+    private void InstallWasdGuard() => HookUserMessage(WasdLegacyEventMessageId, OnWasdCenterHtml);
+
+    private HookResult OnWasdCenterHtml(UserMessage message)
+    {
+        if (_wasd.Count == 0)
+            return HookResult.Continue;
+
+        if (message.ReadUInt("eventid") != WasdShowCenterHtmlEventId)
+            return HookResult.Continue;
+
+        var value = WasdHtmlValue.Match(message.DebugString);
+        if (!value.Success)
+            return HookResult.Continue;
+
+        var tag = WasdMenuTag.Match(value.Groups[1].Value);
+        if (!tag.Success || tag.Value == WasdTag)
+            return HookResult.Continue;
+
+        foreach (var recipient in message.Recipients)
+        {
+            if (recipient == null || !recipient.IsValid)
+                continue;
+
+            if (_wasd.TryGetValue(recipient.Slot, out var session))
+                CloseWasd(session, false);
+        }
+
+        return HookResult.Continue;
     }
 
     private void OpenWasdMenu(CCSPlayerController player, string title,

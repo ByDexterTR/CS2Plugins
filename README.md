@@ -30,6 +30,7 @@
 | [GoBhop](GoBhop/README.md) | Teleports dead Ts to a hidden bhop area | Jailbreak | CounterStrikeSharp |
 | [HideTeammates](HideTeammates/README.md) | Hides teammates (or enemies/everyone) | General | CounterStrikeSharp |
 | [JBDoors](JBDoors/README.md) | Opens/closes every cell door with a single command | Jailbreak | CounterStrikeSharp |
+| [JBLaserWar](JBLaserWar/README.md) | Laser war: bullets do no damage, every shot fires a bouncing laser that kills | Jailbreak | CounterStrikeSharp, gamedata |
 | [JBRace](JBRace/README.md) | Race event with start and finish points | Jailbreak | CounterStrikeSharp |
 | [JBTeams](JBTeams/README.md) | Splits living Ts into colored teams | Jailbreak | CounterStrikeSharp |
 | [Lazer](Lazer/README.md) | Shows dead players where living players are aiming with a laser | General | CounterStrikeSharp, gamedata |
@@ -48,7 +49,7 @@
 | [SpawnkillProtection](SpawnkillProtection/README.md) | Flag and team based spawn protection with color transitions | General | CounterStrikeSharp |
 | [Speedometer](Speedometer/README.md) | Live speed readout (u/s) on the HUD with color transitions | General | CounterStrikeSharp |
 | [Sustum](Sustum/README.md) | Typing event with 4 modes (CTSustum, TSustum, DSustum, DeadSustum) | Jailbreak | CounterStrikeSharp |
-| [TABServerName](TABServerName/README.md) | Changes the map name shown in the top left of the scoreboard | Admin | CounterStrikeSharp, gamedata |
+| [TABServerName](TABServerName/README.md) | Discontinued, points to the Metamod plugin that changes the map name on the scoreboard | Admin | Metamod |
 | [Thirdperson](Thirdperson/README.md) | Third person camera with wall blocking | General | CounterStrikeSharp, gamedata |
 | [VIPCore](VIPCore/README.md) | Group based VIP system with 75+ modules and JSON/MySQL support | Admin | CounterStrikeSharp, MySQL (optional) |
 | [WardenMarker](WardenMarker/README.md) | A single glowing ring marker the warden keeps moving to the point they look at | Jailbreak | CounterStrikeSharp, gamedata |

@@ -49,6 +49,22 @@ Tüm komutlar `@css/generic` **veya** `@jailbreak/warden` yetkisi ister:
 
 ## Yapılandırma
 
+```
+csgo/addons/counterstrikesharp/configs/plugins/Sustum/Sustum.json
+```
+
+Her etkinliğin kendi komut ve flag ayarı vardır; virgülle ayırarak birden fazla komut yazılabilir.
+
+| Ayar | Tip | Varsayılan |
+| --- | --- | --- |
+| `ctsustum_cmd` / `ctsustum_flag` | string | `"css_ctsustum"` / `"@jailbreak/warden,@css/generic"` |
+| `tsustum_cmd` / `tsustum_flag` | string | `"css_tsustum"` / `"@jailbreak/warden,@css/generic"` |
+| `dsustum_cmd` / `dsustum_flag` | string | `"css_dsustum"` / `"@jailbreak/warden,@css/generic"` |
+| `olusustum_cmd` / `olusustum_flag` | string | `"css_olusustum"` / `"@jailbreak/warden,@css/generic"` |
+| `stop_cmd` / `stop_flag` | string | `"css_ctsustum0,css_dsustum0,css_tsustum0,css_olusustum0,css_sustum0"` / `"@jailbreak/warden,@css/generic"` |
+
+### Kelime Havuzu
+
 Kelime havuzu eklenti klasöründeki `sustum.json` dosyasıdır — düz bir string dizisi:
 
 ```json

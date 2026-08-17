@@ -82,9 +82,14 @@ public static class DecoyRing
             collision.SolidFlags = 12;
         }
 
-        disc.SetModel(DiscModel);
+        using (var keyValues = new CEntityKeyValues())
+        {
+            keyValues.SetString("model", DiscModel);
+            keyValues.SetInt("solid", 0);
+            disc.DispatchSpawn(keyValues);
+        }
+
         disc.Teleport(new Vector(center.X, center.Y, center.Z + 1f), new QAngle(), new Vector());
-        disc.DispatchSpawn();
 
         disc.Render = Color.FromArgb(DiscAlpha, 255, 255, 255);
         Utilities.SetStateChanged(disc, "CBaseModelEntity", "m_clrRender");

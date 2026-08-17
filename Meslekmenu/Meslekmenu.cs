@@ -41,15 +41,14 @@ public class MeslekmenuConfig : BasePluginConfig
 public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
 {
   public override string ModuleName => "Meslekmenu";
-  public override string ModuleVersion => "1.0.8";
+  public override string ModuleVersion => "1.0.9";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
   private string ChatPrefix => Localizer["chat_prefix"];
   public MeslekmenuConfig Config { get; set; } = new MeslekmenuConfig();
 
-  private Dictionary<ulong, bool> meslekAktif = new();
-
+  private Dictionary<int, bool> meslekAktif = new();
   private WasdMenuManager _menus = null!;
 
   public void OnConfigParsed(MeslekmenuConfig config)
@@ -127,7 +126,7 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
       return false;
     }
 
-    if (meslekAktif.TryGetValue(player.SteamID, out bool secildi) && secildi)
+    if (meslekAktif.TryGetValue(Util.UserId(player), out bool secildi) && secildi)
     {
       PrintPrefix(player, Localizer["meslekmenu.already_selected"]);
       return false;
@@ -279,7 +278,9 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
         return false;
     }
 
-    meslekAktif[player.SteamID] = true;
+    int userId = Util.UserId(player);
+    if (userId >= 0)
+      meslekAktif[userId] = true;
     return true;
   }
 

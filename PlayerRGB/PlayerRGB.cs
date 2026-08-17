@@ -11,13 +11,13 @@ using static CounterStrikeSharp.API.Core.Listeners;
 public class PlayerRGB : BasePlugin
 {
   public override string ModuleName => "PlayerRGB";
-  public override string ModuleVersion => "1.0.4";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
   private string ChatPrefix => Localizer["chat_prefix"];
 
-  private readonly Dictionary<ulong, bool> rgbEnabled = new();
+  private readonly Dictionary<int, bool> rgbEnabled = new();
   private readonly HashSet<ulong> _savedEnabled = new();
   private readonly object _saveLock = new();
 
@@ -35,12 +35,12 @@ public class PlayerRGB : BasePlugin
 
   public override void Unload(bool hotReload)
   {
-    foreach (var (steamId, enabled) in rgbEnabled)
+    foreach (var (userId, enabled) in rgbEnabled)
     {
       if (!enabled)
         continue;
 
-      var pawn = Utilities.GetPlayerFromSteamId(steamId)?.PlayerPawn.Value;
+      var pawn = Utilities.GetPlayerFromUserid(userId)?.PlayerPawn.Value;
       if (pawn == null || !pawn.IsValid)
         continue;
 
@@ -95,8 +95,8 @@ public class PlayerRGB : BasePlugin
   private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player != null && player.IsValid && !player.IsBot && _savedEnabled.Contains(player.SteamID))
-      rgbEnabled[player.SteamID] = true;
+    if (player != null && player.IsValid && !player.IsBot && Util.UserId(player) >= 0 && _savedEnabled.Contains(Util.SteamId(player)))
+      rgbEnabled[Util.UserId(player)] = true;
     return HookResult.Continue;
   }
 
@@ -104,7 +104,7 @@ public class PlayerRGB : BasePlugin
   {
     var player = @event.Userid;
     if (player != null)
-      rgbEnabled.Remove(player.SteamID);
+      rgbEnabled.Remove(Util.UserId(player));
     return HookResult.Continue;
   }
 
@@ -115,15 +115,19 @@ public class PlayerRGB : BasePlugin
     if (player == null || !player.IsValid)
       return;
 
-    bool enabled = rgbEnabled.TryGetValue(player.SteamID, out var val) ? !val : true;
-    rgbEnabled[player.SteamID] = enabled;
+    int userId = Util.UserId(player);
+    if (userId < 0)
+      return;
+
+    bool enabled = rgbEnabled.TryGetValue(userId, out var val) ? !val : true;
+    rgbEnabled[userId] = enabled;
 
     lock (_saveLock)
     {
       if (enabled)
-        _savedEnabled.Add(player.SteamID);
+        _savedEnabled.Add(Util.SteamId(player));
       else
-        _savedEnabled.Remove(player.SteamID);
+        _savedEnabled.Remove(Util.SteamId(player));
     }
     SaveAsync();
 
@@ -150,13 +154,13 @@ public class PlayerRGB : BasePlugin
 
     var color = FromHue(Server.CurrentTime * RainbowDegreesPerSecond % 360.0);
 
-    foreach (var (steamId, enabled) in rgbEnabled)
+    foreach (var (userId, enabled) in rgbEnabled)
     {
       if (!enabled)
         continue;
 
-      var player = Utilities.GetPlayerFromSteamId(steamId);
-      if (player == null || !player.IsValid || !IsAlive(player))
+      var player = Utilities.GetPlayerFromUserid(userId);
+      if (player == null || !player.IsValid || Util.UserId(player) != userId || !IsAlive(player))
         continue;
 
       var pawn = player.PlayerPawn.Value;
