@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.1.6";
+    public override string ModuleVersion => "1.1.7";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -257,7 +257,7 @@ public partial class VIPCore : BasePlugin
     {
         foreach (var module in _modules)
         {
-            if (!IsModuleEnabled(module.Name) || _loaded.Contains(module.Name))
+            if ((!IsModuleEnabled(module.Name) && !module.AlwaysLoad) || _loaded.Contains(module.Name))
                 continue;
 
             module.OnLoad();

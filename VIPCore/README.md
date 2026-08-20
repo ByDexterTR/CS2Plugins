@@ -43,6 +43,7 @@ Command names can be changed from the `commands` section of `settings.json`; the
 | `css_removevip <steamid64>` / `css_delvip` | Deletes the VIP record | `admin_flag` |
 | `css_reloadvip` / `css_vipreload` | Reloads the config, groups and VIP data | `admin_flag` |
 | `css_tp` / `css_thirdperson` | Toggles the third person camera (Thirdperson module) | VIP (if defined in the group) |
+| `css_vipinspect` / `css_vipreview` | Opens the model preview menu; the picked model appears in front of the player and turns around | VIP |
 | `css_updatevip <steamid64>` / `css_vipupdate` | Re-reads the player's VIP record from storage (JSON/MySQL); applies a change written from a web panel without restarting the server | `admin_flag` |
 | `css_hidevip` / `css_hidefx` | Effect visibility menu; the player picks who sees their own effect: Everyone → Teammates → Enemies → Myself → Off. The preference is stored persistently | — (everyone) |
 | *(module commands)* | Defined with `module_commands` in `settings.json`; a Toggle module is turned on/off instantly, a selection/category module opens its menu. Can be bound (`bind x "css_fall"`) | VIP (if defined in the group) |
@@ -64,6 +65,7 @@ Every command name in the table above can be renamed from `settings.json`; the k
 | `buy_commands` | object | — | BuyTeamWeapon command names; weapon key → comma separated commands (e.g. `"ak47": "css_ak47,css_ak"`) |
 | `module_commands` | object | — | Binds a command directly to a module (can be bound). Toggle modules are turned on/off instantly by the command, selection/category modules open their menu. Delete a line you do not want, add a new one as `"ModuleName": "css_command,css_alias"`; if left empty no command is added |
 | `hide` | object | — | Effect visibility defaults — who sees that player's own effect: `all` everyone, `team` teammates, `enemy` enemies, `self` only themselves, `hidden` nobody, `off` locked (does not appear in the menu). The player's own preference overrides the default |
+| `model_inspect` | object | — | `css_vipinspect` settings, the same for every VIP group: `enabled` on/off, `duration` how long the model stays, `cooldown` the wait between two inspections (0 = none), `distance`/`height` where it appears, `spin` how far it turns |
 | `mysql` | object | — | MySQL connection settings (`host`, `port`, `database`, `user`, `password`, `table_prefix`) |
 
 ```json
@@ -79,7 +81,8 @@ Every command name in the table above can be renamed from `settings.json`; the k
     "removevip": "css_removevip,css_delvip",
     "reload": "css_reloadvip,css_vipreload",
     "tp": "css_tp,css_thirdperson",
-    "hidevip": "css_hidevip,css_hidefx"
+    "hidevip": "css_hidevip,css_hidefx",
+    "inspect": "css_vipinspect,css_vipreview"
   },
   "module_commands": {
     "GiveWeapon": "css_weapons,css_kit",
@@ -99,6 +102,14 @@ Every command name in the table above can be renamed from `settings.json`; the k
     "GrenadeTrail": "all",
     "SaySound": "all",
     "PlayerParticle": "all"
+  },
+  "model_inspect": {
+    "enabled": true,
+    "duration": 5,
+    "cooldown": 30,
+    "distance": 90,
+    "height": -40,
+    "spin": 360
   },
   "mysql": {
     "host": "",
@@ -143,7 +154,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `AdminGroups` | Gives the VIP admin group membership (`#Group` names from SimpleAdmin etc.) | `["#VIP"]` |
 | `AntiFlash` | Blocks flashbangs | `{ "self": true, "enemy": true, "teammates": true, "limit": 0 }` |
 | `AntiHS` | Reduces headshot damage | `{ "percent": 0, "only_with_weapon": "", "limit": 0 }` |
-| `Armor` | Armor (+helmet) on spawn | `{ "value": 100, "helmet": true }` |
+| `Armor` | Armor (+helmet) on spawn; buying armor from the buy menu does not lower it back to 100 | `{ "value": 100, "helmet": true }` |
 | `ArmorRegen` | Armor regeneration | `{ "armor_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2, "max_armor": 100, "give_helmet_when_full": true }` |
 | `Aura` | A constant area effect around the player (heal/poison/slow/speed); the area is shown with a ring and blinks with `duration_on`/`duration_off` | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true }, "speed": { "maxspeed": 400, "radius": 180 } }` |
 | `AutoHS` | Hits count as headshots | `{ "multiplier": 4, "only_with_weapon": "", "ignore_teammates": true, "limit": 0 }` |
@@ -159,7 +170,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `DamageDealt` | Increases the damage dealt; **negative `percent` = debuff** (`-50` halves the damage dealt) | `{ "percent": 50, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `DamageResist` | Reduces the damage taken; **negative `percent` = debuff** (`-50` increases the damage taken by 50%) | `{ "percent": 40, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `Dash` | Pressing jump while airborne dashes you toward the direction key you are holding (forward if none); `limit`: budget per round (0 = unlimited), `unit`: push speed, `sound_volume`: jump sound volume (0 = silent) | `{ "limit": 3, "unit": 600, "sound_volume": 1 }` |
-| `DecoyEffect` | Gives the decoy a feature: poison, healing, slowing or wallhack. The area is shown with a ring on the ground that grows with `radius` | `{ "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 200, "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "wallhack": { "tick": 0.25, "radius": 200, "color": "#612D53", "see_teammates": false, "limit": 0 } }` |
+| `DecoyEffect` | Gives the decoy a feature: poison, healing, slowing, wallhack or magnetic (pulls everyone in range toward it). The area is shown with a ring on the ground that grows with `radius` | `{ "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 200, "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "wallhack": { "tick": 0.25, "radius": 200, "color": "#612D53", "see_teammates": false, "limit": 0 }, "magnetic": { "strength": 30, "radius": 200, "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false, "limit": 0 } }` |
 | `DecoyTeleport` | Teleport to where the decoy landed | `{ "limit": 3 }` |
 | `DefuseKit` | Defuse kit on spawn (CT) | `true` |
 | `DuckEndurance` | Infinite crouching; crouching repeatedly never slows down | `true` |
@@ -173,6 +184,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `FastDefuse` | Fast bomb defuse; with `immune_while_burning: false` the speed advantage is disabled while burning / near fire or an airborne molotov | `{ "time": 1, "immune_while_burning": true }` |
 | `FastPlant` | Fast bomb plant; with `immune_while_burning: false` the speed advantage is disabled while burning / near fire or an airborne molotov | `{ "time": 1, "immune_while_burning": true }` |
 | `FastReload` | The magazine empties normally; on the last bullet it refills instantly from the reserve (1 magazine is taken from the reserve) | `{ "only_with_weapon": "", "limit": 0 }` |
+| `FlashDuration` | Multiplies how long the flashbangs you throw blind people; `0.5` = half as long, `2.0` = twice as long | `{ "multiplier": 1.5, "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `FortniteArmor` | Damage hits armor first. `percent` is how much of the damage goes to armor; once armor runs out the rest goes to health | `{ "percent": 100, "absorb_fall_damage": false }` |
 | `Fov` | FOV options | `[50, 60, 70, 80, 90]` |
 | `GiveWeapon` | Weapon selection on spawn, one per category. With "Force Give" on in the menu the weapon in that slot is replaced | `{ "rifle": ["weapon_ak47", "weapon_awp"], "pistol": ["weapon_deagle"] }` |
@@ -180,11 +192,14 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Glaz` | See through smoke | `true` |
 | `GlueGrenade` | Thrown grenades stick on first contact (if you add decoy, there is a risk of teleporting inside a wall with DecoyTeleport) | `{ "only_grenades": "flashbang,hegrenade", "limit": 0 }` |
 | `Gravity` | Gravity options | `[1.0, 0.8, 0.5]` |
+| `GrenadeDamage` | Multiplies the damage and blast radius of your HE grenades | `{ "damage_multiplier": 2.0, "range_multiplier": 2.0, "limit": 0 }` |
 | `GrenadeKit` | Grenade set on spawn; not given if already held, with 2+ it is given again after throwing (not re-given while InfiniteAmmo is on) | `{ "flash": 2, "smoke": 1, "he": 3, "molotov": 1, "decoy": 0 }` |
 | `GrenadeResist` | Reduces grenade (HE/molotov/inferno) damage; **negative `percent` = debuff** (`-50` increases grenade damage by 50%) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `GrenadeTimer` | The player picks per grenade type from the menu how many extra seconds it stays in the air before going off; the values offered come from the config (0.1 - 20) | `{ "hegrenade": [0.5, 1.0, 2.0], "flashbang": [0.5, 1.0, 2.0], "molotov": [1.0, 2.0, 3.0], "decoy": [], "limit": 0 }` |
 | `GrenadeTrail` | Grenade trail effect | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
 | `HealthRegen` | Health regeneration | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Healthshot on spawn | `2` |
+| `HealthshotBoost` | Using a healthshot also gives speed and extra damage for a short time | `{ "duration": 5, "speed_multiplier": 1.3, "damage_multiplier": 1.25, "limit": 0 }` |
 | `HitSound` | Plays a sound when you hit an enemy; spectators hear it too. 2 categories: `hs: true` entries on headshots, the rest on normal hits. If no HS sound is picked the normal one plays. `path` is a file path, `emit` a soundevent name | `[{ "name": "Killcard", "path": "sounds/ui/killcard_1.vsnd" }, { "name": "Ping", "emit": "UI.PlayerPing", "volume": 1, "hs": true }]` |
 | `InfiniteAmmo` | Infinite ammo | `{ "only_weapon": "" }` |
 | `Invisibility` | Invisibility (not transmitted to enemies) | `{ "only_stopped": true, "dmg_after_invis": 2.0, "only_with_weapon": "" }` |
@@ -192,8 +207,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `JoinMessage` | Join/leave announcement | `{ "join_message": "...", "leave_message": "..." }` |
 | `KillEffect` | Particle effect on a kill; separate categories for normal, headshot and last kill. With nothing picked it falls back to the previous category | `[{ "name": "Simsek", "particle": "...", "time": 3, "hs": false, "lastkill": false }]` |
 | `KillHeal` | Restores health by kill type: an `hp` (or `money`) key inside `distance` | `{ "headshot": 15, "noscope": 10, "inair": 20, "blind": 5, "distance": { "unit": 2048, "hp": 10 }, "weapon_knife": 50 }` |
-| `KillScreen` | Kill screen effect (does not work on a teammate while FFA is off) | `{ "duration": 1.0 }` |
-| `MagneticDecoy` | While the decoy is on the ground and beeping it pulls everyone within `radius` toward it; the pull weakens with distance (`strength` is the base force); `limit` is how many decoys per round | `{ "radius": 180, "strength": 30, "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
+| `KillScreen` | Screen flashes in the chosen colour on a kill (does not work on a teammate while FFA is off); `duration` is how long the colour stays, `fade` how long it takes to clear, `alpha` how strong it is | `{ "duration": 0.05, "fade": 0.35, "alpha": 90, "colors": ["Random random", "Red #FF0000"] }` |
 | `Mole` | The damaged player is buried `unit` units into the ground for `time` seconds and cannot move; `limit` is how many burials per round (0 = unlimited) | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
 | `OneShot` | One shot kill with specific weapons | `{ "weapons": "weapon_awp,weapon_ssg08", "limit": 0 }` |
 | `PistolRoundDisable` | The listed modules are disabled on pistol rounds (a group setting, not a module) | `["GiveWeapon", "WeaponAmmo"]` |
@@ -209,6 +223,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `RapidFire` | `firepercent` is the fire rate (`0.1` – `2.0`): `1.0` normal, `2.0` fastest, below that is slower. `recoilpercent` is the recoil left (`0.0` – `1.0`): `0.0` none, `1.0` normal | `{ "only_with_weapon": "", "recoilpercent": 0.0, "firepercent": 2.0 }` |
 | `ReflectDamage` | Damage reflection | `{ "reflect_percent": 50, "max_per_shot": 100, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `Respawn` | A dead player respawns after `time` seconds; `limit` is the budget per round (0 = unlimited), cancelled when the round changes | `{ "limit": 1, "time": 3 }` |
+| `Ricochet` | Your bullets bounce off walls and can still hit an enemy; `bounces` is how many times, `damage_falloff` how much damage is left after each bounce | `{ "bounces": 3, "damage_multiplier": 0.5, "damage_falloff": 0.75, "show_tracer": true, "ignore_teammates": true, "color": "#FFE28C", "only_with_weapon": "" }` |
 | `Sacrifice` | When the VIP dies, gives living teammates health (capped at their own MaxHealth), armor (+helmet with `helmet`) and the weapons in the `weapons` list | `{ "hp": 25, "armor": 25, "helmet": false, "weapons": "weapon_hegrenade,weapon_flashbang" }` |
 | `SaySound` | Plays a sound when a chat message is sent (`say` to everyone, `say_team` to the team); `cooldown` in seconds, `0` = no wait; `path` is a file path or `emit` is a soundevent name (`volume` only applies to `emit`); the old flat list is also supported | `{ "cooldown": 2, "sounds": [{ "name": "Beep", "path": "sounds/ui/beepclear.vsnd" }, { "name": "Sohbet", "emit": "UI.Lobby.Chat", "volume": 1 }] }` |
 | `Silent` | Hides footsteps from other players | `{ "only_with_weapon": "" }` |

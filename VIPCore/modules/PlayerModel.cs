@@ -8,7 +8,7 @@ namespace VIPCore;
 
 public class PlayerModel : VipModule
 {
-    private class ModelDef
+    public class ModelDef
     {
         public string Name { get; set; } = "";
         public string Model { get; set; } = "";
@@ -16,7 +16,7 @@ public class PlayerModel : VipModule
         public bool Leg { get; set; } = true;
     }
 
-    private class Cfg
+    public class Cfg
     {
         public List<ModelDef> Ct { get; set; } = new();
         public List<ModelDef> T { get; set; } = new();

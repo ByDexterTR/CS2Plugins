@@ -133,6 +133,10 @@ public partial class VIPCore
 
     public string TpCommands => Config.Commands.Tp;
 
+    public string InspectCommands => Config.Commands.Inspect;
+
+    public ModelInspectSettings InspectSettings => Config.ModelInspect;
+
     public string HideDefault(string module) =>
         Config.Hide.TryGetValue(module, out var value) && !string.IsNullOrWhiteSpace(value) ? value : "all";
 

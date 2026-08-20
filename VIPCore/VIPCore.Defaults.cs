@@ -445,6 +445,14 @@ public partial class VIPCore
         "color": "#612D53",
         "see_teammates": false,
         "limit": 0
+      },
+      "magnetic": {
+        "strength": 30,
+        "radius": 200,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false,
+        "limit": 0
       }
     },
     "DecoyTeleport": {
@@ -500,6 +508,12 @@ public partial class VIPCore
       "only_with_weapon": "",
       "limit": 0
     },
+    "FlashDuration": {
+      "multiplier": 1.5,
+      "ignore_teammates": true,
+      "ignore_self": true,
+      "limit": 0
+    },
     "FortniteArmor": {
       "percent": 100,
       "absorb_fall_damage": false
@@ -537,6 +551,11 @@ public partial class VIPCore
       0.5,
       0.3
     ],
+    "GrenadeDamage": {
+      "damage_multiplier": 2.0,
+      "range_multiplier": 2.0,
+      "limit": 0
+    },
     "GrenadeKit": {
       "flash": 2,
       "smoke": 1,
@@ -549,6 +568,25 @@ public partial class VIPCore
       "only_with_grenade": "he,molotov,inferno",
       "ignore_teammates": true,
       "ignore_self": true,
+      "limit": 0
+    },
+    "GrenadeTimer": {
+      "hegrenade": [
+        0.5,
+        1.0,
+        2.0
+      ],
+      "flashbang": [
+        0.5,
+        1.0,
+        2.0
+      ],
+      "molotov": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "decoy": [],
       "limit": 0
     },
     "GrenadeTrail": {
@@ -568,6 +606,12 @@ public partial class VIPCore
       "delay_after_dmg": 2
     },
     "Healthshot": 2,
+    "HealthshotBoost": {
+      "duration": 5,
+      "speed_multiplier": 1.3,
+      "damage_multiplier": 1.25,
+      "limit": 0
+    },
     "HitSound": [
       {
         "name": "Killcard",
@@ -812,15 +856,17 @@ public partial class VIPCore
       "weapon_knife": 50
     },
     "KillScreen": {
-      "duration": 1
-    },
-    "MagneticDecoy": {
-      "radius": 180,
-      "strength": 30,
-      "ignore_teammates": true,
-      "ignore_enemy": false,
-      "ignore_self": true,
-      "limit": 0
+      "duration": 0.05,
+      "fade": 0.35,
+      "alpha": 90,
+      "colors": [
+        "Rastgele random",
+        "Kirmizi #FF0000",
+        "Yesil #00FF00",
+        "Mavi #0000FF",
+        "Sari #FFFF00",
+        "Mor #A020F0"
+      ]
     },
     "Mole": {
       "time": 2.5,
@@ -1006,6 +1052,25 @@ public partial class VIPCore
     "Respawn": {
       "limit": 1,
       "time": 3
+    },
+    "Ricochet": {
+      "bounces": 3,
+      "segment_distance": 1200,
+      "damage_multiplier": 0.5,
+      "fallback_damage": 25,
+      "respect_armor": true,
+      "damage_falloff": 0.75,
+      "max_impacts_per_tick": 2,
+      "show_tracer": true,
+      "tracer_width": 0.5,
+      "tracer_speed": 2600,
+      "tracer_length": 220,
+      "max_active_tracers": 12,
+      "hit_radius": 20,
+      "ignore_teammates": true,
+      "sound_volume": 1,
+      "color": "#FFE28C",
+      "only_with_weapon": ""
     },
     "Sacrifice": {
       "hp": 25,

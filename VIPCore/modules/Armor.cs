@@ -14,7 +14,11 @@ public class Armor : VipModule
     public override string Name => "Armor";
     public override string DisplayName => Core.Localizer["vip.module.armor"];
 
-    public override void OnLoad() => Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
+    public override void OnLoad()
+    {
+        Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
+        Core.RegisterEventHandler<EventItemPurchase>(OnPurchase);
+    }
 
     private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)
     {
@@ -22,21 +26,39 @@ public class Armor : VipModule
         if (!Active(player))
             return HookResult.Continue;
 
-        var cfg = GroupValue<Cfg>(player!) ?? new Cfg();
-        Server.NextFrame(() =>
-        {
-            if (!IsAlive(player))
-                return;
-
-            var pawn = player!.PlayerPawn.Value;
-            if (pawn == null || !pawn.IsValid)
-                return;
-
-            player.GiveNamedItem(cfg.Helmet ? "item_assaultsuit" : "item_kevlar");
-            pawn.ArmorValue = cfg.Value;
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
-        });
-
+        Server.NextFrame(() => Apply(player!, false));
         return HookResult.Continue;
+    }
+
+    private HookResult OnPurchase(EventItemPurchase ev, GameEventInfo info)
+    {
+        var player = ev.Userid;
+        if (!Active(player))
+            return HookResult.Continue;
+
+        string item = ev.Weapon ?? "";
+        if (item != "item_kevlar" && item != "item_assaultsuit")
+            return HookResult.Continue;
+
+        Server.NextFrame(() => Apply(player!, true));
+        return HookResult.Continue;
+    }
+
+    private void Apply(CCSPlayerController player, bool keepHigher)
+    {
+        if (!IsAlive(player) || !Active(player))
+            return;
+
+        var pawn = player.PlayerPawn.Value;
+        if (pawn == null || !pawn.IsValid)
+            return;
+
+        var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+
+        player.GiveNamedItem(cfg.Helmet ? "item_assaultsuit" : "item_kevlar");
+
+        int value = keepHigher ? Math.Max(cfg.Value, pawn.ArmorValue) : cfg.Value;
+        pawn.ArmorValue = value;
+        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
     }
 }

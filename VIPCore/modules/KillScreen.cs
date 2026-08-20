@@ -1,4 +1,3 @@
-using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Cvars;
 
@@ -8,13 +7,20 @@ public class KillScreen : VipModule
 {
     private class Cfg
     {
-        public float Duration { get; set; } = 1.0f;
+        public float Duration { get; set; } = 0.05f;
+        public float Fade { get; set; } = 0.35f;
+        public int Alpha { get; set; } = 90;
+        public List<string> Colors { get; set; } = new();
     }
 
     private static ConVar? _cvFfa;
 
     public override string Name => "KillScreen";
     public override string DisplayName => Core.Localizer["vip.module.killscreen"];
+    public override VipFeatureType MenuType => VipFeatureType.Select;
+
+    public override List<VipFeatureOption> SelectOptions(CCSPlayerController player) =>
+        TrailBeam.ParseColorOptions(GroupValue<Cfg>(player)?.Colors ?? new());
 
     public override void OnLoad() => Core.RegisterEventHandler<EventPlayerDeath>(OnDeath);
 
@@ -30,13 +36,12 @@ public class KillScreen : VipModule
         if (!ffa && victim.Team == attacker.Team)
             return HookResult.Continue;
 
-        var pawn = attacker!.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid)
-            return HookResult.Continue;
+        var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
+        string setting = Setting(attacker);
+        var color = TrailBeam.IsRandom(setting) ? TrailBeam.RandomColor() : TrailBeam.Resolve(setting);
 
-        float duration = (GroupValue<Cfg>(attacker) ?? new Cfg()).Duration;
-        pawn.HealthShotBoostExpirationTime = Server.CurrentTime + duration;
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flHealthShotBoostExpirationTime");
+        int alpha = Math.Clamp(cfg.Alpha, 0, 255);
+        ScreenFade.Apply(attacker, System.Drawing.Color.FromArgb(alpha, color.R, color.G, color.B), cfg.Fade, cfg.Duration);
         return HookResult.Continue;
     }
 }

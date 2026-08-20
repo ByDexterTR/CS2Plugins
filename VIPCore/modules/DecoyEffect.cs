@@ -47,6 +47,16 @@ public class DecoyEffect : VipModule
         public int Limit { get; set; } = 0;
     }
 
+    private class MagneticCfg
+    {
+        public float Strength { get; set; } = 30f;
+        public float Radius { get; set; } = 180f;
+        public bool IgnoreTeammates { get; set; } = true;
+        public bool IgnoreSelf { get; set; } = true;
+        public bool IgnoreEnemy { get; set; } = false;
+        public int Limit { get; set; } = 0;
+    }
+
     private class WallhackCfg
     {
         public float Tick { get; set; } = 0.25f;
@@ -62,6 +72,7 @@ public class DecoyEffect : VipModule
         public HealCfg? Heal { get; set; }
         public SlowCfg? Slow { get; set; }
         public WallhackCfg? Wallhack { get; set; }
+        public MagneticCfg? Magnetic { get; set; }
     }
 
     private class ActiveDecoy
@@ -94,6 +105,8 @@ public class DecoyEffect : VipModule
             options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.slow"], "slow"));
         if (cfg.Wallhack != null)
             options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.wallhack"], "wallhack"));
+        if (cfg.Magnetic != null)
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.magnetic"], "magnetic"));
         return options;
     }
 
@@ -147,6 +160,7 @@ public class DecoyEffect : VipModule
         "heal" when cfg.Heal != null => (cfg.Heal.Radius, cfg.Heal.Limit, Color.FromArgb(255, 0, 255, 0)),
         "slow" when cfg.Slow != null => (cfg.Slow.Radius, cfg.Slow.Limit, Color.FromArgb(255, 0, 128, 255)),
         "wallhack" when cfg.Wallhack != null => (cfg.Wallhack.Radius, cfg.Wallhack.Limit, TrailBeam.Resolve(cfg.Wallhack.Color)),
+        "magnetic" when cfg.Magnetic != null => (cfg.Magnetic.Radius, cfg.Magnetic.Limit, Color.FromArgb(255, 255, 128, 0)),
         _ => (0f, 0, Color.White)
     };
 
@@ -214,6 +228,11 @@ public class DecoyEffect : VipModule
 
             switch (decoy.Mode)
             {
+                case "magnetic" when cfg.Magnetic != null:
+                    decoy.NextTick = now + 0.05f;
+                    Pull(decoy, owner!, cfg.Magnetic);
+                    break;
+
                 case "poison" when cfg.Poison != null:
                     decoy.NextTick = now + Math.Max(cfg.Poison.Tick, 0.05f);
                     Apply(decoy, owner!, cfg.Poison.Radius, cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, false, pawn =>
@@ -297,6 +316,32 @@ public class DecoyEffect : VipModule
         for (int target = 0; target < 64; target++)
             if ((decoy.Seen & (1UL << target)) != 0)
                 GlowPool.Show(decoy.OwnerSlot, target, color);
+    }
+
+    private void Pull(ActiveDecoy decoy, CCSPlayerController owner, MagneticCfg cfg)
+    {
+        if (cfg.Radius <= 0f || cfg.Strength <= 0f)
+            return;
+
+        Apply(decoy, owner, cfg.Radius, cfg.IgnoreTeammates, cfg.IgnoreSelf, cfg.IgnoreEnemy, pawn =>
+        {
+            if (pawn.AbsOrigin == null)
+                return;
+
+            float distance = TrailBeam.Distance(decoy.Pos, pawn.AbsOrigin);
+            if (distance <= 10f)
+                return;
+
+            float dx = decoy.Pos.X - pawn.AbsOrigin.X;
+            float dy = decoy.Pos.Y - pawn.AbsOrigin.Y;
+            float length = MathF.Sqrt(dx * dx + dy * dy);
+            if (length < 1f)
+                return;
+
+            float pull = cfg.Strength * (1f - distance / cfg.Radius);
+            var velocity = pawn.AbsVelocity;
+            pawn.Teleport(null, null, new Vector(velocity.X + dx / length * pull, velocity.Y + dy / length * pull, velocity.Z));
+        });
     }
 
     private void ResetStaleSlows()

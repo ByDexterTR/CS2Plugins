@@ -43,6 +43,7 @@ Komut adları `settings.json` → `commands` bölümünden değiştirilebilir; v
 | `css_removevip <steamid64>` / `css_delvip` | VIP kaydını siler | `admin_flag` |
 | `css_reloadvip` / `css_vipreload` | Config, grup ve VIP verilerini yeniden yükler | `admin_flag` |
 | `css_tp` / `css_thirdperson` | Üçüncü şahıs kamerayı açar/kapatır (Thirdperson modülü) | VIP (grupta tanımlıysa) |
+| `css_vipinspect` / `css_vipreview` | Model önizleme menüsünü açar; seçilen model oyuncunun önüne gelip döner | VIP |
 | `css_updatevip <steamid64>` / `css_vipupdate` | Oyuncunun VIP kaydını depodan (JSON/MySQL) yeniden okur; web panelden yazılan değişikliği sunucu yeniden başlamadan uygular | `admin_flag` |
 | `css_hidevip` / `css_hidefx` | Efekt görünürlük menüsü; oyuncu kendi efektini kimin göreceğini seçer: Herkes → Takım → Rakipler → Kendim → Kapalı. Tercih kalıcı saklanır | — (herkes) |
 | *(modül komutları)* | `settings.json` → `module_commands` ile tanımlanır; Toggle modülü anında açar/kapatır, seçmeli/kategorili modülün menüsünü açar. Bind edilebilir (`bind x "css_fall"`) | VIP (grupta tanımlıysa) |
@@ -64,6 +65,7 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
 | `buy_commands` | nesne | — | BuyTeamWeapon komut adları; silah anahtarı → virgülle komutlar (örn. `"ak47": "css_ak47,css_ak"`) |
 | `module_commands` | nesne | — | Modüle doğrudan komut bağlar (bind edilebilir). Toggle modüller komutla anında açılıp kapanır, seçmeli/kategorili modüllerin menüsü açılır. İstemediğin satırı sil, yenisini `"ModulAdi": "css_komut,css_takma"` biçiminde ekle; boş bırakılırsa hiç komut eklenmez |
 | `hide` | nesne | — | Efekt görünürlüğü varsayılanları — oyuncunun kendi efektini kimin göreceği: `all` herkes, `team` takım, `enemy` rakipler, `self` sadece kendisi, `hidden` hiç kimse, `off` kilitli (menüde çıkmaz). Oyuncunun kendi tercihi varsayılanı ezer |
+| `model_inspect` | nesne | — | `css_vipinspect` ayarları, tüm VIP grupları için aynı: `enabled` açık/kapalı, `duration` modelin kalma süresi, `cooldown` iki inceleme arasındaki bekleme (0 = yok), `distance`/`height` nerede duracağı, `spin` kaç derece döneceği |
 | `mysql` | nesne | — | MySQL bağlantı ayarları (`host`, `port`, `database`, `user`, `password`, `table_prefix`) |
 
 ```json
@@ -79,7 +81,8 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
     "removevip": "css_removevip,css_delvip",
     "reload": "css_reloadvip,css_vipreload",
     "tp": "css_tp,css_thirdperson",
-    "hidevip": "css_hidevip,css_hidefx"
+    "hidevip": "css_hidevip,css_hidefx",
+    "inspect": "css_vipinspect,css_vipreview"
   },
   "module_commands": {
     "GiveWeapon": "css_weapons,css_kit",
@@ -99,6 +102,14 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
     "GrenadeTrail": "all",
     "SaySound": "all",
     "PlayerParticle": "all"
+  },
+  "model_inspect": {
+    "enabled": true,
+    "duration": 5,
+    "cooldown": 30,
+    "distance": 90,
+    "height": -40,
+    "spin": 360
   },
   "mysql": {
     "host": "",
@@ -143,7 +154,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `AdminGroups` | VIP'e admin grubu üyeliği verir (SimpleAdmin vb. `#Grup` adları) | `["#VIP"]` |
 | `AntiFlash` | Flashbang'i engeller | `{ "self": true, "enemy": true, "teammates": true, "limit": 0 }` |
 | `AntiHS` | Headshot hasarını azaltır | `{ "percent": 0, "only_with_weapon": "", "limit": 0 }` |
-| `Armor` | Spawn'da zırh (+kask) | `{ "value": 100, "helmet": true }` |
+| `Armor` | Spawn'da zırh (+kask); satın alma menüsünden zırh alınca değer 100'e düşmez | `{ "value": 100, "helmet": true }` |
 | `ArmorRegen` | Zırh yenilenmesi | `{ "armor_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2, "max_armor": 100, "give_helmet_when_full": true }` |
 | `Aura` | Oyuncunun etrafında sürekli etki alanı (iyileştirme/zehir/yavaşlatma/hız); alan bir halka ile gösterilir, `duration_on`/`duration_off` ile yanıp söner | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true }, "speed": { "maxspeed": 400, "radius": 180 } }` |
 | `AutoHS` | Vuruşlar Headshot sayılır | `{ "multiplier": 4, "only_with_weapon": "", "ignore_teammates": true, "limit": 0 }` |
@@ -159,7 +170,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `DamageDealt` | Verilen hasarı artırır; **negatif `percent` = debuff** (`-50` verilen hasarı yarıya düşürür) | `{ "percent": 50, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `DamageResist` | Alınan hasarı azaltır; **negatif `percent` = debuff** (`-50` alınan hasarı %50 artırır) | `{ "percent": 40, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `Dash` | Havadayken zıplama tuşuna basınca bastığın yön tuşuna doğru atılır (yön yoksa ileri); `limit`: raunt başına hak (0 = sınırsız), `unit`: itme hızı, `sound_volume`: zıplama sesinin seviyesi (0 = sessiz) | `{ "limit": 3, "unit": 600, "sound_volume": 1 }` |
-| `DecoyEffect` | Decoy'a özellik verir: zehirli, iyileştiren, yavaşlatan veya WallHack. Etki alanı yerde bir halka ile gösterilir, halkanın boyutu `radius` ile büyür | `{ "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 200, "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "wallhack": { "tick": 0.25, "radius": 200, "color": "#612D53", "see_teammates": false, "limit": 0 } }` |
+| `DecoyEffect` | Decoy'a özellik verir: zehirli, iyileştiren, yavaşlatan, WallHack veya mıknatıs (yakındakileri kendine çeker). Etki alanı yerde bir halka ile gösterilir, halkanın boyutu `radius` ile büyür | `{ "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 200, "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "wallhack": { "tick": 0.25, "radius": 200, "color": "#612D53", "see_teammates": false, "limit": 0 }, "magnetic": { "strength": 30, "radius": 200, "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false, "limit": 0 } }` |
 | `DecoyTeleport` | Decoy'un düştüğü yere ışınlanma | `{ "limit": 3 }` |
 | `DefuseKit` | Spawn'da imha kiti (CT) | `true` |
 | `DuckEndurance` | Sınırsız çömelme; arka arkaya çömelince yavaşlamaz | `true` |
@@ -173,6 +184,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `FastDefuse` | Hızlı bomba imhası; `immune_while_burning: false` ise yanarken / ateşin veya havadaki molotofun yakınında hız avantajı devre dışı | `{ "time": 1, "immune_while_burning": true }` |
 | `FastPlant` | Hızlı bomba kurma;  `immune_while_burning: false` ise yanarken / ateşin veya havadaki molotofun yakınında hız avantajı devre dışı | `{ "time": 1, "immune_while_burning": true }` |
 | `FastReload` | Şarjör normal boşalır; son mermide yedekten anında dolar — (yedekten 1 şarjör düşer) | `{ "only_with_weapon": "", "limit": 0 }` |
+| `FlashDuration` | Attığın flaşların kör etme süresini çarpar; `0.5` = yarı süre, `2.0` = iki katı | `{ "multiplier": 1.5, "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `FortniteArmor` | Hasarı önce zırh karşılar. `percent` hasarın ne kadarının zırha gideceği; zırh biterse kalan hasar cana işler | `{ "percent": 100, "absorb_fall_damage": false }` |
 | `Fov` | FOV seçenekleri | `[50, 60, 70, 80, 90]` |
 | `GiveWeapon` | Spawn'da silah seçimi; her kategoriden bir silah. Menüdeki "Daima Ver" açıkken o slottaki silah değiştirilir | `{ "rifle": ["weapon_ak47", "weapon_awp"], "pistol": ["weapon_deagle"] }` |
@@ -180,11 +192,14 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `Glaz` | Sis içini görme | `true` |
 | `GlueGrenade` | Atılan bombalar ilk temasta yapışır (decoy eklersen DecoyTeleport ile duvar içine ışınlanma riski) | `{ "only_grenades": "flashbang,hegrenade", "limit": 0 }` |
 | `Gravity` | Yerçekimi seçenekleri | `[1.0, 0.8, 0.5]` |
+| `GrenadeDamage` | HE grenade'lerinin hasarını ve patlama yarıçapını çarpar | `{ "damage_multiplier": 2.0, "range_multiplier": 2.0, "limit": 0 }` |
 | `GrenadeKit` | Spawn'da bomba seti; zaten varsa vermez, 2+ ise atınca yeniden verir (InfiniteAmmo açıkken yeniden vermez) | `{ "flash": 2, "smoke": 1, "he": 3, "molotov": 1, "decoy": 0 }` |
 | `GrenadeResist` | Bomba (HE/molotov/inferno) hasarını azaltır; **negatif `percent` = debuff** (`-50` bomba hasarını %50 artırır) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `GrenadeTimer` | Oyuncu menüden her grenade türü için kaç saniye geç patlayacağını seçer; menüdeki değerler configten gelir (0.1 - 20) | `{ "hegrenade": [0.5, 1.0, 2.0], "flashbang": [0.5, 1.0, 2.0], "molotov": [1.0, 2.0, 3.0], "decoy": [], "limit": 0 }` |
 | `GrenadeTrail` | Bomba izi efekti | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
 | `HealthRegen` | Can yenilenmesi | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Spawn'da healthshot | `2` |
+| `HealthshotBoost` | Healthshot kullanınca kısa süre hız ve ekstra hasar verir | `{ "duration": 5, "speed_multiplier": 1.3, "damage_multiplier": 1.25, "limit": 0 }` |
 | `HitSound` | Düşmana vurunca ses çalar; izleyenler de duyar. 2 kategori: `hs: true` girdiler kafa vuruşunda, diğerleri normal vuruşta. HS seçili değilse normal ses çalar. `path` dosya yolu veya `emit` soundevent adı | `[{ "name": "Killcard", "path": "sounds/ui/killcard_1.vsnd" }, { "name": "Ping", "emit": "UI.PlayerPing", "volume": 1, "hs": true }]` |
 | `InfiniteAmmo` | Sınırsız mermi | `{ "only_weapon": "" }` |
 | `Invisibility` | Görünmezlik (düşmanlara transmit edilmez) | `{ "only_stopped": true, "dmg_after_invis": 2.0, "only_with_weapon": "" }` |
@@ -192,8 +207,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `JoinMessage` | Giriş/çıkış duyurusu | `{ "join_message": "...", "leave_message": "..." }` |
 | `KillEffect` | Öldürünce partikül efekti; normal, kafadan ve son öldürme için ayrı kategoriler. Seçim yoksa bir üst kategoriye düşer | `[{ "name": "Simsek", "particle": "...", "time": 3, "hs": false, "lastkill": false }]` |
 | `KillHeal` | Öldürme şekline göre can yeniler: `distance` içinde `hp` (veya `money`) anahtarı | `{ "headshot": 15, "noscope": 10, "inair": 20, "blind": 5, "distance": { "unit": 2048, "hp": 10 }, "weapon_knife": 50 }` |
-| `KillScreen` | Öldürme ekran efekti (FFA kapalıysa takım arkadaşında çalışmaz) | `{ "duration": 1.0 }` |
-| `MagneticDecoy` | Decoy yere düşüp öttüğü sürece `radius` içindekileri kendine çeker; çekim mesafeyle azalır (`strength` taban güç); `limit` raunt başına kaç decoy | `{ "radius": 180, "strength": 30, "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
+| `KillScreen` | Öldürünce ekran seçilen renge boyanır (FFA kapalıysa takım arkadaşında çalışmaz); `duration` rengin kalma süresi, `fade` kaybolma süresi, `alpha` yoğunluğu | `{ "duration": 0.05, "fade": 0.35, "alpha": 90, "colors": ["Rastgele random", "Kirmizi #FF0000"] }` |
 | `Mole` | Hasar verilen oyuncu `time` saniye `unit` birim yere gömülür ve hareket edemez; `limit` raunt başına kaç gömme (0=sınırsız) | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
 | `OneShot` | Belirli silahlarla tek atış | `{ "weapons": "weapon_awp,weapon_ssg08", "limit": 0 }` |
 | `PistolRoundDisable` | Listelenen modüller pistol rauntlarda devre dışı kalır (modül değil, grup ayarı) | `["GiveWeapon", "WeaponAmmo"]` |
@@ -209,6 +223,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `RapidFire` | `firepercent` atış hızı (`0.1` – `2.0`): `1.0` normal, `2.0` en hızlı, altı yavaşlatır. `recoilpercent` kalan sekme (`0.0` – `1.0`): `0.0` sekme yok, `1.0` normal | `{ "only_with_weapon": "", "recoilpercent": 0.0, "firepercent": 2.0 }` |
 | `ReflectDamage` | Hasar yansıtma | `{ "reflect_percent": 50, "max_per_shot": 100, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `Respawn` | Ölen oyuncu `time` saniye sonra yeniden doğar; `limit` raunt başına hak (0 = sınırsız), raunt değişince iptal | `{ "limit": 1, "time": 3 }` |
+| `Ricochet` | Mermilerin duvardan seker ve sekerken düşmana isabet edebilir; `bounces` kaç kez sekeceği, `damage_falloff` her sekmede kalan hasar | `{ "bounces": 3, "damage_multiplier": 0.5, "damage_falloff": 0.75, "show_tracer": true, "ignore_teammates": true, "color": "#FFE28C", "only_with_weapon": "" }` |
 | `Sacrifice` | VIP ölünce yaşayan takım arkadaşlarına can (kendi MaxHealth tavanlı), zırh (+`helmet` ile kask) ve `weapons` listesindeki silahları verir | `{ "hp": 25, "armor": 25, "helmet": false, "weapons": "weapon_hegrenade,weapon_flashbang" }` |
 | `SaySound` | Sohbete mesaj yazınca ses çalar (`say` herkese, `say_team` takıma); `cooldown` saniye, `0` = beklemesiz; `path` dosya yolu veya `emit` soundevent adı (`volume` yalnız `emit` için); eski düz liste de desteklenir | `{ "cooldown": 2, "sounds": [{ "name": "Beep", "path": "sounds/ui/beepclear.vsnd" }, { "name": "Sohbet", "emit": "UI.Lobby.Chat", "volume": 1 }] }` |
 | `Silent` | Ayak seslerini diğer oyunculardan gizler | `{ "only_with_weapon": "" }` |

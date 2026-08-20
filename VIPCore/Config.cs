@@ -64,6 +64,9 @@ public class VipConfig
         ["PlayerParticle"] = "all"
     };
 
+    [JsonPropertyName("model_inspect")]
+    public ModelInspectSettings ModelInspect { get; set; } = new();
+
     [JsonPropertyName("mysql")]
     public MySqlSettings MySql { get; set; } = new();
 }
@@ -79,6 +82,17 @@ public class CommandNames
     [JsonPropertyName("tp")] public string Tp { get; set; } = "css_tp,css_thirdperson";
     [JsonPropertyName("updateuser")] public string UpdateUser { get; set; } = "css_updatevip,css_vipupdate";
     [JsonPropertyName("hidevip")] public string HideVip { get; set; } = "css_hidevip,css_hidefx";
+    [JsonPropertyName("inspect")] public string Inspect { get; set; } = "css_vipinspect,css_vipreview";
+}
+
+public class ModelInspectSettings
+{
+    [JsonPropertyName("enabled")] public bool Enabled { get; set; } = true;
+    [JsonPropertyName("duration")] public float Duration { get; set; } = 5f;
+    [JsonPropertyName("cooldown")] public float Cooldown { get; set; } = 30f;
+    [JsonPropertyName("distance")] public float Distance { get; set; } = 90f;
+    [JsonPropertyName("height")] public float Height { get; set; } = -40f;
+    [JsonPropertyName("spin")] public float Spin { get; set; } = 360f;
 }
 
 public class MySqlSettings

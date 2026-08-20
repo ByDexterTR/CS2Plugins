@@ -173,6 +173,9 @@ public partial class VIPCore
         return $"{CC.Green}{match?.Display ?? value}{CC.Default}";
     }
 
+    public void OpenCustomMenu(CCSPlayerController player, string title,
+        List<(string display, Action<CCSPlayerController> onSelect)> items) => OpenMenu(player, title, items);
+
     private void OpenMenu(CCSPlayerController player, string title,
         List<(string display, Action<CCSPlayerController> onSelect)> items)
     {

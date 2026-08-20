@@ -11,7 +11,8 @@
     "reload": "css_reloadvip,css_vipreload",
     "tp": "css_tp,css_thirdperson",
     "updateuser": "css_updatevip,css_vipupdate",
-    "hidevip": "css_hidevip,css_hidefx"
+    "hidevip": "css_hidevip,css_hidefx",
+    "inspect": "css_vipinspect,css_vipreview"
   },
   "buy_commands": {
     "galil": "css_galil",
@@ -51,6 +52,14 @@
     "GrenadeTrail": "all",
     "SaySound": "all",
     "PlayerParticle": "all"
+  },
+  "model_inspect": {
+    "enabled": true,
+    "duration": 5,
+    "cooldown": 30,
+    "distance": 90,
+    "height": -40,
+    "spin": 360
   },
   "mysql": {
     "host": "",
