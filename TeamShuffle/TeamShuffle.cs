@@ -84,7 +84,7 @@ public class PlayerStats
 public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 {
   public override string ModuleName => "TeamShuffle";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -320,7 +320,18 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     if (IsWarmup())
       return HookResult.Continue;
 
-    var entry = GetStats(@event.Userid);
+    CCSPlayerController? mvp;
+
+    try
+    {
+      mvp = @event.Userid;
+    }
+    catch (NativeException)
+    {
+      return HookResult.Continue;
+    }
+
+    var entry = GetStats(mvp);
     if (entry != null)
       entry.RoundMvps++;
 
