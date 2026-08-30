@@ -1,0 +1,18 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "teamshuffle.no_access": "You are not allowed to use this command.",
+  "teamshuffle.not_enough": "At least {0} players are needed for a shuffle.",
+  "teamshuffle.queued": "Teams will be shuffled at the end of the round.",
+  "teamshuffle.shuffled": "Teams shuffled ({0}), {1} players switched.",
+  "teamshuffle.power": "Power: CT {0} - T {1}",
+  "teamshuffle.moved": "You have been moved to {0}.",
+  "teamshuffle.auto_assigned": "You have been placed in {0}.",
+  "teamshuffle.changeteam_blocked": "You cannot change your team.",
+  "teamshuffle.spec_blocked": "You cannot go to spectator.",
+  "teamshuffle.already_balanced": "Teams are already balanced.",
+  "teamshuffle.reason_manual": "manual",
+  "teamshuffle.reason_streak": "{0} round win streak",
+  "teamshuffle.reason_interval": "{0} rounds passed",
+  "teamshuffle.team_ct": "CT",
+  "teamshuffle.team_t": "T"
+}

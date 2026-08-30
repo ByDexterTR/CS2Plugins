@@ -2,7 +2,7 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-44 CounterStrikeSharp plugins for CS2 servers. All of them ship with Turkish and English language support, each one can be installed on its own, and each has its own README.
+45 CounterStrikeSharp plugins for CS2 servers. All of them ship with Turkish and English language support, each one can be installed on its own, and each has its own README.
 
 ## Plugins
 
@@ -50,6 +50,7 @@
 | [Speedometer](Speedometer/README.md) | Live speed readout (u/s) on the HUD with color transitions | General | CounterStrikeSharp |
 | [Sustum](Sustum/README.md) | Typing event with 4 modes (CTSustum, TSustum, DSustum, DeadSustum) | Jailbreak | CounterStrikeSharp |
 | [TABServerName](TABServerName/README.md) | Discontinued, points to the Metamod plugin that changes the map name on the scoreboard | Admin | Metamod |
+| [TeamShuffle](TeamShuffle/README.md) | Balances T and CT by live damage and kill power; manual and automatic shuffle | General | CounterStrikeSharp |
 | [Thirdperson](Thirdperson/README.md) | Third person camera with wall blocking | General | CounterStrikeSharp, gamedata |
 | [VIPCore](VIPCore/README.md) | Group based VIP system with 75+ modules and JSON/MySQL support | Admin | CounterStrikeSharp, MySQL (optional) |
 | [WardenMarker](WardenMarker/README.md) | A single glowing ring marker the warden keeps moving to the point they look at | Jailbreak | CounterStrikeSharp, gamedata |

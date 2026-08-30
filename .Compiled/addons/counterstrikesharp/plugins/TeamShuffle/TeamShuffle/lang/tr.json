@@ -1,0 +1,18 @@
+{
+  "chat_prefix": "[ByDexter]",
+  "teamshuffle.no_access": "Bu komutu kullanma yetkin yok.",
+  "teamshuffle.not_enough": "Karıştırma için en az {0} oyuncu gerekli.",
+  "teamshuffle.queued": "Takımlar raunt sonunda karıştırılacak.",
+  "teamshuffle.shuffled": "Takımlar karıştırıldı ({0}), {1} oyuncu yer değiştirdi.",
+  "teamshuffle.power": "Güç: CT {0} - T {1}",
+  "teamshuffle.moved": "{0} takımına geçtin.",
+  "teamshuffle.auto_assigned": "{0} takımına alındın.",
+  "teamshuffle.changeteam_blocked": "Takım değiştiremezsin.",
+  "teamshuffle.spec_blocked": "İzleyiciye geçemezsin.",
+  "teamshuffle.already_balanced": "Takımlar zaten dengeli.",
+  "teamshuffle.reason_manual": "manuel",
+  "teamshuffle.reason_streak": "{0} raunt üst üste galibiyet",
+  "teamshuffle.reason_interval": "{0} raunt geçti",
+  "teamshuffle.team_ct": "CT",
+  "teamshuffle.team_t": "T"
+}

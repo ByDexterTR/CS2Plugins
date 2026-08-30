@@ -2,7 +2,7 @@
 
 *Bu dosyanın [İngilizcesi / English](README.md).*
 
-CS2 sunucuları için 44 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngilizce dil desteğiyle gelir, her biri tek başına kurulabilir ve kendi README dosyasında anlatılmıştır.
+CS2 sunucuları için 45 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngilizce dil desteğiyle gelir, her biri tek başına kurulabilir ve kendi README dosyasında anlatılmıştır.
 
 ## Eklentiler
 
@@ -50,6 +50,7 @@ CS2 sunucuları için 44 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 | [Speedometer](Speedometer/README.tr.md) | HUD'da renk geçişli anlık hız göstergesi (u/s) | Genel | CounterStrikeSharp |
 | [Sustum](Sustum/README.tr.md) | Kelime yazma etkinliği; 4 mod (CTSustum, TSustum, DSustum, ÖlüSustum) | Jailbreak | CounterStrikeSharp |
 | [TABServerName](TABServerName/README.tr.md) | Skorboardda sol üstteki harita ismini istediğiniz gibi değiştirme | Yönetim | CounterStrikeSharp, gamedata |
+| [TeamShuffle](TeamShuffle/README.tr.md) | T ve CT'yi anlık hasar ve kill gücüne göre dengeler; manuel ve otomatik karıştırma | Genel | CounterStrikeSharp |
 | [Thirdperson](Thirdperson/README.tr.md) | Üçüncü şahıs kamera; duvar engelleme | Genel | CounterStrikeSharp, gamedata |
 | [VIPCore](VIPCore/README.tr.md) | 75+ modüllü, grup tabanlı, JSON/MySQL destekli VIP sistemi | Yönetim | CounterStrikeSharp, MySQL (opsiyonel) |
 | [WardenMarker](WardenMarker/README.tr.md) | Warden'ın baktığı noktaya taşıdığı tek parlayan halka marker | Jailbreak | CounterStrikeSharp, gamedata |
