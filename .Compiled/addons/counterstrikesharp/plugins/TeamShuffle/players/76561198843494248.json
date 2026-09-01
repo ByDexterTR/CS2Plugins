@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "updated": 1788262022,
+  "rounds": 28,
+  "kills": 40,
+  "deaths": 17,
+  "assists": 2,
+  "damage": 4083,
+  "mvp": 12,
+  "first_kills": 9,
+  "shots": 528,
+  "hits": {
+    "head": 21,
+    "chest": 42,
+    "arm": 12,
+    "leg": 5,
+    "stomach": 14,
+    "other": 5
+  },
+  "multi_kills": {
+    "2": 8,
+    "3": 5,
+    "4": 1
+  },
+  "clutches": {
+    "3": 1
+  }
+}

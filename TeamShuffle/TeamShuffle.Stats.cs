@@ -54,8 +54,7 @@ public class PlayerStats
   [JsonIgnore]
   public bool Played;
 
-  [JsonIgnore]
-  public bool Dirty;
+  public bool Empty() => Rounds == 0 && Kills == 0 && Shots == 0 && Damage <= 0f;
 
   public int Hit(string group) => Hits.TryGetValue(group, out int value) ? value : 0;
 
@@ -83,8 +82,11 @@ public partial class TeamShuffle
 {
   private const int ShrinkRounds = 5;
 
+  private const float AutosaveInterval = 300f;
+
   private static readonly JsonSerializerOptions StatsJson = new() { WriteIndented = true };
 
+  private readonly HashSet<ulong> loadedStats = [];
   private readonly Dictionary<CsTeam, (int UserId, int Enemies)> clutchCandidates = new();
   private bool roundFirstKillTaken;
 
@@ -106,6 +108,9 @@ public partial class TeamShuffle
   {
     ulong steamId = Util.SteamId(player);
     if (steamId == 0UL || player.IsBot || player.IsHLTV)
+      return;
+
+    if (!loadedStats.Add(steamId))
       return;
 
     string path = StatsFile(steamId);
@@ -159,19 +164,18 @@ public partial class TeamShuffle
 
     loaded.LifeKills = live.LifeKills;
     loaded.Played = live.Played;
-    loaded.Dirty = live.Dirty;
 
     stats[steamId] = loaded;
   }
 
   private void SaveStats(ulong steamId, PlayerStats entry)
   {
-    if (steamId == 0UL)
+    if (steamId == 0UL || entry.Empty())
       return;
 
     entry.Updated = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-    entry.Dirty = false;
 
+    string directory = StatsDirectory;
     string path = StatsFile(steamId);
     string payload;
 
@@ -185,59 +189,18 @@ public partial class TeamShuffle
       return;
     }
 
-    string temp = $"{path}.{Guid.NewGuid():N}.tmp";
-
     Task.Run(() =>
     {
       try
       {
-        Directory.CreateDirectory(StatsDirectory);
-        File.WriteAllText(temp, payload);
-        File.Move(temp, path, true);
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(path, payload);
       }
       catch (Exception ex)
       {
         Logger.LogError("TeamShuffle: {File} yazilamadi: {Message}", path, ex.Message);
-
-        try
-        {
-          File.Delete(temp);
-        }
-        catch
-        {
-        }
       }
     });
-  }
-
-  private void ClearTemporary()
-  {
-    string directory = StatsDirectory;
-
-    Task.Run(() =>
-    {
-      try
-      {
-        if (!Directory.Exists(directory))
-          return;
-
-        foreach (string file in Directory.EnumerateFiles(directory, "*.tmp"))
-          File.Delete(file);
-      }
-      catch (Exception ex)
-      {
-        Logger.LogError("TeamShuffle: gecici dosyalar silinemedi: {Message}", ex.Message);
-      }
-    });
-  }
-
-  private void SaveDirty()
-  {
-    foreach (var (steamId, entry) in stats)
-    {
-      if (entry.Dirty)
-        SaveStats(steamId, entry);
-    }
   }
 
   private void SaveAll()
@@ -253,7 +216,6 @@ public partial class TeamShuffle
       return;
 
     entry.Shots++;
-    entry.Dirty = true;
   }
 
   private void CountHit(CCSPlayerController? attacker, int hitGroup, int damage)
@@ -264,7 +226,6 @@ public partial class TeamShuffle
 
     entry.Damage += damage;
     PlayerStats.Add(entry.Hits, HitGroup(hitGroup));
-    entry.Dirty = true;
   }
 
   private void CountKill(CCSPlayerController? killer, CCSPlayerController? victim, CCSPlayerController? assister)
@@ -273,7 +234,6 @@ public partial class TeamShuffle
     if (victimEntry != null)
     {
       victimEntry.Deaths++;
-      victimEntry.Dirty = true;
       BucketLife(victimEntry);
     }
 
@@ -282,7 +242,6 @@ public partial class TeamShuffle
     {
       killerEntry.Kills++;
       killerEntry.LifeKills++;
-      killerEntry.Dirty = true;
 
       if (!roundFirstKillTaken)
         killerEntry.FirstKills++;
@@ -294,7 +253,6 @@ public partial class TeamShuffle
     if (assistEntry != null)
     {
       assistEntry.Assists++;
-      assistEntry.Dirty = true;
     }
 
     TrackClutch();
@@ -351,7 +309,6 @@ public partial class TeamShuffle
       if (entry != null)
       {
         PlayerStats.Add(entry.Clutches, candidate.Enemies.ToString());
-        entry.Dirty = true;
       }
     }
 
@@ -369,10 +326,7 @@ public partial class TeamShuffle
 
       entry.Rounds++;
       entry.Played = false;
-      entry.Dirty = true;
     }
-
-    SaveDirty();
   }
 
   private float BaseRating(PlayerStats entry)

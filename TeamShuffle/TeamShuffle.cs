@@ -80,7 +80,7 @@ public class TeamShuffleConfig : BasePluginConfig
 public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 {
   public override string ModuleName => "TeamShuffle";
-  public override string ModuleVersion => "1.0.2";
+  public override string ModuleVersion => "1.0.3";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -99,6 +99,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
   private bool pending;
   private bool wasWarmup = true;
   private bool pistolRound;
+  private bool roundLive;
   private CCSGameRulesProxy? gameRulesProxy;
   private ConVar? cvHalftime;
   private ConVar? cvMaxRounds;
@@ -135,7 +136,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
     AddCommandListener("jointeam", OnJoinTeam);
     RegisterListener<OnMapStart>(OnMapStarted);
-    RegisterListener<OnMapEnd>(SaveDirty);
+    RegisterListener<OnMapEnd>(SaveAll);
 
     foreach (var name in Util.Split(Config.ShuffleCommands))
       AddCommand(name, "Takim karistirma", OnShuffleCommand);
@@ -144,7 +145,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
       AddCommand(name, "Takim gucu dokumu", OnDebugCommand);
 
     ApplyConVars();
-    ClearTemporary();
+    AddTimer(AutosaveInterval, SaveAll, CounterStrikeSharp.API.Modules.Timers.TimerFlags.REPEAT);
 
     if (hotReload)
     {
@@ -160,6 +161,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
   private void OnMapStarted(string mapName)
   {
+    roundLive = false;
     health.Clear();
     planned.Clear();
     clutchCandidates.Clear();
@@ -190,7 +192,11 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     return gameRulesProxy?.GameRules;
   }
 
-  private bool IsWarmup() => GameRules()?.WarmupPeriod == true;
+  private bool IsWarmup()
+  {
+    var rules = GameRules();
+    return rules == null || rules.WarmupPeriod;
+  }
 
   private bool IsPistolRound()
   {
@@ -246,7 +252,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
   private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
   {
-    if (IsWarmup())
+    if (!roundLive)
       return HookResult.Continue;
 
     var attacker = @event.Attacker;
@@ -265,7 +271,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
   private HookResult OnWeaponFire(EventWeaponFire @event, GameEventInfo info)
   {
-    if (IsWarmup())
+    if (!roundLive)
       return HookResult.Continue;
 
     CountShot(@event.Userid);
@@ -320,10 +326,15 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
       health.Remove(userId);
 
     ulong steamId = Util.SteamId(player);
-    if (steamId != 0UL && stats.TryGetValue(steamId, out var entry))
+    if (steamId != 0UL)
     {
-      SaveStats(steamId, entry);
-      stats.Remove(steamId);
+      if (stats.TryGetValue(steamId, out var entry))
+      {
+        SaveStats(steamId, entry);
+        stats.Remove(steamId);
+      }
+
+      loadedStats.Remove(steamId);
     }
 
     return HookResult.Continue;
@@ -335,7 +346,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     if (victimId >= 0)
       health[victimId] = 0;
 
-    if (IsWarmup())
+    if (!roundLive)
       return HookResult.Continue;
 
     var attacker = @event.Attacker;
@@ -375,7 +386,6 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     if (entry != null)
     {
       entry.Mvp++;
-      entry.Dirty = true;
     }
 
     return HookResult.Continue;
@@ -446,10 +456,12 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     if (IsWarmup())
     {
       wasWarmup = true;
+      roundLive = false;
       return HookResult.Continue;
     }
 
     pistolRound = IsPistolRound();
+    roundLive = true;
 
     if (wasWarmup)
       LeaveWarmup();
@@ -473,6 +485,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
     CommitClutch(winner);
     CommitRound();
+    roundLive = false;
 
     if (!pistolRound && (winner == (int)CsTeam.Terrorist || winner == (int)CsTeam.CounterTerrorist))
     {
