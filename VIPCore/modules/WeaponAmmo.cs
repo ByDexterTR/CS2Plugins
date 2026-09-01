@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -42,6 +41,7 @@ public class WeaponAmmo : VipModule
         _instance = this;
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
         Core.RegisterEventHandler<EventItemPickup>(OnPickup);
+        Core.RegisterEventHandler<EventItemEquip>(OnEquip);
         Core.RegisterEventHandler<EventWeaponFire>(OnFire);
         Core.RegisterEventHandler<EventRoundStart>((_, __) =>
         {
@@ -49,7 +49,7 @@ public class WeaponAmmo : VipModule
             _carry.Clear();
             return HookResult.Continue;
         });
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick);
     }
 
     public override void OnUnload()
@@ -102,6 +102,16 @@ public class WeaponAmmo : VipModule
     }
 
     private HookResult OnPickup(EventItemPickup ev, GameEventInfo info)
+    {
+        var player = ev.Userid;
+        if (!Active(player) || !IsAlive(player))
+            return HookResult.Continue;
+
+        Server.NextFrame(() => ApplyAll(player));
+        return HookResult.Continue;
+    }
+
+    private HookResult OnEquip(EventItemEquip ev, GameEventInfo info)
     {
         var player = ev.Userid;
         if (!Active(player) || !IsAlive(player))
@@ -258,11 +268,8 @@ public class WeaponAmmo : VipModule
 
     private void ReAdopt()
     {
-        foreach (var player in Core.Players)
+        foreach (var player in ActivePlayers())
         {
-            if (player == null || !player.IsValid || player.IsBot || !IsAlive(player) || !Active(player))
-                continue;
-
             var entries = GroupValue<List<Entry>>(player) ?? new();
             if (entries.Count == 0)
                 continue;

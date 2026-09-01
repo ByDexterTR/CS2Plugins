@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using System.Numerics;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 using Vector = CounterStrikeSharp.API.Modules.Utils.Vector;
 
 namespace VIPCore;
@@ -70,12 +69,12 @@ public class Ricochet : VipModule
     {
         KillCredit.Ensure(Core);
 
-        Core.RegisterListener<OnServerPrecacheResources>(manifest => manifest.AddResource(TrailBeam.Sprite));
+        Core.HookPrecache(manifest => manifest.AddResource(TrailBeam.Sprite));
         Core.RegisterEventHandler<EventBulletImpact>(OnBulletImpact);
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick);
         Core.RegisterEventHandler<EventRoundStart>((_, _) => { Clear(); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundEnd>((_, _) => { Clear(); return HookResult.Continue; });
-        Core.RegisterListener<OnMapStart>(_ => Clear());
+        Core.HookMapStart(_ => Clear());
     }
 
     public override void OnUnload() => Clear();

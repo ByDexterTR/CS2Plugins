@@ -1,5 +1,4 @@
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -22,7 +21,7 @@ public class DamageDealt : VipModule
     public override string Name => "DamageDealt";
     public override string DisplayName => Core.Localizer["vip.module.damagedealt"];
 
-    public override void OnLoad() => Core.RegisterListener<OnEntityTakeDamagePre>(OnDamage);
+    public override void OnLoad() => Core.HookDamage(OnDamage);
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {

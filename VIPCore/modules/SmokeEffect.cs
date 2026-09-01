@@ -2,7 +2,6 @@ using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -63,6 +62,7 @@ public class SmokeEffect : VipModule
         public string Color { get; set; } = GlowPool.DefaultColor;
         public float Radius { get; set; } = 180f;
         public bool SeeTeammates { get; set; }
+        public int OnlyMode { get; set; } = 0;
         public int Limit { get; set; } = 0;
     }
 
@@ -117,10 +117,11 @@ public class SmokeEffect : VipModule
         {
             GlowPool.Ensure(Core);
             GlowPool.Acquire();
+            ActivityFilter.Ensure(Core);
             _glowUser = true;
         }
 
-        Core.RegisterListener<OnEntitySpawned>(OnEntitySpawned);
+        Core.HookEntitySpawned(OnEntitySpawned);
         Core.RegisterEventHandler<EventSmokegrenadeDetonate>(OnDetonate);
         Core.RegisterEventHandler<EventSmokegrenadeExpired>(OnExpired);
         Core.RegisterEventHandler<EventRoundStart>((_, __) =>
@@ -130,7 +131,7 @@ public class SmokeEffect : VipModule
             Array.Clear(_armed);
             return HookResult.Continue;
         });
-        Core.RegisterListener<OnMapStart>(_ =>
+        Core.HookMapStart(_ =>
         {
             _smokes.Clear();
             Array.Clear(_used);
@@ -138,7 +139,7 @@ public class SmokeEffect : VipModule
             _slowed.Clear();
             _slowedThisTick.Clear();
         });
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick);
     }
 
     private (List<int>? color, int limit) ModeInfo(CCSPlayerController player, string mode)
@@ -351,6 +352,9 @@ public class SmokeEffect : VipModule
                     continue;
 
                 if (TrailBeam.Distance(smoke.Pos, pawn.AbsOrigin) > radius)
+                    continue;
+
+                if (!ActivityFilter.Matches(cfg.OnlyMode, target, pawn))
                     continue;
 
                 smoke.Seen |= 1UL << target.Slot;

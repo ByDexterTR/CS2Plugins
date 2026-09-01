@@ -1,17 +1,17 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Cvars;
 using Microsoft.Extensions.Logging;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.1.7";
+    public override string ModuleVersion => "1.1.8";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -27,7 +27,8 @@ public partial class VIPCore : BasePlugin
     private readonly HashSet<string> _loaded = new();
     private readonly List<VipModule> _modules = new();
     private readonly Dictionary<string, VipModule> _moduleByName = new();
-    private readonly Dictionary<(string Group, string Feature, Type Type), object?> _groupValueCache = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(string Group, string Feature, Type Type), object?> _groupValueCache = new();
+    private readonly Dictionary<string, (int Tick, List<CCSPlayerController> Players)> _activeCache = new();
     private Dictionary<string, HashSet<string>> _pistolDisable = new();
     private Dictionary<string, HashSet<string>> _forced = new();
     private readonly Dictionary<ulong, Dictionary<string, string?>> _pendingSettings = new();
@@ -64,6 +65,16 @@ public partial class VIPCore : BasePlugin
     }
 
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
+    private static readonly JsonDocumentOptions DocOpts = new()
+    {
+        CommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
+    };
+    private static readonly JsonSerializerOptions GroupFileOpts = new()
+    {
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
+    };
     private static readonly JsonSerializerOptions GroupOpts = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -130,6 +141,7 @@ public partial class VIPCore : BasePlugin
     public override void Load(bool hotReload)
     {
         Current = this;
+        InstallHooks();
         VipHudGuard.Install(this);
         InstallWasdGuard();
         RollRoundColors();
@@ -160,9 +172,9 @@ public partial class VIPCore : BasePlugin
                 FlushSettings(p.SteamID);
             return HookResult.Continue;
         });
-        RegisterListener<OnMapStart>(_ => PurgeExpired());
+        HookMapStart(_ => PurgeExpired());
         AddTimer(60f, PurgeExpired, CounterStrikeSharp.API.Modules.Timers.TimerFlags.REPEAT);
-        RegisterListener<OnServerPrecacheResources>(m =>
+        HookPrecache(m =>
         {
             if (IsModuleEnabled("PlayerTrail") || IsModuleEnabled("GrenadeTrail") || IsModuleEnabled("BulletTrail"))
                 m.AddResource(TrailBeam.Sprite);
@@ -203,6 +215,34 @@ public partial class VIPCore : BasePlugin
         _modules.Sort((a, b) => b.Priority.CompareTo(a.Priority));
     }
 
+    public IReadOnlyList<CCSPlayerController> ActivePlayers(string feature)
+    {
+        int tick = Server.TickCount;
+        if (_activeCache.TryGetValue(feature, out var cached) && cached.Tick == tick)
+            return cached.Players;
+
+        var list = cached.Players ?? new List<CCSPlayerController>();
+        list.Clear();
+
+        if (_vips.Count > 0)
+        {
+            foreach (var player in Players)
+            {
+                if (player == null || !player.IsValid || player.IsBot)
+                    continue;
+                if (player.PlayerPawn.Value?.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+                    continue;
+                if (!IsActive(player, feature))
+                    continue;
+
+                list.Add(player);
+            }
+        }
+
+        _activeCache[feature] = (tick, list);
+        return list;
+    }
+
     public IReadOnlyList<string> GetGroupFeatures(CCSPlayerController player)
     {
         var group = GetClientGroup(player);
@@ -221,12 +261,38 @@ public partial class VIPCore : BasePlugin
         try
         {
             if (!File.Exists(path))
+            {
                 File.WriteAllText(path, JsonSerializer.Serialize(new VipConfig(), JsonOpts));
+                Config = new VipConfig();
+                return;
+            }
 
-            Config = JsonSerializer.Deserialize<VipConfig>(File.ReadAllText(path)) ?? new VipConfig();
+            if (JsonNode.Parse(File.ReadAllText(path), null, DocOpts) is not JsonObject user)
+            {
+                Logger.LogWarning("VIPCore: settings.json bir nesne degil, varsayilan ayarlar kullaniliyor.");
+                Config = new VipConfig();
+                return;
+            }
+
+            var defaults = JsonSerializer.SerializeToNode(new VipConfig(), JsonOpts) as JsonObject ?? new JsonObject();
+            var added = new List<string>();
+            var unknown = new List<string>();
+            ConfigCheck.FillMissing(typeof(VipConfig), defaults, user, "", added, unknown);
+
+            if (added.Count > 0)
+            {
+                File.WriteAllText(path, user.ToJsonString(JsonOpts));
+                Logger.LogInformation("VIPCore: settings.json icine eksik ayarlar eklendi: {0}", string.Join(", ", added));
+            }
+
+            foreach (var key in unknown)
+                Logger.LogWarning("VIPCore: settings.json icindeki \"{0}\" ayari taninmiyor.", key);
+
+            Config = user.Deserialize<VipConfig>() ?? new VipConfig();
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogWarning("VIPCore: settings.json okunamadi ({0}), varsayilan ayarlar kullaniliyor.", ex.Message);
             Config = new VipConfig();
         }
     }
@@ -294,11 +360,12 @@ public partial class VIPCore : BasePlugin
         Dictionary<string, Dictionary<string, JsonElement>> parsed;
         try
         {
-            parsed = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, JsonElement>>>(File.ReadAllText(GroupsPath))
+            parsed = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, JsonElement>>>(File.ReadAllText(GroupsPath), GroupFileOpts)
                      ?? new();
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError("VIPCore: vipgroups.json okunamadi ({0}), hicbir grup yuklenmedi.", ex.Message);
             parsed = new();
         }
 
@@ -341,6 +408,12 @@ public partial class VIPCore : BasePlugin
                 foreach (var feature in feats.Keys)
                     _enabled.Add(feature);
         }
+
+        foreach (var issue in ConfigCheck.Groups(parsed, _moduleByName))
+            Logger.LogWarning("VIPCore: vipgroups.json {0}", issue);
+
+        foreach (var issue in ConfigCheck.Settings(Config, _moduleByName))
+            Logger.LogWarning("VIPCore: settings.json {0}", issue);
     }
 
     private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
@@ -546,11 +619,11 @@ public partial class VIPCore : BasePlugin
             return default;
 
         var key = (group, feature, typeof(T));
+        if (_groupValueCache.TryGetValue(key, out var cached))
+            return (T?)cached;
+
         lock (_lock)
         {
-            if (_groupValueCache.TryGetValue(key, out var cached))
-                return (T?)cached;
-
             object? value = null;
             if (_groups.TryGetValue(group, out var feats) && feats.TryGetValue(feature, out var element))
             {

@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -27,7 +26,7 @@ public class ExtraJump : VipModule
     public override void OnLoad()
     {
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick);
     }
 
     private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)
@@ -45,11 +44,8 @@ public class ExtraJump : VipModule
 
     private void OnTick()
     {
-        foreach (var player in Core.Players)
+        foreach (var player in ActivePlayers())
         {
-            if (player == null || !player.IsValid || player.IsBot || !Active(player))
-                continue;
-
             var pawn = player.PlayerPawn.Value;
             if (pawn == null || !pawn.IsValid)
                 continue;

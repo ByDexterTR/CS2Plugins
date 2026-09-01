@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -10,20 +9,24 @@ public class RadarHack : VipModule
     {
         public float DurationOn { get; set; } = 1f;
         public float DurationOff { get; set; } = 0f;
+        public bool SeeTeammates { get; set; }
+        public int OnlyMode { get; set; } = 0;
     }
 
     public override string Name => "RadarHack";
     public override string DisplayName => Core.Localizer["vip.module.radarhack"];
 
-    public override void OnLoad() => Core.RegisterListener<OnTick>(OnTick);
+    public override void OnLoad()
+    {
+        ActivityFilter.Ensure(Core);
+        Core.HookTick(OnTick);
+    }
 
     private void OnTick()
     {
-        var vips = Core.Players.Where(p => p != null && p.IsValid && IsAlive(p) && Active(p)).ToList();
+        var vips = ActivePlayers();
         if (vips.Count == 0)
             return;
-
-        var bomb = Utilities.FindAllEntitiesByDesignerName<CC4>("weapon_c4").FirstOrDefault();
 
         foreach (var player in vips)
         {
@@ -39,7 +42,9 @@ public class RadarHack : VipModule
 
             foreach (var enemy in Core.Players)
             {
-                if (enemy == null || !enemy.IsValid || enemy.Team == player.Team || !IsAlive(enemy))
+                if (enemy == null || !enemy.IsValid || enemy.Slot == slot || !IsAlive(enemy))
+                    continue;
+                if (!cfg.SeeTeammates && enemy.Team == player.Team)
                     continue;
 
                 var enemyPawn = enemy.PlayerPawn.Value;
@@ -48,12 +53,11 @@ public class RadarHack : VipModule
 
                 if (enemyPawn.Render.A < 200)
                     continue;
+                if (!ActivityFilter.Matches(cfg.OnlyMode, enemy, enemyPawn))
+                    continue;
 
                 enemyPawn.EntitySpottedState.SpottedByMask[slot / 32] |= 1u << (slot % 32);
             }
-
-            if (bomb != null && bomb.IsValid)
-                bomb.EntitySpottedState.SpottedByMask[slot / 32] |= 1u << (slot % 32);
         }
     }
 }

@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -15,7 +14,6 @@ public class PlayerTrail : VipModule
     }
 
     private readonly Vector[] _last = new Vector[64];
-    private int _tick;
 
     public override string Name => "PlayerTrail";
     public override string DisplayName => Core.Localizer["vip.module.playertrail"];
@@ -31,7 +29,7 @@ public class PlayerTrail : VipModule
 
         EffectHide.Ensure(Core);
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick, 2);
     }
 
     private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)
@@ -44,14 +42,8 @@ public class PlayerTrail : VipModule
 
     private void OnTick()
     {
-        if (++_tick < 2)
-            return;
-        _tick = 0;
-
-        foreach (var player in Core.Players)
+        foreach (var player in ActivePlayers())
         {
-            if (player == null || !player.IsValid || player.IsBot || !IsAlive(player) || !Active(player))
-                continue;
 
             var origin = player.PlayerPawn.Value?.AbsOrigin;
             if (origin == null)

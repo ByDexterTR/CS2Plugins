@@ -1,7 +1,6 @@
 using System.Globalization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -23,7 +22,7 @@ public class Gravity : VipModule
         }).ToList();
     }
 
-    public override void OnLoad() => Core.RegisterListener<OnTick>(OnTick);
+    public override void OnLoad() => Core.HookTick(OnTick, 8);
 
     public override void OnUnload()
     {

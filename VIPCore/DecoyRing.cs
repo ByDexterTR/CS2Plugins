@@ -15,6 +15,7 @@ public static class DecoyRing
     private const int OuterSegments = 24;
     private const int InnerSegments = 18;
     private const float RingHeight = 3f;
+    private const int BeamsPerFrame = 12;
 
     private class Ring
     {
@@ -33,8 +34,12 @@ public static class DecoyRing
         _rings[key] = ring;
 
         SpawnDisc(center, radius, ring);
-        SpawnRing(core, center, radius, OuterSegments, color, ring);
-        SpawnRing(core, center, radius * 0.5f, InnerSegments, color, ring);
+
+        var points = new List<(Vector From, Vector To)>();
+        Collect(points, center, radius, OuterSegments);
+        Collect(points, center, radius * 0.5f, InnerSegments);
+
+        SpawnBatch(core, key, ring, points, 0, color);
     }
 
     public static void Hide(int key)
@@ -103,7 +108,7 @@ public static class DecoyRing
         }
     }
 
-    private static void SpawnRing(VIPCore core, Vector center, float radius, int segments, Color color, Ring ring)
+    private static void Collect(List<(Vector From, Vector To)> points, Vector center, float radius, int segments)
     {
         if (segments < 3 || radius <= 0f)
             return;
@@ -114,25 +119,39 @@ public static class DecoyRing
         for (int i = 1; i <= segments; i++)
         {
             var next = PointOn(center, radius, step * i);
-
-            var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam");
-            if (beam != null && beam.IsValid)
-            {
-                beam.Width = 1.2f;
-                beam.Render = color;
-                beam.SetModel(TrailBeam.Sprite);
-                beam.Teleport(previous, new QAngle(), new Vector());
-
-                beam.EndPos.X = next.X;
-                beam.EndPos.Y = next.Y;
-                beam.EndPos.Z = next.Z;
-                Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
-
-                ring.Beams.Add(beam.Index);
-            }
-
+            points.Add((previous, next));
             previous = next;
         }
+    }
+
+    private static void SpawnBatch(VIPCore core, int key, Ring ring, List<(Vector From, Vector To)> points, int index, Color color)
+    {
+        if (!_rings.TryGetValue(key, out var current) || !ReferenceEquals(current, ring))
+            return;
+
+        int end = Math.Min(index + BeamsPerFrame, points.Count);
+
+        for (int i = index; i < end; i++)
+        {
+            var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam");
+            if (beam == null || !beam.IsValid)
+                continue;
+
+            beam.Width = 1.2f;
+            beam.Render = color;
+            beam.SetModel(TrailBeam.Sprite);
+            beam.Teleport(points[i].From, new QAngle(), new Vector());
+
+            beam.EndPos.X = points[i].To.X;
+            beam.EndPos.Y = points[i].To.Y;
+            beam.EndPos.Z = points[i].To.Z;
+            Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+
+            ring.Beams.Add(beam.Index);
+        }
+
+        if (end < points.Count)
+            Server.NextFrame(() => SpawnBatch(core, key, ring, points, end, color));
     }
 
     private static Vector PointOn(Vector center, float radius, float angle) =>

@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -40,7 +39,7 @@ public class PlayerParticle : VipModule
         Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundEnd>((_, __) => { RemoveAll(); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { RemoveAll(); return HookResult.Continue; });
-        Core.RegisterListener<OnMapStart>(_ => Array.Clear(_active));
+        Core.HookMapStart(_ => Array.Clear(_active));
     }
 
     public override void OnUnload() => RemoveAll();

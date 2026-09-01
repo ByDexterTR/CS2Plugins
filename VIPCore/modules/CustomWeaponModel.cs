@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -36,8 +35,8 @@ public class CustomWeaponModel : VipModule
     {
         Core.RegisterEventHandler<EventPlayerSpawn>((ev, _) => { Schedule(ev.Userid); return HookResult.Continue; });
         Core.RegisterEventHandler<EventItemPickup>((ev, _) => { Schedule(ev.Userid); return HookResult.Continue; });
-        Core.RegisterListener<OnEntityDeleted>(entity => _applied.Remove(entity.Index));
-        Core.RegisterListener<OnServerPrecacheResources>(manifest =>
+        Core.HookEntityDeleted(entity => _applied.Remove(entity.Index));
+        Core.HookPrecache(manifest =>
         {
             foreach (var entries in Core.GetAllGroupValues<List<Entry>>(Name))
                 foreach (var entry in entries)

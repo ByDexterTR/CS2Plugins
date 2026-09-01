@@ -3,7 +3,6 @@ using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -69,6 +68,8 @@ public class Aura : VipModule
 
     private class Cfg
     {
+        [JsonPropertyName("beam_visible")]
+        public string BeamVisible { get; set; } = "all";
         public HealCfg? Heal { get; set; }
         public PoisonCfg? Poison { get; set; }
         public SlowCfg? Slow { get; set; }
@@ -81,6 +82,14 @@ public class Aura : VipModule
     private readonly float[] _nextEffectTick = new float[64];
     private readonly string?[] _colorStr = new string?[64];
     private readonly Color[] _colorVal = new Color[64];
+    private const byte VisibleAll = 0;
+    private const byte VisibleTeam = 1;
+    private const byte VisibleEnemy = 2;
+    private const byte VisibleSelf = 3;
+    private const byte VisibleOff = 4;
+
+    private readonly byte[] _visible = new byte[64];
+    private readonly int[] _team = new int[64];
     private readonly HashSet<int> _affected = new();
     private readonly HashSet<int> _affectedThisTick = new();
 
@@ -101,7 +110,8 @@ public class Aura : VipModule
 
     public override void OnLoad()
     {
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTransmit(OnCheckTransmit);
+        Core.HookTick(OnTick, 2);
         Core.RegisterEventHandler<EventRoundEnd>((_, __) => { ClearRings(); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundStart>((_, __) =>
         {
@@ -145,6 +155,7 @@ public class Aura : VipModule
 
             string mode = Setting(player);
             var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+            _visible[slot] = ParseVisible(cfg.BeamVisible);
 
             var (radius, color, durationOn, durationOff) = mode switch
             {
@@ -251,6 +262,68 @@ public class Aura : VipModule
         foreach (int slot in _affectedThisTick)
             _affected.Add(slot);
     }
+
+    private static byte ParseVisible(string value) => value.ToLowerInvariant() switch
+    {
+        "self" => VisibleSelf,
+        "team" => VisibleTeam,
+        "enemy" => VisibleEnemy,
+        "off" => VisibleOff,
+        _ => VisibleAll
+    };
+
+    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    {
+        if (_rings.Count == 0)
+            return;
+
+        bool anyFiltered = false;
+        for (int slot = 0; slot < 64; slot++)
+        {
+            if (_rings.ContainsKey(slot) && _visible[slot] != VisibleAll)
+            {
+                anyFiltered = true;
+                break;
+            }
+        }
+
+        if (!anyFiltered)
+            return;
+
+        Array.Clear(_team);
+        foreach (var player in Core.Players)
+            if (player != null && player.IsValid && player.Slot < 64)
+                _team[player.Slot] = player.TeamNum;
+
+        foreach (var (info, viewer) in infoList)
+        {
+            if (viewer == null || !viewer.IsValid || viewer.Slot >= 64)
+                continue;
+
+            int viewerSlot = viewer.Slot;
+            int viewerTeam = _team[viewerSlot];
+
+            foreach (var (ownerSlot, beams) in _rings)
+            {
+                byte visible = _visible[ownerSlot];
+                if (visible == VisibleAll || CanSee(visible, ownerSlot, _team[ownerSlot], viewerSlot, viewerTeam))
+                    continue;
+
+                foreach (var beam in beams)
+                    if (beam != null && beam.IsValid && info.TransmitEntities.Contains(beam.Index))
+                        info.TransmitEntities.Remove(beam.Index);
+            }
+        }
+    }
+
+    private static bool CanSee(byte visible, int ownerSlot, int ownerTeam, int viewerSlot, int viewerTeam) => visible switch
+    {
+        VisibleOff => false,
+        VisibleSelf => viewerSlot == ownerSlot,
+        VisibleTeam => viewerSlot == ownerSlot || (ownerTeam > 1 && viewerTeam == ownerTeam),
+        VisibleEnemy => viewerSlot == ownerSlot || (ownerTeam > 1 && viewerTeam > 1 && viewerTeam != ownerTeam),
+        _ => true
+    };
 
     private void SetVelocity(CCSPlayerPawn pawn, float factor)
     {

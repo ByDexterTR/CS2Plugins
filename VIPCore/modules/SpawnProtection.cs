@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Timers;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -21,7 +20,7 @@ public class SpawnProtection : VipModule
     public override void OnLoad()
     {
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
-        Core.RegisterListener<OnEntityTakeDamagePre>(OnDamage);
+        Core.HookDamage(OnDamage);
     }
 
     private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)

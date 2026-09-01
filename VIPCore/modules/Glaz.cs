@@ -1,7 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -17,7 +15,7 @@ public class Glaz : VipModule
         Core.RegisterEventHandler<EventSmokegrenadeDetonate>(OnDetonate);
         Core.RegisterEventHandler<EventSmokegrenadeExpired>(OnExpired);
         Core.RegisterEventHandler<EventRoundStart>(OnRound);
-        Core.RegisterListener<CheckTransmit>(OnCheckTransmit);
+        Core.HookTransmit(OnCheckTransmit);
     }
 
     private HookResult OnDetonate(EventSmokegrenadeDetonate ev, GameEventInfo info)
@@ -38,7 +36,7 @@ public class Glaz : VipModule
         return HookResult.Continue;
     }
 
-    private void OnCheckTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
     {
         if (_smokes.Count == 0)
             return;

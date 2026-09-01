@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -11,6 +10,8 @@ public class Berserk : VipModule
         public float Dpk { get; set; } = 0.2f;
         [JsonPropertyName("maxdpk")]
         public float MaxDpk { get; set; } = 5.0f;
+        public bool IgnoreTeammates { get; set; } = true;
+        public bool IgnoreSelf { get; set; } = true;
     }
 
     private readonly float[] _bonus = new float[64];
@@ -28,7 +29,7 @@ public class Berserk : VipModule
                 _bonus[slot] = 0f;
             return HookResult.Continue;
         });
-        Core.RegisterListener<OnEntityTakeDamagePre>(OnDamage);
+        Core.HookDamage(OnDamage);
     }
 
     private HookResult OnDeath(EventPlayerDeath ev, GameEventInfo info)
@@ -57,6 +58,16 @@ public class Berserk : VipModule
         float bonus = _bonus[attacker.Slot];
         if (bonus <= 0)
             return HookResult.Continue;
+
+        var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
+        var victim = PawnController(entity);
+        if (victim != null)
+        {
+            if (cfg.IgnoreSelf && victim.Slot == attacker.Slot)
+                return HookResult.Continue;
+            if (cfg.IgnoreTeammates && victim.Slot != attacker.Slot && victim.Team == attacker.Team)
+                return HookResult.Continue;
+        }
 
         info.Damage *= 1f + bonus;
         return HookResult.Changed;

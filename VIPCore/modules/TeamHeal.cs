@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -24,7 +23,7 @@ public class TeamHeal : VipModule
     public override string Name => "TeamHeal";
     public override string DisplayName => Core.Localizer["vip.module.teamheal"];
 
-    public override void OnLoad() => Core.RegisterListener<OnEntityTakeDamagePre>(OnDamage);
+    public override void OnLoad() => Core.HookDamage(OnDamage);
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {

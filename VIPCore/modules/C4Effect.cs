@@ -2,7 +2,6 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -50,7 +49,7 @@ public class C4Effect : VipModule
         Core.RegisterEventHandler<EventBombDefused>(OnDefused);
         Core.RegisterEventHandler<EventBombExploded>((_, __) => { RemovePlantParticle(); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { RemovePlantParticle(); return HookResult.Continue; });
-        Core.RegisterListener<OnServerPrecacheResources>(manifest =>
+        Core.HookPrecache(manifest =>
         {
             foreach (var entries in Core.GetAllGroupValues<List<Entry>>(Name))
                 foreach (var entry in entries)

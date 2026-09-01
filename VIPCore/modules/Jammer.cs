@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -23,7 +22,7 @@ public class Jammer : VipModule
 
     public override void OnLoad()
     {
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick, 16);
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { UnjamAll(); return HookResult.Continue; });
     }
 
@@ -45,15 +44,9 @@ public class Jammer : VipModule
 
     private void OnTick()
     {
-        if (Server.TickCount % 16 != 0)
-            return;
-
         _jammers.Clear();
-        foreach (var player in Core.Players)
+        foreach (var player in ActivePlayers())
         {
-            if (player == null || !player.IsValid || !IsAlive(player) || !Active(player))
-                continue;
-
             var origin = player.PlayerPawn.Value?.AbsOrigin;
             if (origin == null)
                 continue;

@@ -1,9 +1,7 @@
 using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -33,8 +31,8 @@ public class Invisibility : VipModule
 
     public override void OnLoad()
     {
-        Core.RegisterListener<OnTick>(OnTick);
-        Core.RegisterListener<CheckTransmit>(OnCheckTransmit);
+        Core.HookTick(OnTick, 2);
+        Core.HookTransmit(OnCheckTransmit);
         Core.RegisterEventHandler<EventPlayerHurt>((ev, _) => { Reveal(ev.Userid); return HookResult.Continue; });
         Core.RegisterEventHandler<EventWeaponFire>((ev, _) => { Reveal(ev.Userid); return HookResult.Continue; });
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
@@ -149,7 +147,7 @@ public class Invisibility : VipModule
         Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
     }
 
-    private void OnCheckTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
     {
         if (_invisCount == 0)
             return;

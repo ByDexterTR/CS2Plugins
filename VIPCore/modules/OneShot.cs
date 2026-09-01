@@ -1,5 +1,4 @@
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -8,6 +7,8 @@ public class OneShot : VipModule
     private class Cfg
     {
         public string Weapons { get; set; } = "";
+        public bool IgnoreTeammates { get; set; } = true;
+        public bool IgnoreSelf { get; set; } = true;
         public int Limit { get; set; } = 0;
 
         private List<string>? _allow;
@@ -19,7 +20,7 @@ public class OneShot : VipModule
     public override string Name => "OneShot";
     public override string DisplayName => Core.Localizer["vip.module.oneshot"];
 
-    public override void OnLoad() => Core.RegisterListener<OnEntityTakeDamagePre>(OnDamage);
+    public override void OnLoad() => Core.HookDamage(OnDamage);
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
@@ -31,6 +32,16 @@ public class OneShot : VipModule
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(attacker!) ?? DefaultCfg;
+
+        var victim = PawnController(entity);
+        if (victim != null)
+        {
+            if (cfg.IgnoreSelf && victim.Slot == attacker!.Slot)
+                return HookResult.Continue;
+            if (cfg.IgnoreTeammates && victim.Slot != attacker!.Slot && victim.Team == attacker.Team)
+                return HookResult.Continue;
+        }
+
         var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
             return HookResult.Continue;

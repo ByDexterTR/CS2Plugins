@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -21,7 +20,7 @@ public class ExtraSpeed : VipModule
     public override void OnLoad()
     {
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick);
     }
 
     private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)

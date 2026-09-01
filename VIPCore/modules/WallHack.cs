@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -11,6 +10,7 @@ public class WallHack : VipModule
         public float DurationOn { get; set; } = 1f;
         public float DurationOff { get; set; } = 0f;
         public bool SeeTeammates { get; set; }
+        public int OnlyMode { get; set; } = 0;
         public string Color { get; set; } = GlowPool.DefaultColor;
     }
 
@@ -23,20 +23,22 @@ public class WallHack : VipModule
     {
         GlowPool.Ensure(Core);
         GlowPool.Acquire();
-        Core.RegisterListener<OnTick>(OnTick);
+        ActivityFilter.Ensure(Core);
+        Core.HookTick(OnTick);
     }
 
     public override void OnUnload() => GlowPool.Release();
 
     private void OnTick()
     {
+        var users = ActivePlayers();
+        if (users.Count == 0)
+            return;
+
         GlowPool.Build();
 
-        foreach (var player in Core.Players)
+        foreach (var player in users)
         {
-            if (player == null || !player.IsValid || player.IsBot || !IsAlive(player) || !Active(player))
-                continue;
-
             var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
             if (cfg.DurationOff > 0f)
             {
@@ -52,6 +54,8 @@ public class WallHack : VipModule
                 if (target == null || !target.IsValid || target.Slot == player.Slot || !IsAlive(target))
                     continue;
                 if (!cfg.SeeTeammates && target.Team == player.Team)
+                    continue;
+                if (!ActivityFilter.Matches(cfg.OnlyMode, target, target.PlayerPawn.Value))
                     continue;
 
                 GlowPool.Show(player.Slot, target.Slot, color);

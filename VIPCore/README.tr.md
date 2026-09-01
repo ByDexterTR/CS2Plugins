@@ -137,6 +137,10 @@ Grup adı → modül adı → modül değeri eşlemesidir. Bir grupta **tanıml�
 }
 ```
 
+### Ayar denetimi
+
+Her açılışta (ve `css_vipreload` ile) iki dosya da denetlenir. `settings.json` içinde eksik kalan ayarlar otomatik eklenir, böylece güncellemeden sonra dosyayı silip baştan ayarlamanız gerekmez; kendi yazdıklarınıza dokunulmaz. Hatalı görünen her şey sunucu konsoluna yazılır: artık olmayan modül veya anahtar, adı değişenler (yeni adıyla birlikte) ve yazım hataları için öneri.
+
 ### Depolama dosyaları
 
 | Depolama | Konum |
@@ -156,7 +160,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `AntiHS` | Headshot hasarını azaltır | `{ "percent": 0, "only_with_weapon": "", "limit": 0 }` |
 | `Armor` | Spawn'da zırh (+kask); satın alma menüsünden zırh alınca değer 100'e düşmez | `{ "value": 100, "helmet": true }` |
 | `ArmorRegen` | Zırh yenilenmesi | `{ "armor_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2, "max_armor": 100, "give_helmet_when_full": true }` |
-| `Aura` | Oyuncunun etrafında sürekli etki alanı (iyileştirme/zehir/yavaşlatma/hız); alan bir halka ile gösterilir, `duration_on`/`duration_off` ile yanıp söner | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true }, "speed": { "maxspeed": 400, "radius": 180 } }` |
+| `Aura` | Oyuncunun etrafında sürekli etki alanı (iyileştirme/zehir/yavaşlatma/hız); alan bir halka ile gösterilir, `duration_on`/`duration_off` ile yanıp söner; `beam_visible` halkayı kimin göreceğini belirler: `all`, `team`, `enemy`, `self`, `off`. | `{ "heal": { "heal": 2, "tick": 0.5, "radius": 180, "beamcolor": "0 255 0", "duration_on": 1, "duration_off": 0, "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true }, "speed": { "maxspeed": 400, "radius": 180 } }` |
 | `AutoHS` | Vuruşlar Headshot sayılır | `{ "multiplier": 4, "only_with_weapon": "", "ignore_teammates": true, "limit": 0 }` |
 | `Berserk` | Öldürme başına hasar çarpanı artar; `dpk` kill başına eklenen çarpan, `maxdpk` tavan | `{ "dpk": 0.2, "maxdpk": 5.0 }` |
 | `Bhop` | Bunny hop (+opsiyonel autostrafe) | `{ "autostrafe": true, "max_speed": 500, "jump_boost": 1.1, "jump_velocity": 300 }` |
@@ -170,7 +174,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `DamageDealt` | Verilen hasarı artırır; **negatif `percent` = debuff** (`-50` verilen hasarı yarıya düşürür) | `{ "percent": 50, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `DamageResist` | Alınan hasarı azaltır; **negatif `percent` = debuff** (`-50` alınan hasarı %50 artırır) | `{ "percent": 40, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `Dash` | Havadayken zıplama tuşuna basınca bastığın yön tuşuna doğru atılır (yön yoksa ileri); `limit`: raunt başına hak (0 = sınırsız), `unit`: itme hızı, `sound_volume`: zıplama sesinin seviyesi (0 = sessiz) | `{ "limit": 3, "unit": 600, "sound_volume": 1 }` |
-| `DecoyEffect` | Decoy'a özellik verir: zehirli, iyileştiren, yavaşlatan, WallHack veya mıknatıs (yakındakileri kendine çeker). Etki alanı yerde bir halka ile gösterilir, halkanın boyutu `radius` ile büyür | `{ "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 200, "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "wallhack": { "tick": 0.25, "radius": 200, "color": "#612D53", "see_teammates": false, "limit": 0 }, "magnetic": { "strength": 30, "radius": 200, "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false, "limit": 0 } }` |
+| `DecoyEffect` | Decoy'a özellik verir: zehirli, iyileştiren, yavaşlatan, WallHack, RadarHack, mıknatıs (yakındakileri kendine çeker) veya güç (alandakiler daha fazla hasar verir). Etki alanı yerde bir halka ile gösterilir, halkanın boyutu `radius` ile büyür | `{ "poison": { "minhp": 10, "damage": 2, "tick": 0.5, "radius": 200 }, "wallhack": { "tick": 0.25, "radius": 200, "color": "#612D53", "see_teammates": false, "only_mode": 0, "limit": 0 }, "radarhack": { "tick": 0.25, "radius": 200, "see_teammates": false, "only_mode": 0 }, "strength": { "damage_multiplier": 1.5, "radius": 200 }, "magnetic": { "strength": 30, "radius": 200 } }` |
 | `DecoyTeleport` | Decoy'un düştüğü yere ışınlanma | `{ "limit": 3 }` |
 | `DefuseKit` | Spawn'da imha kiti (CT) | `true` |
 | `DuckEndurance` | Sınırsız çömelme; arka arkaya çömelince yavaşlamaz | `true` |
@@ -199,7 +203,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `GrenadeTrail` | Bomba izi efekti | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
 | `HealthRegen` | Can yenilenmesi | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Spawn'da healthshot | `2` |
-| `HealthshotBoost` | Healthshot kullanınca kısa süre hız ve ekstra hasar verir | `{ "duration": 5, "speed_multiplier": 1.3, "damage_multiplier": 1.25, "limit": 0 }` |
+| `HealthshotEffect` | Healthshot kullanınca menüden seçilen etki `time` saniye başlar: `speed` hız, `strength` ekstra hasar, `heal`, `poison`, `slow`, `wallhack`, `radarhack`, `magnetic`. `radius: 0` etkinin sadece oyuncuya işlemesi demek | `{ "speed": { "speed_multiplier": 1.3, "time": 5 }, "strength": { "damage_multiplier": 1.25, "time": 5, "radius": 0 }, "wallhack": { "time": 5, "radius": 0, "only_mode": 0 } }` |
 | `HitSound` | Düşmana vurunca ses çalar; izleyenler de duyar. 2 kategori: `hs: true` girdiler kafa vuruşunda, diğerleri normal vuruşta. HS seçili değilse normal ses çalar. `path` dosya yolu veya `emit` soundevent adı | `[{ "name": "Killcard", "path": "sounds/ui/killcard_1.vsnd" }, { "name": "Ping", "emit": "UI.PlayerPing", "volume": 1, "hs": true }]` |
 | `InfiniteAmmo` | Sınırsız mermi | `{ "only_weapon": "" }` |
 | `Invisibility` | Görünmezlik (düşmanlara transmit edilmez) | `{ "only_stopped": true, "dmg_after_invis": 2.0, "only_with_weapon": "" }` |
@@ -207,6 +211,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `JoinMessage` | Giriş/çıkış duyurusu | `{ "join_message": "...", "leave_message": "..." }` |
 | `KillEffect` | Öldürünce partikül efekti; normal, kafadan ve son öldürme için ayrı kategoriler. Seçim yoksa bir üst kategoriye düşer | `[{ "name": "Simsek", "particle": "...", "time": 3, "hs": false, "lastkill": false }]` |
 | `KillHeal` | Öldürme şekline göre can yeniler: `distance` içinde `hp` (veya `money`) anahtarı | `{ "headshot": 15, "noscope": 10, "inair": 20, "blind": 5, "distance": { "unit": 2048, "hp": 10 }, "weapon_knife": 50 }` |
+| `KillIcon` | VIP'in öldürmelerinde killfeed ikonunu değiştirir. Her anahtar bir ikon adı alır (`spray0`, `knifegg`, `prop_exploding_barrel`, herhangi bir silah adı); boş bırakılırsa normal ikon kalır. Şu sırada ilk uyan kazanır: `squadwipe`, `dominated`, `jumpkill`, `blindkill`, `assistflash`, `noscope`, `throughsmoke`, `penetrated`, `headshot`, sonra `weapons` listesi | `{ "headshot": "", "noscope": "", "throughsmoke": "", "blindkill": "", "assistflash": "", "jumpkill": "", "penetrated": "", "dominated": "", "squadwipe": "", "weapons": { "weapon_glock": "spray0" } }` |
 | `KillScreen` | Öldürünce ekran seçilen renge boyanır (FFA kapalıysa takım arkadaşında çalışmaz); `duration` rengin kalma süresi, `fade` kaybolma süresi, `alpha` yoğunluğu | `{ "duration": 0.05, "fade": 0.35, "alpha": 90, "colors": ["Rastgele random", "Kirmizi #FF0000"] }` |
 | `Mole` | Hasar verilen oyuncu `time` saniye `unit` birim yere gömülür ve hareket edemez; `limit` raunt başına kaç gömme (0=sınırsız) | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
 | `OneShot` | Belirli silahlarla tek atış | `{ "weapons": "weapon_awp,weapon_ssg08", "limit": 0 }` |
@@ -219,7 +224,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `PlayerSize` | Oyuncu boyutu seçimi; yalnız spawn'da uygulanır; boyut zaten başka eklentiyle değiştiyse dokunmaz | `[0.5, 0.75, 1.25, 1.5]` |
 | `PlayerTrail` | Oyuncu hareket izi | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
 | `Pyro` | VIP'in molotof/yanıcı bombası hasar yerine can yeniler (`multiplier` × hasar; 1'den büyükse net can basar) | `{ "multiplier": 1.5, "ignore_teammates": false, "ignore_enemy": true, "ignore_self": false, "limit": 0 }` |
-| `RadarHack` | Tüm düşmanları (ve C4'ü) radarda gösterir; `duration_on`/`duration_off` ile yanıp söner (`duration_off: 0` = sürekli açık, `duration_on` en az 1 sn) | `{ "duration_on": 1, "duration_off": 0 }` |
+| `RadarHack` | Tüm düşmanları radarda gösterir; `duration_on`/`duration_off` ile yanıp söner (`duration_off: 0` = sürekli açık, `duration_on` en az 1 sn), `only_mode` kimin görüneceğini seçer: `0` herkes, `1` sadece ateş edenler, `2` sadece hareket edenler, `12` ikisi | `{ "duration_on": 1, "duration_off": 0, "see_teammates": false, "only_mode": 0 }` |
 | `RapidFire` | `firepercent` atış hızı (`0.1` – `2.0`): `1.0` normal, `2.0` en hızlı, altı yavaşlatır. `recoilpercent` kalan sekme (`0.0` – `1.0`): `0.0` sekme yok, `1.0` normal | `{ "only_with_weapon": "", "recoilpercent": 0.0, "firepercent": 2.0 }` |
 | `ReflectDamage` | Hasar yansıtma | `{ "reflect_percent": 50, "max_per_shot": 100, "only_with_weapon": "", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `Respawn` | Ölen oyuncu `time` saniye sonra yeniden doğar; `limit` raunt başına hak (0 = sınırsız), raunt değişince iptal | `{ "limit": 1, "time": 3 }` |
@@ -234,10 +239,11 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `Tag` | Sohbet etiketi/renkleri + skorbord (TAB) etiketi (`tab` boşsa TAB'a dokunulmaz) | `{ "tag": "{Gold}[{Orchid}PLUS{Gold}]", "name_color": "gold", "chat_color": "default", "tab": "[PLUS]" }` |
 | `TeamHeal` | Takım arkadaşına ateş edince hasar yerine iyileştirme | `{ "minhp": 5, "percent": 50, "sound_volume": 0.5, "only_with_weapon": "" }` |
 | `Thirdperson` | Üçüncü şahıs kamera | `{ "distance": 120 }` |
-| `WallHack` | Rakipleri duvar arkasından parlayarak gösterir. `duration_on`/`duration_off` ile yanıp söner (`duration_off: 0` = sürekli açık), `see_teammates` takım arkadaşlarını da gösterir, `color` parlama rengi | `{ "duration_on": 1, "duration_off": 3, "color": "#612D53", "see_teammates": false }` |
+| `WallHack` | Rakipleri duvar arkasından parlayarak gösterir. `duration_on`/`duration_off` ile yanıp söner (`duration_off: 0` = sürekli açık), `see_teammates` takım arkadaşlarını da gösterir, `color` parlama rengi, `only_mode` kimin görüneceğini seçer: `0` herkes, `1` sadece ateş edenler, `2` sadece hareket edenler, `12` ikisi | `{ "duration_on": 1, "duration_off": 3, "color": "#612D53", "see_teammates": false, "only_mode": 0 }` |
 | `Vampire` | Verilen hasar kadar can çalma | `{ "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120, "ignore_teammates": true }` |
 | `VIPChat` | VIP'lere özel sohbet kanalı | `true` |
 | `WeaponAmmo` | Silah bazlı özel şarjör/yedek mermi (çoğu silahta reserve = şarjör adedi; nova/sawedoff/xm1014'te mermi adedi). Silahı silip yeniden veren eklentilerle (WeaponPaints `css_wp`) uyumlu, mermi korunur | `[{ "weapon_name": "weapon_ak47", "ammo": 30, "reserve": 3 }]` |
+| `WeaponGlow` | En az bir VIP özelliği açtığı sürece yerdeki silahlar parlar. `visible: "all"` parlamayı silahın kendisine verir, tam oturur ama herkes görür; `visible: "vip"` ayrı bir parlama kopyası yaratır, sadece VIP'ler görür ama bazı modellerde (örneğin çift beretta) hafif kayık durur. `range` parlamanın göründüğü mesafe, `ignore` parlamayacak silahların listesi | `{ "color": "#FFFFFF", "range": 5000, "visible": "all", "ignore": ["weapon_c4"] }` |
 | `ZeusCooldown` | Zeus'un yeniden şarj süresini kısaltır (`limit`: raunt başına hak, 0 = sınırsız) | `{ "cooldown": 5, "limit": 0 }` |
 
 ## Kullanım Örnekleri

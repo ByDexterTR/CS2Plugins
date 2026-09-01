@@ -3,7 +3,6 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -24,7 +23,7 @@ public class Thirdperson : VipModule
     public override void OnLoad()
     {
         Core.RegisterAliasedCommand(Core.TpCommands, OnToggle);
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick);
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
         {
             int slot = ev.Userid?.Slot ?? -1;

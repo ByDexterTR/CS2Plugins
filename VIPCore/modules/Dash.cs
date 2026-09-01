@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -50,15 +49,13 @@ public class Dash : VipModule
                 _states[slot] = new State();
             return HookResult.Continue;
         });
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick);
     }
 
     private void OnTick()
     {
-        foreach (var player in Core.Players)
+        foreach (var player in ActivePlayers())
         {
-            if (player == null || !player.IsValid || player.IsBot || !IsAlive(player) || !Active(player))
-                continue;
 
             var pawn = player.PlayerPawn.Value;
             if (pawn == null || !pawn.IsValid)

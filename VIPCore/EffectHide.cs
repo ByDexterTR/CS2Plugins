@@ -1,7 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -35,6 +33,16 @@ public static class EffectHide
     private static readonly bool[] _locked = new bool[ModuleCount];
     private static int _transmitNonDefault;
     private static readonly Dictionary<uint, (int Module, int OwnerSlot)> _entities = new();
+    private static readonly List<uint>[] _hidden = CreateBuckets();
+    private static readonly byte[] _ownerMode = new byte[64];
+
+    private static List<uint>[] CreateBuckets()
+    {
+        var buckets = new List<uint>[64];
+        for (int i = 0; i < 64; i++)
+            buckets[i] = new List<uint>();
+        return buckets;
+    }
 
     public static bool Locked(int module) => _locked[module];
 
@@ -52,8 +60,8 @@ public static class EffectHide
         for (int m = 0; m < ModuleCount; m++)
             _locked[m] = core.HideDefault(Names[m]).Equals("off", StringComparison.OrdinalIgnoreCase);
 
-        core.RegisterListener<CheckTransmit>(OnCheckTransmit);
-        core.RegisterListener<OnEntityDeleted>(entity =>
+        core.HookTransmit(OnCheckTransmit);
+        core.HookEntityDeleted(entity =>
         {
             if (_entities.Count > 0)
                 _entities.Remove(entity.Index);
@@ -172,7 +180,7 @@ public static class EffectHide
             _transmitNonDefault += isNonDefault ? 1 : -1;
     }
 
-    private static void OnCheckTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
+    private static void OnCheckTransmit(CCheckTransmitInfoList infoList)
     {
         var core = _owner;
         if (core == null || _transmitNonDefault == 0 || _entities.Count == 0)
@@ -183,6 +191,31 @@ public static class EffectHide
             if (p != null && p.IsValid && p.Slot < 64)
                 _team[p.Slot] = p.TeamNum;
 
+        for (int slot = 0; slot < 64; slot++)
+        {
+            _hidden[slot].Clear();
+            _ownerMode[slot] = ModeAll;
+        }
+
+        bool any = false;
+        foreach (var (index, entry) in _entities)
+        {
+            int ownerSlot = entry.OwnerSlot;
+            if (ownerSlot < 0 || ownerSlot >= 64)
+                continue;
+
+            byte mode = _mode[ownerSlot, entry.Module];
+            if (mode == ModeAll)
+                continue;
+
+            _ownerMode[ownerSlot] = mode;
+            _hidden[ownerSlot].Add(index);
+            any = true;
+        }
+
+        if (!any)
+            return;
+
         foreach (var (info, viewer) in infoList)
         {
             if (viewer == null || !viewer.IsValid || viewer.Slot >= 64)
@@ -191,20 +224,17 @@ public static class EffectHide
             int viewerSlot = viewer.Slot;
             int viewerTeam = _team[viewerSlot];
 
-            foreach (var (index, entry) in _entities)
+            for (int ownerSlot = 0; ownerSlot < 64; ownerSlot++)
             {
-                int ownerSlot = entry.OwnerSlot;
-                if (ownerSlot < 0 || ownerSlot >= 64)
+                var bucket = _hidden[ownerSlot];
+                if (bucket.Count == 0)
+                    continue;
+                if (CanSee(_ownerMode[ownerSlot], ownerSlot, _team[ownerSlot], viewerSlot, viewerTeam))
                     continue;
 
-                byte mode = _mode[ownerSlot, entry.Module];
-                if (mode == ModeAll)
-                    continue;
-                if (CanSee(mode, ownerSlot, _team[ownerSlot], viewerSlot, viewerTeam))
-                    continue;
-
-                if (info.TransmitEntities.Contains(index))
-                    info.TransmitEntities.Remove(index);
+                foreach (uint index in bucket)
+                    if (info.TransmitEntities.Contains(index))
+                        info.TransmitEntities.Remove(index);
             }
         }
     }

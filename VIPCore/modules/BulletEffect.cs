@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -89,8 +88,8 @@ public class BulletEffect : VipModule
             return HookResult.Continue;
         });
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { ResetAll(); return HookResult.Continue; });
-        Core.RegisterListener<OnMapStart>(_ => ResetAll());
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookMapStart(_ => ResetAll());
+        Core.HookTick(OnTick, 4);
     }
 
     public override void OnUnload() => ResetAll();

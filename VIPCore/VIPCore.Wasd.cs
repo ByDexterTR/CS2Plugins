@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.UserMessages;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -92,7 +91,7 @@ public partial class VIPCore
 
         if (!_wasdTickHooked)
         {
-            RegisterListener<OnTick>(WasdOnTick);
+            HookTick(WasdOnTick);
             _wasdTickHooked = true;
         }
     }

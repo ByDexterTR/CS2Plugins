@@ -60,6 +60,7 @@ public abstract class VipModule
     protected string Setting(CCSPlayerController player) => Core.GetSetting(player.SteamID, Name);
     protected string CategorySetting(CCSPlayerController player, string category) => Core.GetSetting(player.SteamID, $"{Name}@{category}");
     protected T? GroupValue<T>(CCSPlayerController player) => Core.GetGroupValue<T>(player, Name);
+    protected IReadOnlyList<CCSPlayerController> ActivePlayers() => Core.ActivePlayers(Name);
 
     public static bool TryGetButtons(CCSPlayerController? p, out PlayerButtons buttons)
     {

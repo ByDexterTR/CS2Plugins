@@ -1,5 +1,4 @@
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -19,7 +18,7 @@ public class GlueGrenade : VipModule
     public override string Name => "GlueGrenade";
     public override string DisplayName => Core.Localizer["vip.module.gluegrenade"];
 
-    public override void OnLoad() => Core.RegisterListener<OnEntitySpawned>(OnEntitySpawned);
+    public override void OnLoad() => Core.HookEntitySpawned(OnEntitySpawned);
 
     private void OnEntitySpawned(CEntityInstance entity)
     {

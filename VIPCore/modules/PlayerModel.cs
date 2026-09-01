@@ -2,7 +2,6 @@ using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -55,7 +54,7 @@ public class PlayerModel : VipModule
     {
         _instance = this;
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
-        Core.RegisterListener<OnServerPrecacheResources>(manifest =>
+        Core.HookPrecache(manifest =>
         {
             foreach (var cfg in Core.GetAllGroupValues<Cfg>(Name))
             {

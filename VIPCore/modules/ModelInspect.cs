@@ -2,7 +2,6 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -30,18 +29,18 @@ public class ModelInspect : VipModule
     public override void OnLoad()
     {
         Core.RegisterAliasedCommand(Core.InspectCommands, OnInspect);
-        Core.RegisterListener<OnServerPrecacheResources>(manifest =>
+        Core.HookPrecache(manifest =>
         {
             foreach (var cfg in Core.GetAllGroupValues<PlayerModel.Cfg>("PlayerModel"))
                 foreach (var def in cfg.Ct.Concat(cfg.T))
                     if (def.Model.Length > 0)
                         manifest.AddResource(def.Model);
         });
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick);
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
         Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundStart>((_, _) => { RemoveAll(); return HookResult.Continue; });
-        Core.RegisterListener<OnMapStart>(_ => RemoveAll());
+        Core.HookMapStart(_ => RemoveAll());
     }
 
     public override void OnUnload() => RemoveAll();

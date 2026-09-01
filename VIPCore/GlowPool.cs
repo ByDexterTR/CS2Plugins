@@ -1,8 +1,7 @@
 using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes;
-using static CounterStrikeSharp.API.Core.Listeners;
+using CounterStrikeSharp.API.Modules.Memory;
 
 namespace VIPCore;
 
@@ -16,6 +15,24 @@ public static class GlowPool
     private static readonly ulong[] _visible = new ulong[64];
     private static int _users;
     private static int _builtAt = -1;
+    private static readonly Dictionary<string, int> _glowOffsets = new();
+
+    public static void Mark(CBaseModelEntity entity, string field)
+    {
+        if (!_glowOffsets.TryGetValue(field, out int offset))
+        {
+            offset = Schema.GetSchemaOffset("CGlowProperty", field);
+            _glowOffsets[field] = offset;
+        }
+
+        Utilities.SetStateChanged(entity, "CBaseModelEntity", "m_Glow", offset);
+    }
+
+    public static void ApplyColor(CDynamicProp glow, Color color)
+    {
+        glow.Glow.GlowColorOverride = color;
+        Mark(glow, "m_glowColorOverride");
+    }
 
     public static void Ensure(VIPCore core)
     {
@@ -29,7 +46,7 @@ public static class GlowPool
         _users = 0;
         _builtAt = -1;
 
-        core.RegisterListener<CheckTransmit>(OnCheckTransmit);
+        core.HookTransmit(OnCheckTransmit);
         core.RegisterEventHandler<EventRoundStart>((_, _) => { DestroyAll(); return HookResult.Continue; });
         core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
         {
@@ -76,8 +93,7 @@ public static class GlowPool
         if (glow == null || !glow.IsValid)
             return;
 
-        glow.Glow.GlowColorOverride = color;
-        Utilities.SetStateChanged(glow, "CGlowProperty", "m_glowColorOverride");
+        ApplyColor(glow, color);
         _colors[slot] = color;
     }
 
@@ -191,7 +207,7 @@ public static class GlowPool
         _builtAt = -1;
     }
 
-    private static void OnCheckTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
+    private static void OnCheckTransmit(CCheckTransmitInfoList infoList)
     {
         if (_users <= 0)
             return;

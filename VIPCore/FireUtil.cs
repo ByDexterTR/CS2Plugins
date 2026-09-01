@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -25,7 +24,7 @@ public static class FireUtil
     private static readonly List<Throw> _thrown = new();
     private static readonly float[] _lastBurn = new float[64];
 
-    public static void Ensure(BasePlugin plugin)
+    public static void Ensure(VIPCore plugin)
     {
         if (ReferenceEquals(_owner, plugin))
             return;
@@ -39,7 +38,7 @@ public static class FireUtil
         plugin.RegisterEventHandler<EventInfernoExpire>(OnInfernoExpire);
         plugin.RegisterEventHandler<EventGrenadeThrown>(OnGrenadeThrown);
         plugin.RegisterEventHandler<EventMolotovDetonate>(OnMolotovDetonate);
-        plugin.RegisterListener<OnEntityTakeDamagePre>(OnDamage);
+        plugin.HookDamage(OnDamage);
     }
 
     public static bool Blocked(CCSPlayerController? player)

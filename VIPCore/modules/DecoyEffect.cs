@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -63,6 +62,26 @@ public class DecoyEffect : VipModule
         public string Color { get; set; } = GlowPool.DefaultColor;
         public float Radius { get; set; } = 180f;
         public bool SeeTeammates { get; set; }
+        public int OnlyMode { get; set; } = 0;
+        public int Limit { get; set; } = 0;
+    }
+
+    private class RadarhackCfg
+    {
+        public float Tick { get; set; } = 0.25f;
+        public float Radius { get; set; } = 180f;
+        public bool SeeTeammates { get; set; }
+        public int OnlyMode { get; set; } = 0;
+        public int Limit { get; set; } = 0;
+    }
+
+    private class StrengthCfg
+    {
+        public float DamageMultiplier { get; set; } = 1.5f;
+        public float Radius { get; set; } = 180f;
+        public bool IgnoreTeammates { get; set; } = false;
+        public bool IgnoreSelf { get; set; } = false;
+        public bool IgnoreEnemy { get; set; } = true;
         public int Limit { get; set; } = 0;
     }
 
@@ -73,6 +92,8 @@ public class DecoyEffect : VipModule
         public SlowCfg? Slow { get; set; }
         public WallhackCfg? Wallhack { get; set; }
         public MagneticCfg? Magnetic { get; set; }
+        public RadarhackCfg? Radarhack { get; set; }
+        public StrengthCfg? Strength { get; set; }
     }
 
     private class ActiveDecoy
@@ -87,6 +108,8 @@ public class DecoyEffect : VipModule
     private readonly Dictionary<int, ActiveDecoy> _decoys = new();
     private readonly HashSet<int> _slowed = new();
     private readonly HashSet<int> _slowedThisTick = new();
+    private readonly int[] _strengthTick = new int[64];
+    private readonly float[] _strength = new float[64];
     private bool _glowUser;
 
     public override string Name => "DecoyEffect";
@@ -107,6 +130,10 @@ public class DecoyEffect : VipModule
             options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.wallhack"], "wallhack"));
         if (cfg.Magnetic != null)
             options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.magnetic"], "magnetic"));
+        if (cfg.Radarhack != null)
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.radarhack"], "radarhack"));
+        if (cfg.Strength != null)
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.strength"], "strength"));
         return options;
     }
 
@@ -119,12 +146,15 @@ public class DecoyEffect : VipModule
             _glowUser = true;
         }
 
-        Core.RegisterListener<OnServerPrecacheResources>(m => m.AddResource(DecoyRing.DiscModel));
+        ActivityFilter.Ensure(Core);
+
+        Core.HookPrecache(m => m.AddResource(DecoyRing.DiscModel));
+        Core.HookDamage(OnDamage);
         Core.RegisterEventHandler<EventDecoyStarted>(OnStarted);
         Core.RegisterEventHandler<EventDecoyDetonate>((ev, _) => { Remove(ev.Entityid); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { Clear(); return HookResult.Continue; });
-        Core.RegisterListener<OnMapStart>(_ => Clear());
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookMapStart(_ => Clear());
+        Core.HookTick(OnTick);
     }
 
     public override void OnUnload()
@@ -146,6 +176,8 @@ public class DecoyEffect : VipModule
         _decoys.Clear();
         _slowed.Clear();
         _slowedThisTick.Clear();
+        Array.Clear(_strengthTick);
+        Array.Clear(_strength);
     }
 
     private void Remove(int entityId)
@@ -161,6 +193,8 @@ public class DecoyEffect : VipModule
         "slow" when cfg.Slow != null => (cfg.Slow.Radius, cfg.Slow.Limit, Color.FromArgb(255, 0, 128, 255)),
         "wallhack" when cfg.Wallhack != null => (cfg.Wallhack.Radius, cfg.Wallhack.Limit, TrailBeam.Resolve(cfg.Wallhack.Color)),
         "magnetic" when cfg.Magnetic != null => (cfg.Magnetic.Radius, cfg.Magnetic.Limit, Color.FromArgb(255, 255, 128, 0)),
+        "radarhack" when cfg.Radarhack != null => (cfg.Radarhack.Radius, cfg.Radarhack.Limit, Color.FromArgb(255, 0, 255, 255)),
+        "strength" when cfg.Strength != null => (cfg.Strength.Radius, cfg.Strength.Limit, Color.FromArgb(255, 255, 0, 0)),
         _ => (0f, 0, Color.White)
     };
 
@@ -220,6 +254,18 @@ public class DecoyEffect : VipModule
             if (decoy.Mode == "wallhack")
             {
                 ApplyWallhack(decoy, cfg.Wallhack, owner!, now);
+                continue;
+            }
+
+            if (decoy.Mode == "radarhack")
+            {
+                ApplyRadarhack(decoy, cfg.Radarhack, owner!, now);
+                continue;
+            }
+
+            if (decoy.Mode == "strength")
+            {
+                MarkStrength(decoy, owner!, cfg.Strength);
                 continue;
             }
 
@@ -303,6 +349,8 @@ public class DecoyEffect : VipModule
 
                 if (TrailBeam.Distance(decoy.Pos, pawn.AbsOrigin) > radius)
                     continue;
+                if (!ActivityFilter.Matches(cfg.OnlyMode, target, pawn))
+                    continue;
 
                 decoy.Seen |= 1UL << target.Slot;
             }
@@ -316,6 +364,92 @@ public class DecoyEffect : VipModule
         for (int target = 0; target < 64; target++)
             if ((decoy.Seen & (1UL << target)) != 0)
                 GlowPool.Show(decoy.OwnerSlot, target, color);
+    }
+
+    private void ApplyRadarhack(ActiveDecoy decoy, RadarhackCfg? cfg, CCSPlayerController owner, float now)
+    {
+        if (cfg == null || !IsAlive(owner) || owner.Slot >= 64)
+            return;
+
+        if (decoy.NextTick <= now)
+        {
+            decoy.NextTick = now + Math.Max(cfg.Tick, 0.05f);
+            decoy.Seen = 0;
+
+            float radius = cfg.Radius > 0f ? cfg.Radius : 180f;
+            foreach (var target in Core.Players)
+            {
+                if (target == null || !target.IsValid || target.Slot >= 64 || target.Slot == decoy.OwnerSlot || !IsAlive(target))
+                    continue;
+                if (!cfg.SeeTeammates && target.Team == owner.Team)
+                    continue;
+
+                var targetPawn = target.PlayerPawn.Value;
+                if (targetPawn == null || !targetPawn.IsValid || targetPawn.AbsOrigin == null)
+                    continue;
+
+                if (TrailBeam.Distance(decoy.Pos, targetPawn.AbsOrigin) > radius)
+                    continue;
+                if (!ActivityFilter.Matches(cfg.OnlyMode, target, targetPawn))
+                    continue;
+
+                decoy.Seen |= 1UL << target.Slot;
+            }
+        }
+
+        if (decoy.Seen == 0)
+            return;
+
+        int slot = owner.Slot;
+        for (int index = 0; index < 64; index++)
+        {
+            if ((decoy.Seen & (1UL << index)) == 0)
+                continue;
+
+            var pawn = Utilities.GetPlayerFromSlot(index)?.PlayerPawn.Value;
+            if (pawn != null && pawn.IsValid)
+                pawn.EntitySpottedState.SpottedByMask[slot / 32] |= 1u << (slot % 32);
+        }
+    }
+
+    private void MarkStrength(ActiveDecoy decoy, CCSPlayerController owner, StrengthCfg? cfg)
+    {
+        if (cfg == null || cfg.Radius <= 0f || cfg.DamageMultiplier <= 0f)
+            return;
+
+        Apply(decoy, owner, cfg.Radius, cfg.IgnoreTeammates, cfg.IgnoreSelf, cfg.IgnoreEnemy, pawn =>
+        {
+            var controller = pawn.Controller.Value?.As<CCSPlayerController>();
+            if (controller != null && controller.IsValid && controller.Slot < 64)
+            {
+                _strengthTick[controller.Slot] = Server.TickCount;
+                _strength[controller.Slot] = cfg.DamageMultiplier;
+            }
+        });
+    }
+
+    private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
+    {
+        if (info.Attacker?.Value == null)
+            return HookResult.Continue;
+
+        var attacker = PawnController(info.Attacker.Value);
+        if (attacker == null || attacker.Slot >= 64)
+            return HookResult.Continue;
+
+        if (Server.TickCount - _strengthTick[attacker.Slot] > 1)
+            return HookResult.Continue;
+
+        float scale = _strength[attacker.Slot];
+        if (Math.Abs(scale - 1f) < 0.001f)
+            return HookResult.Continue;
+
+        var victim = PawnController(entity);
+        if (victim != null && victim.Slot == attacker.Slot)
+            return HookResult.Continue;
+
+        info.Damage = MathF.Max(info.Damage * scale, 0f);
+        return HookResult.Changed;
     }
 
     private void Pull(ActiveDecoy decoy, CCSPlayerController owner, MagneticCfg cfg)

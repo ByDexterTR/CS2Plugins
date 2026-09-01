@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -14,7 +13,6 @@ public class BombsiteAnnouncer : VipModule
         public float Duration { get; set; } = 5f;
     }
 
-    private const int HudTickRate = 4;
 
     private string? _site;
     private float _plantTime;
@@ -31,7 +29,7 @@ public class BombsiteAnnouncer : VipModule
             _site = null;
             return HookResult.Continue;
         });
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick, 8);
     }
 
     private HookResult OnPlanted(EventBombPlanted ev, GameEventInfo info)
@@ -70,9 +68,6 @@ public class BombsiteAnnouncer : VipModule
             _site = null;
             return;
         }
-
-        if (Server.TickCount % HudTickRate != 0)
-            return;
 
         foreach (var player in Core.Players)
         {

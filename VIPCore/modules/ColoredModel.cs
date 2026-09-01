@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -17,7 +16,7 @@ public class ColoredModel : VipModule
     private readonly int[] _lastArgb = new int[64];
     private readonly bool[] _external = new bool[64];
 
-    public override void OnLoad() => Core.RegisterListener<OnTick>(OnTick);
+    public override void OnLoad() => Core.HookTick(OnTick, 8);
 
     public override void OnUnload()
     {

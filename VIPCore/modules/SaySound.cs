@@ -47,7 +47,7 @@ public class SaySound : VipModule
         EffectHide.Ensure(Core);
         Core.AddCommandListener("say", (p, info) => Handle(p, info, false), HookMode.Post);
         Core.AddCommandListener("say_team", (p, info) => Handle(p, info, true), HookMode.Post);
-        Core.RegisterListener<CounterStrikeSharp.API.Core.Listeners.OnMapStart>(_ => Array.Clear(_lastPlay));
+        Core.HookMapStart(_ => Array.Clear(_lastPlay));
     }
 
     private HookResult Handle(CCSPlayerController? player, CommandInfo info, bool teamOnly)

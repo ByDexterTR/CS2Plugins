@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -20,17 +19,15 @@ public class Bhop : VipModule
     public override string Name => "Bhop";
     public override string DisplayName => Core.Localizer["vip.module.bhop"];
 
-    public override void OnLoad() => Core.RegisterListener<OnTick>(OnTick);
+    public override void OnLoad() => Core.HookTick(OnTick);
 
     private void OnTick()
     {
         if (Core.IsFreezeTime())
             return;
 
-        foreach (var player in Core.Players)
+        foreach (var player in ActivePlayers())
         {
-            if (player == null || !player.IsValid || player.IsBot || !Active(player))
-                continue;
 
             var pawn = player.PlayerPawn.Value;
             if (pawn == null || !pawn.IsValid)

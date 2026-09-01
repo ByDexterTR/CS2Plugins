@@ -1,5 +1,4 @@
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -18,7 +17,7 @@ public class FallDamage : VipModule
 
     public override void OnLoad()
     {
-        Core.RegisterListener<OnEntityTakeDamagePre>(OnDamage);
+        Core.HookDamage(OnDamage);
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
     }
 

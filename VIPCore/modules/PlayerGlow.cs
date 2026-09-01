@@ -1,7 +1,6 @@
 using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -26,7 +25,7 @@ public class PlayerGlow : VipModule
     public override void OnLoad()
     {
         EffectHide.Ensure(Core);
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookTick(OnTick, 4);
         Core.RegisterEventHandler<EventRoundStart>((_, _) => { Array.Clear(_glows); return HookResult.Continue; });
     }
 
@@ -82,8 +81,7 @@ public class PlayerGlow : VipModule
                 var current = glow.Glow.GlowColorOverride;
                 if (current.R != color.R || current.G != color.G || current.B != color.B || current.A != color.A)
                 {
-                    glow.Glow.GlowColorOverride = color;
-                    Utilities.SetStateChanged(glow, "CGlowProperty", "m_glowColorOverride");
+                    GlowPool.ApplyColor(glow, color);
                 }
             }
         }

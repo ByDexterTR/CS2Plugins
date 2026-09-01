@@ -1,7 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -37,8 +36,8 @@ public class GrenadeTrail : VipModule
     public override void OnLoad()
     {
         EffectHide.Ensure(Core);
-        Core.RegisterListener<OnEntitySpawned>(OnEntitySpawned);
-        Core.RegisterListener<OnTick>(OnTick);
+        Core.HookEntitySpawned(OnEntitySpawned);
+        Core.HookTick(OnTick, 2);
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { _tracked.Clear(); return HookResult.Continue; });
     }
 

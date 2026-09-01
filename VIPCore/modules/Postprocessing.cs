@@ -1,8 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace VIPCore;
 
@@ -34,7 +32,7 @@ public class Postprocessing : VipModule
 
     public override void OnLoad()
     {
-        Core.RegisterListener<OnServerPrecacheResources>(manifest =>
+        Core.HookPrecache(manifest =>
         {
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var entries in Core.GetAllGroupValues<List<Entry>>(Name))
@@ -49,8 +47,8 @@ public class Postprocessing : VipModule
                 }
             }
         });
-        Core.RegisterListener<CheckTransmit>(OnCheckTransmit);
-        Core.RegisterListener<OnMapEnd>(() => { Array.Clear(_volumes); _mapVolumes.Clear(); });
+        Core.HookTransmit(OnCheckTransmit);
+        Core.HookMapEnd(() => { Array.Clear(_volumes); _mapVolumes.Clear(); });
 
         Core.RegisterEventHandler<EventPlayerSpawn>((ev, _) =>
         {
@@ -151,7 +149,7 @@ public class Postprocessing : VipModule
         }
     }
 
-    private void OnCheckTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
     {
         int active = 0;
         for (int slot = 0; slot < 64; slot++)
