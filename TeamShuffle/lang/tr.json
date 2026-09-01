@@ -6,14 +6,16 @@
   "teamshuffle.queued": "Takımlar raunt sonunda karıştırılacak.",
   "teamshuffle.shuffled": "Takımlar karıştırıldı ({0}), {1} oyuncu yeni raunt başında yer değiştirecek.",
   "teamshuffle.equalized": "Takım sayıları eşitlendi, {0} oyuncu yer değiştirdi.",
-  "teamshuffle.power": "Güç: CT {0} - T {1}",
-  "teamshuffle.power_command": "Güç: CT {0} ({1} oyuncu) - T {2} ({3} oyuncu)",
+  "teamshuffle.debug_power": "Güç: CT {0} ({1} oyuncu) - T {2} ({3} oyuncu), fark %{4}",
+  "teamshuffle.debug_console": "Oyuncu dökümü konsola yazıldı.",
+  "teamshuffle.debug_player": "{0} | {1} | puan {2} | {3} raunt | {4} kill | {5} ölüm | {6} hasar",
   "teamshuffle.moved": "{0} takımına geçtin.",
   "teamshuffle.auto_assigned": "{0} takımına alındın.",
   "teamshuffle.already_balanced": "Takımlar zaten dengeli.",
   "teamshuffle.reason_manual": "manuel",
   "teamshuffle.reason_streak": "{0} raunt üst üste galibiyet",
   "teamshuffle.reason_interval": "{0} raunt geçti",
+  "teamshuffle.reason_points": "%{0} skor farkı",
   "teamshuffle.team_ct": "CT",
   "teamshuffle.team_t": "T"
 }

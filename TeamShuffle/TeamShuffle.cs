@@ -11,7 +11,7 @@ namespace TeamShuffle;
 public class TeamShuffleConfig : BasePluginConfig
 {
   [JsonPropertyName("shuffle_mode")]
-  public string ShuffleMode { get; set; } = "streak";
+  public string ShuffleMode { get; set; } = "points";
 
   [JsonPropertyName("shuffle_streak_round")]
   public int ShuffleStreakRound { get; set; } = 3;
@@ -19,17 +19,23 @@ public class TeamShuffleConfig : BasePluginConfig
   [JsonPropertyName("shuffle_interval_round")]
   public int ShuffleIntervalRound { get; set; } = 5;
 
+  [JsonPropertyName("shuffle_points_ratio")]
+  public float ShufflePointsRatio { get; set; } = 0.3f;
+
+  [JsonPropertyName("shuffle_points_min_round")]
+  public int ShufflePointsMinRound { get; set; } = 3;
+
   [JsonPropertyName("shuffle_cmd")]
   public string ShuffleCommands { get; set; } = "css_shuffle,css_karistir";
 
   [JsonPropertyName("shuffle_cmd_flag")]
   public string ShuffleCommandFlag { get; set; } = "@css/generic,@css/ban";
 
-  [JsonPropertyName("shuffle_power_cmd")]
-  public string ShufflePowerCommands { get; set; } = "css_power,css_guc";
+  [JsonPropertyName("shuffle_debug_cmd")]
+  public string ShuffleDebugCommands { get; set; } = "css_debugshuffle";
 
-  [JsonPropertyName("shuffle_power_flag")]
-  public string ShufflePowerFlag { get; set; } = "@css/generic,@css/ban";
+  [JsonPropertyName("shuffle_debug_flag")]
+  public string ShuffleDebugFlag { get; set; } = "@css/root";
 
   [JsonPropertyName("disable_valve_balance")]
   public bool DisableValveBalance { get; set; } = true;
@@ -49,9 +55,6 @@ public class TeamShuffleConfig : BasePluginConfig
   [JsonPropertyName("shuffle_limitteams")]
   public int ShuffleLimitTeams { get; set; } = 2;
 
-  [JsonPropertyName("reset_on_map_change")]
-  public bool ResetOnMapChange { get; set; } = true;
-
   [JsonPropertyName("shuffle_damage_rating")]
   public int ShuffleDamageRating { get; set; } = 1;
 
@@ -61,30 +64,23 @@ public class TeamShuffleConfig : BasePluginConfig
   [JsonPropertyName("shuffle_mvp_rating")]
   public int ShuffleMvpRating { get; set; } = 25;
 
-  [JsonPropertyName("shuffle_balance_tolerance")]
-  public int ShuffleBalanceTolerance { get; set; } = 10;
+  [JsonPropertyName("shuffle_clutch_rating")]
+  public int ShuffleClutchRating { get; set; } = 40;
+
+  [JsonPropertyName("shuffle_aim_rating")]
+  public int ShuffleAimRating { get; set; } = 60;
+
+  [JsonPropertyName("shuffle_tolerance_ratio")]
+  public float ShuffleToleranceRatio { get; set; } = 0.15f;
 
   [JsonPropertyName("shuffle_announce")]
   public bool ShuffleAnnounce { get; set; } = true;
 }
 
-public class PlayerStats
-{
-  public float Damage;
-  public int Kills;
-  public int Mvps;
-  public int Rounds;
-
-  public float RoundDamage;
-  public int RoundKills;
-  public int RoundMvps;
-  public bool Played;
-}
-
-public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
+public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 {
   public override string ModuleName => "TeamShuffle";
-  public override string ModuleVersion => "1.0.1";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -116,13 +112,18 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     config.ShuffleDamageRating = Math.Max(1, config.ShuffleDamageRating);
     config.ShuffleKillRating = Math.Max(1, config.ShuffleKillRating);
     config.ShuffleMvpRating = Math.Max(1, config.ShuffleMvpRating);
-    config.ShuffleBalanceTolerance = Math.Max(0, config.ShuffleBalanceTolerance);
+    config.ShuffleClutchRating = Math.Max(0, config.ShuffleClutchRating);
+    config.ShuffleAimRating = Math.Max(0, config.ShuffleAimRating);
+    config.ShufflePointsRatio = Math.Clamp(config.ShufflePointsRatio, 0.01f, 10f);
+    config.ShufflePointsMinRound = Math.Max(0, config.ShufflePointsMinRound);
+    config.ShuffleToleranceRatio = Math.Clamp(config.ShuffleToleranceRatio, 0f, 10f);
     Config = config;
   }
 
   public override void Load(bool hotReload)
   {
     RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
+    RegisterEventHandler<EventWeaponFire>(OnWeaponFire);
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
@@ -134,23 +135,34 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
     AddCommandListener("jointeam", OnJoinTeam);
     RegisterListener<OnMapStart>(OnMapStarted);
+    RegisterListener<OnMapEnd>(SaveDirty);
 
     foreach (var name in Util.Split(Config.ShuffleCommands))
       AddCommand(name, "Takim karistirma", OnShuffleCommand);
 
-    foreach (var name in Util.Split(Config.ShufflePowerCommands))
-      AddCommand(name, "Takim gucu", OnPowerCommand);
+    foreach (var name in Util.Split(Config.ShuffleDebugCommands))
+      AddCommand(name, "Takim gucu dokumu", OnDebugCommand);
 
     ApplyConVars();
+    ClearTemporary();
+
+    if (hotReload)
+    {
+      foreach (var player in Utilities.GetPlayers())
+      {
+        if (player != null && player.IsValid)
+          LoadStats(player);
+      }
+    }
   }
+
+  public override void Unload(bool hotReload) => SaveAll();
 
   private void OnMapStarted(string mapName)
   {
     health.Clear();
     planned.Clear();
-
-    if (Config.ResetOnMapChange)
-      stats.Clear();
+    clutchCandidates.Clear();
 
     lastWinner = 0;
     winStreak = 0;
@@ -197,6 +209,16 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
       || rules.GameRestart;
   }
 
+  private (float Ct, float T) TeamPower()
+  {
+    var entries = Rated(Utilities.GetPlayers().Where(IsPlaying).ToList());
+
+    float ct = entries.Where(e => e.Player.Team == CsTeam.CounterTerrorist).Sum(e => e.Rating);
+    float t = entries.Where(e => e.Player.Team == CsTeam.Terrorist).Sum(e => e.Rating);
+
+    return (ct, t);
+  }
+
   private bool BelowMinPlayers() =>
     Utilities.GetPlayers().Count(IsPlaying) < Config.ShuffleMinPlayers;
 
@@ -236,9 +258,17 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     if (attacker.Handle == victim.Handle || attacker.TeamNum == victim.TeamNum)
       return HookResult.Continue;
 
-    var entry = GetStats(attacker);
-    if (entry != null)
-      entry.RoundDamage += AppliedDamage(victim, @event.Health, @event.DmgHealth);
+    CountHit(attacker, @event.Hitgroup, AppliedDamage(victim, @event.Health, @event.DmgHealth));
+
+    return HookResult.Continue;
+  }
+
+  private HookResult OnWeaponFire(EventWeaponFire @event, GameEventInfo info)
+  {
+    if (IsWarmup())
+      return HookResult.Continue;
+
+    CountShot(@event.Userid);
 
     return HookResult.Continue;
   }
@@ -283,9 +313,18 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
   private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
   {
-    int userId = Util.UserId(@event.Userid);
+    var player = @event.Userid;
+
+    int userId = Util.UserId(player);
     if (userId >= 0)
       health.Remove(userId);
+
+    ulong steamId = Util.SteamId(player);
+    if (steamId != 0UL && stats.TryGetValue(steamId, out var entry))
+    {
+      SaveStats(steamId, entry);
+      stats.Remove(steamId);
+    }
 
     return HookResult.Continue;
   }
@@ -302,15 +341,16 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     var attacker = @event.Attacker;
     var victim = @event.Userid;
 
-    if (attacker == null || !attacker.IsValid || victim == null || !victim.IsValid)
+    if (victim == null || !victim.IsValid)
       return HookResult.Continue;
 
-    if (attacker.Handle == victim.Handle || attacker.TeamNum == victim.TeamNum)
-      return HookResult.Continue;
+    bool enemyKill = attacker != null && attacker.IsValid
+      && attacker.Handle != victim.Handle && attacker.TeamNum != victim.TeamNum;
 
-    var entry = GetStats(attacker);
-    if (entry != null)
-      entry.RoundKills++;
+    var assister = @event.Assister;
+    bool enemyAssist = assister != null && assister.IsValid && assister.TeamNum != victim.TeamNum;
+
+    CountKill(enemyKill ? attacker : null, victim, enemyAssist ? assister : null);
 
     return HookResult.Continue;
   }
@@ -333,7 +373,10 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
     var entry = GetStats(mvp);
     if (entry != null)
-      entry.RoundMvps++;
+    {
+      entry.Mvp++;
+      entry.Dirty = true;
+    }
 
     return HookResult.Continue;
   }
@@ -393,11 +436,12 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
   {
     foreach (var entry in stats.Values)
     {
-      entry.RoundDamage = 0f;
-      entry.RoundKills = 0;
-      entry.RoundMvps = 0;
+      entry.LifeKills = 0;
       entry.Played = false;
     }
+
+    clutchCandidates.Clear();
+    roundFirstKillTaken = false;
 
     if (IsWarmup())
     {
@@ -425,9 +469,11 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     if (IsWarmup())
       return HookResult.Continue;
 
+    int winner = @event.Winner;
+
+    CommitClutch(winner);
     CommitRound();
 
-    int winner = @event.Winner;
     if (!pistolRound && (winner == (int)CsTeam.Terrorist || winner == (int)CsTeam.CounterTerrorist))
     {
       if (winner == lastWinner)
@@ -460,6 +506,23 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
       reason = Localizer["teamshuffle.reason_interval", roundsSinceShuffle];
     }
 
+    if (!trigger && mode == "points" && roundsSinceShuffle >= Config.ShufflePointsMinRound)
+    {
+      var (ctPower, tPower) = TeamPower();
+      float low = Math.Min(ctPower, tPower);
+
+      if (low > 0f)
+      {
+        float ratio = Math.Abs(ctPower - tPower) / low;
+
+        if (ratio >= Config.ShufflePointsRatio)
+        {
+          trigger = true;
+          reason = Localizer["teamshuffle.reason_points", (int)Math.Round(ratio * 100f)];
+        }
+      }
+    }
+
     if (!trigger)
       return HookResult.Continue;
 
@@ -476,36 +539,6 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     winStreak = 0;
     lastWinner = 0;
     roundsSinceShuffle = 0;
-  }
-
-  private void CommitRound()
-  {
-    foreach (var entry in stats.Values)
-    {
-      if (!entry.Played)
-        continue;
-
-      entry.Damage += entry.RoundDamage;
-      entry.Kills += entry.RoundKills;
-      entry.Mvps += entry.RoundMvps;
-      entry.Rounds++;
-
-      entry.RoundDamage = 0f;
-      entry.RoundKills = 0;
-      entry.RoundMvps = 0;
-      entry.Played = false;
-    }
-  }
-
-  private float RatingOf(CCSPlayerController player)
-  {
-    ulong key = Util.SteamId(player);
-    if (key == 0UL || !stats.TryGetValue(key, out var entry) || entry.Rounds == 0)
-      return -1f;
-
-    return entry.Damage / entry.Rounds * Config.ShuffleDamageRating
-      + (float)entry.Kills / entry.Rounds * Config.ShuffleKillRating
-      + (float)entry.Mvps / entry.Rounds * Config.ShuffleMvpRating;
   }
 
   public void OnShuffleCommand(CCSPlayerController? player, CommandInfo info)
@@ -533,9 +566,9 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     Reply(player, info, Localizer["teamshuffle.queued"]);
   }
 
-  public void OnPowerCommand(CCSPlayerController? player, CommandInfo info)
+  public void OnDebugCommand(CCSPlayerController? player, CommandInfo info)
   {
-    if (!Util.HasAccess(player, Config.ShufflePowerFlag))
+    if (!Util.HasAccess(player, Config.ShuffleDebugFlag))
     {
       Reply(player, info, Localizer["teamshuffle.no_access"]);
       return;
@@ -548,8 +581,41 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     int ctCount = entries.Count(e => e.Player.Team == CsTeam.CounterTerrorist);
     int tCount = entries.Count - ctCount;
 
-    Reply(player, info, Localizer["teamshuffle.power_command",
-      (int)Math.Round(ctPower), ctCount, (int)Math.Round(tPower), tCount]);
+    float low = Math.Min(ctPower, tPower);
+    int gap = low > 0f ? (int)Math.Round(Math.Abs(ctPower - tPower) / low * 100f) : 0;
+
+    string header = Localizer["teamshuffle.debug_power",
+      (int)Math.Round(ctPower), ctCount, (int)Math.Round(tPower), tCount, gap];
+
+    Reply(player, info, header);
+
+    if (player != null && player.IsValid)
+      Reply(player, info, Localizer["teamshuffle.debug_console"]);
+
+    Write(player, header);
+
+    foreach (var entry in entries)
+    {
+      ulong steamId = Util.SteamId(entry.Player);
+      stats.TryGetValue(steamId, out var record);
+
+      Write(player, Localizer["teamshuffle.debug_player",
+        entry.Player.PlayerName,
+        Localizer[entry.Player.Team == CsTeam.CounterTerrorist ? "teamshuffle.team_ct" : "teamshuffle.team_t"],
+        (int)Math.Round(entry.Rating),
+        record?.Rounds ?? 0,
+        record?.Kills ?? 0,
+        record?.Deaths ?? 0,
+        (int)Math.Round(record?.Damage ?? 0f)]);
+    }
+  }
+
+  private static void Write(CCSPlayerController? player, string line)
+  {
+    if (player != null && player.IsValid)
+      player.PrintToConsole(line);
+    else
+      Server.PrintToConsole(line);
   }
 
   private void Reply(CCSPlayerController? player, CommandInfo info, string message)
@@ -611,29 +677,10 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     planned.Clear();
     int moved = Plan(groupA, teamA) + Plan(groupB, teamB);
 
-    float ctPower = teamA == CsTeam.CounterTerrorist ? sumA : sumB;
-    float tPower = teamA == CsTeam.CounterTerrorist ? sumB : sumA;
-
     if (Config.ShuffleAnnounce)
-    {
       Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["teamshuffle.shuffled", reason, moved]}");
-      Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["teamshuffle.power", (int)Math.Round(ctPower), (int)Math.Round(tPower)]}");
-    }
 
     return true;
-  }
-
-  private List<(CCSPlayerController Player, float Rating)> Rated(List<CCSPlayerController> players)
-  {
-    var rated = players.Select(p => (Player: p, Rating: RatingOf(p))).ToList();
-    var known = rated.Where(e => e.Rating >= 0f).Select(e => e.Rating).ToList();
-    float fallback = known.Count > 0 ? known.Average() : 0f;
-
-    return rated
-      .Select(e => (e.Player, Rating: e.Rating >= 0f ? e.Rating : fallback))
-      .OrderByDescending(e => e.Rating)
-      .ThenBy(_ => Random.Shared.Next())
-      .ToList();
   }
 
   private bool AlreadyBalanced(List<(CCSPlayerController Player, float Rating)> entries)
@@ -646,11 +693,11 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     if (Math.Abs(ctCount - tCount) > 1)
       return false;
 
-    float top = Math.Max(ct, t);
-    if (top <= 0f)
-      return true;
+    float low = Math.Min(ct, t);
+    if (low <= 0f)
+      return false;
 
-    return Math.Abs(ct - t) / top * 100f <= Config.ShuffleBalanceTolerance;
+    return Math.Abs(ct - t) / low <= Config.ShuffleToleranceRatio;
   }
 
   private int Plan(List<CCSPlayerController> group, CsTeam team)
@@ -738,17 +785,21 @@ public class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
   private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
   {
-    if (!Config.DisableChangeTeam)
-      return HookResult.Continue;
+    var joined = @event.Userid;
+    if (joined != null && joined.IsValid)
+      LoadStats(joined);
 
-    int userId = Util.UserId(@event.Userid);
+    int userId = Util.UserId(joined);
     if (userId < 0)
       return HookResult.Continue;
 
     AddTimer(1.0f, () =>
     {
       var player = Util.FromUserId(userId);
-      if (player == null || player.IsBot || player.IsHLTV || IsWarmup() || BelowMinPlayers())
+      if (player == null || player.IsBot || player.IsHLTV)
+        return;
+
+      if (!Config.DisableChangeTeam || IsWarmup() || BelowMinPlayers())
         return;
 
       if (player.Team == CsTeam.Terrorist || player.Team == CsTeam.CounterTerrorist)

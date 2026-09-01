@@ -6,14 +6,16 @@
   "teamshuffle.queued": "Teams will be shuffled at the end of the round.",
   "teamshuffle.shuffled": "Teams shuffled ({0}), {1} players will switch at the start of the next round.",
   "teamshuffle.equalized": "Team counts evened out, {0} players switched.",
-  "teamshuffle.power": "Power: CT {0} - T {1}",
-  "teamshuffle.power_command": "Power: CT {0} ({1} players) - T {2} ({3} players)",
+  "teamshuffle.debug_power": "Power: CT {0} ({1} players) - T {2} ({3} players), gap {4}%",
+  "teamshuffle.debug_console": "The player breakdown has been written to the console.",
+  "teamshuffle.debug_player": "{0} | {1} | score {2} | {3} rounds | {4} kills | {5} deaths | {6} damage",
   "teamshuffle.moved": "You have been moved to {0}.",
   "teamshuffle.auto_assigned": "You have been placed in {0}.",
   "teamshuffle.already_balanced": "Teams are already balanced.",
   "teamshuffle.reason_manual": "manual",
   "teamshuffle.reason_streak": "{0} round win streak",
   "teamshuffle.reason_interval": "{0} rounds passed",
+  "teamshuffle.reason_points": "{0}% score gap",
   "teamshuffle.team_ct": "CT",
   "teamshuffle.team_t": "T"
 }
