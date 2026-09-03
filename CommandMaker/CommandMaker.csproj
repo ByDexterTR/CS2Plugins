@@ -4,12 +4,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.371" />
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.373" />
   </ItemGroup>
 
 
@@ -18,6 +19,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
+    <Compile Include="..\.Shared\NativeTrace.cs" Link=".Shared\NativeTrace.cs" />
+    <Compile Include="..\.Shared\ScreenFade.cs" Link=".Shared\ScreenFade.cs" />
+    <Compile Include="..\.Shared\SoundUtil.cs" Link=".Shared\SoundUtil.cs" />
+    <Compile Include="..\.Shared\WasdMenu.cs" Link=".Shared\WasdMenu.cs" />
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
     <Compile Include="..\.Shared\HudGuard.cs" Link=".Shared\HudGuard.cs" />
     <Using Include="ByDexter.Shared" />
