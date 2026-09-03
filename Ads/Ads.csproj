@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.371" ExcludeAssets="runtime" />
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.373" ExcludeAssets="runtime" />
     <PackageReference Include="MySqlConnector" Version="2.6.1" />
   </ItemGroup>
 
