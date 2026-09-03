@@ -61,6 +61,7 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
 | `storage` | string | `"json"` | `"json"` veya `"mysql"` |
 | `menu_type` | string | `"hud"` | `"hud"`, `"chat"` veya `"wasd"` |
 | `admin_flag` | string | `"@css/root"` | Yönetim komutları için gereken yetki |
+| `perf_log` | bool | `false` | Her modülün maliyetini `logs/perf_<tarih>.txt` dosyasına yazar; 60 saniyede bir özet tablo ve her sıçrama için bir satır. Performans sorunu aramıyorsanız kapalı bırakın |
 | `commands` | nesne | — | Komut adları (virgülle çoklu takma ad) |
 | `buy_commands` | nesne | — | BuyTeamWeapon komut adları; silah anahtarı → virgülle komutlar (örn. `"ak47": "css_ak47,css_ak"`) |
 | `module_commands` | nesne | — | Modüle doğrudan komut bağlar (bind edilebilir). Toggle modüller komutla anında açılıp kapanır, seçmeli/kategorili modüllerin menüsü açılır. İstemediğin satırı sil, yenisini `"ModulAdi": "css_komut,css_takma"` biçiminde ekle; boş bırakılırsa hiç komut eklenmez |
@@ -73,6 +74,7 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
   "storage": "json",
   "menu_type": "hud",
   "admin_flag": "@css/root",
+  "perf_log": false,
   "commands": {
     "menu": "css_vip,css_vipmenu",
     "list_online": "css_vips,css_onlinevip",
@@ -156,6 +158,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | --- | --- | --- |
 | `AdminFlags` | VIP'e otomatik yetki bayrağı verir | `["@css/reservation", "@css/vip"]` |
 | `AdminGroups` | VIP'e admin grubu üyeliği verir (SimpleAdmin vb. `#Grup` adları) | `["#VIP"]` |
+| `Adrenaline` | Her öldürme VIP'i hızlandırır; `spk` öldürme başına eklenen hız, `maxspk` üst sınır, `duration` son öldürmeden sonra bonusun kaç saniye süreceği (0 = ölene kadar) | `{ "spk": 0.05, "maxspk": 0.5, "duration": 0 }` |
 | `AntiFlash` | Flashbang'i engeller | `{ "self": true, "enemy": true, "teammates": true, "limit": 0 }` |
 | `AntiHS` | Headshot hasarını azaltır | `{ "percent": 0, "only_with_weapon": "", "limit": 0 }` |
 | `Armor` | Spawn'da zırh (+kask); satın alma menüsünden zırh alınca değer 100'e düşmez | `{ "value": 100, "helmet": true }` |
@@ -212,6 +215,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `KillEffect` | Öldürünce partikül efekti; normal, kafadan ve son öldürme için ayrı kategoriler. Seçim yoksa bir üst kategoriye düşer | `[{ "name": "Simsek", "particle": "...", "time": 3, "hs": false, "lastkill": false }]` |
 | `KillHeal` | Öldürme şekline göre can yeniler: `distance` içinde `hp` (veya `money`) anahtarı | `{ "headshot": 15, "noscope": 10, "inair": 20, "blind": 5, "distance": { "unit": 2048, "hp": 10 }, "weapon_knife": 50 }` |
 | `KillIcon` | VIP'in öldürmelerinde killfeed ikonunu değiştirir. Her anahtar bir ikon adı alır (`spray0`, `knifegg`, `prop_exploding_barrel`, herhangi bir silah adı); boş bırakılırsa normal ikon kalır. Şu sırada ilk uyan kazanır: `squadwipe`, `dominated`, `jumpkill`, `blindkill`, `assistflash`, `noscope`, `throughsmoke`, `penetrated`, `headshot`, sonra `weapons` listesi | `{ "headshot": "", "noscope": "", "throughsmoke": "", "blindkill": "", "assistflash": "", "jumpkill": "", "penetrated": "", "dominated": "", "squadwipe": "", "weapons": { "weapon_glock": "spray0" } }` |
+| `Knockback` | Ateş etmek VIP'i geriye iter; havadayken aşağı sıkınca daha uzağa taşır. `force` atış başına itme gücü, `max_speed` itmeden sonraki hız sınırı (0 = sınırsız), `only_in_air` sadece havadayken çalışsın, `only_with_weapon` belirli silahlarla sınırlar. Yalnız mermili silahlar iter; bıçak ve el bombaları itmez | `{ "force": 120, "max_speed": 1200, "only_in_air": true, "only_with_weapon": "" }` |
 | `KillScreen` | Öldürünce ekran seçilen renge boyanır (FFA kapalıysa takım arkadaşında çalışmaz); `duration` rengin kalma süresi, `fade` kaybolma süresi, `alpha` yoğunluğu | `{ "duration": 0.05, "fade": 0.35, "alpha": 90, "colors": ["Rastgele random", "Kirmizi #FF0000"] }` |
 | `Mole` | Hasar verilen oyuncu `time` saniye `unit` birim yere gömülür ve hareket edemez; `limit` raunt başına kaç gömme (0=sınırsız) | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
 | `OneShot` | Belirli silahlarla tek atış | `{ "weapons": "weapon_awp,weapon_ssg08", "limit": 0 }` |
@@ -234,6 +238,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `Silent` | Ayak seslerini diğer oyunculardan gizler | `{ "only_with_weapon": "" }` |
 | `SmokeColor` | Renkli sis bombası; sis rengini başka eklenti ayarladıysa dokunmaz | `["Beyaz #FFFFFF", "Kirmizi #FF0000"]` |
 | `SmokeEffect` | Sise özellik verir: zehirli, iyileştiren, yavaşlatan veya WallHack sisi. `time` sisin etkisinin kaç sn süreceği (0 = sis dağılana kadar), `radius` etki alanı, `limit` raunt başına hak | `{ "poison": { "minhp": 10, "damage": 2, "time": 20, "tick": 0.5, "radius": 180, "smokecolor": [255, 0, 255], "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "heal": { "heal": 2, "time": 20, "tick": 0.5, "radius": 180, "smokecolor": [0, 255, 0], "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true, "limit": 0 }, "slow": { "percent": 30, "time": 20, "minspeed": 100, "radius": 180, "smokecolor": [0, 0, 255], "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false, "limit": 0 }, "wallhack": { "time": 20, "tick": 0.25, "radius": 180, "smokecolor": [97, 45, 83], "color": "#612D53", "see_teammates": false, "limit": 0 } }` |
+| `Soul` | Ölen VIP geride bir ruh bırakır. Takım arkadaşı `E` tuşunu basılı tutarsa onu orada canlandırır; rakip basılı tutarsa ruhu çalar ve ruhu çalınan oyuncu o raunt bir daha canlanamaz. `respawn_time` canlandırma için basılı tutma süresi, `steal_time` çalma süresi (daha uzun, çalmak risk olsun), `steal` rakiplerin çalıp çalamayacağı, `limit` raunt başına kaç canlanma (0=sınırsız), `radius` tutan oyuncunun ne kadar yaklaşması gerektiği (ruhun havadaki noktasından değil, cesetten ölçülür), `duration` ruhun kaç saniye kalacağı (0 = raunt sonuna kadar; `steal_time`'dan uzun tutun yoksa çalma hiç tamamlanamaz), `size` ve `speed` ruhun görünümü, `height` cesedin ne kadar üstünde duracağı (sadece görsel), `color_t` / `color_ct` takım renkleri, `color_steal` rakip çalarken ruhun rengi | `{ "respawn_time": 5, "steal_time": 10, "steal": true, "limit": 1, "radius": 100, "duration": 25, "size": 22, "speed": 45, "height": 45, "color_t": "#FF8000", "color_ct": "#00A0FF", "color_steal": "#FF0033" }` |
 | `SpawnProtection` | Spawn koruması; `time` saniye, `limit` raunt başına kaç kez (0=sınırsız) | `{ "time": 4, "limit": 0 }` |
 | `Spy` | Rastgele bir düşmanın modelini giyer | `true` |
 | `Tag` | Sohbet etiketi/renkleri + skorbord (TAB) etiketi (`tab` boşsa TAB'a dokunulmaz) | `{ "tag": "{Gold}[{Orchid}PLUS{Gold}]", "name_color": "gold", "chat_color": "default", "tab": "[PLUS]" }` |
@@ -243,7 +248,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `Vampire` | Verilen hasar kadar can çalma | `{ "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120, "ignore_teammates": true }` |
 | `VIPChat` | VIP'lere özel sohbet kanalı | `true` |
 | `WeaponAmmo` | Silah bazlı özel şarjör/yedek mermi (çoğu silahta reserve = şarjör adedi; nova/sawedoff/xm1014'te mermi adedi). Silahı silip yeniden veren eklentilerle (WeaponPaints `css_wp`) uyumlu, mermi korunur | `[{ "weapon_name": "weapon_ak47", "ammo": 30, "reserve": 3 }]` |
-| `WeaponGlow` | En az bir VIP özelliği açtığı sürece yerdeki silahlar parlar. `visible: "all"` parlamayı silahın kendisine verir, tam oturur ama herkes görür; `visible: "vip"` ayrı bir parlama kopyası yaratır, sadece VIP'ler görür ama bazı modellerde (örneğin çift beretta) hafif kayık durur. `range` parlamanın göründüğü mesafe, `ignore` parlamayacak silahların listesi | `{ "color": "#FFFFFF", "range": 5000, "visible": "all", "ignore": ["weapon_c4"] }` |
+| `WeaponGlow` | Yerdeki silahlar parlar; parlamayı yalnız özelliği açan VIP'ler görür. Bazı modellerde (örneğin çift beretta) parlama hafif kayık durabilir. `range` parlamanın göründüğü mesafe, `ignore` parlamayacak silahların listesi | `{ "color": "#FFFFFF", "range": 5000, "ignore": ["weapon_c4"] }` |
 | `ZeusCooldown` | Zeus'un yeniden şarj süresini kısaltır (`limit`: raunt başına hak, 0 = sınırsız) | `{ "cooldown": 5, "limit": 0 }` |
 
 ## Kullanım Örnekleri

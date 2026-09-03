@@ -13,6 +13,9 @@ public class VipConfig
     [JsonPropertyName("admin_flag")]
     public string AdminFlag { get; set; } = "@css/root";
 
+    [JsonPropertyName("perf_log")]
+    public bool PerfLog { get; set; } = false;
+
     [JsonPropertyName("commands")]
     public CommandNames Commands { get; set; } = new();
 

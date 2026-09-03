@@ -11,7 +11,6 @@ public class WeaponGlow : VipModule
     {
         public string Color { get; set; } = "#FFFFFF";
         public int Range { get; set; } = 5000;
-        public string Visible { get; set; } = "all";
         public List<string> Ignore { get; set; } = new() { "weapon_c4" };
     }
 
@@ -25,12 +24,13 @@ public class WeaponGlow : VipModule
     private readonly HashSet<uint> _carried = new();
     private readonly HashSet<uint> _failed = new();
     private readonly List<uint> _stale = new();
+    private Cfg _cfg = DefaultCfg;
     private int _nextScan;
 
     public override string Name => "WeaponGlow";
     public override string DisplayName => Core.Localizer["vip.module.weaponglow"];
 
-    private Cfg Settings() => Core.GetAllGroupValues<Cfg>(Name).FirstOrDefault() ?? DefaultCfg;
+    private void RefreshCfg() => _cfg = Core.GetAllGroupValues<Cfg>(Name).FirstOrDefault() ?? DefaultCfg;
 
     public override void OnLoad()
     {
@@ -41,9 +41,12 @@ public class WeaponGlow : VipModule
         Core.RegisterEventHandler<EventRoundStart>((_, _) =>
         {
             Clear();
+            RefreshCfg();
             _nextScan = 0;
             return HookResult.Continue;
         });
+
+        RefreshCfg();
     }
 
     public override void OnUnload() => Clear();
@@ -102,13 +105,14 @@ public class WeaponGlow : VipModule
         if (tick >= _nextScan)
         {
             _nextScan = tick + RescanTicks;
+            RefreshCfg();
             Rescan();
         }
 
         if (_weapons.Count == 0)
             return;
 
-        var cfg = Settings();
+        var cfg = _cfg;
         _stale.Clear();
         CollectCarried();
 
@@ -274,7 +278,7 @@ public class WeaponGlow : VipModule
 
     private void OnCheckTransmit(CCheckTransmitInfoList infoList)
     {
-        if (_glows.Count == 0 || !Settings().Visible.Equals("vip", StringComparison.OrdinalIgnoreCase))
+        if (_glows.Count == 0)
             return;
 
         foreach (var (info, viewer) in infoList)

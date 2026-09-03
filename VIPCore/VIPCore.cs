@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.1.8";
+    public override string ModuleVersion => "1.1.9";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -146,6 +146,7 @@ public partial class VIPCore : BasePlugin
         InstallWasdGuard();
         RollRoundColors();
         LoadConfig();
+        PerfLog.Install(ModuleDirectory, Config.PerfLog, () => Players.Count == 0);
         DiscoverModules();
         InitStorage();
         ReloadData();
@@ -174,6 +175,7 @@ public partial class VIPCore : BasePlugin
         });
         HookMapStart(_ => PurgeExpired());
         AddTimer(60f, PurgeExpired, CounterStrikeSharp.API.Modules.Timers.TimerFlags.REPEAT);
+        AddTimer(60f, PerfLog.Report, CounterStrikeSharp.API.Modules.Timers.TimerFlags.REPEAT);
         HookPrecache(m =>
         {
             if (IsModuleEnabled("PlayerTrail") || IsModuleEnabled("GrenadeTrail") || IsModuleEnabled("BulletTrail"))
@@ -188,6 +190,10 @@ public partial class VIPCore : BasePlugin
     public override void Unload(bool hotReload)
     {
         FlushSettings(sync: true);
+
+        PerfLog.Report();
+        PerfLog.Info("PerfLog closed");
+        PerfLog.Close();
 
         foreach (var module in _modules)
             if (_loaded.Contains(module.Name))

@@ -61,6 +61,7 @@ Every command name in the table above can be renamed from `settings.json`; the k
 | `storage` | string | `"json"` | `"json"` or `"mysql"` |
 | `menu_type` | string | `"hud"` | `"hud"`, `"chat"` or `"wasd"` |
 | `admin_flag` | string | `"@css/root"` | Permission required for the admin commands |
+| `perf_log` | bool | `false` | Writes the cost of every module to `logs/perf_<date>.txt`; a summary table every 60 seconds plus a line for every spike. Keep it off unless you are chasing a performance problem |
 | `commands` | object | — | Command names (multiple aliases separated with commas) |
 | `buy_commands` | object | — | BuyTeamWeapon command names; weapon key → comma separated commands (e.g. `"ak47": "css_ak47,css_ak"`) |
 | `module_commands` | object | — | Binds a command directly to a module (can be bound). Toggle modules are turned on/off instantly by the command, selection/category modules open their menu. Delete a line you do not want, add a new one as `"ModuleName": "css_command,css_alias"`; if left empty no command is added |
@@ -73,6 +74,7 @@ Every command name in the table above can be renamed from `settings.json`; the k
   "storage": "json",
   "menu_type": "hud",
   "admin_flag": "@css/root",
+  "perf_log": false,
   "commands": {
     "menu": "css_vip,css_vipmenu",
     "list_online": "css_vips,css_onlinevip",
@@ -156,6 +158,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | --- | --- | --- |
 | `AdminFlags` | Gives the VIP permission flags automatically | `["@css/reservation", "@css/vip"]` |
 | `AdminGroups` | Gives the VIP admin group membership (`#Group` names from SimpleAdmin etc.) | `["#VIP"]` |
+| `Adrenaline` | Every kill makes the VIP faster; `spk` is the speed added per kill, `maxspk` the cap, `duration` how many seconds the bonus lasts after the last kill (0 = until death) | `{ "spk": 0.05, "maxspk": 0.5, "duration": 0 }` |
 | `AntiFlash` | Blocks flashbangs | `{ "self": true, "enemy": true, "teammates": true, "limit": 0 }` |
 | `AntiHS` | Reduces headshot damage | `{ "percent": 0, "only_with_weapon": "", "limit": 0 }` |
 | `Armor` | Armor (+helmet) on spawn; buying armor from the buy menu does not lower it back to 100 | `{ "value": 100, "helmet": true }` |
@@ -212,6 +215,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `KillEffect` | Particle effect on a kill; separate categories for normal, headshot and last kill. With nothing picked it falls back to the previous category | `[{ "name": "Simsek", "particle": "...", "time": 3, "hs": false, "lastkill": false }]` |
 | `KillHeal` | Restores health by kill type: an `hp` (or `money`) key inside `distance` | `{ "headshot": 15, "noscope": 10, "inair": 20, "blind": 5, "distance": { "unit": 2048, "hp": 10 }, "weapon_knife": 50 }` |
 | `KillIcon` | Replaces the killfeed icon on the VIP's kills. Every key takes an icon name (`spray0`, `knifegg`, `prop_exploding_barrel`, any weapon name); leave it empty to keep the normal icon. The first match wins in this order: `squadwipe`, `dominated`, `jumpkill`, `blindkill`, `assistflash`, `noscope`, `throughsmoke`, `penetrated`, `headshot`, then the `weapons` list | `{ "headshot": "", "noscope": "", "throughsmoke": "", "blindkill": "", "assistflash": "", "jumpkill": "", "penetrated": "", "dominated": "", "squadwipe": "", "weapons": { "weapon_glock": "spray0" } }` |
+| `Knockback` | Shooting pushes the VIP backwards, so firing downwards in mid air carries them further. `force` is the push per shot, `max_speed` the speed cap after the push (0 = no cap), `only_in_air` limits it to jumps, `only_with_weapon` limits it to certain weapons. Only bullet weapons push; knives and grenades never do | `{ "force": 120, "max_speed": 1200, "only_in_air": true, "only_with_weapon": "" }` |
 | `KillScreen` | Screen flashes in the chosen colour on a kill (does not work on a teammate while FFA is off); `duration` is how long the colour stays, `fade` how long it takes to clear, `alpha` how strong it is | `{ "duration": 0.05, "fade": 0.35, "alpha": 90, "colors": ["Random random", "Red #FF0000"] }` |
 | `Mole` | The damaged player is buried `unit` units into the ground for `time` seconds and cannot move; `limit` is how many burials per round (0 = unlimited) | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
 | `OneShot` | One shot kill with specific weapons | `{ "weapons": "weapon_awp,weapon_ssg08", "limit": 0 }` |
@@ -234,6 +238,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Silent` | Hides footsteps from other players | `{ "only_with_weapon": "" }` |
 | `SmokeColor` | Colored smoke grenade; left alone if another plugin already set the smoke color | `["Beyaz #FFFFFF", "Kirmizi #FF0000"]` |
 | `SmokeEffect` | Gives smoke a feature: poison, healing, slowing or wallhack smoke. `time` is how long the effect lasts (0 = until the smoke fades), `radius` the area, `limit` the per-round budget | `{ "poison": { "minhp": 10, "damage": 2, "time": 20, "tick": 0.5, "radius": 180, "smokecolor": [255, 0, 255], "ignore_teammates": true, "ignore_self": true, "limit": 0 }, "heal": { "heal": 2, "time": 20, "tick": 0.5, "radius": 180, "smokecolor": [0, 255, 0], "ignore_teammates": false, "ignore_self": false, "ignore_enemy": true, "limit": 0 }, "slow": { "percent": 30, "time": 20, "minspeed": 100, "radius": 180, "smokecolor": [0, 0, 255], "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false, "limit": 0 }, "wallhack": { "time": 20, "tick": 0.25, "radius": 180, "smokecolor": [97, 45, 83], "color": "#612D53", "see_teammates": false, "limit": 0 } }` |
+| `Soul` | A dead VIP leaves a soul behind. A teammate holding `E` on it revives them at that spot; an enemy holding `E` steals the soul instead, and a stolen soul means no more revives for that player until the round ends. `respawn_time` is the hold time for a revive, `steal_time` the hold time for a steal (longer, so stealing is a real risk), `steal` whether enemies may steal at all, `limit` how many revives per round (0 = unlimited), `radius` how close the holder must be (measured from the body, not from the floating soul), `duration` how long the soul stays (0 = until the round ends; keep it longer than `steal_time` or stealing can never finish), `size` and `speed` the look of the soul, `height` how high above the body it floats (visual only), `color_t` / `color_ct` the team colors, `color_steal` the color while an enemy is stealing | `{ "respawn_time": 5, "steal_time": 10, "steal": true, "limit": 1, "radius": 100, "duration": 25, "size": 22, "speed": 45, "height": 45, "color_t": "#FF8000", "color_ct": "#00A0FF", "color_steal": "#FF0033" }` |
 | `SpawnProtection` | Spawn protection; `time` seconds, `limit` how many times per round (0 = unlimited) | `{ "time": 4, "limit": 0 }` |
 | `Spy` | Wears the model of a random enemy | `true` |
 | `Tag` | Chat tag/colors + scoreboard (TAB) tag (if `tab` is empty TAB is left alone) | `{ "tag": "{Gold}[{Orchid}PLUS{Gold}]", "name_color": "gold", "chat_color": "default", "tab": "[PLUS]" }` |
@@ -243,7 +248,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Vampire` | Steals health equal to the damage dealt | `{ "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120, "ignore_teammates": true }` |
 | `VIPChat` | Private chat channel for VIPs | `true` |
 | `WeaponAmmo` | Per-weapon custom magazine/reserve ammo (on most weapons reserve = number of magazines; on nova/sawedoff/xm1014 it is shells). Works with plugins that destroy and re-give weapons (WeaponPaints `css_wp`), the ammo is kept | `[{ "weapon_name": "weapon_ak47", "ammo": 30, "reserve": 3 }]` |
-| `WeaponGlow` | Weapons lying on the ground glow while at least one VIP has the feature on. `visible: "all"` glows the weapon itself so it lines up perfectly but everyone sees it; `visible: "vip"` builds a separate glow copy that only VIPs see, which can sit slightly off on some models (dual berettas for example). `range` is how far the glow is visible, `ignore` lists the weapons that stay unlit | `{ "color": "#FFFFFF", "range": 5000, "visible": "all", "ignore": ["weapon_c4"] }` |
+| `WeaponGlow` | Weapons lying on the ground glow, and only the VIPs who turned the feature on see them. On some models the glow can sit slightly off (dual berettas for example). `range` is how far the glow is visible, `ignore` lists the weapons that stay unlit | `{ "color": "#FFFFFF", "range": 5000, "ignore": ["weapon_c4"] }` |
 | `ZeusCooldown` | Shortens the Zeus recharge time (`limit`: budget per round, 0 = unlimited) | `{ "cooldown": 5, "limit": 0 }` |
 
 ## Usage Examples

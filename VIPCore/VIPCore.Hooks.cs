@@ -96,6 +96,7 @@ public partial class VIPCore
     {
         var hooks = _tickHooks;
         int tick = Server.TickCount;
+        long total = PerfLog.Start();
 
         for (int i = 0; i < hooks.Length; i++)
         {
@@ -103,9 +104,13 @@ public partial class VIPCore
             if (hook.Every > 1 && tick % hook.Every != hook.Phase)
                 continue;
 
+            long perf = PerfLog.Start();
             try { hook.Handler(); }
             catch (Exception ex) { HookFault(hook.Handler, ex); }
+            PerfLog.Sample(perf, "Tick", hook.Handler);
         }
+
+        PerfLog.Sample(total, "Tick (total)");
     }
 
     private HookResult DispatchDamage(CBaseEntity entity, CTakeDamageInfo info)
@@ -115,6 +120,7 @@ public partial class VIPCore
 
         for (int i = 0; i < hooks.Length; i++)
         {
+            long perf = PerfLog.Start();
             try
             {
                 var single = hooks[i](entity, info);
@@ -122,6 +128,7 @@ public partial class VIPCore
                     result = single;
             }
             catch (Exception ex) { HookFault(hooks[i], ex); }
+            PerfLog.Sample(perf, "Damage", hooks[i]);
         }
 
         return result;
@@ -130,11 +137,16 @@ public partial class VIPCore
     private void DispatchTransmit([CastFrom(typeof(nint))] CCheckTransmitInfoList infoList)
     {
         var hooks = _transmitHooks;
+        long all = PerfLog.Start();
         for (int i = 0; i < hooks.Length; i++)
         {
+            long perf = PerfLog.Start();
             try { hooks[i](infoList); }
             catch (Exception ex) { HookFault(hooks[i], ex); }
+            PerfLog.Sample(perf, "Transmit", hooks[i]);
         }
+
+        PerfLog.Sample(all, "Transmit (total)");
     }
 
     private void DispatchSpawn(CEntityInstance entity)
@@ -142,8 +154,10 @@ public partial class VIPCore
         var hooks = _spawnHooks;
         for (int i = 0; i < hooks.Length; i++)
         {
+            long perf = PerfLog.Start();
             try { hooks[i](entity); }
             catch (Exception ex) { HookFault(hooks[i], ex); }
+            PerfLog.Sample(perf, "Spawn", hooks[i]);
         }
     }
 
@@ -152,8 +166,10 @@ public partial class VIPCore
         var hooks = _deleteHooks;
         for (int i = 0; i < hooks.Length; i++)
         {
+            long perf = PerfLog.Start();
             try { hooks[i](entity); }
             catch (Exception ex) { HookFault(hooks[i], ex); }
+            PerfLog.Sample(perf, "Delete", hooks[i]);
         }
     }
 
@@ -162,8 +178,10 @@ public partial class VIPCore
         var hooks = _mapStartHooks;
         for (int i = 0; i < hooks.Length; i++)
         {
+            long perf = PerfLog.Start();
             try { hooks[i](mapName); }
             catch (Exception ex) { HookFault(hooks[i], ex); }
+            PerfLog.Sample(perf, "MapStart", hooks[i]);
         }
     }
 
@@ -172,8 +190,10 @@ public partial class VIPCore
         var hooks = _mapEndHooks;
         for (int i = 0; i < hooks.Length; i++)
         {
+            long perf = PerfLog.Start();
             try { hooks[i](); }
             catch (Exception ex) { HookFault(hooks[i], ex); }
+            PerfLog.Sample(perf, "MapEnd", hooks[i]);
         }
     }
 }

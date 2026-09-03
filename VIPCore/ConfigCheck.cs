@@ -30,7 +30,8 @@ internal static class ConfigCheck
         ["Respawn.timer"] = "time",
         ["HealthRegen.max_hp"] = "",
         ["TeamHeal.maxhp"] = "",
-        ["SmokeEffect.heal.maxhp"] = ""
+        ["SmokeEffect.heal.maxhp"] = "",
+        ["WeaponGlow.visible"] = ""
     };
 
     private sealed class Node

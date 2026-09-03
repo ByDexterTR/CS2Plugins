@@ -124,6 +124,11 @@ public partial class VIPCore
     "AdminGroups": [
       "#VIP"
     ],
+    "Adrenaline": {
+      "spk": 0.05,
+      "maxspk": 0.5,
+      "duration": 0
+    },
     "AntiFlash": {
       "self": true,
       "enemy": true,
@@ -924,6 +929,12 @@ public partial class VIPCore
         "weapon_glock": "spray0"
       }
     },
+    "Knockback": {
+      "force": 120,
+      "max_speed": 1200,
+      "only_in_air": true,
+      "only_with_weapon": ""
+    },
     "KillScreen": {
       "duration": 0.05,
       "fade": 0.35,
@@ -1251,6 +1262,20 @@ public partial class VIPCore
         "limit": 0
       }
     },
+    "Soul": {
+      "respawn_time": 5,
+      "steal_time": 10,
+      "steal": true,
+      "limit": 1,
+      "radius": 100,
+      "duration": 25,
+      "size": 22,
+      "speed": 45,
+      "height": 45,
+      "color_t": "#FF8000",
+      "color_ct": "#00A0FF",
+      "color_steal": "#FF0033"
+    },
     "SpawnProtection": {
       "time": 4,
       "limit": 0
@@ -1293,7 +1318,6 @@ public partial class VIPCore
     "WeaponGlow": {
       "color": "#FFFFFF",
       "range": 5000,
-      "visible": "all",
       "ignore": [
         "weapon_c4"
       ]
