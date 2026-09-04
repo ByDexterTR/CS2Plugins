@@ -59,6 +59,7 @@ csgo/addons/counterstrikesharp/configs/plugins/TeamShuffle/TeamShuffle.json
 | `disable_select_spec` | bool | `true` | Oyuncular izleyiciye geçemez |
 | `shuffle_spec_immune_flag` | string | `"@css/ban"` | Bu flaglere sahip oyuncular izleyiciye geçebilir; boş bırakılırsa herkes geçebilir |
 | `shuffle_min_players` | int | `4` | Altındayken eklenti hiçbir şeye karışmaz (en az 2) |
+| `shuffle_priority` | int | `1` | Tek sayıda oyuncu varken +1 üstünlüğün verileceği taraf: `0` kapalı, `1` skorda geride olan takım, `2` T, `3` CT. Karıştırmada, otomatik eşitlemede ve sunucuya katılan oyuncuyu yerleştirirken kullanılır |
 | `shuffle_limitteams` | int | `2` | Takımlar arası oyuncu farkı bu sayıya ulaşınca eşitlenir (en az 2) |
 | `shuffle_damage_rating` | int | `1` | Raunt başı ortalama hasarın puan çarpanı |
 | `shuffle_kill_rating` | int | `50` | Raunt başı ortalama killin puan çarpanı |
@@ -84,7 +85,7 @@ puan  = (raunt × temel + 5 × sunucuOrtalaması) / (raunt + 5)
 
 Ağırlıklı clutch: 1v2 = 1, 1v3 = 2, 1v4 = 3, 1v5 = 5. Kafa isabet oranı `kafa / (toplam isabet + 20)` ile hesaplanır, birkaç isabetle zirveye çıkılmaz. Son satırdaki harmanlama az raunt oynamış oyuncuyu sunucu ortalamasına yaklaştırır.
 
-Oyuncular güçlüden zayıfa sıralanır ve teker teker o an puanı düşük olan takıma verilir, oyuncu sayıları eşit tutulur. Zayıf takıma göre fark `shuffle_tolerance_ratio` altındaysa kimse oynatılmaz.
+Oyuncular güçlüden zayıfa sıralanır ve teker teker o an puanı düşük olan takıma verilir, oyuncu sayıları eşit tutulur. Zayıf takıma göre fark `shuffle_tolerance_ratio` altındaysa kimse oynatılmaz. Oyuncu sayısı tekse fazla oyuncu `shuffle_priority` ile seçilen tarafa verilir.
 
 ## Kullanım Örneği
 

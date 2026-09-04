@@ -59,6 +59,7 @@ csgo/addons/counterstrikesharp/configs/plugins/TeamShuffle/TeamShuffle.json
 | `disable_select_spec` | bool | `true` | Players cannot go to spectator |
 | `shuffle_spec_immune_flag` | string | `"@css/ban"` | Players with these flags can still go to spectator; left empty, everyone can |
 | `shuffle_min_players` | int | `4` | Below this the plugin does not interfere at all (at least 2) |
+| `shuffle_priority` | int | `1` | Side that gets the extra player when the player count is odd: `0` off, `1` the team behind on score, `2` T, `3` CT. Used by the shuffle, by the automatic evening out and when a joining player is placed |
 | `shuffle_limitteams` | int | `2` | The counts are evened out when the difference reaches this number (at least 2) |
 | `shuffle_damage_rating` | int | `1` | Score multiplier of the average damage per round |
 | `shuffle_kill_rating` | int | `50` | Score multiplier of the average kills per round |
@@ -84,7 +85,7 @@ score = (rounds × base + 5 × server average) / (rounds + 5)
 
 Weighted clutches: 1v2 = 1, 1v3 = 2, 1v4 = 3, 1v5 = 5. The head hit ratio is `head / (total hits + 20)`, so a couple of lucky hits do not top the chart. The last line pulls players with few rounds towards the server average.
 
-Players are sorted from strongest to weakest and handed out one by one to whichever team has the lower score at that moment, while the counts are kept equal. If the gap over the weaker team stays below `shuffle_tolerance_ratio`, nobody is moved.
+Players are sorted from strongest to weakest and handed out one by one to whichever team has the lower score at that moment, while the counts are kept equal. If the gap over the weaker team stays below `shuffle_tolerance_ratio`, nobody is moved. When the player count is odd, the extra player goes to the side `shuffle_priority` picks.
 
 ## Usage Example
 

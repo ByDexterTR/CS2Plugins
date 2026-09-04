@@ -52,6 +52,9 @@ public class TeamShuffleConfig : BasePluginConfig
   [JsonPropertyName("shuffle_min_players")]
   public int ShuffleMinPlayers { get; set; } = 4;
 
+  [JsonPropertyName("shuffle_priority")]
+  public int ShufflePriority { get; set; } = 1;
+
   [JsonPropertyName("shuffle_limitteams")]
   public int ShuffleLimitTeams { get; set; } = 2;
 
@@ -80,7 +83,7 @@ public class TeamShuffleConfig : BasePluginConfig
 public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 {
   public override string ModuleName => "TeamShuffle";
-  public override string ModuleVersion => "1.0.3";
+  public override string ModuleVersion => "1.0.4";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -110,6 +113,7 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     config.ShuffleIntervalRound = Math.Max(1, config.ShuffleIntervalRound);
     config.ShuffleMinPlayers = Math.Max(2, config.ShuffleMinPlayers);
     config.ShuffleLimitTeams = Math.Max(2, config.ShuffleLimitTeams);
+    config.ShufflePriority = Math.Clamp(config.ShufflePriority, 0, 3);
     config.ShuffleDamageRating = Math.Max(1, config.ShuffleDamageRating);
     config.ShuffleKillRating = Math.Max(1, config.ShuffleKillRating);
     config.ShuffleMvpRating = Math.Max(1, config.ShuffleMvpRating);
@@ -223,6 +227,44 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     float t = entries.Where(e => e.Player.Team == CsTeam.Terrorist).Sum(e => e.Rating);
 
     return (ct, t);
+  }
+
+  private static (int Ct, int T) TeamScores()
+  {
+    int ct = 0;
+    int t = 0;
+
+    foreach (var team in Utilities.FindAllEntitiesByDesignerName<CCSTeam>("cs_team_manager"))
+    {
+      if (team.TeamNum == (int)CsTeam.CounterTerrorist)
+        ct = team.Score;
+      else if (team.TeamNum == (int)CsTeam.Terrorist)
+        t = team.Score;
+    }
+
+    return (ct, t);
+  }
+
+  private CsTeam? PriorityTeam()
+  {
+    switch (Config.ShufflePriority)
+    {
+      case 2:
+        return CsTeam.Terrorist;
+
+      case 3:
+        return CsTeam.CounterTerrorist;
+
+      case 1:
+        var (ct, t) = TeamScores();
+        if (ct == t)
+          return null;
+
+        return ct < t ? CsTeam.CounterTerrorist : CsTeam.Terrorist;
+
+      default:
+        return null;
+    }
   }
 
   private bool BelowMinPlayers() =>
@@ -684,7 +726,8 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     int keepA = groupA.Count(p => p.Team == CsTeam.CounterTerrorist) + groupB.Count(p => p.Team == CsTeam.Terrorist);
     int keepB = groupA.Count(p => p.Team == CsTeam.Terrorist) + groupB.Count(p => p.Team == CsTeam.CounterTerrorist);
 
-    var teamA = keepA >= keepB ? CsTeam.CounterTerrorist : CsTeam.Terrorist;
+    var priority = groupA.Count > groupB.Count ? PriorityTeam() : null;
+    var teamA = priority ?? (keepA >= keepB ? CsTeam.CounterTerrorist : CsTeam.Terrorist);
     var teamB = teamA == CsTeam.CounterTerrorist ? CsTeam.Terrorist : CsTeam.CounterTerrorist;
 
     planned.Clear();
@@ -755,7 +798,11 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     float biggerPower = bigger.Sum(e => e.Rating);
     float smallerPower = smaller.Sum(e => e.Rating);
 
-    int moves = (bigger.Count - smaller.Count) / 2;
+    int difference = bigger.Count - smaller.Count;
+    int moves = difference / 2;
+
+    if (difference % 2 == 1 && PriorityTeam() == target)
+      moves++;
     var pool = bigger.ToList();
 
     planned.Clear();
@@ -865,8 +912,12 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
     CsTeam team;
 
+    var priority = PriorityTeam();
+
     if (ctCount != tCount)
       team = ctCount < tCount ? CsTeam.CounterTerrorist : CsTeam.Terrorist;
+    else if (priority != null)
+      team = priority.Value;
     else
     {
       var entries = Rated(others);
