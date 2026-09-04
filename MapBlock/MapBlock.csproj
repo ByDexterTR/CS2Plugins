@@ -6,10 +6,18 @@
     <Nullable>enable</Nullable>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CounterStrikeSharp.API" Version="1.0.373" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
+    <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Compile Include="..\.Shared\NativeTrace.cs" Link=".Shared\NativeTrace.cs" />
+    <Compile Include="..\.Shared\WasdMenu.cs" Link=".Shared\WasdMenu.cs" />
   </ItemGroup>
 
   <ItemGroup>

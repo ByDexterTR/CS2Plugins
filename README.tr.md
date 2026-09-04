@@ -34,7 +34,7 @@ CS2 sunucuları için 45 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 | [JBRace](JBRace/README.tr.md) | Başlangıç/bitiş noktalı yarış etkinliği | Jailbreak | CounterStrikeSharp |
 | [JBTeams](JBTeams/README.tr.md) | Canlı T'leri renkli takımlara böler | Jailbreak | CounterStrikeSharp |
 | [Lazer](Lazer/README.tr.md) | Ölü oyunculara canlıların baktığı yeri lazerle gösterir | Genel | CounterStrikeSharp, gamedata |
-| [MapBlock](MapBlock/README.tr.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır | Genel | CounterStrikeSharp |
+| [MapBlock](MapBlock/README.tr.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır | Genel | CounterStrikeSharp, gamedata |
 | [Meslekmenu](Meslekmenu/README.tr.md) | T'lere raunt başına bir meslek: Doktor, Flash, Bombacı, Rambo, Zeus | Jailbreak | CounterStrikeSharp |
 | [PlayerHourCheck](PlayerHourCheck/README.tr.md) | CS2 oynama saati kontrolü; kademeli kick/ban cezaları | Yönetim | CounterStrikeSharp, MySQL (opsiyonel), kick/ban komutu olan yetkili eklentisi |
 | [PlayerRGB](PlayerRGB/README.tr.md) | Oyuncu modeline RGB (gökkuşağı) efekti | Genel | CounterStrikeSharp |

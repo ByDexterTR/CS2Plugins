@@ -34,7 +34,7 @@
 | [JBRace](JBRace/README.md) | Race event with start and finish points | Jailbreak | CounterStrikeSharp |
 | [JBTeams](JBTeams/README.md) | Splits living Ts into colored teams | Jailbreak | CounterStrikeSharp |
 | [Lazer](Lazer/README.md) | Shows dead players where living players are aiming with a laser | General | CounterStrikeSharp, gamedata |
-| [MapBlock](MapBlock/README.md) | Fences off map areas while the player count is low | General | CounterStrikeSharp |
+| [MapBlock](MapBlock/README.md) | Fences off map areas while the player count is low | General | CounterStrikeSharp, gamedata |
 | [Meslekmenu](Meslekmenu/README.md) | One job per round for Ts: Doctor, Flash, Bomber, Rambo, Zeus | Jailbreak | CounterStrikeSharp |
 | [PlayerHourCheck](PlayerHourCheck/README.md) | CS2 playtime check with tiered kick/ban punishments | Admin | CounterStrikeSharp, MySQL (optional), an admin plugin with kick/ban |
 | [PlayerRGB](PlayerRGB/README.md) | RGB (rainbow) effect on the player model | General | CounterStrikeSharp |

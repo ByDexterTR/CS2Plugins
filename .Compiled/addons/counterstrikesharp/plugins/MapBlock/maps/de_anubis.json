@@ -1,0 +1,119 @@
+[
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_256_capped.vmdl",
+    "Origin": [
+      -1084,
+      -770,
+      64
+    ],
+    "Angles": [
+      0,
+      -45,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_128_capped.vmdl",
+    "Origin": [
+      -916,
+      -597,
+      64
+    ],
+    "Angles": [
+      0,
+      -45,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_256_capped.vmdl",
+    "Origin": [
+      -1084,
+      -770,
+      194
+    ],
+    "Angles": [
+      0,
+      -45,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_128_capped.vmdl",
+    "Origin": [
+      -916,
+      -597,
+      194
+    ],
+    "Angles": [
+      0,
+      -45,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_128_capped.vmdl",
+    "Origin": [
+      -283,
+      1378,
+      57
+    ],
+    "Angles": [
+      0,
+      -90,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_128_capped.vmdl",
+    "Origin": [
+      -528,
+      169,
+      -116
+    ],
+    "Angles": [
+      0,
+      -180,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_256_capped.vmdl",
+    "Origin": [
+      -1340,
+      1739,
+      48
+    ],
+    "Angles": [
+      0,
+      -90,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_256_capped.vmdl",
+    "Origin": [
+      -1340,
+      1739,
+      178
+    ],
+    "Angles": [
+      0,
+      -90,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_128_capped.vmdl",
+    "Origin": [
+      -1066,
+      1458,
+      -30
+    ],
+    "Angles": [
+      0,
+      0,
+      0
+    ]
+  }
+]

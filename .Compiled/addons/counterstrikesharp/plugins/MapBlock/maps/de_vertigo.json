@@ -1,0 +1,67 @@
+[
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_256_capped.vmdl",
+    "Origin": [
+      -1601,
+      856,
+      11776
+    ],
+    "Angles": [
+      0,
+      180,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_256_capped.vmdl",
+    "Origin": [
+      -1601,
+      856,
+      11906
+    ],
+    "Angles": [
+      0,
+      180,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_64_capped.vmdl",
+    "Origin": [
+      -1513,
+      1024,
+      11776
+    ],
+    "Angles": [
+      0,
+      90,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_64_capped.vmdl",
+    "Origin": [
+      -1635,
+      -206,
+      11488
+    ],
+    "Angles": [
+      0,
+      -180,
+      0
+    ]
+  },
+  {
+    "Model": "models/props/de_nuke/hr_nuke/chainlink_fence_001/chainlink_fence_001_256_capped.vmdl",
+    "Origin": [
+      -2151,
+      -620,
+      11488
+    ],
+    "Angles": [
+      0,
+      90,
+      0
+    ]
+  }
+]
