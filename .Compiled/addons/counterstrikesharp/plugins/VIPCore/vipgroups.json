@@ -85,14 +85,14 @@
       ]
     },
     "PlayerTrail": {
-      "width": 1,
-      "lifetime": 2,
       "colors": [
         "Rainbow rainbow",
         "Rastgele random",
         "Mavi #0000FF",
         "Yesil #00FF00"
-      ]
+      ],
+      "lifetime": 2,
+      "width": 1
     },
     "SmokeColor": [
       "Rastgele random",
@@ -112,22 +112,21 @@
     "VIPChat": true
   },
   "#Plus": {
+    "Include": [
+      "#Lite"
+    ],
     "AdminFlags": [
       "@css/reservation",
-      "@css/vip"
+      "@css/vip",
+      "@css/chat"
     ],
     "AdminGroups": [
       "#VIP"
     ],
     "AntiFlash": {
       "self": true,
-      "enemy": true,
+      "enemy": false,
       "teammates": true,
-      "limit": 0
-    },
-    "AntiHS": {
-      "percent": 0,
-      "only_with_weapon": "",
       "limit": 0
     },
     "Armor": {
@@ -141,85 +140,33 @@
       "max_armor": 100,
       "give_helmet_when_full": true
     },
-    "Aura": {
-      "beam_visible": "all",
-      "heal": {
-        "heal": 2,
-        "tick": 0.5,
-        "radius": 180,
-        "beamcolor": "0 255 0",
-        "duration_on": 1,
-        "duration_off": 0,
-        "ignore_teammates": false,
-        "ignore_self": false,
-        "ignore_enemy": true
-      },
-      "poison": {
-        "damage": 2,
-        "tick": 0.5,
-        "radius": 180,
-        "beamcolor": "255 0 255",
-        "duration_on": 1,
-        "duration_off": 0,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "ignore_enemy": false
-      },
-      "slow": {
-        "percent": 30,
-        "minspeed": 100,
-        "radius": 180,
-        "beamcolor": "0 0 255",
-        "duration_on": 1,
-        "duration_off": 0,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "ignore_enemy": false
-      },
-      "speed": {
-        "percent": 30,
-        "maxspeed": 400,
-        "radius": 180,
-        "beamcolor": "255 255 0",
-        "duration_on": 1,
-        "duration_off": 0,
-        "ignore_teammates": false,
-        "ignore_self": false,
-        "ignore_enemy": true
-      }
-    },
-    "AutoHS": {
-      "multiplier": 4,
-      "only_with_weapon": "",
-      "ignore_teammates": true,
-      "limit": 0
-    },
-    "Berserk": {
-      "dpk": 0.2,
-      "maxdpk": 5.0
-    },
     "Bhop": {
       "autostrafe": true,
-      "max_speed": 500,
-      "jump_boost": 1.1,
+      "max_speed": 400,
+      "jump_boost": 1.05,
       "jump_velocity": 300
     },
-    "BombsiteAnnouncer": {
-      "img_a": "https://raw.githubusercontent.com/itsAudioo/CS2BombsiteAnnouncer/refs/heads/main/img/Site-A.png",
-      "img_b": "https://raw.githubusercontent.com/itsAudioo/CS2BombsiteAnnouncer/refs/heads/main/img/Site-B.png",
-      "duration": 5
-    },
     "BulletTrail": {
-      "width": 1.5,
-      "lifetime": 0.6,
-      "only_with_weapon": "",
       "colors": [
         "Rainbow rainbow",
         "Rastgele random",
         "Kirmizi #FF0000",
         "Mavi #0000FF",
         "Yesil #00FF00"
-      ]
+      ],
+      "lifetime": 0.6,
+      "only_with_weapon": "",
+      "particles": [
+        {
+          "name": "Tuefek",
+          "file": "particles/weapons/cs_weapon_fx/weapon_tracers_assrifle.vpcf"
+        },
+        {
+          "name": "Ruh",
+          "file": "particles/weapons/cs_weapon_fx/weapon_tracers_rifle_wisp.vpcf"
+        }
+      ],
+      "width": 1.5
     },
     "BuyTeamWeapon": {
       "galil": true,
@@ -242,148 +189,7 @@
       "usp": true
     },
     "ColoredModel": [
-      "Rainbow rainbow",
-      "Rastgele random",
-      "Kirmizi #FF0000",
-      "Yesil #00FF00",
-      "Mavi #0000FF",
-      "Sari #FFFF00",
-      "Mor #A020F0"
-    ],
-    "C4Effect": [
-      {
-        "name": "Duman",
-        "particle": "particles/explosions_fx/explosion_smokegrenade_s1_child_smoke_bottom.vpcf",
-        "time": 6,
-        "defuse": false
-      },
-      {
-        "name": "Su Sicramasi",
-        "particle": "particles/water_impact/water_splash_02_continuous.vpcf",
-        "time": 4,
-        "defuse": false
-      },
-      {
-        "name": "Sis",
-        "particle": "particles/ambient_fx/cbbl_movie_fog.vpcf",
-        "time": 8,
-        "defuse": false
-      },
-      {
-        "name": "Bomba Ping",
-        "particle": "particles/ui/hud/ui_map_bomb_plant_ping.vpcf",
-        "time": 10,
-        "defuse": false
-      },
-      {
-        "name": "Ses Patlamasi",
-        "particle": "particles/ui/rank_carepackage_recieve.vpcf",
-        "time": 4,
-        "defuse": true
-      },
-      {
-        "name": "Ses Portali",
-        "particle": "particles/ui/status_levels/ui_status_level_4_energycirc.vpcf",
-        "time": 4,
-        "defuse": true
-      },
-      {
-        "name": "Bariyer",
-        "particle": "particles/ui/status_levels/ui_status_level_7_energycirc.vpcf",
-        "time": 3,
-        "defuse": true
-      },
-      {
-        "name": "Bariyer 2",
-        "particle": "particles/ui/status_levels/ui_status_level_8_energycirc.vpcf",
-        "time": 3,
-        "defuse": true
-      },
-      {
-        "name": "Kivilcim",
-        "particle": "particles/ui/status_levels/ui_status_level_7_sparkles.vpcf",
-        "time": 2,
-        "defuse": true
-      },
-      {
-        "name": "Elektrik Flare",
-        "particle": "particles/generic_fx/fx_electricspark_flare.vpcf",
-        "time": 1.5,
-        "defuse": true
-      },
-      {
-        "name": "Kirmizi Isik",
-        "particle": "particles/ambient_fx/aircraft_navred.vpcf",
-        "time": 10,
-        "defuse": false
-      },
-      {
-        "name": "Yesil Isik",
-        "particle": "particles/ambient_fx/aircraft_navgreen.vpcf",
-        "time": 10,
-        "defuse": false
-      },
-      {
-        "name": "Baca Dumani",
-        "particle": "particles/ambient_fx/ambient_smokestack.vpcf",
-        "time": 8,
-        "defuse": false
-      },
-      {
-        "name": "Sandik Dumani",
-        "particle": "particles/inventory_items/crate_emission_smoke.vpcf",
-        "time": 8,
-        "defuse": false
-      },
-      {
-        "name": "Yildirim",
-        "particle": "particles/environment/de_train/train_lightning.vpcf",
-        "time": 4,
-        "defuse": false
-      },
-      {
-        "name": "Helikopter Toz",
-        "particle": "particles/ambient_fx/copter_land_loop_1.vpcf",
-        "time": 8,
-        "defuse": false
-      },
-      {
-        "name": "Toz Patlamasi",
-        "particle": "particles/breakable_fx/breakable_dust_expl.vpcf",
-        "time": 2,
-        "defuse": true
-      },
-      {
-        "name": "Tavuk Tuyu",
-        "particle": "particles/critters/chicken/chicken_gone_feathers.vpcf",
-        "time": 3,
-        "defuse": true
-      },
-      {
-        "name": "Alevli Tuy",
-        "particle": "particles/critters/chicken/chicken_gone_feathers_fire.vpcf",
-        "time": 3,
-        "defuse": true
-      },
-      {
-        "name": "Zombi Tavuk",
-        "particle": "particles/critters/chicken/chicken_gone_zombie.vpcf",
-        "time": 3,
-        "defuse": true
-      },
-      {
-        "name": "Toz Firtinasi",
-        "particle": "particles/inventory_items/crate_impact_smoke.vpcf",
-        "time": 4,
-        "defuse": true
-      }
-    ],
-    "CustomWeaponModel": [
-      {
-        "name": "M4A4 - AK47",
-        "weapon": "weapon_m4a1",
-        "model": "weapons/models/ak47/weapon_rif_ak47.vmdl"
-      }
+      "Kirmizi #FF0000"
     ],
     "DamageDealt": {
       "percent": 50,
@@ -393,119 +199,34 @@
       "limit": 0
     },
     "DamageResist": {
-      "percent": 40,
+      "percent": 22,
       "only_with_weapon": "",
       "ignore_teammates": true,
       "ignore_self": true,
       "limit": 0
     },
-    "Dash": {
-      "limit": 3,
-      "unit": 600,
-      "sound_volume": 1
-    },
-    "DecoyEffect": {
-      "poison": {
-        "minhp": 10,
-        "damage": 2,
-        "tick": 0.5,
-        "sound_volume": 0.3,
-        "radius": 200,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "limit": 0
-      },
-      "heal": {
-        "heal": 2,
-        "tick": 0.5,
-        "sound_volume": 0.5,
-        "radius": 200,
-        "ignore_teammates": false,
-        "ignore_self": false,
-        "ignore_enemy": true,
-        "limit": 0
-      },
-      "slow": {
-        "percent": 30,
-        "minspeed": 100,
-        "tick": 0.1,
-        "radius": 200,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "ignore_enemy": false,
-        "limit": 0
-      },
-      "wallhack": {
-        "tick": 0.25,
-        "radius": 200,
-        "color": "#612D53",
-        "see_teammates": false,
-        "only_mode": 0,
-        "limit": 0
-      },
-      "radarhack": {
-        "tick": 0.25,
-        "radius": 200,
-        "see_teammates": false,
-        "only_mode": 0,
-        "limit": 0
-      },
-      "strength": {
-        "damage_multiplier": 1.5,
-        "radius": 200,
-        "ignore_teammates": false,
-        "ignore_self": false,
-        "ignore_enemy": true,
-        "limit": 0
-      },
-      "magnetic": {
-        "strength": 30,
-        "radius": 200,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "ignore_enemy": false,
-        "limit": 0
-      }
-    },
     "DecoyTeleport": {
-      "limit": 0
+      "limit": 5
     },
-    "DefuseKit": true,
     "DuckEndurance": true,
     "DuckSpeed": {
-      "percent": 100
+      "percent": 75
     },
-    "Force": [
-      "Dash",
-      "ExtraHP"
-    ],
-    "ExtraHP": 150,
+    "ExtraHP": 120,
     "ExtraJump": {
-      "count": 2,
-      "limit": 0,
+      "count": 1,
+      "limit": 5,
       "sound_volume": 1
     },
-    "ExtraKillAwards": {
-      "headshot": 150,
-      "noscope": 100,
-      "inair": 200,
-      "blind": 50,
-      "distance": {
-        "unit": 2048,
-        "money": 100
-      },
-      "weapon_ak47": 150,
-      "weapon_knife": 1000
-    },
     "ExtraMoney": {
-      "amount": 4000
+      "amount": 1500
     },
     "ExtraSpeed": {
-      "multiplier": 1.3,
-      "only_with_weapon": ""
+      "multiplier": 1.15,
+      "only_with_weapon": "weapon_knife"
     },
     "FallDamage": {
-      "percent": 0,
+      "percent": 35,
       "limit": 0
     },
     "FastDefuse": {
@@ -520,25 +241,16 @@
       "only_with_weapon": "",
       "limit": 0
     },
-    "FlashDuration": {
-      "multiplier": 1.5,
-      "ignore_teammates": true,
-      "ignore_self": true,
-      "limit": 0
-    },
+    "Force": [
+      "ExtraHP"
+    ],
     "FortniteArmor": {
-      "percent": 100,
+      "percent": 65,
       "absorb_fall_damage": false
     },
     "Fov": [
-      50,
-      60,
       70,
-      80,
-      90,
-      100,
-      110,
-      120
+      80
     ],
     "GiveWeapon": {
       "rifle": [
@@ -550,23 +262,6 @@
         "weapon_deagle",
         "weapon_fiveseven"
       ]
-    },
-    "GiveZeus": true,
-    "Glaz": true,
-    "GlueGrenade": {
-      "only_grenades": "flashbang,hegrenade",
-      "limit": 0
-    },
-    "Gravity": [
-      1,
-      0.8,
-      0.5,
-      0.3
-    ],
-    "GrenadeDamage": {
-      "damage_multiplier": 2.0,
-      "range_multiplier": 2.0,
-      "limit": 0
     },
     "GrenadeKit": {
       "flash": 2,
@@ -602,65 +297,26 @@
       "limit": 0
     },
     "GrenadeTrail": {
-      "width": 1.5,
-      "lifetime": 2.5,
       "colors": [
         "Rainbow rainbow",
         "Rastgele random",
         "Kirmizi #FF0000",
         "Mavi #0000FF",
         "Yesil #00FF00"
-      ]
+      ],
+      "lifetime": 2.5,
+      "particles": [
+        {
+          "name": "Duman",
+          "file": "particles/ui/hud/ui_map_def_utility_trail.vpcf"
+        }
+      ],
+      "width": 1.5
     },
     "HealthRegen": {
-      "hp_per_tick": 10,
+      "hp_per_tick": 5,
       "interval": 1,
-      "delay_after_dmg": 2
-    },
-    "Healthshot": 2,
-    "HealthshotEffect": {
-      "speed": {
-        "speed_multiplier": 1.3,
-        "time": 5,
-        "limit": 0
-      },
-      "strength": {
-        "damage_multiplier": 1.25,
-        "time": 5,
-        "radius": 0,
-        "ignore_teammates": false,
-        "ignore_self": false,
-        "ignore_enemy": true,
-        "limit": 0
-      },
-      "heal": {
-        "heal": 2,
-        "time": 5,
-        "tick": 0.5,
-        "sound_volume": 0.5,
-        "radius": 200,
-        "ignore_teammates": false,
-        "ignore_self": false,
-        "ignore_enemy": true,
-        "limit": 0
-      },
-      "wallhack": {
-        "time": 5,
-        "tick": 0.25,
-        "color": "#612D53",
-        "radius": 0,
-        "see_teammates": false,
-        "only_mode": 0,
-        "limit": 0
-      },
-      "radarhack": {
-        "time": 5,
-        "tick": 0.25,
-        "radius": 0,
-        "see_teammates": false,
-        "only_mode": 0,
-        "limit": 0
-      }
+      "delay_after_dmg": 4
     },
     "HitSound": [
       {
@@ -678,22 +334,338 @@
         "hs": true
       }
     ],
-    "InfiniteAmmo": {
-      "only_weapon": ""
+    "JoinMessage": {
+      "join_message": "{Gold}{name}{Default} sunucuya katildi {Green}(PLUS VIP)",
+      "leave_message": "{Gold}{name}{Default} sunucudan ayrildi"
     },
+    "KillHeal": {
+      "headshot": 15,
+      "noscope": 10,
+      "inair": 20,
+      "blind": 5,
+      "distance": {
+        "unit": 2048,
+        "hp": 10
+      },
+      "weapon_ak47": 15,
+      "weapon_knife": 50
+    },
+    "KillScreen": {
+      "duration": 0.05,
+      "fade": 0.35,
+      "alpha": 90,
+      "colors": [
+        "Rastgele random",
+        "Kirmizi #FF0000",
+        "Yesil #00FF00",
+        "Mavi #0000FF",
+        "Sari #FFFF00",
+        "Mor #A020F0"
+      ]
+    },
+    "PistolRoundDisable": [
+      "GiveWeapon",
+      "WeaponAmmo"
+    ],
+    "PlayerGlow": {
+      "colors": [
+        "Kirmizi #FF0000"
+      ]
+    },
+    "PlayerModel": {
+      "ct": [
+        {
+          "name": "Special Agent Ava",
+          "model": "agents/models/ctm_swat/ctm_swat_variante.vmdl",
+          "arm": "",
+          "leg": true
+        },
+        {
+          "name": "Seal Team 6 Soldier",
+          "model": "agents/models/ctm_st6/ctm_st6_variante.vmdl",
+          "arm": "",
+          "leg": true
+        }
+      ],
+      "t": [
+        {
+          "name": "Sir Bloody Miami Darryl",
+          "model": "agents/models/tm_professional/tm_professional_varf.vmdl",
+          "arm": "",
+          "leg": true
+        },
+        {
+          "name": "Little Kev",
+          "model": "agents/models/tm_professional/tm_professional_varh.vmdl",
+          "arm": "",
+          "leg": true
+        }
+      ]
+    },
+    "PlayerTrail": {
+      "colors": [
+        "Kirmizi #FF0000"
+      ],
+      "lifetime": 2.2,
+      "particles": [
+        {
+          "name": "Duman",
+          "file": "particles/entity/spectator_utility_trail.vpcf",
+          "offset": 8
+        }
+      ],
+      "width": 1.2
+    },
+    "SaySound": {
+      "cooldown": 2,
+      "sounds": [
+        {
+          "name": "Beep",
+          "path": "sounds/ui/beepclear.vsnd"
+        },
+        {
+          "name": "Bep",
+          "path": "sounds/ui/panorama/chatwheel_alert_01.vsnd"
+        },
+        {
+          "name": "Bz",
+          "path": "sounds/ui/panorama/radial_slideout_01.vsnd"
+        },
+        {
+          "name": "Dong",
+          "path": "sounds/ui/deathnotice.vsnd"
+        },
+        {
+          "name": "Sohbet",
+          "emit": "UI.Lobby.Chat",
+          "volume": 1
+        }
+      ]
+    },
+    "Silent": {
+      "only_with_weapon": ""
+    },
+    "SmokeColor": [
+      "Yesil #00FF00"
+    ],
+    "SpawnProtection": {
+      "time": 3,
+      "limit": 0
+    },
+    "Tag": {
+      "tag": "{Gold}[{Orchid}PLUS{Gold}]",
+      "name_color": "gold",
+      "chat_color": "default",
+      "tab": "[PLUS]"
+    },
+    "TeamHeal": {
+      "minhp": 5,
+      "percent": 50,
+      "sound_volume": 0.5,
+      "only_with_weapon": ""
+    },
+    "Thirdperson": {
+      "distance": 120
+    },
+    "WeaponAmmo": [
+      {
+        "weapon_name": "weapon_ak47",
+        "ammo": 45,
+        "reserve": 5
+      },
+      {
+        "weapon_name": "weapon_deagle",
+        "ammo": 10,
+        "reserve": 5
+      }
+    ],
+    "ZeusCooldown": {
+      "cooldown": 5,
+      "limit": 0
+    }
+  },
+  "#Ultra": {
+    "Include": [
+      "#Plus"
+    ],
+    "AdminFlags": [
+      "@css/generic"
+    ],
+    "Adrenaline": {
+      "spk": 0.05,
+      "maxspk": 0.5,
+      "duration": 0
+    },
+    "AntiFlash": {
+      "self": true,
+      "enemy": true,
+      "teammates": true,
+      "limit": 0
+    },
+    "AntiHS": {
+      "percent": 0,
+      "only_with_weapon": "",
+      "limit": 0
+    },
+    "AutoHS": {
+      "multiplier": 4,
+      "only_with_weapon": "",
+      "ignore_teammates": true,
+      "limit": 0
+    },
+    "Berserk": {
+      "dpk": 0.2,
+      "maxdpk": 5.0
+    },
+    "Bhop": {
+      "autostrafe": true,
+      "max_speed": 450,
+      "jump_boost": 1.1,
+      "jump_velocity": 300
+    },
+    "BulletEffect": {
+      "poison": {
+        "damage": 2,
+        "tick": 0.5,
+        "duration": 3,
+        "sound_volume": 0.3,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "slow": {
+        "percent": 20,
+        "duration": 3,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "lower": {
+        "size": 0.85,
+        "duration": 5,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "upper": {
+        "size": 1.25,
+        "duration": 5,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "only_with_weapon": ""
+    },
+    "BulletTrail": {
+      "particles": [
+        {
+          "name": "Agir",
+          "file": "particles/weapons/cs_weapon_fx/weapon_tracers_50cal.vpcf"
+        },
+        {
+          "name": "Sok",
+          "file": "particles/weapons/cs_weapon_fx/weapon_tracers_taser.vpcf"
+        }
+      ]
+    },
+    "ColoredModel": [
+      "Sari #FFFF00"
+    ],
+    "CustomWeaponModel": [
+      {
+        "name": "M4A4 - AK47",
+        "weapon": "weapon_m4a1",
+        "model": "weapons/models/ak47/weapon_rif_ak47.vmdl"
+      }
+    ],
+    "DamageResist": {
+      "percent": 30
+    },
+    "Dash": {
+      "limit": 3,
+      "unit": 600,
+      "sound_volume": 1
+    },
+    "DecoyTeleport": {
+      "limit": 8
+    },
+    "DuckSpeed": {
+      "percent": 90
+    },
+    "ExtraHP": 135,
+    "ExtraJump": {
+      "count": 2,
+      "limit": 8,
+      "sound_volume": 1
+    },
+    "ExtraKillAwards": {
+      "headshot": 150,
+      "noscope": 100,
+      "inair": 200,
+      "blind": 50,
+      "distance": {
+        "unit": 2048,
+        "money": 100
+      },
+      "weapon_ak47": 150,
+      "weapon_knife": 1000
+    },
+    "ExtraMoney": {
+      "amount": 2500
+    },
+    "ExtraSpeed": {
+      "multiplier": 1.2,
+      "only_with_weapon": ""
+    },
+    "FallDamage": {
+      "percent": 15,
+      "limit": 0
+    },
+    "FlashDuration": {
+      "multiplier": 1.5,
+      "ignore_teammates": true,
+      "ignore_self": true,
+      "limit": 0
+    },
+    "Force": [
+      "Dash",
+      "ExtraHP"
+    ],
+    "FortniteArmor": {
+      "percent": 80,
+      "absorb_fall_damage": false
+    },
+    "Fov": [
+      90,
+      100
+    ],
+    "GrenadeDamage": {
+      "damage_multiplier": 2.0,
+      "range_multiplier": 2.0,
+      "limit": 0
+    },
+    "GrenadeTrail": {
+      "particles": [
+        {
+          "name": "Ates",
+          "file": "particles/inferno_fx/incgrenade_thrown_trail.vpcf"
+        }
+      ]
+    },
+    "HealthRegen": {
+      "hp_per_tick": 7,
+      "interval": 1,
+      "delay_after_dmg": 3
+    },
+    "Healthshot": 2,
     "Invisibility": {
       "only_stopped": true,
       "dmg_after_invis": 2,
       "only_with_weapon": ""
     },
-    "Jammer": {
-      "radius": 500,
-      "ignore_teammates": true,
-      "ignore_enemy": false
-    },
     "JoinMessage": {
-      "join_message": "{Gold}{name}{Default} sunucuya katildi {Green}(PLUS VIP)",
-      "leave_message": "{Gold}{name}{Default} sunucudan ayrildi"
+      "join_message": "{Orchid}{name}{Default} sunucuya katildi {Green}(ULTRA VIP)",
+      "leave_message": "{Orchid}{name}{Default} sunucudan ayrildi"
     },
     "KillEffect": [
       {
@@ -893,18 +865,6 @@
         "lastkill": true
       }
     ],
-    "KillHeal": {
-      "headshot": 15,
-      "noscope": 10,
-      "inair": 20,
-      "blind": 5,
-      "distance": {
-        "unit": 2048,
-        "hp": 10
-      },
-      "weapon_ak47": 15,
-      "weapon_knife": 50
-    },
     "KillIcon": {
       "headshot": "",
       "penetrated": "",
@@ -919,18 +879,11 @@
         "weapon_glock": "spray0"
       }
     },
-    "KillScreen": {
-      "duration": 0.05,
-      "fade": 0.35,
-      "alpha": 90,
-      "colors": [
-        "Rastgele random",
-        "Kirmizi #FF0000",
-        "Yesil #00FF00",
-        "Mavi #0000FF",
-        "Sari #FFFF00",
-        "Mor #A020F0"
-      ]
+    "Knockback": {
+      "force": 120,
+      "max_speed": 1200,
+      "only_in_air": true,
+      "only_with_weapon": ""
     },
     "Mole": {
       "time": 2.5,
@@ -941,26 +894,42 @@
       "ignore_self": true,
       "limit": 0
     },
-    "OneShot": {
-      "weapons": "weapon_awp,weapon_ssg08",
-      "limit": 0
-    },
-    "PistolRoundDisable": [
-      "GiveWeapon",
-      "WeaponAmmo"
-    ],
     "PlayerGlow": {
-      "range": 300,
-      "team": -1,
       "colors": [
-        "Rainbow rainbow",
-        "Rastgele random",
-        "Kirmizi #FF0000",
-        "Mavi #0000FF",
-        "Yesil #00FF00",
-        "Sari #FFFF00",
-        "Mor #A020F0"
+        "Sari #FFFF00"
       ]
+    },
+    "PlayerParticle": [
+      {
+        "name": "Duman",
+        "particle": "particles/ambient_fx/ambient_smokestack.vpcf",
+        "offset": 10
+      },
+      {
+        "name": "Su",
+        "particle": "particles/water_impact/water_splash_02_continuous.vpcf",
+        "offset": 5
+      }
+    ],
+    "PlayerSize": [
+      0.5,
+      0.75,
+      1.25,
+      1.5
+    ],
+    "PlayerTrail": {
+      "colors": [
+        "Sari #FFFF00"
+      ],
+      "lifetime": 2.4,
+      "particles": [
+        {
+          "name": "Enerji",
+          "file": "particles/weapons/cs_weapon_fx/bumpmine_player_trail.vpcf",
+          "offset": 8
+        }
+      ],
+      "width": 1.4
     },
     "Postprocessing": [
       {
@@ -989,119 +958,12 @@
         "fade": 0.25
       }
     ],
-    "PlayerParticle": [
-      {
-        "name": "Duman",
-        "particle": "particles/ambient_fx/ambient_smokestack.vpcf",
-        "offset": 10
-      },
-      {
-        "name": "Su",
-        "particle": "particles/water_impact/water_splash_02_continuous.vpcf",
-        "offset": 5
-      }
-    ],
-    "PlayerModel": {
-      "ct": [
-        {
-          "name": "Special Agent Ava",
-          "model": "agents/models/ctm_swat/ctm_swat_variante.vmdl",
-          "arm": "",
-          "leg": true
-        },
-        {
-          "name": "Seal Team 6 Soldier",
-          "model": "agents/models/ctm_st6/ctm_st6_variante.vmdl",
-          "arm": "",
-          "leg": true
-        }
-      ],
-      "t": [
-        {
-          "name": "Sir Bloody Miami Darryl",
-          "model": "agents/models/tm_professional/tm_professional_varf.vmdl",
-          "arm": "",
-          "leg": true
-        },
-        {
-          "name": "Little Kev",
-          "model": "agents/models/tm_professional/tm_professional_varh.vmdl",
-          "arm": "",
-          "leg": true
-        }
-      ]
-    },
-    "PlayerSize": [
-      0.5,
-      0.75,
-      1.25,
-      1.5
-    ],
-    "PlayerTrail": {
-      "width": 1.5,
-      "lifetime": 2.5,
-      "colors": [
-        "Rainbow rainbow",
-        "Rastgele random",
-        "Kirmizi #FF0000",
-        "Mavi #0000FF",
-        "Yesil #00FF00",
-        "Sari #FFFF00",
-        "Mor #A020F0"
-      ]
-    },
-    "BulletEffect": {
-      "poison": {
-        "damage": 2,
-        "tick": 0.5,
-        "duration": 3,
-        "sound_volume": 0.3,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "ignore_enemy": false
-      },
-      "slow": {
-        "percent": 20,
-        "duration": 3,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "ignore_enemy": false
-      },
-      "lower": {
-        "size": 0.85,
-        "duration": 5,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "ignore_enemy": false
-      },
-      "upper": {
-        "size": 1.25,
-        "duration": 5,
-        "ignore_teammates": true,
-        "ignore_self": true,
-        "ignore_enemy": false
-      },
-      "only_with_weapon": ""
-    },
     "Pyro": {
       "multiplier": 1.5,
       "ignore_teammates": false,
       "ignore_enemy": true,
       "ignore_self": false,
       "limit": 0
-    },
-    "RadarHack": {
-      "duration_on": 1,
-      "duration_off": 0,
-      "see_teammates": false,
-      "only_mode": 0
-    },
-    "WallHack": {
-      "duration_on": 1,
-      "duration_off": 3,
-      "color": "#612D53",
-      "see_teammates": false,
-      "only_mode": 0
     },
     "RapidFire": {
       "only_with_weapon": "",
@@ -1119,6 +981,448 @@
     "Respawn": {
       "limit": 1,
       "time": 3
+    },
+    "Sacrifice": {
+      "hp": 25,
+      "armor": 25,
+      "helmet": false,
+      "weapons": "weapon_hegrenade,weapon_flashbang"
+    },
+    "SmokeColor": [
+      "Mavi #0000FF"
+    ],
+    "Tag": {
+      "tag": "{Orchid}[{Gold}ULTRA{Orchid}]",
+      "name_color": "orchid",
+      "chat_color": "default",
+      "tab": "[ULTRA]"
+    },
+    "Vampire": {
+      "heal_percent": 75,
+      "only_with_weapon": "",
+      "max_overheal": 200,
+      "ignore_teammates": true
+    }
+  },
+  "#Deluxe": {
+    "Include": [
+      "#Ultra"
+    ],
+    "Aura": {
+      "beam_visible": "all",
+      "heal": {
+        "heal": 2,
+        "tick": 0.5,
+        "radius": 180,
+        "beamcolor": "0 255 0",
+        "duration_on": 1,
+        "duration_off": 0,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true
+      },
+      "poison": {
+        "damage": 2,
+        "tick": 0.5,
+        "radius": 180,
+        "beamcolor": "255 0 255",
+        "duration_on": 1,
+        "duration_off": 0,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "slow": {
+        "percent": 30,
+        "minspeed": 100,
+        "radius": 180,
+        "beamcolor": "0 0 255",
+        "duration_on": 1,
+        "duration_off": 0,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false
+      },
+      "speed": {
+        "percent": 30,
+        "maxspeed": 400,
+        "radius": 180,
+        "beamcolor": "255 255 0",
+        "duration_on": 1,
+        "duration_off": 0,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true
+      }
+    },
+    "Bhop": {
+      "autostrafe": true,
+      "max_speed": 500,
+      "jump_boost": 1.1,
+      "jump_velocity": 300
+    },
+    "BombsiteAnnouncer": {
+      "img_a": "https://raw.githubusercontent.com/itsAudioo/CS2BombsiteAnnouncer/refs/heads/main/img/Site-A.png",
+      "img_b": "https://raw.githubusercontent.com/itsAudioo/CS2BombsiteAnnouncer/refs/heads/main/img/Site-B.png",
+      "duration": 5
+    },
+    "BulletTrail": {
+      "particles": [
+        {
+          "name": "MVP",
+          "file": "particles/ui/hud/ui_map_mvp_pistol_tracerc.vpcf"
+        },
+        {
+          "name": "AWP",
+          "file": "particles/ui/hud/ui_map_mvp_model_awp_tracer.vpcf"
+        }
+      ]
+    },
+    "C4Effect": [
+      {
+        "name": "Duman",
+        "particle": "particles/explosions_fx/explosion_smokegrenade_s1_child_smoke_bottom.vpcf",
+        "time": 6,
+        "defuse": false
+      },
+      {
+        "name": "Su Sicramasi",
+        "particle": "particles/water_impact/water_splash_02_continuous.vpcf",
+        "time": 4,
+        "defuse": false
+      },
+      {
+        "name": "Sis",
+        "particle": "particles/ambient_fx/cbbl_movie_fog.vpcf",
+        "time": 8,
+        "defuse": false
+      },
+      {
+        "name": "Bomba Ping",
+        "particle": "particles/ui/hud/ui_map_bomb_plant_ping.vpcf",
+        "time": 10,
+        "defuse": false
+      },
+      {
+        "name": "Ses Patlamasi",
+        "particle": "particles/ui/rank_carepackage_recieve.vpcf",
+        "time": 4,
+        "defuse": true
+      },
+      {
+        "name": "Ses Portali",
+        "particle": "particles/ui/status_levels/ui_status_level_4_energycirc.vpcf",
+        "time": 4,
+        "defuse": true
+      },
+      {
+        "name": "Bariyer",
+        "particle": "particles/ui/status_levels/ui_status_level_7_energycirc.vpcf",
+        "time": 3,
+        "defuse": true
+      },
+      {
+        "name": "Bariyer 2",
+        "particle": "particles/ui/status_levels/ui_status_level_8_energycirc.vpcf",
+        "time": 3,
+        "defuse": true
+      },
+      {
+        "name": "Kivilcim",
+        "particle": "particles/ui/status_levels/ui_status_level_7_sparkles.vpcf",
+        "time": 2,
+        "defuse": true
+      },
+      {
+        "name": "Elektrik Flare",
+        "particle": "particles/generic_fx/fx_electricspark_flare.vpcf",
+        "time": 1.5,
+        "defuse": true
+      },
+      {
+        "name": "Kirmizi Isik",
+        "particle": "particles/ambient_fx/aircraft_navred.vpcf",
+        "time": 10,
+        "defuse": false
+      },
+      {
+        "name": "Yesil Isik",
+        "particle": "particles/ambient_fx/aircraft_navgreen.vpcf",
+        "time": 10,
+        "defuse": false
+      },
+      {
+        "name": "Baca Dumani",
+        "particle": "particles/ambient_fx/ambient_smokestack.vpcf",
+        "time": 8,
+        "defuse": false
+      },
+      {
+        "name": "Sandik Dumani",
+        "particle": "particles/inventory_items/crate_emission_smoke.vpcf",
+        "time": 8,
+        "defuse": false
+      },
+      {
+        "name": "Yildirim",
+        "particle": "particles/environment/de_train/train_lightning.vpcf",
+        "time": 4,
+        "defuse": false
+      },
+      {
+        "name": "Helikopter Toz",
+        "particle": "particles/ambient_fx/copter_land_loop_1.vpcf",
+        "time": 8,
+        "defuse": false
+      },
+      {
+        "name": "Toz Patlamasi",
+        "particle": "particles/breakable_fx/breakable_dust_expl.vpcf",
+        "time": 2,
+        "defuse": true
+      },
+      {
+        "name": "Tavuk Tuyu",
+        "particle": "particles/critters/chicken/chicken_gone_feathers.vpcf",
+        "time": 3,
+        "defuse": true
+      },
+      {
+        "name": "Alevli Tuy",
+        "particle": "particles/critters/chicken/chicken_gone_feathers_fire.vpcf",
+        "time": 3,
+        "defuse": true
+      },
+      {
+        "name": "Zombi Tavuk",
+        "particle": "particles/critters/chicken/chicken_gone_zombie.vpcf",
+        "time": 3,
+        "defuse": true
+      },
+      {
+        "name": "Toz Firtinasi",
+        "particle": "particles/inventory_items/crate_impact_smoke.vpcf",
+        "time": 4,
+        "defuse": true
+      }
+    ],
+    "ColoredModel": [
+      "Mor #A020F0"
+    ],
+    "DamageResist": {
+      "percent": 40
+    },
+    "DecoyEffect": {
+      "poison": {
+        "minhp": 10,
+        "damage": 2,
+        "tick": 0.5,
+        "sound_volume": 0.3,
+        "radius": 200,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "limit": 0
+      },
+      "heal": {
+        "heal": 2,
+        "tick": 0.5,
+        "sound_volume": 0.5,
+        "radius": 200,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true,
+        "limit": 0
+      },
+      "slow": {
+        "percent": 30,
+        "minspeed": 100,
+        "tick": 0.1,
+        "radius": 200,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false,
+        "limit": 0
+      },
+      "wallhack": {
+        "tick": 0.25,
+        "radius": 200,
+        "color": "#612D53",
+        "see_teammates": false,
+        "only_mode": 0,
+        "limit": 0
+      },
+      "radarhack": {
+        "tick": 0.25,
+        "radius": 200,
+        "see_teammates": false,
+        "only_mode": 0,
+        "limit": 0
+      },
+      "strength": {
+        "damage_multiplier": 1.5,
+        "radius": 200,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true,
+        "limit": 0
+      },
+      "magnetic": {
+        "strength": 30,
+        "radius": 200,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false,
+        "limit": 0
+      }
+    },
+    "DecoyTeleport": {
+      "limit": 0
+    },
+    "DuckSpeed": {
+      "percent": 100
+    },
+    "ExtraHP": 150,
+    "ExtraJump": {
+      "count": 2,
+      "limit": 0,
+      "sound_volume": 1
+    },
+    "ExtraMoney": {
+      "amount": 4000
+    },
+    "ExtraSpeed": {
+      "multiplier": 1.3,
+      "only_with_weapon": ""
+    },
+    "FallDamage": {
+      "percent": 0,
+      "limit": 0
+    },
+    "FortniteArmor": {
+      "percent": 100,
+      "absorb_fall_damage": false
+    },
+    "Fov": [
+      110,
+      120
+    ],
+    "Glaz": true,
+    "GlueGrenade": {
+      "only_grenades": "flashbang,hegrenade",
+      "limit": 0
+    },
+    "Gravity": [
+      1,
+      0.8,
+      0.5,
+      0.3
+    ],
+    "GrenadeTrail": {
+      "particles": [
+        {
+          "name": "Kar",
+          "file": "particles/weapons/cs_weapon_fx/weapon_snowball_trail.vpcf"
+        }
+      ]
+    },
+    "HealthRegen": {
+      "hp_per_tick": 10,
+      "interval": 1,
+      "delay_after_dmg": 2
+    },
+    "HealthshotEffect": {
+      "speed": {
+        "speed_multiplier": 1.3,
+        "time": 5,
+        "limit": 0
+      },
+      "strength": {
+        "damage_multiplier": 1.25,
+        "time": 5,
+        "radius": 0,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true,
+        "limit": 0
+      },
+      "heal": {
+        "heal": 2,
+        "time": 5,
+        "tick": 0.5,
+        "sound_volume": 0.5,
+        "radius": 200,
+        "ignore_teammates": false,
+        "ignore_self": false,
+        "ignore_enemy": true,
+        "limit": 0
+      },
+      "wallhack": {
+        "time": 5,
+        "tick": 0.25,
+        "color": "#612D53",
+        "radius": 0,
+        "see_teammates": false,
+        "only_mode": 0,
+        "limit": 0
+      },
+      "radarhack": {
+        "time": 5,
+        "tick": 0.25,
+        "radius": 0,
+        "see_teammates": false,
+        "only_mode": 0,
+        "limit": 0
+      }
+    },
+    "InfiniteAmmo": {
+      "only_weapon": ""
+    },
+    "Jammer": {
+      "radius": 500,
+      "ignore_teammates": true,
+      "ignore_enemy": false
+    },
+    "JoinMessage": {
+      "join_message": "{LightRed}{name}{Default} sunucuya katildi {Green}(DELUXE VIP)",
+      "leave_message": "{LightRed}{name}{Default} sunucudan ayrildi"
+    },
+    "OneShot": {
+      "weapons": "weapon_awp,weapon_ssg08",
+      "limit": 0
+    },
+    "PlayerGlow": {
+      "colors": [
+        "Mor #A020F0"
+      ]
+    },
+    "PlayerTrail": {
+      "colors": [
+        "Mor #A020F0"
+      ],
+      "lifetime": 2.5,
+      "particles": [
+        {
+          "name": "Para",
+          "file": "particles/money_fx/moneybag_trail.vpcf",
+          "offset": 8
+        },
+        {
+          "name": "Spor",
+          "file": "particles/survival_fx/danger_trail_spores.vpcf",
+          "offset": 8
+        }
+      ],
+      "width": 1.5
+    },
+    "RadarHack": {
+      "duration_on": 1,
+      "duration_off": 0,
+      "see_teammates": false,
+      "only_mode": 0
+    },
+    "Respawn": {
+      "limit": 2,
+      "time": 2
     },
     "Ricochet": {
       "bounces": 3,
@@ -1139,47 +1443,7 @@
       "color": "#FFE28C",
       "only_with_weapon": ""
     },
-    "Sacrifice": {
-      "hp": 25,
-      "armor": 25,
-      "helmet": false,
-      "weapons": "weapon_hegrenade,weapon_flashbang"
-    },
-    "SaySound": {
-      "cooldown": 2,
-      "sounds": [
-        {
-          "name": "Beep",
-          "path": "sounds/ui/beepclear.vsnd"
-        },
-        {
-          "name": "Bep",
-          "path": "sounds/ui/panorama/chatwheel_alert_01.vsnd"
-        },
-        {
-          "name": "Bz",
-          "path": "sounds/ui/panorama/radial_slideout_01.vsnd"
-        },
-        {
-          "name": "Dong",
-          "path": "sounds/ui/deathnotice.vsnd"
-        },
-        {
-          "name": "Sohbet",
-          "emit": "UI.Lobby.Chat",
-          "volume": 1
-        }
-      ]
-    },
-    "Silent": {
-      "only_with_weapon": ""
-    },
     "SmokeColor": [
-      "Rastgele random",
-      "Beyaz #FFFFFF",
-      "Kirmizi #FF0000",
-      "Yesil #00FF00",
-      "Mavi #0000FF",
       "Sari #FFFF00",
       "Mor #A020F0"
     ],
@@ -1246,56 +1510,44 @@
         "limit": 0
       }
     },
+    "Soul": {
+      "respawn_time": 5,
+      "steal_time": 10,
+      "steal": true,
+      "limit": 1,
+      "radius": 100,
+      "duration": 25,
+      "size": 22,
+      "speed": 45,
+      "height": 45,
+      "color_t": "#FF8000",
+      "color_ct": "#00A0FF",
+      "color_steal": "#FF0033"
+    },
     "SpawnProtection": {
       "time": 4,
       "limit": 0
     },
     "Spy": true,
     "Tag": {
-      "tag": "{Gold}[{Orchid}PLUS{Gold}]",
-      "name_color": "gold",
+      "tag": "{LightRed}[{Gold}DELUXE{LightRed}]",
+      "name_color": "lightred",
       "chat_color": "default",
-      "tab": "[PLUS]"
+      "tab": "[DELUXE]"
     },
-    "TeamHeal": {
-      "minhp": 5,
-      "percent": 50,
-      "sound_volume": 0.5,
-      "only_with_weapon": ""
+    "WallHack": {
+      "duration_on": 1,
+      "duration_off": 3,
+      "color": "#612D53",
+      "see_teammates": false,
+      "only_mode": 0
     },
-    "Thirdperson": {
-      "distance": 120
-    },
-    "VIPChat": true,
-    "Vampire": {
-      "heal_percent": 75,
-      "only_with_weapon": "",
-      "max_overheal": 200,
-      "ignore_teammates": true
-    },
-    "WeaponAmmo": [
-      {
-        "weapon_name": "weapon_ak47",
-        "ammo": 45,
-        "reserve": 5
-      },
-      {
-        "weapon_name": "weapon_deagle",
-        "ammo": 10,
-        "reserve": 5
-      }
-    ],
     "WeaponGlow": {
       "color": "#FFFFFF",
       "range": 5000,
-      "visible": "all",
       "ignore": [
         "weapon_c4"
       ]
-    },
-    "ZeusCooldown": {
-      "cooldown": 5,
-      "limit": 0
     }
   }
 }

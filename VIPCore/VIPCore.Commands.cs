@@ -3,6 +3,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace VIPCore;
@@ -427,6 +428,8 @@ public partial class VIPCore
             return entry.Expires == 0 ? long.MaxValue : entry.Expires - now;
         }
     }
+
+    public bool HasAdminAccess(CCSPlayerController? player) => HasAdmin(player);
 
     private bool HasAdmin(CCSPlayerController? player) =>
         player == null || AdminManager.PlayerHasPermissions(player, Config.AdminFlag);

@@ -11,6 +11,7 @@ public class GrenadeTrail : VipModule
         public float Width { get; set; } = 1.0f;
         public float Lifetime { get; set; } = 2.0f;
         public List<string> Colors { get; set; } = new();
+        public List<ParticleEntry> Particles { get; set; } = new();
     }
 
     private class Tracked
@@ -30,8 +31,13 @@ public class GrenadeTrail : VipModule
     public override string DisplayName => Core.Localizer["vip.module.grenadetrail"];
     public override VipFeatureType MenuType => VipFeatureType.Select;
 
-    public override List<VipFeatureOption> SelectOptions(CCSPlayerController player) =>
-        TrailBeam.ParseColorOptions(GroupValue<Cfg>(player)?.Colors ?? new());
+    public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
+    {
+        var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+        var options = TrailBeam.ParseColorOptions(cfg.Colors);
+        ParticleTrail.AddOptions(options, cfg.Particles);
+        return options;
+    }
 
     public override void OnLoad()
     {
@@ -39,6 +45,11 @@ public class GrenadeTrail : VipModule
         Core.HookEntitySpawned(OnEntitySpawned);
         Core.HookTick(OnTick, 2);
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { _tracked.Clear(); return HookResult.Continue; });
+        Core.HookPrecache(manifest =>
+        {
+            foreach (var cfg in Core.GetAllGroupValues<Cfg>(Name))
+                ParticleTrail.Precache(manifest, cfg.Particles);
+        });
     }
 
     private void OnEntitySpawned(CEntityInstance entity)
@@ -58,6 +69,15 @@ public class GrenadeTrail : VipModule
 
             var cfg = GroupValue<Cfg>(owner!) ?? new Cfg();
             string setting = Setting(owner!);
+
+            var entry = ParticleTrail.Find(cfg.Particles, setting);
+            if (entry != null)
+            {
+                var attached = ParticleTrail.Follow(projectile, entry, entry.Offset, EffectHide.GrenadeTrail, owner!.Slot);
+                Core.AddTimer(entry.Lifetime > 0 ? entry.Lifetime : 10f, () => ParticleTrail.Stop(attached));
+                return;
+            }
+
             _tracked.Add(new Tracked
             {
                 Projectile = projectile,

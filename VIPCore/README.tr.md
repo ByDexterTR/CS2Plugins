@@ -27,7 +27,7 @@ Modüler VIP sistemi. 75'ten fazla yerleşik VIP özelliği (modül), grup taban
    csgo/addons/counterstrikesharp/plugins/VIPCore/
    ```
 2. Sunucuyu yeniden başlatın veya `css_plugins load VIPCore` komutunu çalıştırın.
-3. İlk yüklemede eklenti klasöründe `settings.json` ve örnek gruplarla (`#Lite`, `#Plus`) `vipgroups.json` oluşturulur.
+3. İlk yüklemede eklenti klasöründe `settings.json` ve örnek gruplarla (`#Lite`, `#Plus`, `#Ultra`, `#Deluxe`) `vipgroups.json` oluşturulur.
 4. Grupları düzenleyin, ardından `css_addvip` ile VIP ekleyin.
 
 ## Komutlar
@@ -103,7 +103,8 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
     "PlayerGlow": "self",
     "GrenadeTrail": "all",
     "SaySound": "all",
-    "PlayerParticle": "all"
+    "PlayerParticle": "all",
+    "Pet": "all"
   },
   "model_inspect": {
     "enabled": true,
@@ -126,7 +127,7 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
 
 ### `vipgroups.json` (eklenti klasöründe)
 
-Grup adı → modül adı → modül değeri eşlemesidir. Bir grupta **tanımlı olmayan modül o gruba kapalıdır**. İlk çalıştırmada tüm modülleri kapsayan `#Lite` ve `#Plus` örnekleriyle oluşturulur.
+Grup adı → modül adı → modül değeri eşlemesidir. Bir grupta **tanımlı olmayan modül o gruba kapalıdır**. İlk çalıştırmada dört örnek kademeyle oluşturulur: `#Lite`, `#Plus`, `#Ultra`, `#Deluxe`. Her kademe bir öncekini `Include` ile devralır ve yalnız eklediğini ya da iyileştirdiğini yazar; `#Deluxe` sonuçta tüm modülleri kapsar.
 
 ```json
 {
@@ -138,6 +139,33 @@ Grup adı → modül adı → modül değeri eşlemesidir. Bir grupta **tanıml�
   }
 }
 ```
+
+### Grup kalıtımı
+
+Bir grup `Include` ile başka bir grubun her şeyini devralır, sonra yalnız farklı olanı yazar:
+
+```json
+{
+  "#Lite":  { "ExtraHP": 110, "ExtraJump": { "count": 1, "limit": 3 } },
+  "#Plus":  { "Include": ["#Lite"], "ExtraHP": 130, "ExtraJump": { "limit": 0 }, "Silent": true },
+  "#Ultra": { "Include": ["#Plus"], "Vampire": { "heal_percent": 75 } }
+}
+```
+
+Yukarıdaki `#Plus` sonuçta `ExtraHP: 130`, `ExtraJump: { "count": 1, "limit": 0 }`, `Silent` ve `#Lite`'ın geri kalan her şeyine sahip olur. Kalıtım zincirlenir, yani `#Ultra` `#Lite`'ı da alır; aynı anda birden fazla grup da yazılabilir. Birleştirme dosya okunurken bir kez yapılır, oyun sırasında hiçbir maliyeti yoktur.
+
+Aynı modül iki grupta da yazılıysa:
+
+| Durum | Sonuç |
+| --- | --- |
+| Sayı | İyi olan kazanır, yani devralınan grup hiçbir grubu geriye götürmez. Bu genelde büyük olandır; az olanın iyi olduğu birkaç anahtarda küçük olan kazanır: `FallDamage.percent`, `Respawn.time`, `FastDefuse.time`, `FastPlant.time`, `Soul.respawn_time` ve tüm `tick`, `interval`, `cooldown`, `delay_after_dmg`, `duration_off`, `minspeed`, `minhp`, `recoilpercent`, `dmg_after_invis` |
+| `limit` | `0` sınırsız demektir, bu yüzden `0` daima kazanır |
+| Liste (model, renk, silah, efekt…) | Listeler birleşir. Aynı `name` (ya da `weapon_name`, `weapon`, `sound`, `file`, `model`) değerini taşıyan kayıtlar tek kayda birleşir, farklı olan yeni kayıt olarak eklenir |
+| Nesne | Anahtar anahtar, aynı kurallarla birleşir |
+| Yazı, açık/kapalı | Grubun kendi değeri kazanır |
+| `Force`, `PistolRoundDisable` | Grup kendi listesini yazdıysa devralınanın yerine geçer |
+
+Olmayan bir grup adı ve kalıtım döngüsü sunucu konsoluna yazılır, o kalıtım atlanır.
 
 ### Ayar denetimi
 
@@ -169,7 +197,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `Bhop` | Bunny hop (+opsiyonel autostrafe) | `{ "autostrafe": true, "max_speed": 500, "jump_boost": 1.1, "jump_velocity": 300 }` |
 | `BombsiteAnnouncer` | Bomba kurulunca CT'lere HUD görseli (yalnız görsel) + sohbet mesajı | `{ "img_a": "...Site-A.png", "img_b": "...Site-B.png", "duration": 5.0 }` |
 | `BulletEffect` | Menüden seçilen etki vurduğun oyuncuya uygulanır: `poison` zehir, `slow` yavaşlatma, `lower` küçültme, `upper` büyütme. Tekrar vurmak süreyi uzatır | `{ "poison": { "damage": 2, "tick": 0.5, "duration": 3, "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false }, "slow": { "percent": 20, "duration": 3 }, "lower": { "size": 0.85, "duration": 5 }, "upper": { "size": 1.25, "duration": 5 }, "only_with_weapon": "" }` |
-| `BulletTrail` | Mermi izi efekti | `{ "width": 1.5, "lifetime": 0.6, "colors": [...] }` |
+| `BulletTrail` | Mermi izi efekti. İki tür kayıt var: `colors` beam çizer (renk serbest, `rainbow` ve `random` çalışır), `particles` yerine oyunun partikülünü oynatır (rengi dosyanın içinde gömülüdür, `tint` yalnız buna göre hazırlanmış partiküllerde işe yarar). İkisi de aynı menüde görünür | `{ "width": 1.5, "lifetime": 0.6, "colors": [...], "particles": [{ "name": "Ruh", "file": "particles/weapons/cs_weapon_fx/weapon_tracers_rifle_wisp.vpcf" }] }` |
 | `BuyTeamWeapon` | Karşı takım silahlarını satın alma (yalnız buyzone içinde ve `mp_buytime` dolmadan); Komut adları `settings.json` → `buy_commands` | `{ "ak47": true, "m4a4": true, ... }` |
 | `C4Effect` | Bomba kurarken ve imha ederken partikül efekti; iki ayrı kategori, boş olan menüde gizlenir | `[{ "name": "Duman", "particle": "...", "time": 6, "defuse": false }]` |
 | `ColoredModel` | Renkli oyuncu modeli; başka eklenti (ör. jRandomSkills) rengi değiştirirse o el geri çekilir | `["Rainbow rainbow", "Mavi #0000FF"]` |
@@ -203,7 +231,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `GrenadeKit` | Spawn'da bomba seti; zaten varsa vermez, 2+ ise atınca yeniden verir (InfiniteAmmo açıkken yeniden vermez) | `{ "flash": 2, "smoke": 1, "he": 3, "molotov": 1, "decoy": 0 }` |
 | `GrenadeResist` | Bomba (HE/molotov/inferno) hasarını azaltır; **negatif `percent` = debuff** (`-50` bomba hasarını %50 artırır) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `GrenadeTimer` | Oyuncu menüden her grenade türü için kaç saniye geç patlayacağını seçer; menüdeki değerler configten gelir (0.1 - 20) | `{ "hegrenade": [0.5, 1.0, 2.0], "flashbang": [0.5, 1.0, 2.0], "molotov": [1.0, 2.0, 3.0], "decoy": [], "limit": 0 }` |
-| `GrenadeTrail` | Bomba izi efekti | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
+| `GrenadeTrail` | Bomba izi efekti. `colors` beam çizer, `particles` bombaya uçuşu boyunca tek partikül bağlar (beam'den ucuzdur) | `{ "width": 1.5, "lifetime": 2.5, "colors": [...], "particles": [{ "name": "Duman", "file": "particles/ui/hud/ui_map_def_utility_trail.vpcf" }] }` |
 | `HealthRegen` | Can yenilenmesi | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Spawn'da healthshot | `2` |
 | `HealthshotEffect` | Healthshot kullanınca menüden seçilen etki `time` saniye başlar: `speed` hız, `strength` ekstra hasar, `heal`, `poison`, `slow`, `wallhack`, `radarhack`, `magnetic`. `radius: 0` etkinin sadece oyuncuya işlemesi demek | `{ "speed": { "speed_multiplier": 1.3, "time": 5 }, "strength": { "damage_multiplier": 1.25, "time": 5, "radius": 0 }, "wallhack": { "time": 5, "radius": 0, "only_mode": 0 } }` |
@@ -219,6 +247,9 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `KillScreen` | Öldürünce ekran seçilen renge boyanır (FFA kapalıysa takım arkadaşında çalışmaz); `duration` rengin kalma süresi, `fade` kaybolma süresi, `alpha` yoğunluğu | `{ "duration": 0.05, "fade": 0.35, "alpha": 90, "colors": ["Rastgele random", "Kirmizi #FF0000"] }` |
 | `Mole` | Hasar verilen oyuncu `time` saniye `unit` birim yere gömülür ve hareket edemez; `limit` raunt başına kaç gömme (0=sınırsız) | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
 | `OneShot` | Belirli silahlarla tek atış | `{ "weapons": "weapon_awp,weapon_ssg08", "limit": 0 }` |
+| `Include` | Grup, listelenen grupların tüm modüllerini devralır, yalnız farklı olanı yazar (modül değil, grup ayarı). Bkz. “Grup kalıtımı” | `["#Lite"]` |
+| `Outfit` | Oyuncunun üzerinde taşıdığı süs modelleri. Kategoriler serbest: config'de ne isim verirseniz menüde o kategori olur ve her birinden aynı anda bir parça takılabilir. Spawn'da takılır, ölünce silinir. Model oyuncu iskeletini taşımalı, yoksa vücuda yapışmaz | `{ "hat": [{ "name": "Kovboy", "model": "models/hats/cowboy.vmdl", "team": "" }], "backpack": [{ "name": "Çanta", "model": "models/bags/bag.vmdl", "team": "CT" }] }` |
+| `Pet` | Oyuncuyu takip eden yoldaş. Arkasından yürür, hareket ederken koşma, dururken bekleme animasyonunu oynatır; `flying` onu `height` yüksekliğinde havada tutar ve hafifçe salındırır. Ölünce silinir (`css_hidefx` ile gizlenebilir). Animasyon adları modelden gelir | `[{ "name": "Kunduz", "model": "models/pets/beaver.vmdl", "flying": false, "speed": 260, "distance": 55, "height": 45, "scale": 1.0, "animations": { "idle": "@courier_idle", "run": "@courier_run", "death": "@courier_death", "spawn": "@courier_spawn" } }]` |
 | `PistolRoundDisable` | Listelenen modüller pistol rauntlarda devre dışı kalır (modül değil, grup ayarı) | `["GiveWeapon", "WeaponAmmo"]` |
 | `Force` | Listelenen **Toggle** modüller daima aktif olur; menüde gösterilmez, oyuncu açıp/kapatamaz (modül değil, grup ayarı; modül grupta tanımlı olmalı; seçmeli/komut-tabanlı modüller etkilenmez) | `["Dash", "ExtraHP"]` |
 | `PlayerGlow` | Oyuncu glow (duvar arkası parlama) | `{ "range": 300, "team": -1, "colors": [...] }` |
@@ -226,7 +257,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `PlayerParticle` | Oyuncuya yapışan ve onu takip eden partikül; ölünce ve raunt başında silinir (`css_hidefx` ile gizlenebilir). `offset` yerden yüksekliği. Sürekli yayan (loop) partikül seçin, tek seferlik patlama efektleri takip etmez | `[{ "name": "Duman", "particle": "particles/ambient_fx/ambient_smokestack.vpcf", "offset": 10 }]` |
 | `PlayerModel` | Takıma göre oyuncu modeli seçimi (CT ve T ayrı menü); `leg: false` birinci şahıs bacakları gizler. Yalnız spawn'da uygulanır | `{ "ct": [{ "name": "Special Agent Ava", "model": "agents/models/ctm_swat/ctm_swat_variante.vmdl", "arm": "", "leg": true }], "t": [...] }` |
 | `PlayerSize` | Oyuncu boyutu seçimi; yalnız spawn'da uygulanır; boyut zaten başka eklentiyle değiştiyse dokunmaz | `[0.5, 0.75, 1.25, 1.5]` |
-| `PlayerTrail` | Oyuncu hareket izi | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
+| `PlayerTrail` | Oyuncu hareket izi. `colors` her adımın arkasına beam çizer, `particles` oyuncuya ölene kadar tek partikül bağlar (beam'den ucuzdur); `offset` yerden yüksekliğidir. `follow: false` partikülü oyuncuyla taşımak yerine arkasında parça parça bırakır | `{ "width": 1.5, "lifetime": 2.5, "colors": [...], "particles": [{ "name": "Duman", "file": "particles/entity/spectator_utility_trail.vpcf", "offset": 8 }] }` |
 | `Pyro` | VIP'in molotof/yanıcı bombası hasar yerine can yeniler (`multiplier` × hasar; 1'den büyükse net can basar) | `{ "multiplier": 1.5, "ignore_teammates": false, "ignore_enemy": true, "ignore_self": false, "limit": 0 }` |
 | `RadarHack` | Tüm düşmanları radarda gösterir; `duration_on`/`duration_off` ile yanıp söner (`duration_off: 0` = sürekli açık, `duration_on` en az 1 sn), `only_mode` kimin görüneceğini seçer: `0` herkes, `1` sadece ateş edenler, `2` sadece hareket edenler, `12` ikisi | `{ "duration_on": 1, "duration_off": 0, "see_teammates": false, "only_mode": 0 }` |
 | `RapidFire` | `firepercent` atış hızı (`0.1` – `2.0`): `1.0` normal, `2.0` en hızlı, altı yavaşlatır. `recoilpercent` kalan sekme (`0.0` – `1.0`): `0.0` sekme yok, `1.0` normal | `{ "only_with_weapon": "", "recoilpercent": 0.0, "firepercent": 2.0 }` |
@@ -254,7 +285,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 ## Kullanım Örnekleri
 
 ```
-!addvip 76561198000000000 #Plus 1mo   → 1 aylık Plus VIP
+!addvip 76561198000000000 #Deluxe 1mo → 1 aylık Deluxe VIP
 !addvip 76561198000000000 #Lite 0     → kalıcı Lite VIP
 !vip                                  → VIP menüsü + kalan süre
 !viplist                              → tüm kayıtlar

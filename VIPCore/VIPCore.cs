@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.1.9";
+    public override string ModuleVersion => "1.2.0";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -375,6 +375,12 @@ public partial class VIPCore : BasePlugin
             parsed = new();
         }
 
+        foreach (var issue in ConfigCheck.Groups(parsed, _moduleByName))
+            Logger.LogWarning("VIPCore: vipgroups.json {0}", issue);
+
+        foreach (var issue in GroupInclude.Resolve(parsed))
+            Logger.LogWarning("VIPCore: vipgroups.json {0}", issue);
+
         var pistolDisable = new Dictionary<string, HashSet<string>>();
         var forced = new Dictionary<string, HashSet<string>>();
         foreach (var (groupName, feats) in parsed)
@@ -414,9 +420,6 @@ public partial class VIPCore : BasePlugin
                 foreach (var feature in feats.Keys)
                     _enabled.Add(feature);
         }
-
-        foreach (var issue in ConfigCheck.Groups(parsed, _moduleByName))
-            Logger.LogWarning("VIPCore: vipgroups.json {0}", issue);
 
         foreach (var issue in ConfigCheck.Settings(Config, _moduleByName))
             Logger.LogWarning("VIPCore: settings.json {0}", issue);

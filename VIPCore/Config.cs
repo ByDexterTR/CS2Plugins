@@ -64,7 +64,8 @@ public class VipConfig
         ["PlayerGlow"] = "self",
         ["GrenadeTrail"] = "all",
         ["SaySound"] = "all",
-        ["PlayerParticle"] = "all"
+        ["PlayerParticle"] = "all",
+        ["Pet"] = "all"
     };
 
     [JsonPropertyName("model_inspect")]

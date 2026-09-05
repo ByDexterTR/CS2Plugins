@@ -35,6 +35,17 @@ public class ModelInspect : VipModule
                 foreach (var def in cfg.Ct.Concat(cfg.T))
                     if (def.Model.Length > 0)
                         manifest.AddResource(def.Model);
+
+            foreach (var entries in Core.GetAllGroupValues<List<Pet.Entry>>("Pet"))
+                foreach (var entry in entries)
+                    if (entry.Model.Length > 0)
+                        manifest.AddResource(entry.Model);
+
+            foreach (var cfg in Core.GetAllGroupValues<Outfit.Cfg>("Outfit"))
+                foreach (var entries in cfg.Values)
+                    foreach (var entry in entries)
+                        if (entry.Model.Length > 0)
+                            manifest.AddResource(entry.Model);
         });
         Core.HookTick(OnTick);
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
@@ -76,7 +87,65 @@ public class ModelInspect : VipModule
                 items.Add(("T", p => OpenModelMenu(p, "t")));
         }
 
+        if (Pets(player).Count > 0)
+            items.Add((Core.Localizer["vip.module.pet"], OpenPetMenu));
+
+        foreach (var (category, entries) in Wearables(player))
+        {
+            string name = category;
+            if (entries.Count > 0)
+                items.Add((Label(name), p => OpenWearMenu(p, name)));
+        }
+
         Core.OpenCustomMenu(player, DisplayName, items);
+    }
+
+    private List<Pet.Entry> Pets(CCSPlayerController player) =>
+        (Core.GetGroupValue<List<Pet.Entry>>(player, "Pet") ?? new())
+        .Where(entry => entry.Name.Length > 0 && entry.Model.Length > 0).ToList();
+
+    private Outfit.Cfg Wearables(CCSPlayerController player) =>
+        Core.GetGroupValue<Outfit.Cfg>(player, "Outfit") ?? new();
+
+    private static string Label(string name) =>
+        name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : name;
+
+    private void OpenPetMenu(CCSPlayerController player)
+    {
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>
+        {
+            ($"{CC.LightRed}{Core.Localizer["vip.menu_back"]}{CC.Default}", OpenTeamMenu)
+        };
+
+        foreach (var entry in Pets(player))
+        {
+            var pet = entry;
+            items.Add((pet.Name, p => Preview(p, pet.Model)));
+        }
+
+        Core.OpenCustomMenu(player, Core.Localizer["vip.module.pet"], items);
+    }
+
+    private void OpenWearMenu(CCSPlayerController player, string category)
+    {
+        if (!Wearables(player).TryGetValue(category, out var entries))
+            return;
+
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>
+        {
+            ($"{CC.LightRed}{Core.Localizer["vip.menu_back"]}{CC.Default}", OpenTeamMenu)
+        };
+
+        foreach (var entry in entries)
+        {
+            if (entry.Name.Length == 0 || entry.Model.Length == 0)
+                continue;
+
+            var wear = entry;
+            items.Add((wear.Name, p => Preview(p, wear.Model)));
+        }
+
+        Core.OpenCustomMenu(player, Label(category), items);
     }
 
     private void OpenModelMenu(CCSPlayerController player, string team)

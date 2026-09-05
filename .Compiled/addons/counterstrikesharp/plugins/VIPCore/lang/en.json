@@ -131,6 +131,8 @@
 	"vip.module.modelinspect": "Model Inspect",
 	"vip.module.mole": "Mole",
 	"vip.module.oneshot": "One Shot",
+	"vip.module.outfit": "Outfit",
+	"vip.module.pet": "Pet",
 	"vip.module.playerglow": "Player Glow",
 	"vip.module.playermodel": "Player Model",
 	"vip.module.playerparticle": "Player Particle",

@@ -27,7 +27,7 @@ Modular VIP system. Provides a complete VIP infrastructure with more than 75 bui
    csgo/addons/counterstrikesharp/plugins/VIPCore/
    ```
 2. Restart the server or run `css_plugins load VIPCore`.
-3. On first load `settings.json` and `vipgroups.json` (with the example groups `#Lite`, `#Plus`) are created in the plugin folder.
+3. On first load `settings.json` and `vipgroups.json` (with the example groups `#Lite`, `#Plus`, `#Ultra`, `#Deluxe`) are created in the plugin folder.
 4. Edit the groups, then add VIPs with `css_addvip`.
 
 ## Commands
@@ -103,7 +103,8 @@ Every command name in the table above can be renamed from `settings.json`; the k
     "PlayerGlow": "self",
     "GrenadeTrail": "all",
     "SaySound": "all",
-    "PlayerParticle": "all"
+    "PlayerParticle": "all",
+    "Pet": "all"
   },
   "model_inspect": {
     "enabled": true,
@@ -126,7 +127,7 @@ Every command name in the table above can be renamed from `settings.json`; the k
 
 ### `vipgroups.json` (in the plugin folder)
 
-A mapping of group name → module name → module value. A module that is **not defined in a group is disabled for that group**. On first run it is created with the `#Lite` and `#Plus` examples covering every module.
+A mapping of group name → module name → module value. A module that is **not defined in a group is disabled for that group**. On first run it is created with four example tiers: `#Lite`, `#Plus`, `#Ultra` and `#Deluxe`. Each one inherits the previous with `Include` and only writes what it adds or improves, so `#Deluxe` ends up with every module.
 
 ```json
 {
@@ -138,6 +139,33 @@ A mapping of group name → module name → module value. A module that is **not
   }
 }
 ```
+
+### Group inheritance
+
+A group can take over everything another group has with `Include`, and then only write what is different:
+
+```json
+{
+  "#Lite":  { "ExtraHP": 110, "ExtraJump": { "count": 1, "limit": 3 } },
+  "#Plus":  { "Include": ["#Lite"], "ExtraHP": 130, "ExtraJump": { "limit": 0 }, "Silent": true },
+  "#Ultra": { "Include": ["#Plus"], "Vampire": { "heal_percent": 75 } }
+}
+```
+
+`#Plus` above ends up with `ExtraHP: 130`, `ExtraJump: { "count": 1, "limit": 0 }`, `Silent` and everything else `#Lite` has. Includes chain, so `#Ultra` gets `#Lite` too, and several groups can be listed at once. Everything is merged once while the file is read, so inheritance costs nothing during the game.
+
+When the same module is written in both groups:
+
+| Case | Result |
+| --- | --- |
+| Number | The better value wins, so an inherited group can never leave a group worse off. That is the higher value, except for the few keys where less is better: `FallDamage.percent`, `Respawn.time`, `FastDefuse.time`, `FastPlant.time`, `Soul.respawn_time`, and every `tick`, `interval`, `cooldown`, `delay_after_dmg`, `duration_off`, `minspeed`, `minhp`, `recoilpercent`, `dmg_after_invis` |
+| `limit` | `0` means unlimited, so `0` always wins |
+| List (models, colors, weapons, effects…) | The lists are merged. Entries carrying the same `name` (or `weapon_name`, `weapon`, `sound`, `file`, `model`) are merged into one, a different one is added as a new entry |
+| Object | Merged key by key with the same rules |
+| Text, true/false | The group's own value wins |
+| `Force`, `PistolRoundDisable` | If the group writes its own list, it replaces the inherited one |
+
+A missing group name and an include loop are both written to the server console and skipped.
 
 ### Config check
 
@@ -169,7 +197,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Bhop` | Bunny hop (+optional autostrafe) | `{ "autostrafe": true, "max_speed": 500, "jump_boost": 1.1, "jump_velocity": 300 }` |
 | `BombsiteAnnouncer` | HUD image (visual only) + chat message to CTs when the bomb is planted | `{ "img_a": "...Site-A.png", "img_b": "...Site-B.png", "duration": 5.0 }` |
 | `BulletEffect` | The effect picked from the menu is applied to whoever you hit: `poison`, `slow`, `lower` (shrink), `upper` (enlarge). Hitting again extends the duration | `{ "poison": { "damage": 2, "tick": 0.5, "duration": 3, "ignore_teammates": true, "ignore_self": true, "ignore_enemy": false }, "slow": { "percent": 20, "duration": 3 }, "lower": { "size": 0.85, "duration": 5 }, "upper": { "size": 1.25, "duration": 5 }, "only_with_weapon": "" }` |
-| `BulletTrail` | Bullet trail effect | `{ "width": 1.5, "lifetime": 0.6, "colors": [...] }` |
+| `BulletTrail` | Bullet trail effect. Two kinds of entry: `colors` draws a beam (color is free, `rainbow` and `random` work), `particles` plays a game particle instead (its colour is baked into the file, `tint` only works with particles authored for it). Both appear in the same menu | `{ "width": 1.5, "lifetime": 0.6, "colors": [...], "particles": [{ "name": "Wisp", "file": "particles/weapons/cs_weapon_fx/weapon_tracers_rifle_wisp.vpcf" }] }` |
 | `BuyTeamWeapon` | Buying the other team's weapons (only inside the buyzone and before `mp_buytime` expires); command names come from `buy_commands` in `settings.json` | `{ "ak47": true, "m4a4": true, ... }` |
 | `C4Effect` | Particle effect while planting and defusing the bomb; two separate categories, an empty one is hidden from the menu | `[{ "name": "Duman", "particle": "...", "time": 6, "defuse": false }]` |
 | `ColoredModel` | Colored player model; backs off if another plugin (e.g. jRandomSkills) changes the color | `["Rainbow rainbow", "Mavi #0000FF"]` |
@@ -203,7 +231,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `GrenadeKit` | Grenade set on spawn; not given if already held, with 2+ it is given again after throwing (not re-given while InfiniteAmmo is on) | `{ "flash": 2, "smoke": 1, "he": 3, "molotov": 1, "decoy": 0 }` |
 | `GrenadeResist` | Reduces grenade (HE/molotov/inferno) damage; **negative `percent` = debuff** (`-50` increases grenade damage by 50%) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `GrenadeTimer` | The player picks per grenade type from the menu how many extra seconds it stays in the air before going off; the values offered come from the config (0.1 - 20) | `{ "hegrenade": [0.5, 1.0, 2.0], "flashbang": [0.5, 1.0, 2.0], "molotov": [1.0, 2.0, 3.0], "decoy": [], "limit": 0 }` |
-| `GrenadeTrail` | Grenade trail effect | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
+| `GrenadeTrail` | Grenade trail effect. `colors` draws a beam, `particles` attaches a particle to the grenade for its whole flight (cheaper than the beam) | `{ "width": 1.5, "lifetime": 2.5, "colors": [...], "particles": [{ "name": "Smoke", "file": "particles/ui/hud/ui_map_def_utility_trail.vpcf" }] }` |
 | `HealthRegen` | Health regeneration | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Healthshot on spawn | `2` |
 | `HealthshotEffect` | Using a healthshot starts the effect picked from the menu for `time` seconds: `speed`, `strength` (extra damage), `heal`, `poison`, `slow`, `wallhack`, `radarhack`, `magnetic`. `radius: 0` means the effect only covers the player | `{ "speed": { "speed_multiplier": 1.3, "time": 5 }, "strength": { "damage_multiplier": 1.25, "time": 5, "radius": 0 }, "wallhack": { "time": 5, "radius": 0, "only_mode": 0 } }` |
@@ -219,6 +247,9 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `KillScreen` | Screen flashes in the chosen colour on a kill (does not work on a teammate while FFA is off); `duration` is how long the colour stays, `fade` how long it takes to clear, `alpha` how strong it is | `{ "duration": 0.05, "fade": 0.35, "alpha": 90, "colors": ["Random random", "Red #FF0000"] }` |
 | `Mole` | The damaged player is buried `unit` units into the ground for `time` seconds and cannot move; `limit` is how many burials per round (0 = unlimited) | `{ "time": 2.5, "unit": 30, "only_with_weapon": "weapon_deagle", "ignore_teammates": true, "ignore_enemy": false, "ignore_self": true, "limit": 0 }` |
 | `OneShot` | One shot kill with specific weapons | `{ "weapons": "weapon_awp,weapon_ssg08", "limit": 0 }` |
+| `Include` | The group takes over every module of the listed groups and only writes what is different (a group setting, not a module). See “Group inheritance” | `["#Lite"]` |
+| `Outfit` | Cosmetic models worn on the player. Categories are free: whatever you name in the config becomes a menu category and one item can be worn from each at the same time. Worn on spawn, removed on death. The model must carry the player skeleton, otherwise it will not stick to the body | `{ "hat": [{ "name": "Cowboy", "model": "models/hats/cowboy.vmdl", "team": "" }], "backpack": [{ "name": "Bag", "model": "models/bags/bag.vmdl", "team": "CT" }] }` |
+| `Pet` | A companion that follows the player. It walks behind them, plays the run animation while moving and the idle animation while still; `flying` keeps it in the air at `height` with a gentle bob. Removed on death (can be hidden with `css_hidefx`). Animation names come from the model | `[{ "name": "Beaver", "model": "models/pets/beaver.vmdl", "flying": false, "speed": 260, "distance": 55, "height": 45, "scale": 1.0, "animations": { "idle": "@courier_idle", "run": "@courier_run", "death": "@courier_death", "spawn": "@courier_spawn" } }]` |
 | `PistolRoundDisable` | The listed modules are disabled on pistol rounds (a group setting, not a module) | `["GiveWeapon", "WeaponAmmo"]` |
 | `Force` | The listed **Toggle** modules are always active; they are not shown in the menu and the player cannot toggle them (a group setting, not a module; the module must be defined in the group; selection/command based modules are not affected) | `["Dash", "ExtraHP"]` |
 | `PlayerGlow` | Player glow (glow through walls) | `{ "range": 300, "team": -1, "colors": [...] }` |
@@ -226,7 +257,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `PlayerParticle` | A particle attached to the player that follows them; removed on death and at round start (can be hidden with `css_hidefx`). `offset` is its height above the ground. Pick a continuously emitting (loop) particle, one-shot bursts do not follow | `[{ "name": "Duman", "particle": "particles/ambient_fx/ambient_smokestack.vpcf", "offset": 10 }]` |
 | `PlayerModel` | Player model selection per team (separate CT and T menus); `leg: false` hides the first person legs. Applied on spawn only | `{ "ct": [{ "name": "Special Agent Ava", "model": "agents/models/ctm_swat/ctm_swat_variante.vmdl", "arm": "", "leg": true }], "t": [...] }` |
 | `PlayerSize` | Player size selection; applied on spawn only; left alone if the size was already changed by another plugin | `[0.5, 0.75, 1.25, 1.5]` |
-| `PlayerTrail` | Player movement trail | `{ "width": 1.5, "lifetime": 2.5, "colors": [...] }` |
+| `PlayerTrail` | Player movement trail. `colors` draws a beam behind every step, `particles` attaches a single particle to the player until they die (cheaper than the beam); `offset` is its height above the ground. `follow: false` drops the particle behind the player in pieces instead of carrying it along | `{ "width": 1.5, "lifetime": 2.5, "colors": [...], "particles": [{ "name": "Smoke", "file": "particles/entity/spectator_utility_trail.vpcf", "offset": 8 }] }` |
 | `Pyro` | The VIP's molotov/incendiary restores health instead of dealing damage (`multiplier` × damage; above 1 it nets health) | `{ "multiplier": 1.5, "ignore_teammates": false, "ignore_enemy": true, "ignore_self": false, "limit": 0 }` |
 | `RadarHack` | Shows every enemy on the radar; blinks with `duration_on`/`duration_off` (`duration_off: 0` = always on, `duration_on` at least 1 s), `only_mode` picks who is shown: `0` everyone, `1` only those shooting, `2` only those moving, `12` both | `{ "duration_on": 1, "duration_off": 0, "see_teammates": false, "only_mode": 0 }` |
 | `RapidFire` | `firepercent` is the fire rate (`0.1` – `2.0`): `1.0` normal, `2.0` fastest, below that is slower. `recoilpercent` is the recoil left (`0.0` – `1.0`): `0.0` none, `1.0` normal | `{ "only_with_weapon": "", "recoilpercent": 0.0, "firepercent": 2.0 }` |
@@ -254,7 +285,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 ## Usage Examples
 
 ```
-!addvip 76561198000000000 #Plus 1mo   → 1 month of Plus VIP
+!addvip 76561198000000000 #Deluxe 1mo → 1 month of Deluxe VIP
 !addvip 76561198000000000 #Lite 0     → permanent Lite VIP
 !vip                                  → VIP menu + remaining time
 !viplist                              → every record

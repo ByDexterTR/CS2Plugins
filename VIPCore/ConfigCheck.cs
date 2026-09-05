@@ -14,6 +14,11 @@ internal static class ConfigCheck
         "Force"
     };
 
+    private static readonly HashSet<string> SkippedFeatures = new(StringComparer.OrdinalIgnoreCase)
+    {
+        GroupInclude.Key
+    };
+
     private static readonly Dictionary<string, string> ModuleRenames = new(StringComparer.OrdinalIgnoreCase)
     {
         ["ChatTag"] = "Tag",
@@ -53,6 +58,9 @@ internal static class ConfigCheck
         {
             foreach (var (feature, element) in feats)
             {
+                if (SkippedFeatures.Contains(feature))
+                    continue;
+
                 if (ReservedFeatures.Contains(feature))
                 {
                     CheckModuleList(groupName, feature, element, modules, issues);

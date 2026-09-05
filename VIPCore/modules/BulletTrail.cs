@@ -11,6 +11,7 @@ public class BulletTrail : VipModule
         public float Lifetime { get; set; } = 0.6f;
         public string OnlyWithWeapon { get; set; } = "";
         public List<string> Colors { get; set; } = new();
+        public List<ParticleEntry> Particles { get; set; } = new();
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
@@ -22,13 +23,23 @@ public class BulletTrail : VipModule
     public override string DisplayName => Core.Localizer["vip.module.bullettrail"];
     public override VipFeatureType MenuType => VipFeatureType.Select;
 
-    public override List<VipFeatureOption> SelectOptions(CCSPlayerController player) =>
-        TrailBeam.ParseColorOptions(GroupValue<Cfg>(player)?.Colors ?? new());
+    public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
+    {
+        var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
+        var options = TrailBeam.ParseColorOptions(cfg.Colors);
+        ParticleTrail.AddOptions(options, cfg.Particles);
+        return options;
+    }
 
     public override void OnLoad()
     {
         EffectHide.Ensure(Core);
         Core.RegisterEventHandler<EventBulletImpact>(OnImpact);
+        Core.HookPrecache(manifest =>
+        {
+            foreach (var cfg in Core.GetAllGroupValues<Cfg>(Name))
+                ParticleTrail.Precache(manifest, cfg.Particles);
+        });
     }
 
     private HookResult OnImpact(EventBulletImpact ev, GameEventInfo info)
@@ -51,6 +62,14 @@ public class BulletTrail : VipModule
         var impact = new Vector(ev.X, ev.Y, ev.Z);
 
         string setting = Setting(player);
+
+        var entry = ParticleTrail.Find(cfg.Particles, setting);
+        if (entry != null)
+        {
+            ParticleTrail.Tracer(Core, eye, impact, entry, cfg.Lifetime, EffectHide.BulletTrail, player.Slot);
+            return HookResult.Continue;
+        }
+
         var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(player.Slot) : TrailBeam.Resolve(setting);
         TrailBeam.Create(Core, eye, impact, color, cfg.Width, cfg.Lifetime, EffectHide.BulletTrail, player.Slot);
         return HookResult.Continue;
