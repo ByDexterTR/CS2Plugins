@@ -9,6 +9,8 @@ public class Silent : VipModule
     private class Cfg
     {
         public string OnlyWithWeapon { get; set; } = "";
+        public float DurationOn { get; set; } = 1f;
+        public float DurationOff { get; set; } = 0f;
 
         private List<string>? _allow;
         public List<string> Allow => _allow ??= WeaponUtil.ParseCsv(OnlyWithWeapon);
@@ -62,9 +64,18 @@ public class Silent : VipModule
         if (!Active(player))
             return HookResult.Continue;
 
-        var allow = (GroupValue<Cfg>(player!) ?? DefaultCfg).Allow;
+        var cfg = GroupValue<Cfg>(player!) ?? DefaultCfg;
+
+        var allow = cfg.Allow;
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(player!)))
             return HookResult.Continue;
+
+        if (cfg.DurationOff > 0)
+        {
+            float on = Math.Max(cfg.DurationOn, 0.1f);
+            if (Server.CurrentTime % (on + cfg.DurationOff) >= on)
+                return HookResult.Continue;
+        }
 
         for (int i = um.Recipients.Count - 1; i >= 0; i--)
         {

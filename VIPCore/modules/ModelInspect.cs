@@ -9,12 +9,14 @@ public class ModelInspect : VipModule
 {
     private class Session
     {
-        public required CDynamicProp Prop;
+        public required CBaseModelEntity Prop;
         public required float StartAngle;
         public required float StartTime;
         public required float EndTime;
         public required float Spin;
     }
+
+    private static readonly HashSet<string> PhysicsModels = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly Session?[] _previews = new Session?[64];
     private readonly float[] _nextUse = new float[64];
@@ -46,6 +48,11 @@ public class ModelInspect : VipModule
                     foreach (var entry in entries)
                         if (entry.Model.Length > 0)
                             manifest.AddResource(entry.Model);
+
+            foreach (var entries in Core.GetAllGroupValues<List<CustomWeaponModel.Entry>>("CustomWeaponModel"))
+                foreach (var entry in entries)
+                    if (entry.Model.Length > 0 && !int.TryParse(entry.Model, out _))
+                        manifest.AddResource(entry.Model);
         });
         Core.HookTick(OnTick);
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
@@ -97,6 +104,9 @@ public class ModelInspect : VipModule
                 items.Add((Label(name), p => OpenWearMenu(p, name)));
         }
 
+        if (Weapons(player).Count > 0)
+            items.Add((Core.Localizer["vip.module.customweaponmodel"], OpenWeaponMenu));
+
         Core.OpenCustomMenu(player, DisplayName, items);
     }
 
@@ -107,15 +117,19 @@ public class ModelInspect : VipModule
     private Outfit.Cfg Wearables(CCSPlayerController player) =>
         Core.GetGroupValue<Outfit.Cfg>(player, "Outfit") ?? new();
 
+    private List<CustomWeaponModel.Entry> Weapons(CCSPlayerController player) =>
+        CustomWeaponModel.Usable(Core.GetGroupValue<List<CustomWeaponModel.Entry>>(player, "CustomWeaponModel"))
+            .Where(entry => !int.TryParse(entry.Model, out _)).ToList();
+
     private static string Label(string name) =>
         name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : name;
 
+    private List<(string display, Action<CCSPlayerController> onSelect)> BackTo(Action<CCSPlayerController> parent) =>
+        new() { ($"{CC.LightRed}{Core.Localizer["vip.menu_back"]}{CC.Default}", parent) };
+
     private void OpenPetMenu(CCSPlayerController player)
     {
-        var items = new List<(string display, Action<CCSPlayerController> onSelect)>
-        {
-            ($"{CC.LightRed}{Core.Localizer["vip.menu_back"]}{CC.Default}", OpenTeamMenu)
-        };
+        var items = BackTo(OpenTeamMenu);
 
         foreach (var entry in Pets(player))
         {
@@ -131,10 +145,7 @@ public class ModelInspect : VipModule
         if (!Wearables(player).TryGetValue(category, out var entries))
             return;
 
-        var items = new List<(string display, Action<CCSPlayerController> onSelect)>
-        {
-            ($"{CC.LightRed}{Core.Localizer["vip.menu_back"]}{CC.Default}", OpenTeamMenu)
-        };
+        var items = BackTo(OpenTeamMenu);
 
         foreach (var entry in entries)
         {
@@ -148,6 +159,39 @@ public class ModelInspect : VipModule
         Core.OpenCustomMenu(player, Label(category), items);
     }
 
+    private void OpenWeaponMenu(CCSPlayerController player)
+    {
+        var items = BackTo(OpenTeamMenu);
+        var seen = new HashSet<string>();
+
+        foreach (var entry in Weapons(player))
+        {
+            string category = CustomWeaponModel.Category(entry.Weapon);
+            if (!seen.Add(category))
+                continue;
+
+            items.Add((WeaponUtil.Label(entry.Weapon), p => OpenWeaponModelMenu(p, category)));
+        }
+
+        Core.OpenCustomMenu(player, Core.Localizer["vip.module.customweaponmodel"], items);
+    }
+
+    private void OpenWeaponModelMenu(CCSPlayerController player, string category)
+    {
+        var items = BackTo(OpenWeaponMenu);
+
+        foreach (var entry in Weapons(player))
+        {
+            if (CustomWeaponModel.Category(entry.Weapon) != category)
+                continue;
+
+            var weapon = entry;
+            items.Add((weapon.Name, p => Preview(p, weapon.Model)));
+        }
+
+        Core.OpenCustomMenu(player, WeaponUtil.Label(category), items);
+    }
+
     private void OpenModelMenu(CCSPlayerController player, string team)
     {
         var cfg = Core.GetGroupValue<PlayerModel.Cfg>(player, "PlayerModel");
@@ -155,11 +199,7 @@ public class ModelInspect : VipModule
             return;
 
         var models = Models(team == "ct" ? cfg.Ct : cfg.T);
-
-        var items = new List<(string display, Action<CCSPlayerController> onSelect)>
-        {
-            ($"{CC.LightRed}{Core.Localizer["vip.menu_back"]}{CC.Default}", OpenTeamMenu)
-        };
+        var items = BackTo(OpenTeamMenu);
 
         foreach (var model in models)
         {
@@ -199,12 +239,23 @@ public class ModelInspect : VipModule
 
         Remove(slot);
 
-        var prop = Spawn(pawn, model, out float angle);
-        if (prop == null)
+        if (!Show(player, pawn, model, now, PhysicsModels.Contains(model)))
             return;
 
+        if (cooldown > 0f)
+            _nextUse[slot] = now + cooldown;
+    }
+
+    private bool Show(CCSPlayerController player, CCSPlayerPawn pawn, string model, float now, bool physics)
+    {
+        var prop = Spawn(pawn, model, physics, out float angle);
+        if (prop == null)
+            return false;
+
+        int slot = player.Slot;
         float duration = Math.Max(Settings.Duration, 0.5f);
-        _previews[slot] = new Session
+
+        var session = new Session
         {
             Prop = prop,
             StartAngle = angle,
@@ -213,21 +264,50 @@ public class ModelInspect : VipModule
             Spin = Settings.Spin
         };
 
-        if (cooldown > 0f)
-            _nextUse[slot] = now + cooldown;
+        _previews[slot] = session;
+
+        if (!physics)
+            Server.NextFrame(() =>
+            {
+                if (prop.IsValid || !ReferenceEquals(_previews[slot], session))
+                    return;
+
+                PhysicsModels.Add(model);
+                _previews[slot] = null;
+
+                if (player.IsValid && pawn.IsValid && IsAlive(player))
+                    Show(player, pawn, model, Server.CurrentTime, true);
+            });
+
+        return true;
     }
 
-    private CDynamicProp? Spawn(CCSPlayerPawn pawn, string model, out float angle)
+    private CBaseModelEntity? Spawn(CCSPlayerPawn pawn, string model, bool physics, out float angle)
     {
         angle = pawn.EyeAngles.Y + 180f;
 
-        var prop = Utilities.CreateEntityByName<CDynamicProp>("prop_dynamic");
+        var prop = Utilities.CreateEntityByName<CBaseModelEntity>(physics ? "prop_physics_override" : "prop_dynamic");
         if (prop == null || !prop.IsValid)
             return null;
 
         var node = prop.CBodyComponent?.SceneNode?.Owner?.Entity;
         if (node != null)
             node.Flags = (uint)(node.Flags & ~(1 << 2));
+
+        var position = Position(pawn);
+        var angles = new QAngle(0, angle, 0);
+        prop.Teleport(position, angles, new Vector());
+
+        var keys = new CEntityKeyValues();
+        keys.SetString("model", model);
+        keys.SetInt("spawnflags", 256);
+        keys.SetVector("origin", position);
+
+        prop.DispatchSpawn(keys);
+        keys.Dispose();
+
+        if (!prop.IsValid)
+            return null;
 
         var collision = prop.Collision;
         if (collision != null)
@@ -236,10 +316,10 @@ public class ModelInspect : VipModule
             collision.SolidFlags = 12;
         }
 
-        prop.SetModel(model);
-        prop.Spawnflags = 256u;
-        prop.Teleport(Position(pawn), new QAngle(0, angle, 0), new Vector());
-        prop.DispatchSpawn();
+        if (physics)
+            prop.AcceptInput("DisableMotion");
+
+        prop.Teleport(position, angles, new Vector());
 
         return prop;
     }
@@ -291,7 +371,10 @@ public class ModelInspect : VipModule
         var preview = _previews[slot];
         _previews[slot] = null;
 
-        if (preview != null && preview.Prop.IsValid && preview.Prop.DesignerName == "prop_dynamic")
+        if (preview == null || !preview.Prop.IsValid)
+            return;
+
+        if (preview.Prop.DesignerName is "prop_dynamic" or "prop_physics_override")
             preview.Prop.Remove();
     }
 

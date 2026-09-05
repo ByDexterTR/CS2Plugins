@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Cvars;
 
 namespace VIPCore;
 
@@ -22,13 +23,22 @@ public class Healthshot : VipModule
 
         Server.NextFrame(() =>
         {
-            if (!IsAlive(player))
+            if (!IsAlive(player) || HasWeapon(player, "weapon_healthshot"))
                 return;
 
-            for (int i = CountWeapon(player, "weapon_healthshot"); i < count; i++)
+            int limit = Limit();
+            int give = limit > 0 ? Math.Min(count, limit) : count;
+
+            for (int i = 0; i < give; i++)
                 player!.GiveNamedItem("weapon_healthshot");
         });
 
         return HookResult.Continue;
+    }
+
+    private static int Limit()
+    {
+        try { return ConVar.Find("ammo_item_limit_healthshot")?.GetPrimitiveValue<int>() ?? 0; }
+        catch { return 0; }
     }
 }

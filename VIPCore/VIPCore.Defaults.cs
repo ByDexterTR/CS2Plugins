@@ -444,7 +444,9 @@ public partial class VIPCore
       ]
     },
     "Silent": {
-      "only_with_weapon": ""
+      "only_with_weapon": "",
+      "duration_on": 1,
+      "duration_off": 0
     },
     "SmokeColor": [
       "Yesil #00FF00"
@@ -964,6 +966,7 @@ public partial class VIPCore
     },
     "RapidFire": {
       "only_with_weapon": "",
+      "only_stance": 0,
       "recoilpercent": 0.0,
       "firepercent": 2.0
     },

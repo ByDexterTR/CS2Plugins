@@ -2,6 +2,7 @@
   "storage": "json",
   "menu_type": "wasd",
   "admin_flag": "@css/root",
+  "perf_log": false,
   "commands": {
     "menu": "css_vip,css_vipmenu",
     "list_online": "css_vips,css_onlinevip",
@@ -51,12 +52,13 @@
     "PlayerGlow": "self",
     "GrenadeTrail": "all",
     "SaySound": "all",
-    "PlayerParticle": "all"
+    "PlayerParticle": "all",
+    "Pet": "all"
   },
   "model_inspect": {
     "enabled": true,
     "duration": 5,
-    "cooldown": 30,
+    "cooldown": 5,
     "distance": 90,
     "height": -40,
     "spin": 360

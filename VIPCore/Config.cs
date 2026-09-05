@@ -93,7 +93,7 @@ public class ModelInspectSettings
 {
     [JsonPropertyName("enabled")] public bool Enabled { get; set; } = true;
     [JsonPropertyName("duration")] public float Duration { get; set; } = 5f;
-    [JsonPropertyName("cooldown")] public float Cooldown { get; set; } = 30f;
+    [JsonPropertyName("cooldown")] public float Cooldown { get; set; } = 5f;
     [JsonPropertyName("distance")] public float Distance { get; set; } = 90f;
     [JsonPropertyName("height")] public float Height { get; set; } = -40f;
     [JsonPropertyName("spin")] public float Spin { get; set; } = 360f;

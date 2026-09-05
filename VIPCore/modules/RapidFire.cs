@@ -11,6 +11,8 @@ public class RapidFire : VipModule
     {
         public string OnlyWithWeapon { get; set; } = "";
 
+        public int OnlyStance { get; set; } = 0;
+
         [JsonPropertyName("recoilpercent")]
         public float RecoilPercent { get; set; }
 
@@ -65,6 +67,9 @@ public class RapidFire : VipModule
             var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
             var allow = cfg.Allow;
             if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(player)))
+                continue;
+
+            if (!StanceFilter.Matches(cfg.OnlyStance, pawn))
                 continue;
 
             ApplyRecoil(player.Slot, pawn, Math.Clamp(cfg.RecoilPercent, 0f, 1f));

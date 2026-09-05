@@ -158,11 +158,7 @@
       "only_with_weapon": "",
       "particles": [
         {
-          "name": "Tuefek",
-          "file": "particles/weapons/cs_weapon_fx/weapon_tracers_assrifle.vpcf"
-        },
-        {
-          "name": "Ruh",
+          "name": "Wisp",
           "file": "particles/weapons/cs_weapon_fx/weapon_tracers_rifle_wisp.vpcf"
         }
       ],
@@ -308,7 +304,7 @@
       "particles": [
         {
           "name": "Duman",
-          "file": "particles/ui/hud/ui_map_def_utility_trail.vpcf"
+          "file": "particles/burning_fx/gas_cannister_trail_smoke.vpcf"
         }
       ],
       "width": 1.5
@@ -443,7 +439,9 @@
       ]
     },
     "Silent": {
-      "only_with_weapon": ""
+      "only_with_weapon": "",
+      "duration_on": 1,
+      "duration_off": 0
     },
     "SmokeColor": [
       "Yesil #00FF00"
@@ -561,10 +559,6 @@
         {
           "name": "Agir",
           "file": "particles/weapons/cs_weapon_fx/weapon_tracers_50cal.vpcf"
-        },
-        {
-          "name": "Sok",
-          "file": "particles/weapons/cs_weapon_fx/weapon_tracers_taser.vpcf"
         }
       ]
     },
@@ -967,6 +961,7 @@
     },
     "RapidFire": {
       "only_with_weapon": "",
+      "only_stance": 0,
       "recoilpercent": 0.0,
       "firepercent": 2.0
     },
@@ -1069,12 +1064,8 @@
     "BulletTrail": {
       "particles": [
         {
-          "name": "MVP",
-          "file": "particles/ui/hud/ui_map_mvp_pistol_tracerc.vpcf"
-        },
-        {
-          "name": "AWP",
-          "file": "particles/ui/hud/ui_map_mvp_model_awp_tracer.vpcf"
+          "name": "Sok",
+          "file": "particles/weapons/cs_weapon_fx/weapon_tracers_taser.vpcf"
         }
       ]
     },
@@ -1320,8 +1311,8 @@
     "GrenadeTrail": {
       "particles": [
         {
-          "name": "Kar",
-          "file": "particles/weapons/cs_weapon_fx/weapon_snowball_trail.vpcf"
+          "name": "Kivilcim",
+          "file": "particles/burning_fx/gas_cannister_trail_embers.vpcf"
         }
       ]
     },
@@ -1401,11 +1392,6 @@
       ],
       "lifetime": 2.5,
       "particles": [
-        {
-          "name": "Para",
-          "file": "particles/money_fx/moneybag_trail.vpcf",
-          "offset": 8
-        },
         {
           "name": "Spor",
           "file": "particles/survival_fx/danger_trail_spores.vpcf",

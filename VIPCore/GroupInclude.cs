@@ -28,6 +28,7 @@ internal static class GroupInclude
         "interval",
         "cooldown",
         "duration_off",
+        "only_stance",
         "delay_after_dmg",
         "dmg_after_invis",
         "recoilpercent",
