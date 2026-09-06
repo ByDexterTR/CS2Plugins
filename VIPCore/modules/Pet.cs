@@ -25,6 +25,7 @@ public class Pet : VipModule
         public float Distance { get; set; } = 55f;
         public float Height { get; set; } = 45f;
         public float Scale { get; set; } = 1f;
+        public float Yaw { get; set; } = 0f;
         public Anim Animations { get; set; } = new();
     }
 
@@ -88,7 +89,7 @@ public class Pet : VipModule
     {
         Remove(player.UserId ?? -1);
         if (value != "off")
-            Spawn(player);
+            Server.NextFrame(() => Spawn(player, true));
     }
 
     private void RemoveAll()
@@ -122,7 +123,7 @@ public class Pet : VipModule
         });
     }
 
-    private void Spawn(CCSPlayerController? player)
+    private void Spawn(CCSPlayerController? player, bool instant = false)
     {
         if (player == null || !player.IsValid || !IsAlive(player) || !Active(player))
             return;
@@ -153,10 +154,25 @@ public class Pet : VipModule
             return;
 
         prop.CBodyComponent!.SceneNode!.Owner!.Entity!.Flags &= ~(uint)(1 << 2);
-        prop.SetModel(def.Model);
-        prop.Teleport(start, new QAngle(), new Vector());
-        prop.DispatchSpawn();
-        prop.AcceptInput("Start");
+
+        var keys = new CEntityKeyValues();
+        keys.SetString("model", def.Model);
+        keys.SetInt("spawnflags", 256);
+        keys.SetVector("origin", start);
+        prop.DispatchSpawn(keys);
+        keys.Dispose();
+
+        if (!prop.IsValid)
+            return;
+
+        var collision = prop.Collision;
+        if (collision != null)
+        {
+            collision.SolidType = SolidType_t.SOLID_NONE;
+            collision.SolidFlags = 12;
+        }
+
+        prop.Teleport(start, new QAngle(0, def.Yaw, 0), new Vector());
 
         EffectHide.Track(EffectHide.Pet, prop.Index, player.Slot);
 
@@ -184,11 +200,12 @@ public class Pet : VipModule
                 prop.AcceptInput("SetScale", null, null, def.Scale.ToString(CultureInfo.InvariantCulture));
             }
 
-            string first = def.Animations.Spawn.Length > 0 ? def.Animations.Spawn : def.Animations.Idle;
+            bool intro = !instant && def.Animations.Spawn.Length > 0;
+            string first = intro ? def.Animations.Spawn : def.Animations.Idle;
             if (first.Length > 0)
                 prop.AcceptInput("SetAnimation", value: first);
 
-            if (def.Animations.Spawn.Length > 0 && def.Animations.Idle.Length > 0)
+            if (intro && def.Animations.Idle.Length > 0)
                 Core.AddTimer(1.1f, () =>
                 {
                     if (prop.IsValid)
@@ -288,7 +305,7 @@ public class Pet : VipModule
         float bob = pet.Def.Flying ? MathF.Sin(Server.CurrentTime * BobSpeed) * BobSize : 0f;
         var draw = new Vector(pet.Position.X, pet.Position.Y, pet.Position.Z + bob);
 
-        pet.Prop.Teleport(draw, new QAngle(0, pet.Yaw, 0), new Vector());
+        pet.Prop.Teleport(draw, new QAngle(0, pet.Yaw + pet.Def.Yaw, 0), new Vector());
 
         if (running == pet.Running)
             return;

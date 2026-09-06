@@ -135,8 +135,10 @@ public static class ParticleTrail
         if (particle == null || !particle.IsValid || particle.DesignerName != "info_particle_system")
             return;
 
-        particle.AcceptInput("Stop");
-        particle.Remove();
+        particle.AcceptInput("DestroyImmediately");
+
+        if (particle.IsValid)
+            particle.Remove();
     }
 
     private static QAngle Aim(Vector from, Vector to)

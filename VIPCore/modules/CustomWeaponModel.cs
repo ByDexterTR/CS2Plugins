@@ -10,6 +10,7 @@ public class CustomWeaponModel : VipModule
         public string Name { get; set; } = "";
         public string Weapon { get; set; } = "";
         public string Model { get; set; } = "";
+        public bool Throw { get; set; } = true;
     }
 
     private class Applied
@@ -17,6 +18,16 @@ public class CustomWeaponModel : VipModule
         public bool IsSubclass;
         public string? OriginalModel;
     }
+
+    private static readonly Dictionary<string, string> Projectiles = new()
+    {
+        ["hegrenade_projectile"] = "weapon_hegrenade",
+        ["flashbang_projectile"] = "weapon_flashbang",
+        ["smokegrenade_projectile"] = "weapon_smokegrenade",
+        ["decoy_projectile"] = "weapon_decoy",
+        ["molotov_projectile"] = "weapon_molotov",
+        ["snowball_projectile"] = "weapon_snowball",
+    };
 
     private readonly Dictionary<uint, Applied> _applied = new();
 
@@ -57,6 +68,7 @@ public class CustomWeaponModel : VipModule
         Core.RegisterEventHandler<EventPlayerSpawn>((ev, _) => { Schedule(ev.Userid); return HookResult.Continue; });
         Core.RegisterEventHandler<EventItemPickup>((ev, _) => { Schedule(ev.Userid); return HookResult.Continue; });
         Core.HookEntityDeleted(entity => _applied.Remove(entity.Index));
+        Core.HookEntitySpawned(OnProjectileSpawned);
         Core.HookPrecache(manifest =>
         {
             foreach (var entries in Core.GetAllGroupValues<List<Entry>>(Name))
@@ -117,6 +129,33 @@ public class CustomWeaponModel : VipModule
             else if (_applied.TryGetValue(weapon.Index, out var applied))
                 Revert(weapon, applied);
         }
+    }
+
+    private void OnProjectileSpawned(CEntityInstance entity)
+    {
+        if (entity == null || !entity.IsValid || !Projectiles.TryGetValue(entity.DesignerName, out string? weaponName))
+            return;
+
+        var projectile = entity.As<CBaseCSGrenadeProjectile>();
+        Server.NextFrame(() =>
+        {
+            if (projectile == null || !projectile.IsValid)
+                return;
+
+            var owner = projectile.Thrower.Value?.Controller.Value?.As<CCSPlayerController>();
+            if (owner == null || !owner.IsValid || !Active(owner))
+                return;
+
+            var entries = Usable(GroupValue<List<Entry>>(owner));
+            if (entries.Count == 0)
+                return;
+
+            var wanted = Choose(owner, entries, weaponName);
+            if (wanted == null || !wanted.Throw || int.TryParse(wanted.Model, out _))
+                return;
+
+            projectile.SetModel(wanted.Model);
+        });
     }
 
     private Entry? Pick(CCSPlayerController player, List<Entry> entries, string weaponName)

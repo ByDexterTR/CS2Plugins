@@ -314,6 +314,15 @@
       "interval": 1,
       "delay_after_dmg": 4
     },
+    "HitMarker": [
+      {
+        "name": "Impact",
+        "particle": "particles/impact_fx/impact_hit_effect.vpcf",
+        "headshot": "particles/impact_fx/impact_hit_effect_kill.vpcf",
+        "duration": 0.25,
+        "distance": 60
+      }
+    ],
     "HitSound": [
       {
         "name": "Killcard",

@@ -50,6 +50,7 @@ public class VipConfig
         ["PlayerModel"] = "css_vipmodel",
         ["PlayerParticle"] = "css_particle",
         ["Aura"] = "css_aura",
+        ["HitMarker"] = "css_hitmarker",
         ["HitSound"] = "css_hitsound",
         ["SaySound"] = "css_saysound"
     };

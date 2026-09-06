@@ -118,6 +118,7 @@
 	"vip.module.healthregen": "Health Regen",
 	"vip.module.healthshot": "Healthshot",
 	"vip.module.healthshoteffect": "Healthshot Effect",
+	"vip.module.hitmarker": "Hit Marker",
 	"vip.module.hitsound": "Hit Sound",
 	"vip.module.infiniteammo": "Infinite Ammo",
 	"vip.module.invisibility": "Invisibility",

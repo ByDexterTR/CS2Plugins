@@ -23,6 +23,8 @@ public class GrenadeTrail : VipModule
         public required int OwnerSlot;
         public System.Drawing.Color? Fixed;
         public Vector Last = new(0, 0, 0);
+        public CParticleSystem? Particle;
+        public float Offset;
     }
 
     private readonly List<Tracked> _tracked = new();
@@ -43,13 +45,24 @@ public class GrenadeTrail : VipModule
     {
         EffectHide.Ensure(Core);
         Core.HookEntitySpawned(OnEntitySpawned);
-        Core.HookTick(OnTick, 2);
-        Core.RegisterEventHandler<EventRoundStart>((_, __) => { _tracked.Clear(); return HookResult.Continue; });
+        Core.HookTick(OnTick);
+        Core.RegisterEventHandler<EventRoundStart>((_, __) => { Clear(); return HookResult.Continue; });
+        Core.HookMapStart(_ => _tracked.Clear());
         Core.HookPrecache(manifest =>
         {
             foreach (var cfg in Core.GetAllGroupValues<Cfg>(Name))
                 ParticleTrail.Precache(manifest, cfg.Particles);
         });
+    }
+
+    public override void OnUnload() => Clear();
+
+    private void Clear()
+    {
+        foreach (var t in _tracked)
+            ParticleTrail.Stop(t.Particle);
+
+        _tracked.Clear();
     }
 
     private void OnEntitySpawned(CEntityInstance entity)
@@ -71,22 +84,25 @@ public class GrenadeTrail : VipModule
             string setting = Setting(owner!);
 
             var entry = ParticleTrail.Find(cfg.Particles, setting);
-            if (entry != null)
-            {
-                var attached = ParticleTrail.Follow(projectile, entry, entry.Offset, EffectHide.GrenadeTrail, owner!.Slot);
-                Core.AddTimer(entry.Lifetime > 0 ? entry.Lifetime : 10f, () => ParticleTrail.Stop(attached));
-                return;
-            }
-
-            _tracked.Add(new Tracked
+            var tracked = new Tracked
             {
                 Projectile = projectile,
                 ColorValue = setting,
                 Width = cfg.Width,
                 Lifetime = cfg.Lifetime,
                 OwnerSlot = owner!.Slot,
-                Fixed = TrailBeam.IsRandom(setting) ? Core.RoundColor(owner.Slot) : null
-            });
+                Fixed = entry == null && TrailBeam.IsRandom(setting) ? Core.RoundColor(owner.Slot) : null
+            };
+
+            if (entry != null)
+            {
+                tracked.Particle = ParticleTrail.Carry(projectile, entry, entry.Offset, EffectHide.GrenadeTrail, owner.Slot);
+                tracked.Offset = entry.Offset;
+                if (tracked.Particle == null)
+                    return;
+            }
+
+            _tracked.Add(tracked);
         });
     }
 
@@ -97,6 +113,7 @@ public class GrenadeTrail : VipModule
             var t = _tracked[i];
             if (t.Projectile == null || !t.Projectile.IsValid)
             {
+                ParticleTrail.Stop(t.Particle);
                 _tracked.RemoveAt(i);
                 continue;
             }
@@ -104,6 +121,18 @@ public class GrenadeTrail : VipModule
             var origin = t.Projectile.AbsOrigin;
             if (origin == null)
                 continue;
+
+            if (t.Particle != null)
+            {
+                if (!t.Particle.IsValid)
+                {
+                    _tracked.RemoveAt(i);
+                    continue;
+                }
+
+                t.Particle.Teleport(new Vector(origin.X, origin.Y, origin.Z + t.Offset), new QAngle(), new Vector());
+                continue;
+            }
 
             if (t.Last.LengthSqr() == 0)
             {
