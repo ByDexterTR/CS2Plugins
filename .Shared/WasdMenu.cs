@@ -38,6 +38,7 @@ public class WasdMenuManager
   private readonly Func<string> _scrollLabel;
   private readonly Func<string> _selectLabel;
   private readonly Func<string> _exitLabel;
+  private readonly Func<string>? _pageLabel;
   private readonly string _tag;
 
   private readonly Dictionary<int, Session> _sessions = new();
@@ -55,12 +56,13 @@ public class WasdMenuManager
     public bool Dirty = true;
   }
 
-  public WasdMenuManager(BasePlugin plugin, Func<string> scrollLabel, Func<string> selectLabel, Func<string> exitLabel)
+  public WasdMenuManager(BasePlugin plugin, Func<string> scrollLabel, Func<string> selectLabel, Func<string> exitLabel, Func<string>? pageLabel = null)
   {
     _plugin = plugin;
     _scrollLabel = scrollLabel;
     _selectLabel = selectLabel;
     _exitLabel = exitLabel;
+    _pageLabel = pageLabel;
     _tag = $"<{new string(plugin.ModuleName.Where(char.IsLetterOrDigit).ToArray())}/>";
 
     plugin.HookUserMessage(LegacyEventMessageId, OnCenterHtml);
@@ -267,8 +269,12 @@ public class WasdMenuManager
         : $"<font color='{color}'>{item.Text}</font><br>");
     }
 
+    builder.Append($"<font class='fontSize-s' color='#4AC7EE'>W/S {_scrollLabel()}</font> | ");
+
+    if (totalPages > 1 && _pageLabel != null)
+      builder.Append($"<font class='fontSize-s' color='#C79BE0'>A/D {_pageLabel()}</font> | ");
+
     builder.Append(
-      $"<font class='fontSize-s' color='#4AC7EE'>W/S {_scrollLabel()}</font> | " +
       $"<font class='fontSize-s' color='#76C97A'>E {_selectLabel()}</font> | " +
       $"<font class='fontSize-s' color='#FF8077'>R {_exitLabel()}</font>");
 
