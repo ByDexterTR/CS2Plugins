@@ -6,6 +6,7 @@ public class JsonStorage : IVipStorage
 {
     private readonly string _vipsPath;
     private readonly string _settingsPath;
+    private readonly string _testPath;
     private readonly object _ioLock = new();
     private static readonly JsonSerializerOptions Opts = new() { WriteIndented = true };
 
@@ -13,6 +14,7 @@ public class JsonStorage : IVipStorage
     {
         _vipsPath = Path.Combine(directory, "vips.json");
         _settingsPath = Path.Combine(directory, "players.json");
+        _testPath = Path.Combine(directory, "viptest.json");
     }
 
     public bool SupportsLiveRefresh => false;
@@ -127,6 +129,33 @@ public class JsonStorage : IVipStorage
 
             File.WriteAllText(_settingsPath, JsonSerializer.Serialize(all, Opts));
         }
+    }
+
+    public bool TestUsed(ulong steamId)
+    {
+        lock (_ioLock)
+            return LoadTestUnlocked().Contains(steamId.ToString());
+    }
+
+    public void MarkTestUsed(ulong steamId)
+    {
+        lock (_ioLock)
+        {
+            var all = LoadTestUnlocked();
+            if (!all.Add(steamId.ToString()))
+                return;
+
+            File.WriteAllText(_testPath, JsonSerializer.Serialize(all.ToList(), Opts));
+        }
+    }
+
+    private HashSet<string> LoadTestUnlocked()
+    {
+        if (!File.Exists(_testPath))
+            return new();
+
+        try { return new HashSet<string>(JsonSerializer.Deserialize<List<string>>(File.ReadAllText(_testPath)) ?? new()); }
+        catch { return new(); }
     }
 
     private Dictionary<string, VipEntry> LoadVipsUnlocked()

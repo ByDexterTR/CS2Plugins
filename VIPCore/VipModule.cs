@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Admin;
 
 namespace VIPCore;
 
@@ -61,6 +62,24 @@ public abstract class VipModule
     protected string CategorySetting(CCSPlayerController player, string category) => Core.GetSetting(player.SteamID, $"{Name}@{category}");
     protected T? GroupValue<T>(CCSPlayerController player) => Core.GetGroupValue<T>(player, Name);
     protected IReadOnlyList<CCSPlayerController> ActivePlayers() => Core.ActivePlayers(Name);
+
+    public static bool HasFlags(CCSPlayerController? player, string? required)
+    {
+        if (string.IsNullOrWhiteSpace(required))
+            return true;
+
+        if (player == null || !player.IsValid)
+            return false;
+
+        if (AdminManager.PlayerHasPermissions(player, "@css/root"))
+            return true;
+
+        foreach (string flag in required.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            if (AdminManager.PlayerHasPermissions(player, flag))
+                return true;
+
+        return false;
+    }
 
     public static bool TryGetButtons(CCSPlayerController? p, out PlayerButtons buttons)
     {

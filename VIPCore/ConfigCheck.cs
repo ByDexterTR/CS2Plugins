@@ -11,7 +11,8 @@ internal static class ConfigCheck
     private static readonly HashSet<string> ReservedFeatures = new(StringComparer.OrdinalIgnoreCase)
     {
         "PistolRoundDisable",
-        "Force"
+        "Force",
+        "Period"
     };
 
     private static readonly HashSet<string> SkippedFeatures = new(StringComparer.OrdinalIgnoreCase)

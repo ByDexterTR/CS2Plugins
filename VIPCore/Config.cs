@@ -46,6 +46,7 @@ public class VipConfig
     public Dictionary<string, string> ModuleCommands { get; set; } = new()
     {
         ["GiveWeapon"] = "css_weapons,css_kit",
+        ["GrenadeTrajectory"] = "css_trajectory",
         ["GlueGrenade"] = "css_glue,css_gluegrenade",
         ["PlayerModel"] = "css_vipmodel",
         ["PlayerParticle"] = "css_particle",
@@ -71,6 +72,9 @@ public class VipConfig
 
     [JsonPropertyName("model_inspect")]
     public ModelInspectSettings ModelInspect { get; set; } = new();
+
+    [JsonPropertyName("viptest")]
+    public VipTestSettings VipTest { get; set; } = new();
 
     [JsonPropertyName("mysql")]
     public MySqlSettings MySql { get; set; } = new();
@@ -98,6 +102,13 @@ public class ModelInspectSettings
     [JsonPropertyName("distance")] public float Distance { get; set; } = 90f;
     [JsonPropertyName("height")] public float Height { get; set; } = -40f;
     [JsonPropertyName("spin")] public float Spin { get; set; } = 360f;
+}
+
+public class VipTestSettings
+{
+    [JsonPropertyName("group")] public string Group { get; set; } = "";
+    [JsonPropertyName("duration")] public int Duration { get; set; } = 1800;
+    [JsonPropertyName("cmd")] public string Cmd { get; set; } = "css_viptest";
 }
 
 public class MySqlSettings

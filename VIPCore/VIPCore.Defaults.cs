@@ -314,6 +314,13 @@ public partial class VIPCore
       ],
       "width": 1.5
     },
+    "GrenadeTrajectory": {
+      "molotov": true,
+      "smokegrenade": true,
+      "flashbang": true,
+      "hegrenade": true,
+      "decoy": true
+    },
     "HealthRegen": {
       "hp_per_tick": 5,
       "interval": 1,

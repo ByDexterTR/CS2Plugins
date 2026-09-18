@@ -11,6 +11,7 @@ public class CustomWeaponModel : VipModule
         public string Weapon { get; set; } = "";
         public string Model { get; set; } = "";
         public bool Throw { get; set; } = true;
+        public string Required { get; set; } = "";
     }
 
     private class Applied
@@ -35,10 +36,10 @@ public class CustomWeaponModel : VipModule
     public override string DisplayName => Core.Localizer["vip.module.customweaponmodel"];
     public override VipFeatureType MenuType => VipFeatureType.Select;
 
-    public static List<Entry> Usable(List<Entry>? entries) =>
+    public static List<Entry> Usable(List<Entry>? entries, CCSPlayerController? player = null) =>
         entries == null
             ? new()
-            : entries.Where(e => e.Name.Length > 0 && e.Weapon.Length > 0 && e.Model.Length > 0).ToList();
+            : entries.Where(e => e.Name.Length > 0 && e.Weapon.Length > 0 && e.Model.Length > 0 && HasFlags(player, e.Required)).ToList();
 
     public static string Category(string weapon) => weapon.ToLowerInvariant();
 
@@ -47,7 +48,7 @@ public class CustomWeaponModel : VipModule
         var categories = new List<VipFeatureOption>();
         var seen = new HashSet<string>();
 
-        foreach (var entry in Usable(GroupValue<List<Entry>>(player)))
+        foreach (var entry in Usable(GroupValue<List<Entry>>(player), player))
         {
             string category = Category(entry.Weapon);
             if (seen.Add(category))
@@ -58,7 +59,7 @@ public class CustomWeaponModel : VipModule
     }
 
     public override List<VipFeatureOption> CategoryOptions(CCSPlayerController player, string category) =>
-        Usable(GroupValue<List<Entry>>(player))
+        Usable(GroupValue<List<Entry>>(player), player)
             .Where(e => Category(e.Weapon) == category)
             .Select(e => new VipFeatureOption(e.Name, e.Name))
             .ToList();
@@ -104,7 +105,7 @@ public class CustomWeaponModel : VipModule
         if (player == null || !player.IsValid)
             return;
 
-        var entries = IsAlive(player) && Active(player) ? Usable(GroupValue<List<Entry>>(player)) : new();
+        var entries = IsAlive(player) && Active(player) ? Usable(GroupValue<List<Entry>>(player), player) : new();
 
         var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
         if (weapons == null)
@@ -146,7 +147,7 @@ public class CustomWeaponModel : VipModule
             if (owner == null || !owner.IsValid || !Active(owner))
                 return;
 
-            var entries = Usable(GroupValue<List<Entry>>(owner));
+            var entries = Usable(GroupValue<List<Entry>>(owner), owner);
             if (entries.Count == 0)
                 return;
 

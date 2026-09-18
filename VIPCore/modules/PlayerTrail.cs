@@ -26,7 +26,7 @@ public class PlayerTrail : VipModule
     {
         var cfg = GroupValue<Cfg>(player) ?? new Cfg();
         var options = TrailBeam.ParseColorOptions(cfg.Colors);
-        ParticleTrail.AddOptions(options, cfg.Particles);
+        ParticleTrail.AddOptions(options, cfg.Particles, player);
         return options;
     }
 
@@ -39,7 +39,6 @@ public class PlayerTrail : VipModule
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
         Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
-        Core.RegisterEventHandler<EventRoundEnd>((_, __) => { RemoveAll(); return HookResult.Continue; });
         Core.HookMapStart(_ => Array.Clear(_active));
         Core.HookTick(OnTick, 2);
         Core.HookPrecache(manifest =>
@@ -94,7 +93,7 @@ public class PlayerTrail : VipModule
             return;
 
         var cfg = GroupValue<Cfg>(player) ?? new Cfg();
-        var entry = ParticleTrail.Find(cfg.Particles, Setting(player));
+        var entry = ParticleTrail.Find(cfg.Particles, Setting(player), player);
         if (entry == null || !entry.Follow)
             return;
 
@@ -144,7 +143,7 @@ public class PlayerTrail : VipModule
             {
                 string setting = Setting(player);
                 var cfg = GroupValue<Cfg>(player) ?? new Cfg();
-                var entry = ParticleTrail.Find(cfg.Particles, setting);
+                var entry = ParticleTrail.Find(cfg.Particles, setting, player);
 
                 if (entry != null)
                 {

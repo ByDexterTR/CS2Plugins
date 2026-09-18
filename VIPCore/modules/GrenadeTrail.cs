@@ -37,7 +37,7 @@ public class GrenadeTrail : VipModule
     {
         var cfg = GroupValue<Cfg>(player) ?? new Cfg();
         var options = TrailBeam.ParseColorOptions(cfg.Colors);
-        ParticleTrail.AddOptions(options, cfg.Particles);
+        ParticleTrail.AddOptions(options, cfg.Particles, player);
         return options;
     }
 
@@ -83,7 +83,7 @@ public class GrenadeTrail : VipModule
             var cfg = GroupValue<Cfg>(owner!) ?? new Cfg();
             string setting = Setting(owner!);
 
-            var entry = ParticleTrail.Find(cfg.Particles, setting);
+            var entry = ParticleTrail.Find(cfg.Particles, setting, owner);
             var tracked = new Tracked
             {
                 Projectile = projectile,

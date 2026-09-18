@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.2.2";
+    public override string ModuleVersion => "1.2.3";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -31,6 +31,7 @@ public partial class VIPCore : BasePlugin
     private readonly Dictionary<string, (int Tick, List<CCSPlayerController> Players)> _activeCache = new();
     private Dictionary<string, HashSet<string>> _pistolDisable = new();
     private Dictionary<string, HashSet<string>> _forced = new();
+    private Dictionary<string, PeriodWindow> _periods = new();
     private readonly Dictionary<ulong, Dictionary<string, string?>> _pendingSettings = new();
     private bool _isPistolRound;
     private int _roundNumber;
@@ -383,6 +384,7 @@ public partial class VIPCore : BasePlugin
 
         var pistolDisable = new Dictionary<string, HashSet<string>>();
         var forced = new Dictionary<string, HashSet<string>>();
+        var periods = new Dictionary<string, PeriodWindow>();
         foreach (var (groupName, feats) in parsed)
         {
             if (feats.TryGetValue("PistolRoundDisable", out var pistolElement))
@@ -392,6 +394,23 @@ public partial class VIPCore : BasePlugin
                     var list = pistolElement.Deserialize<List<string>>(GroupOpts);
                     if (list != null && list.Count > 0)
                         pistolDisable[groupName] = new HashSet<string>(list);
+                }
+                catch { }
+            }
+
+            if (feats.TryGetValue("Period", out var periodElement))
+            {
+                try
+                {
+                    var cfg = periodElement.Deserialize<PeriodConfig>(GroupOpts);
+                    if (cfg != null)
+                    {
+                        var window = PeriodWindow.Parse(cfg.Start, cfg.End, cfg.Timezone, out string? issue);
+                        if (issue != null)
+                            Logger.LogWarning("VIPCore: vipgroups.json \"{0}\" -> {1}", groupName, issue);
+                        if (window != null)
+                            periods[groupName] = window;
+                    }
                 }
                 catch { }
             }
@@ -413,6 +432,7 @@ public partial class VIPCore : BasePlugin
             _groups = parsed;
             _pistolDisable = pistolDisable;
             _forced = forced;
+            _periods = periods;
             _groupValueCache.Clear();
             _enabled.Clear();
 
@@ -608,8 +628,19 @@ public partial class VIPCore : BasePlugin
     {
         if (!IsClientVip(player))
             return null;
+
+        string? group;
         lock (_lock)
-            return _vips.TryGetValue(player.SteamID, out var entry) ? entry.Group : null;
+        {
+            group = _vips.TryGetValue(player.SteamID, out var entry) ? entry.Group : null;
+            if (group == null || _periods.Count == 0)
+                return group;
+
+            if (_periods.TryGetValue(group, out var window) && !window.IsOpen(DateTimeOffset.UtcNow))
+                return null;
+        }
+
+        return group;
     }
 
     public bool GroupGrants(CCSPlayerController player, string feature)
@@ -690,9 +721,11 @@ public partial class VIPCore : BasePlugin
     {
         if (!IsGranted(player, feature))
             return false;
+        if (PistolRoundBlocked(player, feature))
+            return false;
         if (IsForced(player, feature))
             return true;
-        return GetSetting(player.SteamID, feature) != "off" && !PistolRoundBlocked(player, feature);
+        return GetSetting(player.SteamID, feature) != "off";
     }
 
     public string GetSetting(ulong steamId, string feature)

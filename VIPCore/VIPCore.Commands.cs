@@ -20,6 +20,7 @@ public partial class VIPCore
         Register(Config.Commands.Reload, OnVipReloadCommand);
         Register(Config.Commands.UpdateUser, OnUpdateVipCommand);
         Register(Config.Commands.HideVip, OnHideVipCommand);
+        Register(Config.VipTest.Cmd, OnVipTestCommand);
         RegisterModuleCommands();
     }
 
@@ -273,6 +274,70 @@ public partial class VIPCore
 
         SetVip(steamId, group, expires);
         info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.added", steamId.ToString(), group, durationText]}");
+    }
+
+    public void OnVipTestCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player == null || !player.IsValid || player.IsBot)
+            return;
+
+        var cfg = Config.VipTest;
+        if (cfg.Group.Length == 0 || cfg.Duration <= 0)
+        {
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_disabled"]}");
+            return;
+        }
+
+        if (!GroupExists(cfg.Group))
+        {
+            Logger.LogWarning("VIPCore: viptest icindeki \"{0}\" diye bir grup yok.", cfg.Group);
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_disabled"]}");
+            return;
+        }
+
+        if (IsClientVip(player))
+        {
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_already_vip"]}");
+            return;
+        }
+
+        ulong steamId = player.SteamID;
+        var storage = _storage;
+
+        Task.Run(() =>
+        {
+            bool used;
+            try { used = storage.TestUsed(steamId); }
+            catch { used = true; }
+
+            Server.NextFrame(() =>
+            {
+                var target = Utilities.GetPlayerFromSteamId64(steamId);
+                if (target == null || !target.IsValid)
+                    return;
+
+                if (used)
+                {
+                    target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_used"]}");
+                    return;
+                }
+
+                if (IsClientVip(target))
+                {
+                    target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_already_vip"]}");
+                    return;
+                }
+
+                SetVip(steamId, cfg.Group, DateTimeOffset.UtcNow.ToUnixTimeSeconds() + cfg.Duration);
+                Task.Run(() =>
+                {
+                    try { storage.MarkTestUsed(steamId); }
+                    catch { }
+                });
+
+                target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_started", cfg.Group, FormatTimeLeft(cfg.Duration)]}");
+            });
+        });
     }
 
     public void OnRemoveVipCommand(CCSPlayerController? player, CommandInfo info)

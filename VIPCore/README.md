@@ -45,6 +45,7 @@ Command names can be changed from the `commands` section of `settings.json`; the
 | `css_tp` / `css_thirdperson` | Toggles the third person camera (Thirdperson module) | VIP (if defined in the group) |
 | `css_vipinspect` / `css_vipreview` | Opens the model preview menu; the picked model appears in front of the player and turns around. Lists player models, pets, outfits and custom weapon models | VIP |
 | `css_updatevip <steamid64>` / `css_vipupdate` | Re-reads the player's VIP record from storage (JSON/MySQL); applies a change written from a web panel without restarting the server | `admin_flag` |
+| `css_viptest` | Starts the one-time VIP trial; set it up with the `viptest` section of `settings.json`. A player who already has VIP cannot use it, and it can only be used once per SteamID | — (everyone) |
 | `css_hidevip` / `css_hidefx` | Effect visibility menu; the player picks who sees their own effect: Everyone → Teammates → Enemies → Myself → Off. The preference is stored persistently | — (everyone) |
 | *(module commands)* | Defined with `module_commands` in `settings.json`; a Toggle module is turned on/off instantly, a selection/category module opens its menu. Can be bound (`bind x "css_fall"`) | VIP (if defined in the group) |
 
@@ -67,6 +68,7 @@ Every command name in the table above can be renamed from `settings.json`; the k
 | `module_commands` | object | — | Binds a command directly to a module (can be bound). Toggle modules are turned on/off instantly by the command, selection/category modules open their menu. Delete a line you do not want, add a new one as `"ModuleName": "css_command,css_alias"`; if left empty no command is added |
 | `hide` | object | — | Effect visibility defaults — who sees that player's own effect: `all` everyone, `team` teammates, `enemy` enemies, `self` only themselves, `hidden` nobody, `off` locked (does not appear in the menu). The player's own preference overrides the default |
 | `model_inspect` | object | — | `css_vipinspect` settings, the same for every VIP group: `enabled` on/off, `duration` how long the model stays, `cooldown` the wait between two inspections (0 = none), `distance`/`height` where it appears, `spin` how far it turns |
+| `viptest` | object | — | One-time VIP trial: `group` which group is given, `duration` how many seconds it lasts, `cmd` the command name. Leave `group` empty to turn the trial off. A player who already has VIP cannot start it, and every SteamID can use it only once (kept in `viptest.json`, or in the `vip_test` table on MySQL) |
 | `mysql` | object | — | MySQL connection settings (`host`, `port`, `database`, `user`, `password`, `table_prefix`) |
 
 ```json
@@ -88,6 +90,7 @@ Every command name in the table above can be renamed from `settings.json`; the k
   },
   "module_commands": {
     "GiveWeapon": "css_weapons,css_kit",
+    "GrenadeTrajectory": "css_trajectory",
     "GlueGrenade": "css_glue,css_gluegrenade",
     "PlayerModel": "css_vipmodel",
     "PlayerParticle": "css_particle",
@@ -114,6 +117,11 @@ Every command name in the table above can be renamed from `settings.json`; the k
     "distance": 90,
     "height": -40,
     "spin": 360
+  },
+  "viptest": {
+    "group": "",
+    "duration": 1800,
+    "cmd": "css_viptest"
   },
   "mysql": {
     "host": "",
@@ -233,6 +241,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `GrenadeResist` | Reduces grenade (HE/molotov/inferno) damage; **negative `percent` = debuff** (`-50` increases grenade damage by 50%) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `GrenadeTimer` | The player picks per grenade type from the menu how many extra seconds it stays in the air before going off; the values offered come from the config (0.1 - 20) | `{ "hegrenade": [0.5, 1.0, 2.0], "flashbang": [0.5, 1.0, 2.0], "molotov": [1.0, 2.0, 3.0], "decoy": [], "limit": 0 }` |
 | `GrenadeTrail` | Grenade trail effect. `colors` draws a beam, `particles` attaches a particle to the grenade for its whole flight (cheaper than the beam) | `{ "width": 1.5, "lifetime": 2.5, "colors": [...], "particles": [{ "name": "Smoke", "file": "particles/ui/hud/ui_map_def_utility_trail.vpcf" }] }` |
+| `GrenadeTrajectory` | Turns on the game's own grenade preview camera (`sv_grenade_trajectory_prac_pipreview`) for that player only. The small picture-in-picture window appears while the grenade is held and shows where it will land. Pick which grenades it works with; `molotov` also covers the CT incendiary | `{ "molotov": true, "smokegrenade": true, "flashbang": true, "hegrenade": true, "decoy": true }` |
 | `HealthRegen` | Health regeneration | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Healthshot on spawn; given only when the player is carrying none, and never above the server limit (`ammo_item_limit_healthshot`) | `2` |
 | `HealthshotEffect` | Using a healthshot starts the effect picked from the menu for `time` seconds: `speed`, `strength` (extra damage), `heal`, `poison`, `slow`, `wallhack`, `radarhack`, `magnetic`. `radius: 0` means the effect only covers the player | `{ "speed": { "speed_multiplier": 1.3, "time": 5 }, "strength": { "damage_multiplier": 1.25, "time": 5, "radius": 0 }, "wallhack": { "time": 5, "radius": 0, "only_mode": 0 } }` |
@@ -296,6 +305,8 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 
 ## Notes
 
+- Every entry of `BulletTrail`, `C4Effect`, `CustomWeaponModel`, `GrenadeTrail`, `Outfit`, `Pet`, `PlayerTrail`, `Postprocessing` and `SaySound` accepts a `required` field. Write CounterStrikeSharp flags into it (several can be separated with commas); only a player holding one of them sees that entry in the menu and in `css_vipinspect`, and only they can have it applied. Leaving it empty or not writing it at all means everyone in the group can use it. `@css/root` always passes. Colour entries do not have this field.
+- A VIP group can be limited to certain hours with `Period`: `"Period": { "start": "23:00", "end": "07:00", "timezone": "Europe/Istanbul" }`. Outside that window the group is not resolved at all, so no module of that group runs and the menu stays empty; the player is not told anything. A window that crosses midnight works. If `timezone` is empty the server clock is used. Like `PistolRoundDisable` and `Force`, a `Period` written in a child group replaces the parent's instead of merging with it.
 - The config files are **inside the plugin folder** (`settings.json`, `vipgroups.json`), not in CounterStrikeSharp's `configs/plugins` directory.
 - A module that is not defined in any group does not run at all.
 - The sound modules (`HitSound`, `SaySound`) support two methods: `path` plays your own sound file, `emit` plays one of the game's built-in sounds. If both are given, `emit` wins. Not every built-in sound name works with `emit`; known working ones are `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept` and `UI.CoinLevelUp`. With both methods the sound only reaches the players it should, so `css_hidefx` preferences and the `say_team` filter work either way.

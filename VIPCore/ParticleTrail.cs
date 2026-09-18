@@ -15,6 +15,7 @@ public class ParticleEntry
     public float Lifetime { get; set; } = 0f;
     public float Offset { get; set; } = 0f;
     public bool Follow { get; set; } = true;
+    public string Required { get; set; } = "";
 }
 
 public static class ParticleTrail
@@ -26,7 +27,7 @@ public static class ParticleTrail
 
     public static string Key(string name) => Marker + name;
 
-    public static ParticleEntry? Find(List<ParticleEntry>? list, string value)
+    public static ParticleEntry? Find(List<ParticleEntry>? list, string value, CCSPlayerController? player = null)
     {
         if (list == null || list.Count == 0 || !IsParticle(value))
             return null;
@@ -34,18 +35,18 @@ public static class ParticleTrail
         string name = value[1..];
         foreach (var entry in list)
             if (entry.File.Length > 0 && entry.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                return entry;
+                return player != null && !VipModule.HasFlags(player, entry.Required) ? null : entry;
 
         return null;
     }
 
-    public static void AddOptions(List<VipFeatureOption> options, List<ParticleEntry>? list)
+    public static void AddOptions(List<VipFeatureOption> options, List<ParticleEntry>? list, CCSPlayerController? player = null)
     {
         if (list == null)
             return;
 
         foreach (var entry in list)
-            if (entry.Name.Length > 0 && entry.File.Length > 0)
+            if (entry.Name.Length > 0 && entry.File.Length > 0 && VipModule.HasFlags(player, entry.Required))
                 options.Add(new VipFeatureOption(entry.Name, Key(entry.Name)));
     }
 

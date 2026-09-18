@@ -112,13 +112,13 @@ public class ModelInspect : VipModule
 
     private List<Pet.Entry> Pets(CCSPlayerController player) =>
         (Core.GetGroupValue<List<Pet.Entry>>(player, "Pet") ?? new())
-        .Where(entry => entry.Name.Length > 0 && entry.Model.Length > 0).ToList();
+        .Where(entry => entry.Name.Length > 0 && entry.Model.Length > 0 && HasFlags(player, entry.Required)).ToList();
 
     private Outfit.Cfg Wearables(CCSPlayerController player) =>
         Core.GetGroupValue<Outfit.Cfg>(player, "Outfit") ?? new();
 
     private List<CustomWeaponModel.Entry> Weapons(CCSPlayerController player) =>
-        CustomWeaponModel.Usable(Core.GetGroupValue<List<CustomWeaponModel.Entry>>(player, "CustomWeaponModel"))
+        CustomWeaponModel.Usable(Core.GetGroupValue<List<CustomWeaponModel.Entry>>(player, "CustomWeaponModel"), player)
             .Where(entry => !int.TryParse(entry.Model, out _)).ToList();
 
     private static string Label(string name) =>
@@ -149,7 +149,7 @@ public class ModelInspect : VipModule
 
         foreach (var entry in entries)
         {
-            if (entry.Name.Length == 0 || entry.Model.Length == 0)
+            if (entry.Name.Length == 0 || entry.Model.Length == 0 || !HasFlags(player, entry.Required))
                 continue;
 
             var wear = entry;

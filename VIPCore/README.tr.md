@@ -45,6 +45,7 @@ Komut adları `settings.json` → `commands` bölümünden değiştirilebilir; v
 | `css_tp` / `css_thirdperson` | Üçüncü şahıs kamerayı açar/kapatır (Thirdperson modülü) | VIP (grupta tanımlıysa) |
 | `css_vipinspect` / `css_vipreview` | Model önizleme menüsünü açar; seçilen model oyuncunun önüne gelip döner. Oyuncu modelleri, petler, giysiler ve özel silah modelleri listelenir | VIP |
 | `css_updatevip <steamid64>` / `css_vipupdate` | Oyuncunun VIP kaydını depodan (JSON/MySQL) yeniden okur; web panelden yazılan değişikliği sunucu yeniden başlamadan uygular | `admin_flag` |
+| `css_viptest` | Tek seferlik VIP denemesini başlatır; `settings.json` içindeki `viptest` bölümünden ayarlanır. Zaten VIP olan kullanamaz, her SteamID yalnız bir kez kullanabilir | — (herkes) |
 | `css_hidevip` / `css_hidefx` | Efekt görünürlük menüsü; oyuncu kendi efektini kimin göreceğini seçer: Herkes → Takım → Rakipler → Kendim → Kapalı. Tercih kalıcı saklanır | — (herkes) |
 | *(modül komutları)* | `settings.json` → `module_commands` ile tanımlanır; Toggle modülü anında açar/kapatır, seçmeli/kategorili modülün menüsünü açar. Bind edilebilir (`bind x "css_fall"`) | VIP (grupta tanımlıysa) |
 
@@ -67,6 +68,7 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
 | `module_commands` | nesne | — | Modüle doğrudan komut bağlar (bind edilebilir). Toggle modüller komutla anında açılıp kapanır, seçmeli/kategorili modüllerin menüsü açılır. İstemediğin satırı sil, yenisini `"ModulAdi": "css_komut,css_takma"` biçiminde ekle; boş bırakılırsa hiç komut eklenmez |
 | `hide` | nesne | — | Efekt görünürlüğü varsayılanları — oyuncunun kendi efektini kimin göreceği: `all` herkes, `team` takım, `enemy` rakipler, `self` sadece kendisi, `hidden` hiç kimse, `off` kilitli (menüde çıkmaz). Oyuncunun kendi tercihi varsayılanı ezer |
 | `model_inspect` | nesne | — | `css_vipinspect` ayarları, tüm VIP grupları için aynı: `enabled` açık/kapalı, `duration` modelin kalma süresi, `cooldown` iki inceleme arasındaki bekleme (0 = yok), `distance`/`height` nerede duracağı, `spin` kaç derece döneceği |
+| `viptest` | nesne | — | Tek seferlik VIP denemesi: `group` hangi grubun verileceği, `duration` kaç saniye süreceği, `cmd` komut adı. `group` boş bırakılırsa deneme kapalı olur. Zaten VIP olan başlatamaz, her SteamID yalnız bir kez kullanabilir (`viptest.json` içinde, MySQL kullanılıyorsa `vip_test` tablosunda tutulur) |
 | `mysql` | nesne | — | MySQL bağlantı ayarları (`host`, `port`, `database`, `user`, `password`, `table_prefix`) |
 
 ```json
@@ -88,6 +90,7 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
   },
   "module_commands": {
     "GiveWeapon": "css_weapons,css_kit",
+    "GrenadeTrajectory": "css_trajectory",
     "GlueGrenade": "css_glue,css_gluegrenade",
     "PlayerModel": "css_vipmodel",
     "PlayerParticle": "css_particle",
@@ -114,6 +117,11 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
     "distance": 90,
     "height": -40,
     "spin": 360
+  },
+  "viptest": {
+    "group": "",
+    "duration": 1800,
+    "cmd": "css_viptest"
   },
   "mysql": {
     "host": "",
@@ -233,6 +241,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `GrenadeResist` | Bomba (HE/molotov/inferno) hasarını azaltır; **negatif `percent` = debuff** (`-50` bomba hasarını %50 artırır) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
 | `GrenadeTimer` | Oyuncu menüden her grenade türü için kaç saniye geç patlayacağını seçer; menüdeki değerler configten gelir (0.1 - 20) | `{ "hegrenade": [0.5, 1.0, 2.0], "flashbang": [0.5, 1.0, 2.0], "molotov": [1.0, 2.0, 3.0], "decoy": [], "limit": 0 }` |
 | `GrenadeTrail` | Bomba izi efekti. `colors` beam çizer, `particles` bombaya uçuşu boyunca tek partikül bağlar (beam'den ucuzdur) | `{ "width": 1.5, "lifetime": 2.5, "colors": [...], "particles": [{ "name": "Duman", "file": "particles/ui/hud/ui_map_def_utility_trail.vpcf" }] }` |
+| `GrenadeTrajectory` | Oyunun kendi bomba önizleme kamerasını (`sv_grenade_trajectory_prac_pipreview`) yalnız o oyuncu için açar. Bomba elde tutulurken köşede küçük bir pencere çıkar ve bombanın nereye düşeceğini gösterir. Hangi bombalarda çalışacağı seçilir; `molotov` CT tarafındaki incendiary'yi de kapsar | `{ "molotov": true, "smokegrenade": true, "flashbang": true, "hegrenade": true, "decoy": true }` |
 | `HealthRegen` | Can yenilenmesi | `{ "hp_per_tick": 10, "interval": 1.0, "delay_after_dmg": 2 }` |
 | `Healthshot` | Spawn'da healthshot; oyuncuda hiç yokken verilir ve sunucu sınırını (`ammo_item_limit_healthshot`) aşmaz | `2` |
 | `HealthshotEffect` | Healthshot kullanınca menüden seçilen etki `time` saniye başlar: `speed` hız, `strength` ekstra hasar, `heal`, `poison`, `slow`, `wallhack`, `radarhack`, `magnetic`. `radius: 0` etkinin sadece oyuncuya işlemesi demek | `{ "speed": { "speed_multiplier": 1.3, "time": 5 }, "strength": { "damage_multiplier": 1.25, "time": 5, "radius": 0 }, "wallhack": { "time": 5, "radius": 0, "only_mode": 0 } }` |
@@ -296,6 +305,8 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 
 ## Notlar
 
+- `BulletTrail`, `C4Effect`, `CustomWeaponModel`, `GrenadeTrail`, `Outfit`, `Pet`, `PlayerTrail`, `Postprocessing` ve `SaySound` içindeki her kaydın `required` alanı vardır. İçine CounterStrikeSharp flag'i yazılır (virgülle birden fazla olabilir); o kaydı yalnız bu flag'lerden birine sahip oyuncu menüde ve `css_vipinspect` içinde görür, yalnız o oyuncuya uygulanır. Boş bırakılırsa veya hiç yazılmazsa gruptaki herkes kullanabilir. `@css/root` her zaman geçer. Renk kayıtlarında bu alan yoktur.
+- Bir VIP grubu `Period` ile belirli saatlere kısıtlanabilir: `"Period": { "start": "23:00", "end": "07:00", "timezone": "Europe/Istanbul" }`. Pencerenin dışında grup hiç çözülmez, yani o grubun hiçbir modülü çalışmaz ve menü boş görünür; oyuncuya bir şey söylenmez. Gece yarısını geçen aralık çalışır. `timezone` boş bırakılırsa sunucu saati kullanılır. `PistolRoundDisable` ve `Force` gibi, alt grupta yazılan `Period` üst gruptakiyle birleşmez, onun yerine geçer.
 - Config dosyası CounterStrikeSharp'ın `configs/plugins` dizininde değil, **eklenti klasörünün içindedir** (`settings.json`, `vipgroups.json`).
 - Bir modül hiçbir grupta tanımlı değilse hiç çalışmaz.
 - Ses modüllerinde (`HitSound`, `SaySound`) iki yöntem var: `path` kendi ses dosyanızı çalar, `emit` ise oyunun hazır seslerinden birini çalar. İkisi birden yazılırsa `emit` geçerli olur. Her hazır ses adı `emit` ile çalışmaz; çalıştığı bilinenler: `UI.PlayerPing`, `UI.Lobby.Chat`, `UI.CompetitiveAccept`, `UI.CoinLevelUp`. Her iki yöntemde de ses yalnız gitmesi gereken oyunculara gider, yani `css_hidefx` tercihleri ve `say_team` filtresi ikisinde de çalışır.

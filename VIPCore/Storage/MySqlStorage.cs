@@ -9,6 +9,7 @@ public class MySqlStorage : IVipStorage
     private readonly string _database;
     private readonly string _users;
     private readonly string _settings;
+    private readonly string _test;
 
     public MySqlStorage(MySqlSettings cfg)
     {
@@ -25,6 +26,7 @@ public class MySqlStorage : IVipStorage
         _database = cfg.Database;
         _users = cfg.TablePrefix + "users";
         _settings = cfg.TablePrefix + "settings";
+        _test = cfg.TablePrefix + "test";
     }
 
     public bool SupportsLiveRefresh => true;
@@ -45,6 +47,10 @@ public class MySqlStorage : IVipStorage
         Migrate(conn);
 
         Exec(conn, $"CREATE TABLE IF NOT EXISTS `{_settings}` {SettingsSchema}");
+
+        Exec(conn, $@"CREATE TABLE IF NOT EXISTS `{_test}` (
+            `steamid` BIGINT UNSIGNED NOT NULL,
+            PRIMARY KEY (`steamid`));");
     }
 
     private const string SettingsSchema = @"(
@@ -273,6 +279,26 @@ public class MySqlStorage : IVipStorage
             Exec(conn, $"CREATE DATABASE IF NOT EXISTS `{_database}`;");
         }
         catch { }
+    }
+
+    public bool TestUsed(ulong steamId)
+    {
+        using var conn = new MySqlConnection(_connString);
+        conn.Open();
+
+        using var cmd = new MySqlCommand($"SELECT 1 FROM `{_test}` WHERE steamid = @s;", conn);
+        cmd.Parameters.AddWithValue("@s", steamId);
+        return cmd.ExecuteScalar() != null;
+    }
+
+    public void MarkTestUsed(ulong steamId)
+    {
+        using var conn = new MySqlConnection(_connString);
+        conn.Open();
+
+        using var cmd = new MySqlCommand($"INSERT IGNORE INTO `{_test}` (steamid) VALUES (@s);", conn);
+        cmd.Parameters.AddWithValue("@s", steamId);
+        cmd.ExecuteNonQuery();
     }
 
     private static void Exec(MySqlConnection conn, string sql)

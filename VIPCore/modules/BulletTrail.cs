@@ -27,7 +27,7 @@ public class BulletTrail : VipModule
     {
         var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
         var options = TrailBeam.ParseColorOptions(cfg.Colors);
-        ParticleTrail.AddOptions(options, cfg.Particles);
+        ParticleTrail.AddOptions(options, cfg.Particles, player);
         return options;
     }
 
@@ -63,7 +63,7 @@ public class BulletTrail : VipModule
 
         string setting = Setting(player);
 
-        var entry = ParticleTrail.Find(cfg.Particles, setting);
+        var entry = ParticleTrail.Find(cfg.Particles, setting, player);
         if (entry != null)
         {
             ParticleTrail.Tracer(Core, eye, impact, entry, cfg.Lifetime, EffectHide.BulletTrail, player.Slot);

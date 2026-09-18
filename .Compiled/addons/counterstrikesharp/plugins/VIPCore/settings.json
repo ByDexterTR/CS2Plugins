@@ -37,6 +37,7 @@
   },
   "module_commands": {
     "GiveWeapon": "css_weapons,css_kit",
+    "GrenadeTrajectory": "css_trajectory",
     "GlueGrenade": "css_glue,css_gluegrenade",
     "PlayerModel": "css_vipmodel",
     "PlayerParticle": "css_particle",
@@ -63,6 +64,11 @@
     "distance": 90,
     "height": -40,
     "spin": 360
+  },
+  "viptest": {
+    "group": "",
+    "duration": 1800,
+    "cmd": "css_viptest"
   },
   "mysql": {
     "host": "",

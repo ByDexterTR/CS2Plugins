@@ -13,6 +13,7 @@ public class C4Effect : VipModule
         public string Particle { get; set; } = "";
         public float Time { get; set; }
         public bool Defuse { get; set; }
+        public string Required { get; set; } = "";
     }
 
     private CParticleSystem? _plantParticle;
@@ -38,7 +39,7 @@ public class C4Effect : VipModule
     {
         bool defuse = category == "defuse";
         return (GroupValue<List<Entry>>(player) ?? new())
-            .Where(e => e.Name.Length > 0 && e.Particle.Length > 0 && e.Defuse == defuse)
+            .Where(e => e.Name.Length > 0 && e.Particle.Length > 0 && e.Defuse == defuse && HasFlags(player, e.Required))
             .ToList();
     }
 

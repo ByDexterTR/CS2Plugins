@@ -11,6 +11,7 @@ public class Outfit : VipModule
         public string Name { get; set; } = "";
         public string Model { get; set; } = "";
         public string Team { get; set; } = "";
+        public string Required { get; set; } = "";
     }
 
     public class Cfg : Dictionary<string, List<Entry>> { }
@@ -52,7 +53,6 @@ public class Outfit : VipModule
         });
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
         Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
-        Core.RegisterEventHandler<EventRoundEnd>((_, __) => { RemoveAll(); return HookResult.Continue; });
         Core.HookMapStart(_ => Array.Clear(_worn));
         Core.HookPrecache(manifest =>
         {
@@ -77,7 +77,7 @@ public class Outfit : VipModule
         var list = new List<Entry>();
         foreach (var entry in entries)
         {
-            if (entry.Name.Length == 0 || entry.Model.Length == 0)
+            if (entry.Name.Length == 0 || entry.Model.Length == 0 || !HasFlags(player, entry.Required))
                 continue;
 
             if (entry.Team.Length > 0)

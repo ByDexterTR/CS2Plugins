@@ -11,6 +11,7 @@ public class Postprocessing : VipModule
         public string Name { get; set; } = "";
         public string File { get; set; } = "";
         public float Fade { get; set; } = 0.25f;
+        public string Required { get; set; } = "";
     }
 
     private const string VolumeClass = "post_processing_volume";
@@ -26,7 +27,7 @@ public class Postprocessing : VipModule
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
     {
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        return entries.Where(e => e.Name.Length > 0 && e.File.Length > 0)
+        return entries.Where(e => e.Name.Length > 0 && e.File.Length > 0 && HasFlags(player, e.Required))
             .Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
     }
 
@@ -58,7 +59,6 @@ public class Postprocessing : VipModule
         });
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
         Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
-        Core.RegisterEventHandler<EventRoundEnd>((_, __) => { RemoveAll(); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundStart>((_, __) =>
         {
             RemoveAll();
@@ -103,7 +103,7 @@ public class Postprocessing : VipModule
         Remove(slot);
 
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        var entry = entries.FirstOrDefault(e => e.Name == Setting(player));
+        var entry = entries.FirstOrDefault(e => e.Name == Setting(player) && HasFlags(player, e.Required));
         if (entry == null || entry.File.Length == 0)
             return;
 

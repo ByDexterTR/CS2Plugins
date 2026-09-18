@@ -16,4 +16,7 @@ public interface IVipStorage
     void DeleteVip(ulong steamId);
 
     void ApplySettings(ulong steamId, Dictionary<string, string?> ops);
+
+    bool TestUsed(ulong steamId);
+    void MarkTestUsed(ulong steamId);
 }

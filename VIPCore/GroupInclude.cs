@@ -10,7 +10,8 @@ internal static class GroupInclude
     private static readonly HashSet<string> ReplaceFeatures = new(StringComparer.OrdinalIgnoreCase)
     {
         "PistolRoundDisable",
-        "Force"
+        "Force",
+        "Period"
     };
 
     private static readonly HashSet<string> LowerWinsPaths = new(StringComparer.OrdinalIgnoreCase)

@@ -26,6 +26,7 @@ public class Pet : VipModule
         public float Height { get; set; } = 45f;
         public float Scale { get; set; } = 1f;
         public float Yaw { get; set; } = 0f;
+        public string Required { get; set; } = "";
         public Anim Animations { get; set; } = new();
     }
 
@@ -54,7 +55,7 @@ public class Pet : VipModule
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
     {
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        return entries.Where(e => e.Name.Length > 0 && e.Model.Length > 0)
+        return entries.Where(e => e.Name.Length > 0 && e.Model.Length > 0 && HasFlags(player, e.Required))
             .Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
     }
 
@@ -70,7 +71,6 @@ public class Pet : VipModule
         });
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Kill(ev.Userid); return HookResult.Continue; });
         Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { Remove(ev.Userid?.UserId ?? -1); return HookResult.Continue; });
-        Core.RegisterEventHandler<EventRoundEnd>((_, __) => { RemoveAll(); return HookResult.Continue; });
         Core.HookMapStart(_ => _pets.Clear());
         Core.HookTick(OnTick);
         Core.HookPrecache(manifest =>
@@ -135,7 +135,7 @@ public class Pet : VipModule
         Remove(userId);
 
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        var def = entries.FirstOrDefault(e => e.Name == Setting(player));
+        var def = entries.FirstOrDefault(e => e.Name == Setting(player) && HasFlags(player, e.Required));
         if (def == null || def.Model.Length == 0)
             return;
 

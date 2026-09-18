@@ -12,6 +12,7 @@ public class SaySound : VipModule
         public string Path { get; set; } = "";
         public string Emit { get; set; } = "";
         public float Volume { get; set; } = 1f;
+        public string Required { get; set; } = "";
     }
 
     private class Cfg
@@ -38,7 +39,7 @@ public class SaySound : VipModule
 
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
     {
-        return GetCfg(player).Sounds.Where(e => e.Name.Length > 0 && (e.Path.Length > 0 || e.Emit.Length > 0))
+        return GetCfg(player).Sounds.Where(e => e.Name.Length > 0 && (e.Path.Length > 0 || e.Emit.Length > 0) && HasFlags(player, e.Required))
             .Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
     }
 
@@ -64,7 +65,7 @@ public class SaySound : VipModule
         if (cfg.Cooldown > 0 && Server.CurrentTime - _lastPlay[slot] < cfg.Cooldown)
             return HookResult.Continue;
 
-        var entry = cfg.Sounds.FirstOrDefault(e => e.Name == Setting(player));
+        var entry = cfg.Sounds.FirstOrDefault(e => e.Name == Setting(player) && HasFlags(player, e.Required));
         if (entry == null || (entry.Path.Length == 0 && entry.Emit.Length == 0))
             return HookResult.Continue;
 
