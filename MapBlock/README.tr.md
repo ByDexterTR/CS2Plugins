@@ -21,7 +21,6 @@ Oyuncu sayısı düşükken haritanın belirli bölgelerini çit modelleriyle ot
 ## Gereksinimler
 
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
-- `gamedata` dosyası: `addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json`
 
 ## Kurulum
 

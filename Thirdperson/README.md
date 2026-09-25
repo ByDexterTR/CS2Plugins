@@ -17,8 +17,7 @@ Standalone plugin that puts the player's camera into a third person (over the sh
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
-- The `gamedata` file: `addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json`
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
 
 ## Installation
 

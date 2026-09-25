@@ -23,8 +23,7 @@ Turns the round into a laser war. Bullets stop hurting anyone; every shot sends 
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
-- The `gamedata` file: `addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json`
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
 
 ## Installation
 

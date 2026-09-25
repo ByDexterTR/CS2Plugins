@@ -17,8 +17,7 @@ Oyuncunun kamerasını üçüncü şahıs (omuz arkası) görünüme alan bağı
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
-- `gamedata` dosyası: `addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json`
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
 
 ## Kurulum
 

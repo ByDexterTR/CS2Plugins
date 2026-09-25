@@ -1,71 +1,25 @@
-using System.Runtime.InteropServices;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Utils;
 
 namespace ByDexter.Shared;
 
-public static unsafe class NativeTrace
+public static class NativeTrace
 {
   public const ulong MaskShotPhysics = 0x2C3011;
   public const ulong MaskShotNoPlayers = 0x203011;
 
-  private const string KeyPhysicsClass = "CNavPhysicsInterface_ClassName";
-  private const string KeyTraceShape = "CNavPhysicsInterface_TraceShape";
-  private const string KeyFilterClass = "CTraceFilter_ClassName";
-  private const string KeyFilterVtable = "CTraceFilter_Vtable";
-  private const string KeyFilterVtableDisp = "CTraceFilter_Vtable_Displacement";
-
-  private const string DefaultPhysicsClass = "CNavPhysicsInterface";
-  private const string DefaultFilterClass = "CTraceFilter";
-  private const int DefaultTraceShapeWindows = 3;
-  private const int DefaultTraceShapeLinux = 5;
-  private const string DefaultFilterVtableWindows = "4C 8D 2D ? ? ? ? 24 C9 89 5D";
-  private const string DefaultFilterVtableLinux = "48 8D 0D ? ? ? ? 66 89 95";
-  private const int DefaultFilterVtableDisp = 3;
-
   private const float MaxWorldCoord = 131072f;
+  private const float MaxDistance = 8192f;
 
-  [StructLayout(LayoutKind.Explicit, Size = 48)]
-  private struct Ray
-  {
-    [FieldOffset(0)] public System.Numerics.Vector3 StartOffset;
-    [FieldOffset(12)] public float Radius;
-    [FieldOffset(40)] public int Type;
-  }
+  private static readonly Dictionary<ulong, TraceOptions> _options = new();
+  private static Vector? _start;
+  private static Vector? _end;
+  private static bool _disabled;
 
-  [StructLayout(LayoutKind.Explicit, Size = 72)]
-  private struct TraceFilter
-  {
-    [FieldOffset(0x00)] public void* Vtable;
-    [FieldOffset(0x08)] public ulong InteractsWith;
-    [FieldOffset(0x10)] public ulong InteractsExclude;
-    [FieldOffset(0x18)] public ulong InteractsAs;
-    [FieldOffset(0x20)] public fixed uint OwnerIdsToIgnore[2];
-    [FieldOffset(0x28)] public fixed uint EntityIdsToIgnore[2];
-    [FieldOffset(0x30)] public fixed ushort HierarchyIds[2];
-    [FieldOffset(0x34)] public byte ObjectSetMask;
-    [FieldOffset(0x35)] public byte CollisionGroup;
-    [FieldOffset(0x36)] public byte Bits;
-    [FieldOffset(0x37)] public bool HitEntities;
-    [FieldOffset(0x38)] public bool HitTriggers;
-    [FieldOffset(0x39)] public bool TestHitboxes;
-    [FieldOffset(0x3A)] public bool TraceComplexEntities;
-    [FieldOffset(0x3B)] public bool OnlyHitIfHasPhysics;
-    [FieldOffset(0x3C)] public bool IterateEntities;
-  }
+  public static string? LastError { get; private set; }
 
-  [StructLayout(LayoutKind.Explicit, Size = 0xB8)]
-  private struct GameTrace
-  {
-    [FieldOffset(0x08)] public IntPtr Entity;
-    [FieldOffset(0x78)] public System.Numerics.Vector3 StartPos;
-    [FieldOffset(0x84)] public System.Numerics.Vector3 EndPos;
-    [FieldOffset(0x90)] public System.Numerics.Vector3 Normal;
-    [FieldOffset(0x9C)] public System.Numerics.Vector3 Position;
-    [FieldOffset(0xAC)] public float Fraction;
-  }
+  public static bool Available => !_disabled;
 
   public readonly record struct TraceHit(
     System.Numerics.Vector3 EndPos,
@@ -75,19 +29,6 @@ public static unsafe class NativeTrace
   {
     public bool DidHit => Fraction < 1f;
   }
-
-  [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-  private delegate bool TraceShapeDelegate(IntPtr thisPtr, Ray* ray, IntPtr vecStart, IntPtr vecEnd, TraceFilter* filter, GameTrace* trace);
-
-  private static TraceShapeDelegate? _traceShape;
-  private static void* _filterVtable;
-  private static bool _disabled;
-
-  public static string? LastError { get; private set; }
-
-  public static bool Available => _traceShape != null && !_disabled;
-
-  private static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
   private static void Log(string message)
   {
@@ -100,190 +41,68 @@ public static unsafe class NativeTrace
     _disabled = true;
     LastError = reason;
     Log($"DEVRE DISI: {reason}");
-    Log($"Duzeltmek icin: addons/counterstrikesharp/gamedata/NativeTrace.gamedata.json");
   }
 
-  private static string GamedataText(string key, string fallback)
+  private static TraceOptions Options(ulong mask)
   {
-    try
+    if (!_options.TryGetValue(mask, out var options))
     {
-      string value = GameData.GetSignature(key);
-      if (!string.IsNullOrWhiteSpace(value))
-      {
-        Log($"gamedata '{key}' kullaniliyor.");
-        return value;
-      }
+      options = new TraceOptions { InteractsWith = (Contents)mask };
+      _options[mask] = options;
     }
-    catch { }
 
-    return fallback;
+    return options;
   }
 
-  private static int GamedataOffset(string key, int fallback)
-  {
-    try
-    {
-      int value = GameData.GetOffset(key);
-      if (value > 0)
-      {
-        Log($"gamedata '{key}' kullaniliyor ({value}).");
-        return value;
-      }
-    }
-    catch { }
+  private static System.Numerics.Vector3 ToNumerics(Vector v) => new(v.X, v.Y, v.Z);
 
-    return fallback;
+  private static bool IsSane(float fraction, System.Numerics.Vector3 end)
+  {
+    if (!float.IsFinite(fraction) || fraction < 0f || fraction > 1f)
+      return false;
+
+    if (!float.IsFinite(end.X) || !float.IsFinite(end.Y) || !float.IsFinite(end.Z))
+      return false;
+
+    return Math.Abs(end.X) <= MaxWorldCoord && Math.Abs(end.Y) <= MaxWorldCoord && Math.Abs(end.Z) <= MaxWorldCoord;
   }
 
-  private static bool EnsureInit()
+  private static TraceHit? Trace(CCSPlayerPawn pawn, System.Numerics.Vector3 startPos, System.Numerics.Vector3 endPos, ulong mask)
   {
-    if (_disabled) return false;
-    if (_traceShape != null) return true;
+    if (_disabled)
+      return null;
 
-    string platform = IsLinux ? "linux" : "windows";
-    string className = GamedataText(KeyPhysicsClass, DefaultPhysicsClass);
-    string filterClass = GamedataText(KeyFilterClass, DefaultFilterClass);
-
+    TraceResult result;
     try
     {
-      IntPtr vtable = NativeAPI.FindVirtualTable(Addresses.ServerPath, className);
-      if (vtable == IntPtr.Zero)
-        throw new Exception($"'{className}' vtable bulunamadi ({platform}, {Addresses.ServerPath}). gamedata anahtari: {KeyPhysicsClass}");
-
-      int offset = GamedataOffset(KeyTraceShape, IsLinux ? DefaultTraceShapeLinux : DefaultTraceShapeWindows);
-      IntPtr fn = *(IntPtr*)(vtable + offset * sizeof(nint));
-      if (fn == IntPtr.Zero)
-        throw new Exception($"TraceShape vtable girisi bos (offset {offset}, {platform}). gamedata anahtari: {KeyTraceShape}");
-
-      IntPtr filterVtable = ResolveFilterVtable(filterClass, platform, out string how);
-      if (filterVtable == IntPtr.Zero)
-        throw new Exception($"'{filterClass}' vtable bulunamadi ({platform}). RTTI ve imza taramasi ikisi de basarisiz. gamedata anahtarlari: {KeyFilterClass}, {KeyFilterVtable}");
-
-      _filterVtable = (void*)filterVtable;
-      _traceShape = Marshal.GetDelegateForFunctionPointer<TraceShapeDelegate>(fn);
-      Log($"hazir ({className}, {platform}, TraceShape offset {offset}, filter {how}).");
-      return true;
+      _start ??= new Vector();
+      _end ??= new Vector();
+      _start.X = startPos.X; _start.Y = startPos.Y; _start.Z = startPos.Z;
+      _end.X = endPos.X; _end.Y = endPos.Y; _end.Z = endPos.Z;
+      result = CounterStrikeSharp.API.Modules.Utils.Trace.TraceEndShape(_start, _end, pawn, Options(mask));
     }
     catch (Exception ex)
     {
-      SelfDisable(ex.Message);
-      return false;
-    }
-  }
-
-  private static IntPtr ResolveFilterVtable(string filterClass, string platform, out string how)
-  {
-    how = "";
-
-    IntPtr rtti = NativeAPI.FindVirtualTable(Addresses.ServerPath, filterClass);
-    if (rtti != IntPtr.Zero)
-    {
-      how = "RTTI";
-      return rtti;
-    }
-
-    Log($"'{filterClass}' RTTI ile bulunamadi, imza taramasina dusuluyor.");
-
-    string sigText = GamedataText(KeyFilterVtable,
-      IsLinux ? DefaultFilterVtableLinux : DefaultFilterVtableWindows);
-
-    IntPtr sig = NativeAPI.FindSignature(Addresses.ServerPath, sigText);
-    if (sig == IntPtr.Zero)
-    {
-      Log($"imza da eslesmedi ({platform}: {sigText}).");
-      return IntPtr.Zero;
-    }
-
-    int disp = GamedataOffset(KeyFilterVtableDisp, DefaultFilterVtableDisp);
-    how = "imza";
-    return GetAbsoluteAddress(sig, disp, disp + 4);
-  }
-
-  private static IntPtr GetAbsoluteAddress(IntPtr addr, int offset, int size)
-  {
-    int code = *(int*)(addr + offset);
-    return addr + code + size;
-  }
-
-  private static bool IsSane(GameTrace* trace)
-  {
-    if (!float.IsFinite(trace->Fraction) || trace->Fraction < 0f || trace->Fraction > 1f)
-      return false;
-
-    var p = trace->EndPos;
-    if (!float.IsFinite(p.X) || !float.IsFinite(p.Y) || !float.IsFinite(p.Z))
-      return false;
-
-    return Math.Abs(p.X) <= MaxWorldCoord && Math.Abs(p.Y) <= MaxWorldCoord && Math.Abs(p.Z) <= MaxWorldCoord;
-  }
-
-  private static TraceHit? Trace(CCSPlayerPawn pawn, Vector start, Vector end, ulong mask)
-  {
-    if (!EnsureInit())
-      return null;
-
-    ushort hierarchyId = 0xFFFF;
-    try { hierarchyId = pawn.Collision.CollisionAttribute.HierarchyId; } catch { }
-
-    TraceFilter* filter = stackalloc TraceFilter[1];
-    *filter = default;
-    filter->Vtable = _filterVtable;
-    filter->InteractsWith = mask;
-    filter->InteractsExclude = 0;
-    filter->InteractsAs = 0;
-    filter->OwnerIdsToIgnore[0] = 0xFFFFFFFF;
-    filter->OwnerIdsToIgnore[1] = 0xFFFFFFFF;
-    filter->EntityIdsToIgnore[0] = pawn.Index;
-    filter->EntityIdsToIgnore[1] = 0xFFFFFFFF;
-    filter->HierarchyIds[0] = hierarchyId;
-    filter->HierarchyIds[1] = 0xFFFF;
-    filter->ObjectSetMask = 7;
-    filter->CollisionGroup = 4;
-    filter->Bits = 0b01000001;
-    filter->HitEntities = true;
-    filter->HitTriggers = false;
-    filter->TestHitboxes = true;
-    filter->TraceComplexEntities = false;
-    filter->OnlyHitIfHasPhysics = false;
-    filter->IterateEntities = true;
-
-    Ray* ray = stackalloc Ray[1];
-    *ray = default;
-
-    GameTrace* trace = stackalloc GameTrace[1];
-    *trace = default;
-
-    try
-    {
-      _traceShape!(IntPtr.Zero, ray, start.Handle, end.Handle, filter, trace);
-    }
-    catch (Exception ex)
-    {
-      SelfDisable($"TraceShape cagrisi basarisiz: {ex.Message}");
+      SelfDisable($"CounterStrikeSharp Trace API cagrisi basarisiz (v1.0.372+ gerekli): {ex.Message}");
       return null;
     }
 
-    if (!IsSane(trace))
+    var end = ToNumerics(result.EndPos);
+    if (!IsSane(result.Fraction, end))
     {
-      SelfDisable($"TraceShape gecersiz sonuc dondurdu. gamedata anahtarlari: {KeyTraceShape}, {KeyFilterVtable}");
+      SelfDisable("CounterStrikeSharp Trace API gecersiz sonuc dondurdu.");
       return null;
     }
 
-    return new TraceHit(trace->EndPos, trace->Normal, trace->Entity, trace->Fraction);
+    return new TraceHit(end, ToNumerics(result.Normal), result.HitEntity().Handle, result.Fraction);
   }
 
   public static TraceHit? TraceRay(CCSPlayerPawn pawn, System.Numerics.Vector3 startPos, System.Numerics.Vector3 endPos, ulong mask = MaskShotPhysics)
-  {
-    Vector start = new(startPos.X, startPos.Y, startPos.Z);
-    Vector end = new(endPos.X, endPos.Y, endPos.Z);
-    return Trace(pawn, start, end, mask);
-  }
+    => Trace(pawn, startPos, endPos, mask);
 
   public static System.Numerics.Vector3? TraceLine(CCSPlayerPawn pawn, System.Numerics.Vector3 startPos, System.Numerics.Vector3 endPos, ulong mask = MaskShotPhysics)
   {
-    Vector start = new(startPos.X, startPos.Y, startPos.Z);
-    Vector end = new(endPos.X, endPos.Y, endPos.Z);
-    var hit = Trace(pawn, start, end, mask);
+    var hit = Trace(pawn, startPos, endPos, mask);
     return hit is { DidHit: true } ? hit.Value.EndPos : null;
   }
 
@@ -293,13 +112,16 @@ public static unsafe class NativeTrace
     if (absOrigin == null)
       return null;
 
-    Vector eye = new(absOrigin.X, absOrigin.Y, absOrigin.Z + pawn.ViewOffset.Z);
-    QAngle eyeAngles = pawn.EyeAngles;
-    Vector forward = new();
-    NativeAPI.AngleVectors(eyeAngles.Handle, forward.Handle, 0, 0);
-    Vector end = new(eye.X + forward.X * 8192f, eye.Y + forward.Y * 8192f, eye.Z + forward.Z * 8192f);
+    var eye = new System.Numerics.Vector3(absOrigin.X, absOrigin.Y, absOrigin.Z + pawn.ViewOffset.Z);
+    QAngle angles = pawn.EyeAngles;
+    float pitch = angles.X * MathF.PI / 180f;
+    float yaw = angles.Y * MathF.PI / 180f;
+    var forward = new System.Numerics.Vector3(
+      MathF.Cos(pitch) * MathF.Cos(yaw),
+      MathF.Cos(pitch) * MathF.Sin(yaw),
+      -MathF.Sin(pitch));
 
-    var hit = Trace(pawn, eye, end, mask);
+    var hit = Trace(pawn, eye, eye + forward * MaxDistance, mask);
     return hit is { DidHit: true } ? hit.Value.EndPos : null;
   }
 }

@@ -10,14 +10,14 @@
 | --- | --- | --- | --- |
 | [1v1Slay](1v1Slay/README.md) | Countdown during a 1v1; slays the remaining players when time runs out | General | CounterStrikeSharp |
 | [AdminList](AdminList/README.md) | Lists online admins with group tags and colors; groups come from config | Admin | CounterStrikeSharp |
-| [Ads](Ads/README.md) | Props on the map, ScreenText and HudSay on screen, chat announcements; event driven ads, JSON/MySQL | General | CounterStrikeSharp, gamedata, MySQL (optional) |
+| [Ads](Ads/README.md) | Props on the map, ScreenText and HudSay on screen, chat announcements; event driven ads, JSON/MySQL | General | CounterStrikeSharp, MySQL (optional) |
 | [AntiCapsLock](AntiCapsLock/README.md) | Lowercases excessive caps in chat or deletes the message | General | CounterStrikeSharp |
 | [AntiTeamFlash](AntiTeamFlash/README.md) | Stops teammate flashbangs from blinding you | General | CounterStrikeSharp |
 | [BhopDoorFix](BhopDoorFix/README.md) | Freezes doors on bhop/KZ maps | General | CounterStrikeSharp |
-| [BringGoto](BringGoto/README.md) | Teleport players to you (bring) and teleport to a player (goto) | Admin | CounterStrikeSharp, gamedata |
+| [BringGoto](BringGoto/README.md) | Teleport players to you (bring) and teleport to a player (goto) | Admin | CounterStrikeSharp |
 | [Cekilis](Cekilis/README.md) | Random player raffle filtered by team/state | Jailbreak | CounterStrikeSharp |
 | [ChatCleaner](ChatCleaner/README.md) | Clears your own screen or the whole server chat | General | CounterStrikeSharp |
-| [Cit](Cit/README.md) | Menu for placing fence/barricade models where you are looking | Jailbreak | CounterStrikeSharp, gamedata |
+| [Cit](Cit/README.md) | Menu for placing fence/barricade models where you are looking | Jailbreak | CounterStrikeSharp |
 | [CommandMaker](CommandMaker/README.md) | Creates custom server commands from JSON without writing code | General | CounterStrikeSharp |
 | [CTBan](CTBan/README.md) | Temporarily bans players from the CT (guard) team | Jailbreak | CounterStrikeSharp |
 | [CTKit](CTKit/README.md) | Weapon kit given to CTs automatically on spawn | Jailbreak | CounterStrikeSharp |
@@ -30,11 +30,11 @@
 | [GoBhop](GoBhop/README.md) | Teleports dead Ts to a hidden bhop area | Jailbreak | CounterStrikeSharp |
 | [HideTeammates](HideTeammates/README.md) | Hides teammates (or enemies/everyone) | General | CounterStrikeSharp |
 | [JBDoors](JBDoors/README.md) | Opens/closes every cell door with a single command | Jailbreak | CounterStrikeSharp |
-| [JBLaserWar](JBLaserWar/README.md) | Laser war: bullets do no damage, every shot fires a bouncing laser that kills | Jailbreak | CounterStrikeSharp, gamedata |
+| [JBLaserWar](JBLaserWar/README.md) | Laser war: bullets do no damage, every shot fires a bouncing laser that kills | Jailbreak | CounterStrikeSharp |
 | [JBRace](JBRace/README.md) | Race event with start and finish points | Jailbreak | CounterStrikeSharp |
 | [JBTeams](JBTeams/README.md) | Splits living Ts into colored teams | Jailbreak | CounterStrikeSharp |
-| [Lazer](Lazer/README.md) | Shows dead players where living players are aiming with a laser | General | CounterStrikeSharp, gamedata |
-| [MapBlock](MapBlock/README.md) | Fences off map areas while the player count is low | General | CounterStrikeSharp, gamedata |
+| [Lazer](Lazer/README.md) | Shows dead players where living players are aiming with a laser | General | CounterStrikeSharp |
+| [MapBlock](MapBlock/README.md) | Fences off map areas while the player count is low | General | CounterStrikeSharp |
 | [Meslekmenu](Meslekmenu/README.md) | One job per round for Ts: Doctor, Flash, Bomber, Rambo, Zeus | Jailbreak | CounterStrikeSharp |
 | [PlayerHourCheck](PlayerHourCheck/README.md) | CS2 playtime check with tiered kick/ban punishments | Admin | CounterStrikeSharp, MySQL (optional), an admin plugin with kick/ban |
 | [PlayerRGB](PlayerRGB/README.md) | RGB (rainbow) effect on the player model | General | CounterStrikeSharp |
@@ -51,9 +51,9 @@
 | [Sustum](Sustum/README.md) | Typing event with 4 modes (CTSustum, TSustum, DSustum, DeadSustum) | Jailbreak | CounterStrikeSharp |
 | [TABServerName](TABServerName/README.md) | Discontinued, points to the Metamod plugin that changes the map name on the scoreboard | Admin | Metamod |
 | [TeamShuffle](TeamShuffle/README.md) | Balances T and CT by live damage and kill power; manual and automatic shuffle | General | CounterStrikeSharp |
-| [Thirdperson](Thirdperson/README.md) | Third person camera with wall blocking | General | CounterStrikeSharp, gamedata |
+| [Thirdperson](Thirdperson/README.md) | Third person camera with wall blocking | General | CounterStrikeSharp |
 | [VIPCore](VIPCore/README.md) | Group based VIP system with 75+ modules and JSON/MySQL support | Admin | CounterStrikeSharp, MySQL (optional) |
-| [WardenMarker](WardenMarker/README.md) | A single glowing ring marker the warden keeps moving to the point they look at | Jailbreak | CounterStrikeSharp, gamedata |
+| [WardenMarker](WardenMarker/README.md) | A single glowing ring marker the warden keeps moving to the point they look at | Jailbreak | CounterStrikeSharp |
 
 ## Requirements
 
@@ -70,7 +70,6 @@ Ready to use files are in the `.Compiled` folder, so you do not have to build an
 
 ## Notes
 
-- **gamedata:** Plugins listed with `gamedata` in the table need the files in the `addons/counterstrikesharp/gamedata` folder. If you install a single plugin, copy that folder too; without it the plugin still loads but the feature that needs it will not work. If one of these plugins breaks after a CS2 update, updating just the gamedata file is usually the fix.
 - **MySQL (optional):** These plugins use a JSON file by default, you do not have to switch to MySQL. Switch only if several servers should share the same records.
 - The source code of every plugin is in its own folder; if you prefer, you can build it yourself with `dotnet build <PluginName>/<PluginName>.csproj -c Release`.
 - License: MIT

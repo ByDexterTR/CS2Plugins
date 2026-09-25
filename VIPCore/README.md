@@ -18,7 +18,7 @@ Modular VIP system. Provides a complete VIP infrastructure with more than 75 bui
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
 
 ## Installation
 

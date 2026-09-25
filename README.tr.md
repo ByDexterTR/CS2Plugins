@@ -10,14 +10,14 @@ CS2 sunucuları için 45 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 | --- | --- | --- | --- |
 | [1v1Slay](1v1Slay/README.tr.md) | 1v1 durumunda geri sayım; süre dolunca kalanları öldürür | Genel | CounterStrikeSharp |
 | [AdminList](AdminList/README.tr.md) | Çevrimiçi yetkilileri grup etiketi ve renkleriyle listeler; gruplar config'ten | Yönetim | CounterStrikeSharp |
-| [Ads](Ads/README.tr.md) | Haritaya prop, ekrana ScreenText ve HudSay, sohbete duyuru; olay bazlı reklamlar, JSON/MySQL | Genel | CounterStrikeSharp, gamedata, MySQL (opsiyonel) |
+| [Ads](Ads/README.tr.md) | Haritaya prop, ekrana ScreenText ve HudSay, sohbete duyuru; olay bazlı reklamlar, JSON/MySQL | Genel | CounterStrikeSharp, MySQL (opsiyonel) |
 | [AntiCapsLock](AntiCapsLock/README.tr.md) | Sohbetteki aşırı büyük harfi küçültür veya mesajı siler | Genel | CounterStrikeSharp |
 | [AntiTeamFlash](AntiTeamFlash/README.tr.md) | Takım arkadaşı flash'larının kör etmesini engeller | Genel | CounterStrikeSharp |
 | [BhopDoorFix](BhopDoorFix/README.tr.md) | Bhop/KZ haritalarındaki kapıları dondurur | Genel | CounterStrikeSharp |
-| [BringGoto](BringGoto/README.tr.md) | Oyuncuları ışınlama (bring) ve oyuncuya ışınlanma (goto) | Yönetim | CounterStrikeSharp, gamedata |
+| [BringGoto](BringGoto/README.tr.md) | Oyuncuları ışınlama (bring) ve oyuncuya ışınlanma (goto) | Yönetim | CounterStrikeSharp |
 | [Cekilis](Cekilis/README.tr.md) | Takım/durum filtreli rastgele oyuncu çekilişi | Jailbreak | CounterStrikeSharp |
 | [ChatCleaner](ChatCleaner/README.tr.md) | Kendi ekranını veya tüm sunucu sohbetini temizleme | Genel | CounterStrikeSharp |
-| [Cit](Cit/README.tr.md) | Baktığınız noktaya çit/barikat modeli yerleştirme menüsü | Jailbreak | CounterStrikeSharp, gamedata |
+| [Cit](Cit/README.tr.md) | Baktığınız noktaya çit/barikat modeli yerleştirme menüsü | Jailbreak | CounterStrikeSharp |
 | [CommandMaker](CommandMaker/README.tr.md) | JSON ile kod yazmadan özel sunucu komutları oluşturma | Genel | CounterStrikeSharp |
 | [CTBan](CTBan/README.tr.md) | Oyunculara süreli CT (gardiyan) yasağı verir | Jailbreak | CounterStrikeSharp |
 | [CTKit](CTKit/README.tr.md) | CT'lere spawn'da otomatik verilen silah kiti | Jailbreak | CounterStrikeSharp |
@@ -30,11 +30,11 @@ CS2 sunucuları için 45 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 | [GoBhop](GoBhop/README.tr.md) | Ölü T'leri gizli bhop noktasına ışınlar | Jailbreak | CounterStrikeSharp |
 | [HideTeammates](HideTeammates/README.tr.md) | Takım arkadaşlarını (veya rakipleri/herkesi) gizler | Genel | CounterStrikeSharp |
 | [JBDoors](JBDoors/README.tr.md) | Tüm hücre kapılarını tek komutla açar/kapatır | Jailbreak | CounterStrikeSharp |
-| [JBLaserWar](JBLaserWar/README.tr.md) | Lazer savaşı: mermiler hasar vermez, her atışta sekerek öldüren bir lazer çıkar | Jailbreak | CounterStrikeSharp, gamedata |
+| [JBLaserWar](JBLaserWar/README.tr.md) | Lazer savaşı: mermiler hasar vermez, her atışta sekerek öldüren bir lazer çıkar | Jailbreak | CounterStrikeSharp |
 | [JBRace](JBRace/README.tr.md) | Başlangıç/bitiş noktalı yarış etkinliği | Jailbreak | CounterStrikeSharp |
 | [JBTeams](JBTeams/README.tr.md) | Canlı T'leri renkli takımlara böler | Jailbreak | CounterStrikeSharp |
-| [Lazer](Lazer/README.tr.md) | Ölü oyunculara canlıların baktığı yeri lazerle gösterir | Genel | CounterStrikeSharp, gamedata |
-| [MapBlock](MapBlock/README.tr.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır | Genel | CounterStrikeSharp, gamedata |
+| [Lazer](Lazer/README.tr.md) | Ölü oyunculara canlıların baktığı yeri lazerle gösterir | Genel | CounterStrikeSharp |
+| [MapBlock](MapBlock/README.tr.md) | Oyuncu sayısı düşükken harita bölgelerini çitle kapatır | Genel | CounterStrikeSharp |
 | [Meslekmenu](Meslekmenu/README.tr.md) | T'lere raunt başına bir meslek: Doktor, Flash, Bombacı, Rambo, Zeus | Jailbreak | CounterStrikeSharp |
 | [PlayerHourCheck](PlayerHourCheck/README.tr.md) | CS2 oynama saati kontrolü; kademeli kick/ban cezaları | Yönetim | CounterStrikeSharp, MySQL (opsiyonel), kick/ban komutu olan yetkili eklentisi |
 | [PlayerRGB](PlayerRGB/README.tr.md) | Oyuncu modeline RGB (gökkuşağı) efekti | Genel | CounterStrikeSharp |
@@ -49,11 +49,11 @@ CS2 sunucuları için 45 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 | [SpawnkillProtection](SpawnkillProtection/README.tr.md) | Flag ve takım bazlı, renk geçişli spawn koruması | Genel | CounterStrikeSharp |
 | [Speedometer](Speedometer/README.tr.md) | HUD'da renk geçişli anlık hız göstergesi (u/s) | Genel | CounterStrikeSharp |
 | [Sustum](Sustum/README.tr.md) | Kelime yazma etkinliği; 4 mod (CTSustum, TSustum, DSustum, ÖlüSustum) | Jailbreak | CounterStrikeSharp |
-| [TABServerName](TABServerName/README.tr.md) | Skorboardda sol üstteki harita ismini istediğiniz gibi değiştirme | Yönetim | CounterStrikeSharp, gamedata |
+| [TABServerName](TABServerName/README.tr.md) | Geliştirilmesi bırakıldı, skorboarddaki harita ismini değiştiren Metamod eklentisine yönlendirir | Yönetim | Metamod |
 | [TeamShuffle](TeamShuffle/README.tr.md) | T ve CT'yi anlık hasar ve kill gücüne göre dengeler; manuel ve otomatik karıştırma | Genel | CounterStrikeSharp |
-| [Thirdperson](Thirdperson/README.tr.md) | Üçüncü şahıs kamera; duvar engelleme | Genel | CounterStrikeSharp, gamedata |
+| [Thirdperson](Thirdperson/README.tr.md) | Üçüncü şahıs kamera; duvar engelleme | Genel | CounterStrikeSharp |
 | [VIPCore](VIPCore/README.tr.md) | 75+ modüllü, grup tabanlı, JSON/MySQL destekli VIP sistemi | Yönetim | CounterStrikeSharp, MySQL (opsiyonel) |
-| [WardenMarker](WardenMarker/README.tr.md) | Warden'ın baktığı noktaya taşıdığı tek parlayan halka marker | Jailbreak | CounterStrikeSharp, gamedata |
+| [WardenMarker](WardenMarker/README.tr.md) | Warden'ın baktığı noktaya taşıdığı tek parlayan halka marker | Jailbreak | CounterStrikeSharp |
 
 ## Gereksinimler
 
@@ -70,7 +70,6 @@ Kullanıma hazır dosyalar `.Compiled` klasöründe; ayrıca derlemenize gerek y
 
 ## Notlar
 
-- **gamedata:** Tabloda gereksinimi `gamedata` yazan eklentiler `addons/counterstrikesharp/gamedata` klasöründeki dosyalara ihtiyaç duyar. Tek eklenti kuruyorsanız bu klasörü de kopyalayın; kopyalamazsanız eklenti yüklenir ama ilgili özelliği çalışmaz. Bir CS2 güncellemesi sonrası bu eklentiler bozulursa çözüm genelde yalnızca gamedata dosyasını güncellemektir.
 - **MySQL (opsiyonel):** Bu eklentiler varsayılan olarak JSON dosyası kullanır, MySQL'e geçmek zorunda değilsiniz. Birden fazla sunucu aynı kayıtları paylaşacaksa MySQL'e geçin.
 - Kaynak kod her eklentinin kendi klasöründedir; isterseniz `dotnet build <EklentiAdı>/<EklentiAdı>.csproj -c Release` ile kendiniz derleyebilirsiniz.
 - Lisans: MIT

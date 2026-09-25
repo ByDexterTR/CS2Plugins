@@ -18,7 +18,7 @@ Modüler VIP sistemi. 75'ten fazla yerleşik VIP özelliği (modül), grup taban
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
 
 ## Kurulum
 
