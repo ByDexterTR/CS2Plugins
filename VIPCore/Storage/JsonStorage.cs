@@ -9,6 +9,11 @@ public class JsonStorage : IVipStorage
     private readonly string _testPath;
     private readonly object _ioLock = new();
     private static readonly JsonSerializerOptions Opts = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions ReadOpts = new()
+    {
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
+    };
 
     public JsonStorage(string directory)
     {
@@ -29,7 +34,7 @@ public class JsonStorage : IVipStorage
             if (!File.Exists(_vipsPath))
                 return result;
 
-            var raw = JsonSerializer.Deserialize<Dictionary<string, VipEntry>>(File.ReadAllText(_vipsPath));
+            var raw = JsonSerializer.Deserialize<Dictionary<string, VipEntry>>(File.ReadAllText(_vipsPath), ReadOpts);
             if (raw == null)
                 return result;
 
@@ -48,7 +53,7 @@ public class JsonStorage : IVipStorage
             if (!File.Exists(_settingsPath))
                 return result;
 
-            var raw = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(_settingsPath));
+            var raw = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(_settingsPath), ReadOpts);
             if (raw == null)
                 return result;
 
@@ -84,7 +89,7 @@ public class JsonStorage : IVipStorage
 
             var settings = LoadSettingsUnlocked();
             if (settings.Remove(steamId.ToString()))
-                File.WriteAllText(_settingsPath, JsonSerializer.Serialize(settings, Opts));
+                WriteAtomic(_settingsPath, JsonSerializer.Serialize(settings, Opts));
         }
     }
 
@@ -127,7 +132,7 @@ public class JsonStorage : IVipStorage
             if (dict is { Count: 0 })
                 all.Remove(key);
 
-            File.WriteAllText(_settingsPath, JsonSerializer.Serialize(all, Opts));
+            WriteAtomic(_settingsPath, JsonSerializer.Serialize(all, Opts));
         }
     }
 
@@ -145,7 +150,7 @@ public class JsonStorage : IVipStorage
             if (!all.Add(steamId.ToString()))
                 return;
 
-            File.WriteAllText(_testPath, JsonSerializer.Serialize(all.ToList(), Opts));
+            WriteAtomic(_testPath, JsonSerializer.Serialize(all.ToList(), Opts));
         }
     }
 
@@ -154,7 +159,7 @@ public class JsonStorage : IVipStorage
         if (!File.Exists(_testPath))
             return new();
 
-        try { return new HashSet<string>(JsonSerializer.Deserialize<List<string>>(File.ReadAllText(_testPath)) ?? new()); }
+        try { return new HashSet<string>(JsonSerializer.Deserialize<List<string>>(File.ReadAllText(_testPath), ReadOpts) ?? new()); }
         catch { return new(); }
     }
 
@@ -162,16 +167,23 @@ public class JsonStorage : IVipStorage
     {
         if (!File.Exists(_vipsPath))
             return new();
-        return JsonSerializer.Deserialize<Dictionary<string, VipEntry>>(File.ReadAllText(_vipsPath)) ?? new();
+        return JsonSerializer.Deserialize<Dictionary<string, VipEntry>>(File.ReadAllText(_vipsPath), ReadOpts) ?? new();
     }
 
     private Dictionary<string, Dictionary<string, string>> LoadSettingsUnlocked()
     {
         if (!File.Exists(_settingsPath))
             return new();
-        return JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(_settingsPath)) ?? new();
+        return JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(_settingsPath), ReadOpts) ?? new();
+    }
+
+    private static void WriteAtomic(string path, string content)
+    {
+        string temp = path + ".tmp";
+        File.WriteAllText(temp, content);
+        File.Move(temp, path, true);
     }
 
     private void WriteVips(Dictionary<string, VipEntry> all) =>
-        File.WriteAllText(_vipsPath, JsonSerializer.Serialize(all, Opts));
+        WriteAtomic(_vipsPath, JsonSerializer.Serialize(all, Opts));
 }

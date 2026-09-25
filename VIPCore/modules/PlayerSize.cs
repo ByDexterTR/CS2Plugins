@@ -52,13 +52,24 @@ public class PlayerSize : VipModule
         if (pawn == null || !pawn.IsValid)
             return;
 
+        if (ScalePool.Rebase(player!.Slot, scale))
+            return;
+
+        float current = Current(pawn);
+        if (Math.Abs(scale - 1f) > 0.01f && Math.Abs(current - 1f) > 0.01f && Math.Abs(current - scale) > 0.01f)
+            return;
+
+        Set(pawn, scale);
+    }
+
+    internal static float Current(CCSPlayerPawn pawn) =>
+        pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.Scale ?? 1f;
+
+    internal static void Set(CCSPlayerPawn pawn, float scale)
+    {
         var skeleton = pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance();
         if (skeleton != null)
-        {
-            if (Math.Abs(skeleton.Scale - 1f) > 0.01f && Math.Abs(skeleton.Scale - scale) > 0.01f)
-                return;
             skeleton.Scale = scale;
-        }
 
         pawn.AcceptInput("SetScale", null, null, scale.ToString(CultureInfo.InvariantCulture));
         Server.NextFrame(() =>

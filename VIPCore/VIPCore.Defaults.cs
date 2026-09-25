@@ -909,6 +909,11 @@ public partial class VIPCore
       "ignore_self": true,
       "limit": 0
     },
+    "NoRecoil": {
+      "only_with_weapon": "",
+      "only_stance": 0,
+      "recoilpercent": 0.0
+    },
     "PlayerGlow": {
       "colors": [
         "Sari #FFFF00"
@@ -983,7 +988,6 @@ public partial class VIPCore
     "RapidFire": {
       "only_with_weapon": "",
       "only_stance": 0,
-      "recoilpercent": 0.0,
       "firepercent": 2.0
     },
     "ReflectDamage": {
@@ -1383,6 +1387,38 @@ public partial class VIPCore
         "radius": 0,
         "see_teammates": false,
         "only_mode": 0,
+        "limit": 0
+      },
+      "resist": {
+        "percent": 50,
+        "time": 5,
+        "limit": 0
+      },
+      "godmode": {
+        "time": 3,
+        "limit": 1
+      },
+      "gravity": {
+        "scale": 0.5,
+        "time": 5,
+        "limit": 0
+      },
+      "infiniteammo": {
+        "time": 5,
+        "limit": 0
+      },
+      "invisible": {
+        "time": 3,
+        "limit": 1
+      },
+      "size": {
+        "scale": 0.7,
+        "time": 5,
+        "limit": 0
+      },
+      "norecoil": {
+        "recoilpercent": 0.0,
+        "time": 5,
         "limit": 0
       }
     },

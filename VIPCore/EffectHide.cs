@@ -111,6 +111,9 @@ public static class EffectHide
 
     public static void Track(int module, uint entityIndex, int ownerSlot)
     {
+        if (module is PlayerTrail or PlayerGlow or PlayerParticle or Pet)
+            InvisPool.Attach(ownerSlot, entityIndex);
+
         if (_owner != null)
             _entities[entityIndex] = (module, ownerSlot);
     }

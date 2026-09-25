@@ -12,6 +12,7 @@ public class CustomWeaponModel : VipModule
         public string Model { get; set; } = "";
         public bool Throw { get; set; } = true;
         public string Required { get; set; } = "";
+        public string Team { get; set; } = "";
     }
 
     private class Applied
@@ -39,7 +40,7 @@ public class CustomWeaponModel : VipModule
     public static List<Entry> Usable(List<Entry>? entries, CCSPlayerController? player = null) =>
         entries == null
             ? new()
-            : entries.Where(e => e.Name.Length > 0 && e.Weapon.Length > 0 && e.Model.Length > 0 && HasFlags(player, e.Required)).ToList();
+            : entries.Where(e => e.Name.Length > 0 && e.Weapon.Length > 0 && e.Model.Length > 0 && Allowed(player, e.Required, e.Team)).ToList();
 
     public static string Category(string weapon) => weapon.ToLowerInvariant();
 

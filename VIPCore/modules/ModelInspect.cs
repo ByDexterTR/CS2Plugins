@@ -112,7 +112,7 @@ public class ModelInspect : VipModule
 
     private List<Pet.Entry> Pets(CCSPlayerController player) =>
         (Core.GetGroupValue<List<Pet.Entry>>(player, "Pet") ?? new())
-        .Where(entry => entry.Name.Length > 0 && entry.Model.Length > 0 && HasFlags(player, entry.Required)).ToList();
+        .Where(entry => entry.Name.Length > 0 && entry.Model.Length > 0 && Allowed(player, entry.Required, entry.Team)).ToList();
 
     private Outfit.Cfg Wearables(CCSPlayerController player) =>
         Core.GetGroupValue<Outfit.Cfg>(player, "Outfit") ?? new();
@@ -149,7 +149,7 @@ public class ModelInspect : VipModule
 
         foreach (var entry in entries)
         {
-            if (entry.Name.Length == 0 || entry.Model.Length == 0 || !HasFlags(player, entry.Required))
+            if (entry.Name.Length == 0 || entry.Model.Length == 0 || !Allowed(player, entry.Required, entry.Team))
                 continue;
 
             var wear = entry;

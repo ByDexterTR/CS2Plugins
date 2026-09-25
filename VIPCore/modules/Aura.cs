@@ -90,8 +90,6 @@ public class Aura : VipModule
 
     private readonly byte[] _visible = new byte[64];
     private readonly int[] _team = new int[64];
-    private readonly HashSet<int> _affected = new();
-    private readonly HashSet<int> _affectedThisTick = new();
 
     public override string Name => "Aura";
     public override string DisplayName => Core.Localizer["vip.module.aura"];
@@ -110,6 +108,7 @@ public class Aura : VipModule
 
     public override void OnLoad()
     {
+        SpeedPool.Ensure(Core);
         Core.HookTransmit(OnCheckTransmit);
         Core.HookTick(OnTick, 2);
         Core.RegisterEventHandler<EventRoundEnd>((_, __) => { ClearRings(); return HookResult.Continue; });
@@ -138,8 +137,6 @@ public class Aura : VipModule
 
     private void OnTick()
     {
-        _affectedThisTick.Clear();
-
         foreach (var player in Core.Players)
         {
             if (player == null || !player.IsValid || player.IsBot)
@@ -229,7 +226,7 @@ public class Aura : VipModule
                         float factor = Math.Max(1f - cfg.Slow.Percent / 100f, 0f);
                         if (cfg.Slow.MinSpeed > 0)
                             factor = Math.Max(factor, cfg.Slow.MinSpeed / 250f);
-                        SetVelocity(target, factor);
+                        SetVelocity(target, SpeedPool.AuraSlow, factor);
                     });
                     break;
 
@@ -239,28 +236,11 @@ public class Aura : VipModule
                         float factor = 1f + cfg.Speed.Percent / 100f;
                         if (cfg.Speed.MaxSpeed > 0)
                             factor = Math.Min(factor, cfg.Speed.MaxSpeed / 250f);
-                        SetVelocity(target, factor);
+                        SetVelocity(target, SpeedPool.AuraSpeed, factor);
                     });
                     break;
             }
         }
-
-        foreach (int slot in _affected)
-        {
-            if (_affectedThisTick.Contains(slot))
-                continue;
-
-            var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
-            if (pawn != null && pawn.IsValid && Math.Abs(pawn.VelocityModifier - 1f) > 0.001f)
-            {
-                pawn.VelocityModifier = 1f;
-                Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-            }
-        }
-
-        _affected.Clear();
-        foreach (int slot in _affectedThisTick)
-            _affected.Add(slot);
     }
 
     private static byte ParseVisible(string value) => value.ToLowerInvariant() switch
@@ -325,14 +305,11 @@ public class Aura : VipModule
         _ => true
     };
 
-    private void SetVelocity(CCSPlayerPawn pawn, float factor)
+    private static void SetVelocity(CCSPlayerPawn pawn, int source, float factor)
     {
         var controller = pawn.Controller.Value?.As<CCSPlayerController>();
         if (controller != null && controller.IsValid)
-            _affectedThisTick.Add(controller.Slot);
-
-        pawn.VelocityModifier = factor;
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+            SpeedPool.Request(controller.Slot, source, factor, 3);
     }
 
     private void Apply(CCSPlayerController owner, Vector center, float radius, bool ignoreTeammates, bool ignoreSelf, bool ignoreEnemy, Action<CCSPlayerPawn> effect)
@@ -383,6 +360,7 @@ public class Aura : VipModule
                 created.Width = 2f;
                 created.Render = color;
                 created.DispatchSpawn();
+                InvisPool.Attach(slot, created);
                 beams.Add(created);
             }
 

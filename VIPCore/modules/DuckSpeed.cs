@@ -16,13 +16,14 @@ public class DuckSpeed : VipModule
 
     private static readonly Cfg DefaultCfg = new();
 
-    private readonly float[] _applied = new float[64];
-
     public override string Name => "DuckSpeed";
     public override string DisplayName => Core.Localizer["vip.module.duckspeed"];
 
-    public override void OnLoad() =>
+    public override void OnLoad()
+    {
+        SpeedPool.Ensure(Core);
         VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Hook(OnPostThink, HookMode.Post);
+    }
 
     public override void OnUnload() =>
         VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Unhook(OnPostThink, HookMode.Post);
@@ -38,22 +39,9 @@ public class DuckSpeed : VipModule
         if (player == null || !player.IsValid || player.IsBot || player.Slot >= 64)
             return HookResult.Continue;
 
-        int slot = player.Slot;
         var movement = pawnBase.MovementServices?.As<CCSPlayer_MovementServices>();
-
-        if (!Active(player) || movement == null || movement.DuckAmount <= 0.01f)
-        {
-            if (_applied[slot] > 0f)
-            {
-                if (Math.Abs(pawn.VelocityModifier - _applied[slot]) < 0.01f)
-                {
-                    pawn.VelocityModifier = 1f;
-                    Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-                }
-                _applied[slot] = 0f;
-            }
+        if (movement == null || movement.DuckAmount <= 0.01f || !Active(player))
             return HookResult.Continue;
-        }
 
         float percent = Math.Clamp((GroupValue<Cfg>(player) ?? DefaultCfg).Percent, VanillaDuckPercent, 100f);
         float target = percent / VanillaDuckPercent;
@@ -64,7 +52,7 @@ public class DuckSpeed : VipModule
             Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
         }
 
-        _applied[slot] = target;
+        SpeedPool.Floor(player.Slot, target);
         return HookResult.Continue;
     }
 }

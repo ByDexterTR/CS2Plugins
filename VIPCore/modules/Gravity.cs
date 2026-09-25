@@ -6,7 +6,12 @@ namespace VIPCore;
 
 public class Gravity : VipModule
 {
+    private static Gravity? _instance;
     private readonly bool[] _applied = new bool[64];
+    private readonly float[] _wanted = new float[64];
+
+    internal static float Base(int slot) =>
+        _instance != null && slot >= 0 && slot < 64 && _instance._applied[slot] ? _instance._wanted[slot] : 1f;
 
     public override string Name => "Gravity";
     public override string DisplayName => Core.Localizer["vip.module.gravity"];
@@ -22,7 +27,11 @@ public class Gravity : VipModule
         }).ToList();
     }
 
-    public override void OnLoad() => Core.HookTick(OnTick, 8);
+    public override void OnLoad()
+    {
+        _instance = this;
+        Core.HookTick(OnTick, 8);
+    }
 
     public override void OnUnload()
     {
@@ -67,6 +76,10 @@ public class Gravity : VipModule
                 continue;
 
             _applied[slot] = true;
+            _wanted[slot] = gravity;
+            if (HealthshotEffect.HoldsGravity(slot))
+                continue;
+
             if (Math.Abs(pawn.ActualGravityScale - gravity) > 0.001f)
                 pawn.ActualGravityScale = gravity;
         }

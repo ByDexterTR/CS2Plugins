@@ -12,6 +12,7 @@ public class Postprocessing : VipModule
         public string File { get; set; } = "";
         public float Fade { get; set; } = 0.25f;
         public string Required { get; set; } = "";
+        public string Team { get; set; } = "";
     }
 
     private const string VolumeClass = "post_processing_volume";
@@ -27,7 +28,7 @@ public class Postprocessing : VipModule
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
     {
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        return entries.Where(e => e.Name.Length > 0 && e.File.Length > 0 && HasFlags(player, e.Required))
+        return entries.Where(e => e.Name.Length > 0 && e.File.Length > 0 && Allowed(player, e.Required, e.Team))
             .Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
     }
 
@@ -103,7 +104,7 @@ public class Postprocessing : VipModule
         Remove(slot);
 
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        var entry = entries.FirstOrDefault(e => e.Name == Setting(player) && HasFlags(player, e.Required));
+        var entry = entries.FirstOrDefault(e => e.Name == Setting(player) && Allowed(player, e.Required, e.Team));
         if (entry == null || entry.File.Length == 0)
             return;
 

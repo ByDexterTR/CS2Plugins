@@ -405,24 +405,65 @@ public partial class VIPCore
             return;
         }
 
-        VipEntry? entry;
-        try { entry = _storage.LoadVip(steamId); }
-        catch { entry = null; }
+        ulong callerId = player?.SteamID ?? 0;
+        bool chat = info.CallingContext == CommandCallingContext.Chat;
+        var storage = _storage;
 
-        lock (_lock)
+        Task.Run(() =>
         {
-            if (entry != null)
-                _vips[steamId] = entry;
-            else
-                _vips.Remove(steamId);
+            VipEntry? entry = null;
+            bool queried = true;
+
+            try { entry = storage.LoadVip(steamId); }
+            catch (Exception ex)
+            {
+                queried = false;
+                Logger.LogError("VIPCore: {0} kayittan okunamadi: {1}", steamId, ex.Message);
+            }
+
+            Server.NextFrame(() =>
+            {
+                if (!queried)
+                {
+                    ReplyLater(callerId, chat, Localizer["vip.update_failed", steamId.ToString()]);
+                    return;
+                }
+
+                lock (_lock)
+                {
+                    if (entry != null)
+                        _vips[steamId] = entry;
+                    else
+                        _vips.Remove(steamId);
+                }
+
+                VipsChanged();
+                PurgeIfExpired(steamId);
+
+                ReplyLater(callerId, chat, entry == null
+                    ? Localizer["vip.not_found", steamId.ToString()]
+                    : Localizer["vip.updated", steamId.ToString(), entry.Group]);
+            });
+        });
+    }
+
+    private void ReplyLater(ulong callerId, bool chat, string message)
+    {
+        message = $" {CC.Orchid}{ChatPrefix}{CC.Default} {message}";
+        if (callerId == 0)
+        {
+            Server.PrintToConsole(message);
+            return;
         }
 
-        PurgeIfExpired(steamId);
+        var target = Utilities.GetPlayerFromSteamId64(callerId);
+        if (target == null || !target.IsValid)
+            return;
 
-        if (entry == null)
-            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.not_found", steamId.ToString()]}");
+        if (chat)
+            target.PrintToChat(message);
         else
-            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.updated", steamId.ToString(), entry.Group]}");
+            target.PrintToConsole(message);
     }
 
     private void SetVip(ulong steamId, string group, long expires)
@@ -430,6 +471,7 @@ public partial class VIPCore
         var entry = new VipEntry { Group = group, Expires = expires };
         lock (_lock)
             _vips[steamId] = entry;
+        VipsChanged();
 
         var storage = _storage;
         Task.Run(() =>
@@ -447,6 +489,7 @@ public partial class VIPCore
             _settings.Remove(steamId);
             _pendingSettings.Remove(steamId);
         }
+        VipsChanged();
 
         var storage = _storage;
         Task.Run(() =>

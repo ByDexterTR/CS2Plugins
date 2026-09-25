@@ -106,8 +106,6 @@ public class DecoyEffect : VipModule
     }
 
     private readonly Dictionary<int, ActiveDecoy> _decoys = new();
-    private readonly HashSet<int> _slowed = new();
-    private readonly HashSet<int> _slowedThisTick = new();
     private readonly int[] _strengthTick = new int[64];
     private readonly float[] _strength = new float[64];
     private bool _glowUser;
@@ -174,8 +172,6 @@ public class DecoyEffect : VipModule
             DecoyRing.Hide(id);
 
         _decoys.Clear();
-        _slowed.Clear();
-        _slowedThisTick.Clear();
         Array.Clear(_strengthTick);
         Array.Clear(_strength);
     }
@@ -232,12 +228,8 @@ public class DecoyEffect : VipModule
     private void OnTick()
     {
         if (_decoys.Count == 0)
-        {
-            ResetStaleSlows();
             return;
-        }
 
-        _slowedThisTick.Clear();
         float now = Server.CurrentTime;
 
         if (_glowUser)
@@ -313,16 +305,12 @@ public class DecoyEffect : VipModule
                     {
                         var controller = pawn.Controller.Value?.As<CCSPlayerController>();
                         if (controller != null && controller.IsValid)
-                            _slowedThisTick.Add(controller.Slot);
-
-                        pawn.VelocityModifier = factor;
-                        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+                            SpeedPool.Request(controller.Slot, SpeedPool.DecoySlow, factor, SpeedPool.TicksFor(cfg.Slow.Tick));
                     });
                     break;
             }
         }
 
-        ResetStaleSlows();
     }
 
     private void ApplyWallhack(ActiveDecoy decoy, WallhackCfg? cfg, CCSPlayerController owner, float now)
@@ -476,33 +464,6 @@ public class DecoyEffect : VipModule
             var velocity = pawn.AbsVelocity;
             pawn.Teleport(null, null, new Vector(velocity.X + dx / length * pull, velocity.Y + dy / length * pull, velocity.Z));
         });
-    }
-
-    private void ResetStaleSlows()
-    {
-        if (_slowed.Count == 0)
-        {
-            foreach (int slot in _slowedThisTick)
-                _slowed.Add(slot);
-            return;
-        }
-
-        foreach (int slot in _slowed)
-        {
-            if (_slowedThisTick.Contains(slot))
-                continue;
-
-            var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
-            if (pawn != null && pawn.IsValid && Math.Abs(pawn.VelocityModifier - 1f) > 0.001f)
-            {
-                pawn.VelocityModifier = 1f;
-                Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-            }
-        }
-
-        _slowed.Clear();
-        foreach (int slot in _slowedThisTick)
-            _slowed.Add(slot);
     }
 
     private void Apply(ActiveDecoy decoy, CCSPlayerController owner, float radius, bool ignoreTeammates, bool ignoreSelf, bool ignoreEnemy, Action<CCSPlayerPawn> effect)

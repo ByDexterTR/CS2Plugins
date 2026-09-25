@@ -1,6 +1,4 @@
-using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Utils;
 
 namespace VIPCore;
 
@@ -21,15 +19,20 @@ public class AntiHS : VipModule
     public override string Name => "AntiHS";
     public override string DisplayName => Core.Localizer["vip.module.antihs"];
 
-    public override void OnLoad() => Core.RegisterEventHandler<EventPlayerHurt>(OnHurt);
+    public override void OnLoad() => Core.HookDamage(OnDamage);
 
-    private HookResult OnHurt(EventPlayerHurt ev, GameEventInfo info)
+    private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        var victim = ev.Userid;
-        if (!Active(victim) || ev.Attacker?.Slot == victim!.Slot)
+        if (info.Damage <= 0f || ((long)info.BitsDamageType & (long)DamageTypes_t.DMG_BULLET) == 0
+            || info.GetHitGroup() != HitGroup_t.HITGROUP_HEAD)
             return HookResult.Continue;
 
-        if (ev.Hitgroup != (int)HitGroup_t.HITGROUP_HEAD)
+        var victim = PawnController(entity);
+        if (!Active(victim))
+            return HookResult.Continue;
+
+        var attacker = PawnController(info.Attacker?.Value);
+        if (attacker != null && attacker.Slot == victim!.Slot)
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(victim!) ?? DefaultCfg;
@@ -40,20 +43,11 @@ public class AntiHS : VipModule
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(victim!)))
             return HookResult.Continue;
 
-        var pawn = victim!.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid)
+        if (LimitReached(victim!.Slot, cfg.Limit))
             return HookResult.Continue;
 
-        int restore = ev.DmgHealth * (100 - cfg.Percent) / 100;
-        if (restore <= 0)
-            return HookResult.Continue;
-
-        if (LimitReached(victim.Slot, cfg.Limit))
-            return HookResult.Continue;
-
-        pawn.Health = Math.Min(pawn.Health + restore, pawn.MaxHealth);
-        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
         LimitUse(victim.Slot);
-        return HookResult.Continue;
+        info.Damage = MathF.Max(info.Damage * Math.Max(cfg.Percent, 0) / 100f, 0f);
+        return HookResult.Changed;
     }
 }

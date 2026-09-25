@@ -82,7 +82,11 @@ public class WeaponGlow : VipModule
 
         foreach (var player in Core.Players)
         {
-            var weapons = player?.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+            if (player == null || !player.IsValid)
+                continue;
+
+            var pawn = player.PlayerPawn.Value;
+            var weapons = pawn != null && pawn.IsValid ? pawn.WeaponServices?.MyWeapons : null;
             if (weapons == null)
                 continue;
 

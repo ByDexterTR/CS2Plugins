@@ -27,6 +27,7 @@ public class Pet : VipModule
         public float Scale { get; set; } = 1f;
         public float Yaw { get; set; } = 0f;
         public string Required { get; set; } = "";
+        public string Team { get; set; } = "";
         public Anim Animations { get; set; } = new();
     }
 
@@ -55,7 +56,7 @@ public class Pet : VipModule
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
     {
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        return entries.Where(e => e.Name.Length > 0 && e.Model.Length > 0 && HasFlags(player, e.Required))
+        return entries.Where(e => e.Name.Length > 0 && e.Model.Length > 0 && Allowed(player, e.Required, e.Team))
             .Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
     }
 
@@ -135,7 +136,7 @@ public class Pet : VipModule
         Remove(userId);
 
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        var def = entries.FirstOrDefault(e => e.Name == Setting(player) && HasFlags(player, e.Required));
+        var def = entries.FirstOrDefault(e => e.Name == Setting(player) && Allowed(player, e.Required, e.Team));
         if (def == null || def.Model.Length == 0)
             return;
 

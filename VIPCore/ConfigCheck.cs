@@ -32,12 +32,17 @@ internal static class ConfigCheck
     private static readonly Dictionary<string, string> KeyRenames = new(StringComparer.OrdinalIgnoreCase)
     {
         ["FallDamage.count"] = "limit",
-        ["RapidFire.norecoil"] = "recoilpercent",
         ["Respawn.timer"] = "time",
         ["HealthRegen.max_hp"] = "",
         ["TeamHeal.maxhp"] = "",
         ["SmokeEffect.heal.maxhp"] = "",
         ["WeaponGlow.visible"] = ""
+    };
+
+    private static readonly Dictionary<string, string> KeyMoves = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["RapidFire.norecoil"] = "NoRecoil icindeki \"recoilpercent\"",
+        ["RapidFire.recoilpercent"] = "NoRecoil icindeki \"recoilpercent\""
     };
 
     private sealed class Node
@@ -164,6 +169,12 @@ internal static class ConfigCheck
             if (node.Props.TryGetValue(prop.Name, out var childNode))
             {
                 Check(prop.Value, childNode, groupName, feature, child, issues);
+                continue;
+            }
+
+            if (KeyMoves.TryGetValue(child, out var target))
+            {
+                issues.Add($"\"{groupName}\" -> {child} kaldirildi, yerine {target} kullanin.");
                 continue;
             }
 

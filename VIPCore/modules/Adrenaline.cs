@@ -23,6 +23,7 @@ public class Adrenaline : VipModule
 
     public override void OnLoad()
     {
+        SpeedPool.Ensure(Core);
         Core.RegisterEventHandler<EventPlayerDeath>(OnDeath);
         Core.RegisterEventHandler<EventPlayerSpawn>((ev, _) =>
         {
@@ -84,40 +85,13 @@ public class Adrenaline : VipModule
                 continue;
 
             var player = Utilities.GetPlayerFromSlot(slot);
-            if (!IsAlive(player) || !Active(player))
+            if (!IsAlive(player) || !Active(player) || (_until[slot] > 0f && Server.CurrentTime >= _until[slot]))
             {
-                Restore(player);
                 Reset(slot);
                 continue;
             }
 
-            if (_until[slot] > 0f && Server.CurrentTime >= _until[slot])
-            {
-                Restore(player);
-                Reset(slot);
-                continue;
-            }
-
-            var pawn = player!.PlayerPawn.Value;
-            if (pawn == null || !pawn.IsValid)
-                continue;
-
-            float target = 1f + bonus;
-            if (Math.Abs(pawn.VelocityModifier - target) > 0.001f)
-            {
-                pawn.VelocityModifier = target;
-                Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-            }
+            SpeedPool.Request(slot, SpeedPool.Adrenaline, 1f + bonus);
         }
-    }
-
-    private static void Restore(CCSPlayerController? player)
-    {
-        var pawn = player?.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid || Math.Abs(pawn.VelocityModifier - 1f) <= 0.001f)
-            return;
-
-        pawn.VelocityModifier = 1f;
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
     }
 }

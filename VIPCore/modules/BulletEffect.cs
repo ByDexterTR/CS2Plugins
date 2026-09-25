@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
@@ -79,6 +78,8 @@ public class BulletEffect : VipModule
 
     public override void OnLoad()
     {
+        SpeedPool.Ensure(Core);
+        ScalePool.Ensure(Core);
         Core.RegisterEventHandler<EventPlayerHurt>(OnHurt);
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
         {
@@ -146,7 +147,7 @@ public class BulletEffect : VipModule
                 }
                 else
                 {
-                    _active[slot] = new Effect
+                    Replace(slot, new Effect
                     {
                         Mode = "poison",
                         Damage = cfg.Poison.Damage,
@@ -154,7 +155,7 @@ public class BulletEffect : VipModule
                         SoundVolume = cfg.Poison.SoundVolume,
                         NextTick = now + interval,
                         ExpireAt = now + pDur
-                    };
+                    });
                 }
                 break;
 
@@ -171,12 +172,12 @@ public class BulletEffect : VipModule
                 }
                 else
                 {
-                    _active[slot] = new Effect
+                    Replace(slot, new Effect
                     {
                         Mode = "slow",
                         SlowFactor = factor,
                         ExpireAt = now + sDur
-                    };
+                    });
                 }
                 break;
 
@@ -207,16 +208,17 @@ public class BulletEffect : VipModule
             return;
         }
 
-        if (existing != null && existing.SizeApplied && existing.Mode != mode)
-            EndEffect(slot, existing);
+        var pawn = victim.PlayerPawn.Value;
+        if (pawn == null || !pawn.IsValid)
+            return;
 
-        ApplyScale(victim.PlayerPawn.Value, cfg.Size);
-        _active[slot] = new Effect
+        Replace(slot, new Effect
         {
             Mode = mode,
             SizeApplied = true,
             ExpireAt = now + dur
-        };
+        });
+        ScalePool.Push(pawn, slot, ScalePool.Bullet, cfg.Size);
     }
 
     private static bool Ignored(bool ignoreTeammates, bool ignoreSelf, bool ignoreEnemy, bool isSelf, bool isTeammate, bool isEnemy) =>
@@ -263,11 +265,7 @@ public class BulletEffect : VipModule
                     break;
 
                 case "slow":
-                    if (Math.Abs(pawn.VelocityModifier - e.SlowFactor) > 0.001f)
-                    {
-                        pawn.VelocityModifier = e.SlowFactor;
-                        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-                    }
+                    SpeedPool.Request(slot, SpeedPool.BulletSlow, e.SlowFactor, 5);
                     break;
             }
         }
@@ -276,33 +274,22 @@ public class BulletEffect : VipModule
     private void EndEffect(int slot, Effect e)
     {
         _active[slot] = null;
+        SpeedPool.Clear(slot, SpeedPool.BulletSlow);
+
         var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
         if (pawn == null || !pawn.IsValid)
             return;
 
-        if (e.Mode == "slow" && Math.Abs(pawn.VelocityModifier - 1f) > 0.001f)
-        {
-            pawn.VelocityModifier = 1f;
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-        }
-        else if (e.SizeApplied)
-            ApplyScale(pawn, 1f);
+        if (e.SizeApplied)
+            ScalePool.Pop(slot, ScalePool.Bullet);
     }
 
-    private static void ApplyScale(CCSPlayerPawn? pawn, float scale)
+    private void Replace(int slot, Effect effect)
     {
-        if (pawn == null || !pawn.IsValid)
-            return;
+        var old = _active[slot];
+        if (old != null && old.SizeApplied)
+            EndEffect(slot, old);
 
-        var skeleton = pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance();
-        if (skeleton != null)
-            skeleton.Scale = scale;
-
-        pawn.AcceptInput("SetScale", null, null, scale.ToString(CultureInfo.InvariantCulture));
-        Server.NextFrame(() =>
-        {
-            if (pawn.IsValid)
-                Utilities.SetStateChanged(pawn, "CBaseEntity", "m_CBodyComponent");
-        });
+        _active[slot] = effect;
     }
 }

@@ -1,7 +1,5 @@
-using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Utils;
 
 namespace VIPCore;
 
@@ -19,47 +17,24 @@ public class Invisibility : VipModule
 
     private static readonly Cfg DefaultCfg = new();
 
-    private const float VisibleAlpha = 0.5f;
-
-    private readonly bool[] _invisible = new bool[64];
     private readonly float[] _revealedUntil = new float[64];
-    private int _invisCount;
-    private readonly List<(uint PawnIndex, nint PawnHandle, CsTeam Team)> _invisPawns = new();
 
     public override string Name => "Invisibility";
     public override string DisplayName => Core.Localizer["vip.module.invisibility"];
 
     public override void OnLoad()
     {
+        InvisPool.Ensure(Core);
         Core.HookTick(OnTick, 2);
-        Core.HookTransmit(OnCheckTransmit);
         Core.RegisterEventHandler<EventPlayerHurt>((ev, _) => { Reveal(ev.Userid); return HookResult.Continue; });
         Core.RegisterEventHandler<EventWeaponFire>((ev, _) => { Reveal(ev.Userid); return HookResult.Continue; });
-        Core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
-        {
-            int slot = ev.Userid?.Slot ?? -1;
-            if (slot >= 0 && slot < 64 && _invisible[slot])
-            {
-                _invisible[slot] = false;
-                _invisCount--;
-                SetVisible(slot);
-            }
-            return HookResult.Continue;
-        });
-        Core.RegisterEventHandler<EventRoundStart>((_, __) =>
-        {
-            Array.Clear(_invisible);
-            Array.Clear(_revealedUntil);
-            _invisCount = 0;
-            return HookResult.Continue;
-        });
+        Core.RegisterEventHandler<EventRoundStart>((_, __) => { Array.Clear(_revealedUntil); return HookResult.Continue; });
     }
 
     public override void OnUnload()
     {
         for (int slot = 0; slot < 64; slot++)
-            if (_invisible[slot])
-                SetVisible(slot);
+            InvisPool.Set(slot, InvisPool.Module, false);
     }
 
     private void Reveal(CCSPlayerController? player)
@@ -77,24 +52,10 @@ public class Invisibility : VipModule
     {
         foreach (var player in Core.Players)
         {
-            if (player == null || !player.IsValid || player.IsBot)
+            if (player == null || !player.IsValid || player.IsBot || player.Slot >= 64)
                 continue;
 
-            int slot = player.Slot;
-            bool wants = ShouldBeInvisible(player, slot);
-
-            if (wants && !_invisible[slot])
-            {
-                _invisible[slot] = true;
-                _invisCount++;
-                SetInvisible(slot);
-            }
-            else if (!wants && _invisible[slot])
-            {
-                _invisible[slot] = false;
-                _invisCount--;
-                SetVisible(slot);
-            }
+            InvisPool.Set(player.Slot, InvisPool.Module, ShouldBeInvisible(player, player.Slot));
         }
     }
 
@@ -124,76 +85,5 @@ public class Invisibility : VipModule
         }
 
         return true;
-    }
-
-    private static void SetInvisible(int slot)
-    {
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid)
-            return;
-
-        pawn.Render = Color.FromArgb((int)(255 * (1 - VisibleAlpha)), 255, 255, 255);
-        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
-    }
-
-    private static void SetVisible(int slot)
-    {
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid)
-            return;
-
-        int alpha = PlayerModel.LegsHidden(slot) ? 254 : 255;
-        pawn.Render = Color.FromArgb(alpha, 255, 255, 255);
-        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
-    }
-
-    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
-    {
-        if (_invisCount == 0)
-            return;
-
-        _invisPawns.Clear();
-        for (int slot = 0; slot < 64; slot++)
-        {
-            if (!_invisible[slot])
-                continue;
-
-            var invisPlayer = Utilities.GetPlayerFromSlot(slot);
-            if (invisPlayer == null || !invisPlayer.IsValid)
-            {
-                _invisible[slot] = false;
-                _invisCount--;
-                continue;
-            }
-
-            var invisPawn = invisPlayer.PlayerPawn.Value;
-            if (invisPawn == null || !invisPawn.IsValid)
-                continue;
-
-            _invisPawns.Add((invisPawn.Index, invisPawn.Handle, invisPlayer.Team));
-        }
-
-        if (_invisPawns.Count == 0)
-            return;
-
-        foreach (var (info, player) in infoList)
-        {
-            if (player == null || !player.IsValid || player.Team == CsTeam.Spectator)
-                continue;
-
-            var targetHandle = player.Pawn.Value?.ObserverServices?.ObserverTarget.Value?.Handle ?? nint.Zero;
-
-            foreach (var (pawnIndex, pawnHandle, team) in _invisPawns)
-            {
-                if (team == player.Team)
-                    continue;
-
-                if (targetHandle != nint.Zero && pawnHandle == targetHandle)
-                    continue;
-
-                if (info.TransmitEntities.Contains(pawnIndex))
-                    info.TransmitEntities.Remove(pawnIndex);
-            }
-        }
     }
 }

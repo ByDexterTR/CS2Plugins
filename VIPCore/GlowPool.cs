@@ -77,7 +77,7 @@ public static class GlowPool
 
     public static void Show(int viewerSlot, int targetSlot, Color color)
     {
-        if (viewerSlot < 0 || viewerSlot >= 64 || targetSlot < 0 || targetSlot >= 64)
+        if (viewerSlot < 0 || viewerSlot >= 64 || targetSlot < 0 || targetSlot >= 64 || InvisPool.IsHidden(targetSlot))
             return;
 
         _visible[viewerSlot] |= 1UL << targetSlot;

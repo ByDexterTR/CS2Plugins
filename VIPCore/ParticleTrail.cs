@@ -16,6 +16,7 @@ public class ParticleEntry
     public float Offset { get; set; } = 0f;
     public bool Follow { get; set; } = true;
     public string Required { get; set; } = "";
+    public string Team { get; set; } = "";
 }
 
 public static class ParticleTrail
@@ -35,7 +36,7 @@ public static class ParticleTrail
         string name = value[1..];
         foreach (var entry in list)
             if (entry.File.Length > 0 && entry.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                return player != null && !VipModule.HasFlags(player, entry.Required) ? null : entry;
+                return player != null && !VipModule.Allowed(player, entry.Required, entry.Team) ? null : entry;
 
         return null;
     }
@@ -46,7 +47,7 @@ public static class ParticleTrail
             return;
 
         foreach (var entry in list)
-            if (entry.Name.Length > 0 && entry.File.Length > 0 && VipModule.HasFlags(player, entry.Required))
+            if (entry.Name.Length > 0 && entry.File.Length > 0 && VipModule.Allowed(player, entry.Required, entry.Team))
                 options.Add(new VipFeatureOption(entry.Name, Key(entry.Name)));
     }
 

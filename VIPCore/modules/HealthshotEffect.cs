@@ -97,6 +97,41 @@ public class HealthshotEffect : VipModule
         public int Limit { get; set; } = 0;
     }
 
+    private class ResistCfg
+    {
+        public int Percent { get; set; } = 50;
+        public float Time { get; set; } = 5f;
+        public int Limit { get; set; } = 0;
+    }
+
+    private class TimedCfg
+    {
+        public float Time { get; set; } = 5f;
+        public int Limit { get; set; } = 0;
+    }
+
+    private class GravityCfg
+    {
+        public float Scale { get; set; } = 0.5f;
+        public float Time { get; set; } = 5f;
+        public int Limit { get; set; } = 0;
+    }
+
+    private class SizeCfg
+    {
+        public float Scale { get; set; } = 0.7f;
+        public float Time { get; set; } = 5f;
+        public int Limit { get; set; } = 0;
+    }
+
+    private class NoRecoilCfg
+    {
+        [JsonPropertyName("recoilpercent")]
+        public float RecoilPercent { get; set; } = 0f;
+        public float Time { get; set; } = 5f;
+        public int Limit { get; set; } = 0;
+    }
+
     private class Cfg
     {
         public PoisonCfg? Poison { get; set; }
@@ -107,6 +142,20 @@ public class HealthshotEffect : VipModule
         public WallhackCfg? Wallhack { get; set; }
         public RadarhackCfg? Radarhack { get; set; }
         public MagneticCfg? Magnetic { get; set; }
+        [JsonPropertyName("resist")]
+        public ResistCfg? Resist { get; set; }
+        [JsonPropertyName("godmode")]
+        public TimedCfg? Godmode { get; set; }
+        [JsonPropertyName("gravity")]
+        public GravityCfg? Gravity { get; set; }
+        [JsonPropertyName("infiniteammo")]
+        public TimedCfg? InfiniteAmmo { get; set; }
+        [JsonPropertyName("invisible")]
+        public TimedCfg? Invisible { get; set; }
+        [JsonPropertyName("size")]
+        public SizeCfg? Size { get; set; }
+        [JsonPropertyName("norecoil")]
+        public NoRecoilCfg? NoRecoil { get; set; }
     }
 
     private class Running
@@ -123,9 +172,12 @@ public class HealthshotEffect : VipModule
     private readonly float[] _lastBoost = new float[64];
     private readonly int[] _strengthTick = new int[64];
     private readonly float[] _strength = new float[64];
-    private readonly float[] _speed = new float[64];
-    private readonly HashSet<int> _slowed = new();
-    private readonly HashSet<int> _slowedThisTick = new();
+    private readonly float[] _taken = new float[64];
+    private readonly bool[] _gravity = new bool[64];
+    private static HealthshotEffect? _instance;
+
+    internal static bool HoldsGravity(int slot) =>
+        _instance != null && slot >= 0 && slot < 64 && _instance._gravity[slot];
     private bool _glowUser;
 
     public override string Name => "HealthshotEffect";
@@ -144,6 +196,13 @@ public class HealthshotEffect : VipModule
         if (cfg.Wallhack != null) options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.wallhack"], "wallhack"));
         if (cfg.Radarhack != null) options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.radarhack"], "radarhack"));
         if (cfg.Magnetic != null) options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.magnetic"], "magnetic"));
+        if (cfg.Resist != null) options.Add(new VipFeatureOption(Core.Localizer["vip.healthshot.resist"], "resist"));
+        if (cfg.Godmode != null) options.Add(new VipFeatureOption(Core.Localizer["vip.healthshot.godmode"], "godmode"));
+        if (cfg.Gravity != null) options.Add(new VipFeatureOption(Core.Localizer["vip.healthshot.gravity"], "gravity"));
+        if (cfg.InfiniteAmmo != null) options.Add(new VipFeatureOption(Core.Localizer["vip.healthshot.infiniteammo"], "infiniteammo"));
+        if (cfg.Invisible != null) options.Add(new VipFeatureOption(Core.Localizer["vip.healthshot.invisible"], "invisible"));
+        if (cfg.Size != null) options.Add(new VipFeatureOption(Core.Localizer["vip.healthshot.size"], "size"));
+        if (cfg.NoRecoil != null) options.Add(new VipFeatureOption(Core.Localizer["vip.healthshot.norecoil"], "norecoil"));
         return options;
     }
 
@@ -156,7 +215,25 @@ public class HealthshotEffect : VipModule
             _glowUser = true;
         }
 
+        _instance = this;
         ActivityFilter.Ensure(Core);
+        SpeedPool.Ensure(Core);
+        ScalePool.Ensure(Core);
+
+        Array.Fill(_taken, 1f);
+
+        var all = Core.GetAllGroupValues<Cfg>(Name);
+        if (all.Any(c => c?.Invisible != null))
+            InvisPool.Ensure(Core);
+
+        if (all.Any(c => c?.NoRecoil != null))
+        {
+            RecoilUtil.Ensure(Core);
+            RecoilUtil.Provide(RecoilKeep);
+        }
+
+        if (all.Any(c => c?.InfiniteAmmo != null))
+            Core.RegisterEventHandler<EventWeaponFire>(OnFire);
 
         Core.HookTick(OnTick);
         Core.HookDamage(OnDamage);
@@ -168,6 +245,7 @@ public class HealthshotEffect : VipModule
     public override void OnUnload()
     {
         ResetAll();
+        RecoilUtil.Withdraw(RecoilKeep);
 
         if (!_glowUser)
             return;
@@ -181,27 +259,22 @@ public class HealthshotEffect : VipModule
         if (slot < 0 || slot >= 64)
             return;
 
+        Revert(slot);
         _active[slot] = null;
         _lastBoost[slot] = 0f;
         _strengthTick[slot] = 0;
         _strength[slot] = 1f;
-        _speed[slot] = 1f;
     }
 
     private void ResetAll()
     {
         for (int slot = 0; slot < 64; slot++)
             Reset(slot);
-
-        _slowed.Clear();
-        _slowedThisTick.Clear();
     }
 
     private void OnTick()
     {
         float now = Server.CurrentTime;
-        _slowedThisTick.Clear();
-
         bool anyGlow = false;
 
         foreach (var player in Core.Players)
@@ -239,8 +312,6 @@ public class HealthshotEffect : VipModule
 
         if (anyGlow && _glowUser)
             GlowPool.Build();
-
-        RestoreStaleSlows();
     }
 
     private void Start(CCSPlayerController player, float now)
@@ -259,6 +330,13 @@ public class HealthshotEffect : VipModule
             "wallhack" when cfg.Wallhack != null => (cfg.Wallhack.Time, cfg.Wallhack.Limit),
             "radarhack" when cfg.Radarhack != null => (cfg.Radarhack.Time, cfg.Radarhack.Limit),
             "magnetic" when cfg.Magnetic != null => (cfg.Magnetic.Time, cfg.Magnetic.Limit),
+            "resist" when cfg.Resist != null => (cfg.Resist.Time, cfg.Resist.Limit),
+            "godmode" when cfg.Godmode != null => (cfg.Godmode.Time, cfg.Godmode.Limit),
+            "gravity" when cfg.Gravity != null => (cfg.Gravity.Time, cfg.Gravity.Limit),
+            "infiniteammo" when cfg.InfiniteAmmo != null => (cfg.InfiniteAmmo.Time, cfg.InfiniteAmmo.Limit),
+            "invisible" when cfg.Invisible != null => (cfg.Invisible.Time, cfg.Invisible.Limit),
+            "size" when cfg.Size != null => (cfg.Size.Time, cfg.Size.Limit),
+            "norecoil" when cfg.NoRecoil != null => (cfg.NoRecoil.Time, cfg.NoRecoil.Limit),
             _ => (0f, 0)
         };
 
@@ -266,25 +344,54 @@ public class HealthshotEffect : VipModule
             return;
 
         LimitUse(slot);
+        Revert(slot);
         _active[slot] = new Running { Mode = mode, ExpireAt = now + time, NextTick = now };
+
+        switch (mode)
+        {
+            case "resist":
+                _taken[slot] = Math.Clamp(1f - cfg.Resist!.Percent / 100f, 0f, 1f);
+                break;
+
+            case "godmode":
+                _taken[slot] = 0f;
+                break;
+
+            case "invisible":
+                InvisPool.Set(slot, InvisPool.Healthshot, true);
+                break;
+
+            case "size":
+                var pawn = player.PlayerPawn.Value;
+                if (pawn != null && pawn.IsValid)
+                    ScalePool.Push(pawn, slot, ScalePool.Healthshot, cfg.Size!.Scale);
+                break;
+        }
+    }
+
+    private void Revert(int slot)
+    {
+        _taken[slot] = 1f;
+        InvisPool.Set(slot, InvisPool.Healthshot, false);
+
+        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+        bool valid = pawn != null && pawn.IsValid;
+
+        if (_gravity[slot])
+        {
+            _gravity[slot] = false;
+            if (valid)
+                pawn!.ActualGravityScale = Gravity.Base(slot);
+        }
+
+        ScalePool.Pop(slot, ScalePool.Healthshot);
     }
 
     private void Stop(CCSPlayerController player, int slot)
     {
         _active[slot] = null;
         _strength[slot] = 1f;
-
-        var pawn = player.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid)
-            return;
-
-        if (_speed[slot] > 1f && Math.Abs(pawn.VelocityModifier - 1f) > 0.001f)
-        {
-            pawn.VelocityModifier = 1f;
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-        }
-
-        _speed[slot] = 1f;
+        Revert(slot);
     }
 
     private void Apply(CCSPlayerController player, CCSPlayerPawn pawn, Running state, float now)
@@ -295,12 +402,7 @@ public class HealthshotEffect : VipModule
         switch (state.Mode)
         {
             case "speed" when cfg.Speed != null:
-                _speed[slot] = Math.Max(cfg.Speed.SpeedMultiplier, 1f);
-                if (pawn.VelocityModifier < _speed[slot] - 0.001f)
-                {
-                    pawn.VelocityModifier = _speed[slot];
-                    Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-                }
+                SpeedPool.Request(slot, SpeedPool.Healthshot, Math.Max(cfg.Speed.SpeedMultiplier, 1f));
                 return;
 
             case "strength" when cfg.Strength != null:
@@ -317,6 +419,20 @@ public class HealthshotEffect : VipModule
 
             case "magnetic" when cfg.Magnetic != null:
                 Magnetic(player, pawn, cfg.Magnetic);
+                return;
+
+            case "gravity" when cfg.Gravity != null:
+                if (cfg.Gravity.Scale > 0f && Math.Abs(pawn.ActualGravityScale - cfg.Gravity.Scale) > 0.001f)
+                    pawn.ActualGravityScale = cfg.Gravity.Scale;
+                _gravity[slot] = true;
+                return;
+
+            case "resist":
+            case "godmode":
+            case "infiniteammo":
+            case "invisible":
+            case "size":
+            case "norecoil":
                 return;
         }
 
@@ -359,10 +475,7 @@ public class HealthshotEffect : VipModule
                 {
                     var controller = target.Controller.Value?.As<CCSPlayerController>();
                     if (controller != null && controller.IsValid)
-                        _slowedThisTick.Add(controller.Slot);
-
-                    target.VelocityModifier = factor;
-                    Utilities.SetStateChanged(target, "CCSPlayerPawn", "m_flVelocityModifier");
+                        SpeedPool.Request(controller.Slot, SpeedPool.HealthshotSlow, factor, SpeedPool.TicksFor(0.1f));
                 });
                 break;
         }
@@ -515,51 +628,60 @@ public class HealthshotEffect : VipModule
         }
     }
 
-    private void RestoreStaleSlows()
-    {
-        if (_slowed.Count > 0)
-        {
-            foreach (int slot in _slowed)
-            {
-                if (_slowedThisTick.Contains(slot))
-                    continue;
-
-                var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
-                if (pawn != null && pawn.IsValid && Math.Abs(pawn.VelocityModifier - 1f) > 0.001f)
-                {
-                    pawn.VelocityModifier = 1f;
-                    Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-                }
-            }
-
-            _slowed.Clear();
-        }
-
-        foreach (int slot in _slowedThisTick)
-            _slowed.Add(slot);
-    }
-
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        if (info.Attacker?.Value == null)
-            return HookResult.Continue;
-
-        var attacker = PawnController(info.Attacker.Value);
-        if (attacker == null || attacker.Slot >= 64)
-            return HookResult.Continue;
-
-        if (Server.TickCount - _strengthTick[attacker.Slot] > 1)
-            return HookResult.Continue;
-
-        float scale = _strength[attacker.Slot];
-        if (Math.Abs(scale - 1f) < 0.001f)
-            return HookResult.Continue;
+        float scale = 1f;
 
         var victim = PawnController(entity);
-        if (victim != null && victim.Slot == attacker.Slot)
+        if (victim != null && victim.Slot < 64)
+            scale *= _taken[victim.Slot];
+
+        var attackerEntity = info.Attacker?.Value;
+        if (attackerEntity != null)
+        {
+            var attacker = PawnController(attackerEntity);
+            if (attacker != null && attacker.Slot < 64
+                && Server.TickCount - _strengthTick[attacker.Slot] <= 1
+                && (victim == null || victim.Slot != attacker.Slot))
+                scale *= _strength[attacker.Slot];
+        }
+
+        if (Math.Abs(scale - 1f) < 0.001f)
             return HookResult.Continue;
 
         info.Damage = MathF.Max(info.Damage * scale, 0f);
         return HookResult.Changed;
+    }
+
+    private HookResult OnFire(EventWeaponFire ev, GameEventInfo info)
+    {
+        var player = ev.Userid;
+        if (player == null || !player.IsValid || player.Slot >= 64 || _active[player.Slot]?.Mode != "infiniteammo")
+            return HookResult.Continue;
+
+        var weapon = player.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
+        if (weapon == null || !weapon.IsValid)
+            return HookResult.Continue;
+
+        string name = weapon.DesignerName;
+        if (name.Contains("knife") || name.Contains("bayonet") || name.Contains("taser"))
+            return HookResult.Continue;
+
+        int maxClip = weapon.As<CCSWeaponBase>().VData?.MaxClip1 ?? 0;
+        if (maxClip <= 0)
+            return HookResult.Continue;
+
+        weapon.Clip1 = maxClip;
+        Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+        return HookResult.Continue;
+    }
+
+    private float RecoilKeep(CCSPlayerController player, CCSPlayerPawn pawn)
+    {
+        if (player.Slot >= 64 || _active[player.Slot]?.Mode != "norecoil")
+            return 1f;
+
+        var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
+        return cfg.NoRecoil == null ? 1f : Math.Clamp(cfg.NoRecoil.RecoilPercent, 0f, 1f);
     }
 }

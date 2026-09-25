@@ -112,7 +112,7 @@ public class PlayerModel : VipModule
             {
                 _legHidden[player.Slot] = true;
                 var render = pawn.Render;
-                pawn.Render = Color.FromArgb(254, render.R, render.G, render.B);
+                pawn.Render = Color.FromArgb(InvisPool.Alpha(player.Slot), render.R, render.G, render.B);
                 Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
             }
         });

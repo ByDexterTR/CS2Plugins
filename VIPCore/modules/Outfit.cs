@@ -77,20 +77,8 @@ public class Outfit : VipModule
         var list = new List<Entry>();
         foreach (var entry in entries)
         {
-            if (entry.Name.Length == 0 || entry.Model.Length == 0 || !HasFlags(player, entry.Required))
+            if (entry.Name.Length == 0 || entry.Model.Length == 0 || !Allowed(player, entry.Required, entry.Team))
                 continue;
-
-            if (entry.Team.Length > 0)
-            {
-                var team = entry.Team.Equals("CT", StringComparison.OrdinalIgnoreCase)
-                    ? CsTeam.CounterTerrorist
-                    : entry.Team.Equals("T", StringComparison.OrdinalIgnoreCase)
-                        ? CsTeam.Terrorist
-                        : CsTeam.None;
-
-                if (team != CsTeam.None && player.Team != team)
-                    continue;
-            }
 
             list.Add(entry);
         }
@@ -150,8 +138,11 @@ public class Outfit : VipModule
                 continue;
 
             var prop = Wear(pawn, entry.Model);
-            if (prop != null)
-                worn.Add(prop);
+            if (prop == null)
+                continue;
+
+            InvisPool.Attach(player.Slot, prop);
+            worn.Add(prop);
         }
 
         if (worn.Count > 0)

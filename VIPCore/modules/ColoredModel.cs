@@ -12,6 +12,8 @@ public class ColoredModel : VipModule
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player) =>
         TrailBeam.ParseColorOptions(GroupValue<List<string>>(player) ?? new());
 
+    private const int RgbMask = 0xFFFFFF;
+
     private readonly bool[] _applied = new bool[64];
     private readonly int[] _lastArgb = new int[64];
     private readonly bool[] _external = new bool[64];
@@ -53,7 +55,7 @@ public class ColoredModel : VipModule
                 continue;
 
             var current = pawn.Render;
-            if (_applied[slot] && current.ToArgb() != _lastArgb[slot])
+            if (_applied[slot] && (current.ToArgb() & RgbMask) != (_lastArgb[slot] & RgbMask))
             {
                 _external[slot] = true;
                 _applied[slot] = false;
@@ -62,8 +64,7 @@ public class ColoredModel : VipModule
 
             string setting = Setting(player);
             var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(slot) : TrailBeam.Resolve(setting);
-            int alpha = PlayerModel.LegsHidden(slot) ? 254 : 255;
-            var target = System.Drawing.Color.FromArgb(alpha, color.R, color.G, color.B);
+            var target = System.Drawing.Color.FromArgb(InvisPool.Alpha(slot), color.R, color.G, color.B);
 
             _applied[slot] = true;
             if (current.ToArgb() == target.ToArgb())
@@ -84,8 +85,7 @@ public class ColoredModel : VipModule
         if (pawn == null || !pawn.IsValid)
             return;
 
-        int alpha = PlayerModel.LegsHidden(slot) ? 254 : 255;
-        pawn.Render = System.Drawing.Color.FromArgb(alpha, 255, 255, 255);
+        pawn.Render = System.Drawing.Color.FromArgb(InvisPool.Alpha(slot), 255, 255, 255);
         Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
     }
 }

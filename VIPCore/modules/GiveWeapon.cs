@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Timers;
 
 namespace VIPCore;
 
@@ -90,7 +91,9 @@ public class GiveWeapon : VipModule
         return HookResult.Continue;
     }
 
-    private static void GiveOne(CCSPlayerController player, string weaponName, bool force)
+    private const float KillDelay = 0.1f;
+
+    private void GiveOne(CCSPlayerController player, string weaponName, bool force)
     {
         var slotWeapons = SameSlotWeapons(player, weaponName, out bool slotKnown);
         if (!slotKnown)
@@ -108,7 +111,16 @@ public class GiveWeapon : VipModule
                 return;
 
             foreach (var (weapon, _) in slotWeapons)
-                weapon.Remove();
+                weapon.AddEntityIOEvent("Kill", weapon, null, "", KillDelay);
+
+            int? userId = player.UserId;
+            Core.AddTimer(KillDelay + 0.05f, () =>
+            {
+                var target = userId == null ? null : Utilities.GetPlayerFromUserid(userId.Value);
+                if (IsAlive(target))
+                    target!.GiveNamedItem(weaponName);
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            return;
         }
 
         player.GiveNamedItem(weaponName);

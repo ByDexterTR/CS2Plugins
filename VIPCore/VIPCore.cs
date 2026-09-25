@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.2.3";
+    public override string ModuleVersion => "1.2.4";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -123,18 +123,6 @@ public partial class VIPCore : BasePlugin
         return rules.TotalRoundsPlayed == 0
             || (halftime && maxRounds / 2 == rules.TotalRoundsPlayed)
             || rules.GameRestart;
-    }
-
-    private bool PistolRoundBlocked(CCSPlayerController player, string feature)
-    {
-        if (_pistolDisable.Count == 0)
-            return false;
-
-        var group = GetClientGroup(player);
-        if (group == null || !_pistolDisable.TryGetValue(group, out var set) || !set.Contains(feature))
-            return false;
-
-        return IsPistolRound();
     }
 
     internal static VIPCore? Current;
@@ -342,20 +330,33 @@ public partial class VIPCore : BasePlugin
     {
         LoadGroups();
 
-        var vips = _storage.LoadVips();
-        var settings = _storage.LoadSettings();
+        Dictionary<ulong, VipEntry>? vips = null;
+        Dictionary<ulong, Dictionary<string, string>>? settings = null;
+
+        try { vips = _storage.LoadVips(); }
+        catch (Exception ex) { Logger.LogError("VIPCore: VIP listesi okunamadi, eldeki liste korunuyor. {0}", ex.Message); }
+
+        try { settings = _storage.LoadSettings(); }
+        catch (Exception ex) { Logger.LogError("VIPCore: oyuncu ayarlari okunamadi, eldeki ayarlar korunuyor. {0}", ex.Message); }
 
         lock (_lock)
         {
-            _vips.Clear();
-            foreach (var (k, v) in vips)
-                _vips[k] = v;
+            if (vips != null)
+            {
+                _vips.Clear();
+                foreach (var (k, v) in vips)
+                    _vips[k] = v;
+            }
 
-            _settings.Clear();
-            foreach (var (k, v) in settings)
-                _settings[k] = v;
+            if (settings != null)
+            {
+                _settings.Clear();
+                foreach (var (k, v) in settings)
+                    _settings[k] = v;
+            }
         }
 
+        VipsChanged();
         PurgeExpired();
     }
 
@@ -520,6 +521,8 @@ public partial class VIPCore : BasePlugin
                         _settings[steamId] = settings;
                 }
 
+                VipsChanged();
+
                 PurgeIfExpired(steamId);
 
                 Server.NextFrame(() => SanitizeSettings(Utilities.GetPlayerFromSteamId64(steamId)));
@@ -596,6 +599,7 @@ public partial class VIPCore : BasePlugin
                 {
                     lock (_lock)
                         _vips[steamId] = fresh;
+                    VipsChanged();
                     return;
                 }
 
@@ -611,8 +615,61 @@ public partial class VIPCore : BasePlugin
                 yield return module;
     }
 
+    private struct ClientState
+    {
+        public int Tick;
+        public int Version;
+        public ulong SteamId;
+        public bool Vip;
+        public string? Group;
+    }
+
+    private readonly ClientState[] _clientStates = new ClientState[64];
+    private int _vipVersion = 1;
+
+    private void VipsChanged() => Interlocked.Increment(ref _vipVersion);
+
+    private ClientState Resolve(CCSPlayerController player)
+    {
+        int slot = player.Slot;
+        bool cacheable = slot >= 0 && slot < 64;
+        int tick = Server.TickCount;
+        int version = Volatile.Read(ref _vipVersion);
+
+        if (cacheable)
+        {
+            var cached = _clientStates[slot];
+            if (cached.Tick == tick && cached.Version == version)
+                return cached;
+        }
+
+        var state = new ClientState { Tick = tick, Version = version };
+        if (player.IsValid && !player.IsBot)
+        {
+            state.SteamId = player.SteamID;
+            var now = DateTimeOffset.UtcNow;
+            lock (_lock)
+            {
+                if (_vips.TryGetValue(state.SteamId, out var entry)
+                    && (entry.Expires == 0 || entry.Expires > now.ToUnixTimeSeconds()))
+                {
+                    state.Vip = true;
+                    state.Group = entry.Group;
+                }
+            }
+
+            if (state.Group != null && _periods.Count > 0
+                && _periods.TryGetValue(state.Group, out var window) && !window.IsOpen(now))
+                state.Group = null;
+        }
+
+        if (cacheable)
+            _clientStates[slot] = state;
+        return state;
+    }
+
     public bool IsClientVip(CCSPlayerController player) =>
-        player != null && player.IsValid && !player.IsBot && IsSteamIdVip(player.SteamID);
+        player != null && Resolve(player).Vip;
 
     public bool IsSteamIdVip(ulong steamId)
     {
@@ -626,31 +683,18 @@ public partial class VIPCore : BasePlugin
 
     public string? GetClientGroup(CCSPlayerController player)
     {
-        if (!IsClientVip(player))
+        if (player == null)
             return null;
 
-        string? group;
-        lock (_lock)
-        {
-            group = _vips.TryGetValue(player.SteamID, out var entry) ? entry.Group : null;
-            if (group == null || _periods.Count == 0)
-                return group;
-
-            if (_periods.TryGetValue(group, out var window) && !window.IsOpen(DateTimeOffset.UtcNow))
-                return null;
-        }
-
-        return group;
+        var state = Resolve(player);
+        return state.Vip ? state.Group : null;
     }
 
-    public bool GroupGrants(CCSPlayerController player, string feature)
-    {
-        var group = GetClientGroup(player);
-        if (group == null)
-            return false;
-        lock (_lock)
-            return _groups.TryGetValue(group, out var feats) && feats.ContainsKey(feature);
-    }
+    private bool GroupHas(string? group, string feature) =>
+        group != null && _groups.TryGetValue(group, out var feats) && feats.ContainsKey(feature);
+
+    public bool GroupGrants(CCSPlayerController player, string feature) =>
+        GroupHas(GetClientGroup(player), feature);
 
     public T? GetGroupValue<T>(CCSPlayerController player, string feature)
     {
@@ -697,35 +741,39 @@ public partial class VIPCore : BasePlugin
         return result;
     }
 
-    public bool IsModuleEnabled(string name)
-    {
-        lock (_lock)
-            return _enabled.Contains(name);
-    }
+    public bool IsModuleEnabled(string name) => _enabled.Contains(name);
 
     public bool IsGranted(CCSPlayerController player, string feature) =>
-        IsClientVip(player) && IsModuleEnabled(feature) && GroupGrants(player, feature);
+        IsModuleEnabled(feature) && GroupGrants(player, feature);
+
+    private bool ForcedIn(string group, string feature) =>
+        _forced.Count > 0 && _forced.TryGetValue(group, out var set) && set.Contains(feature)
+        && FindModule(feature)?.MenuType == VipFeatureType.Toggle;
 
     public bool IsForced(CCSPlayerController player, string feature)
     {
-        if (_forced.Count == 0)
-            return false;
-        if (FindModule(feature)?.MenuType != VipFeatureType.Toggle)
-            return false;
-
         var group = GetClientGroup(player);
-        return group != null && _forced.TryGetValue(group, out var set) && set.Contains(feature);
+        return group != null && ForcedIn(group, feature);
     }
 
     public bool IsActive(CCSPlayerController player, string feature)
     {
-        if (!IsGranted(player, feature))
+        if (player == null || !_enabled.Contains(feature))
             return false;
-        if (PistolRoundBlocked(player, feature))
+
+        var state = Resolve(player);
+        if (!state.Vip || !GroupHas(state.Group, feature))
             return false;
-        if (IsForced(player, feature))
+
+        string group = state.Group!;
+        if (_pistolDisable.Count > 0 && _pistolDisable.TryGetValue(group, out var pistol)
+            && pistol.Contains(feature) && IsPistolRound())
+            return false;
+
+        if (ForcedIn(group, feature))
             return true;
-        return GetSetting(player.SteamID, feature) != "off";
+
+        return GetSetting(state.SteamId, feature) != "off";
     }
 
     public string GetSetting(ulong steamId, string feature)
