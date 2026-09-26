@@ -174,10 +174,10 @@ public partial class CommandMaker
       "description": "Hedefin hareket tipini ayarlar",
       "args": 1,
       "arg1": "list",
-      "arg1_list": "2,8,9,11",
+      "arg1_list": "2,5,7,11",
       "flag": "@css/root",
       "setmovetype": "[TARGET] [ARG1]",
-      "chat": ["[GOLD][TARGET] [DEFAULT]hareket tipi [GOLD][ARG1] [DEFAULT]oldu. [GREY](2 yürüme, 8 noclip, 9 uçma, 11 kapalı)"]
+      "chat": ["[GOLD][TARGET] [DEFAULT]hareket tipi [GOLD][ARG1] [DEFAULT]oldu. [GREY](2 yürüme, 5 uçma, 7 noclip, 11 kapalı)"]
     },
     {
       "command": ["css_hiz", "css_speed"],

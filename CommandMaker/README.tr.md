@@ -20,7 +20,7 @@ Kod yazmadan, JSON dosyası üzerinden özel sunucu komutları oluşturmanızı 
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 
 ## Kurulum
 
@@ -119,7 +119,7 @@ csgo/addons/counterstrikesharp/configs/plugins/CommandMaker/CommandMaker.json
 | Eylem | Değer |
 | --- | --- |
 | `addhealth` / `addarmor` / `addmoney` | Göreli değişim: `"50"` veya `"-25"` |
-| `setangle` | `pitch yaw roll` |
+| `setangle` | `yaw` — oyuncuyu o yöne döndürür. `pitch yaw roll` biçiminde bir değer de kabul edilir, yalnızca yaw kullanılır |
 | `setclantag` | Klan etiketi metni |
 | `screencolor` | `R G B alpha sönme bekleme` — örn. `"255 0 0 90 0.35 0.05"`. Yalnızca `R G B` zorunlu, kalanı `90 0.35 0.05` olur |
 | `emitsound` | `soundevent ses` — örn. `"Player.DamageHelmet 1.0"` |
@@ -142,6 +142,8 @@ Değer biçimi `"[TARGET] <değer>"` şeklindedir; örn. `"sethealth": "[TARGET]
 | `servercenter` | Tüm sunucuya ekran ortası mesaj (`centertime` süresi burada da geçerli) |
 | `execute` | Sunucu konsolunda komut çalıştır |
 | `setcvar` | Cvar ayarla (`"mp_warmuptime 60"`) |
+
+`execute` ve `setcvar` her komut tipinde çalışır. `target` veya `playertarget` komutunda bu satırlarda hedef placeholder'ları ve argümanlar kullanılabilir, yani `"execute": "kickid [TARGETUSERID] sebep"` çalışır.
 
 #### Placeholder'lar
 
@@ -213,6 +215,9 @@ Bazı şeyler ayrı bir alan değil, var olanları birleştirmekten çıkar.
 
 - `setspeed` / `setgravity` etkileri siz değiştirene kadar kalır; sıfırlamak için değeri `1.0` yapan ikinci bir komut tanımlayın.
 - `screencolor` ekrana renkli bir katman basar; düşük `alpha` ton verir, yüksek `alpha` ekranı kaplar.
+- Boşluk içeren oyuncu adı tırnaksız yazılabilir: `!hp John Doe 200`. Tırnak da çalışmaya devam eder.
+- `setmovetype` değerleri: `2` yürüme, `5` uçma, `7` noclip, `11` hareket kapalı.
+- Komutu yazan oyuncuya bağlı placeholder'lar (`[PLAYERAIM]`, `[PLAYERCOORDINATE]`, `[PLAYERANGLE]`) sunucu konsolundan çalıştırıldığında boş kalır; o değeri kullanan eylem yanlış konum uygulamak yerine atlanır.
 - `@aim` baktığınız oyuncuyu, `@nearest` en yakındaki oyuncuyu seçer.
 - `playertarget` komutunda oyuncu yalnızca kendini etkileyebilir. Başkaları üzerinde kullanılabilmesi için tanıma `target_flag` ekleyin.
 - Yetkililer kendi dokunulmazlık seviyesinin üstündeki oyuncuları hedef alamaz; bunu bir komut için kapatmak isterseniz `"ignore_immunity": true` ekleyin.

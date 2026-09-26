@@ -282,7 +282,7 @@ public partial class CommandMaker
   private static string FormatAngle(CCSPlayerController? player)
   {
     if (player?.PlayerPawn.Value is not CCSPlayerPawn pawn || !pawn.IsValid)
-      return "0 0 0";
+      return "";
 
     var angles = pawn.EyeAngles;
     return string.Create(CultureInfo.InvariantCulture, $"{angles.X:0.##} {angles.Y:0.##} {angles.Z:0.##}");
@@ -325,7 +325,7 @@ public partial class CommandMaker
   private static string AimPoint(CCSPlayerController? player)
   {
     if (player?.PlayerPawn.Value is not CCSPlayerPawn pawn || !pawn.IsValid || pawn.AbsOrigin == null)
-      return "0 0 0";
+      return "";
 
     var angles = pawn.EyeAngles;
     float yaw = angles.Y * MathF.PI / 180f;
@@ -512,7 +512,7 @@ public partial class CommandMaker
         case "PLAYERCOORDINATE":
           {
             var pos = player?.PlayerPawn.Value?.AbsOrigin;
-            return pos == null ? "0 0 0" : FormatVector(pos);
+            return pos == null ? "" : FormatVector(pos);
           }
 
         case "TARGET":
@@ -533,7 +533,7 @@ public partial class CommandMaker
         case "TARGETCOORDINATE":
           {
             var pos = target?.PlayerPawn.Value?.AbsOrigin;
-            return pos == null ? "0 0 0" : FormatVector(pos);
+            return pos == null ? "" : FormatVector(pos);
           }
 
         case "ARG1":
@@ -601,11 +601,17 @@ public partial class CommandMaker
           return (_teamT?.Score ?? 0).ToString();
 
         case "SERVERIP":
-          return ConVar.Find("ip")?.StringValue ?? "unknown";
+          {
+            string ip = ConVar.Find("ip")?.StringValue ?? "";
+            return ip.Length > 0 ? ip : "127.0.0.1";
+          }
         case "SERVERPORT":
           return ConVar.Find("hostport")?.GetPrimitiveValue<int>().ToString() ?? "27015";
         case "HOSTNAME":
-          return Clean(ConVar.Find("hostname")?.StringValue ?? "unknown");
+          {
+            string host = ConVar.Find("hostname")?.StringValue ?? "";
+            return Clean(host.Length > 0 ? host : "unknown");
+          }
         case "MAPNAME":
           return Clean(Server.MapName);
         case "TIME":

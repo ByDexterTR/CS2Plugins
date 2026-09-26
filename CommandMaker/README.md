@@ -20,7 +20,7 @@ Lets you create custom server commands from a JSON file without writing code. Ta
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 
 ## Installation
 
@@ -119,7 +119,7 @@ csgo/addons/counterstrikesharp/configs/plugins/CommandMaker/CommandMaker.json
 | Action | Value |
 | --- | --- |
 | `addhealth` / `addarmor` / `addmoney` | Relative change: `"50"` or `"-25"` |
-| `setangle` | `pitch yaw roll` |
+| `setangle` | `yaw` — turns the player to face that direction. A `pitch yaw roll` value is accepted and only the yaw is used |
 | `setclantag` | The clan tag text |
 | `screencolor` | `R G B alpha fade hold` — e.g. `"255 0 0 90 0.35 0.05"`. Only `R G B` is required; the rest fall back to `90 0.35 0.05` |
 | `emitsound` | `soundevent volume` — e.g. `"Player.DamageHelmet 1.0"` |
@@ -142,6 +142,8 @@ The value format is `"[TARGET] <value>"`; e.g. `"sethealth": "[TARGET] [ARG1]"`.
 | `servercenter` | Center screen message to the whole server (uses `centertime` as well) |
 | `execute` | Run a command in the server console |
 | `setcvar` | Set a cvar (`"mp_warmuptime 60"`) |
+
+`execute` and `setcvar` run for every command type. In a `target` or `playertarget` command the target placeholders and the arguments are available in those lines, so `"execute": "kickid [TARGETUSERID] reason"` works.
 
 #### Placeholders
 
@@ -214,6 +216,9 @@ Some things are not separate fields, they come out of combining what is already 
 - `setspeed` / `setgravity` effects stay on until you change them; to reset one, define a second command that sets the value back to `1.0`.
 - `screencolor` paints a colored tint over the screen; a low `alpha` gives a tint, a high one covers the screen.
 - `@aim` picks the player you are looking at, `@nearest` the closest one.
+- A player name with spaces can be written without quotes: `!hp John Doe 200`. Quotes still work.
+- `setmovetype` values: `2` walk, `5` fly, `7` noclip, `11` movement off.
+- Placeholders that need the player who typed the command (`[PLAYERAIM]`, `[PLAYERCOORDINATE]`, `[PLAYERANGLE]`) are empty when the command is run from the server console, and the action that needs them is skipped instead of using a wrong position.
 - In a `playertarget` command a player can only affect themselves. To let it be used on other players, add a `target_flag` to the definition.
 - Admins cannot target players above their own immunity level; add `"ignore_immunity": true` to switch that off for a command.
 - Players given `setgodmode` take no damage until they leave the server or it is turned off.

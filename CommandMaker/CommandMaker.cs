@@ -12,7 +12,7 @@ namespace CommandMaker;
 public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 {
   public override string ModuleName => "CommandMaker";
-  public override string ModuleVersion => "1.0.8";
+  public override string ModuleVersion => "1.0.9";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -532,10 +532,25 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
 
   private bool HandleDefaultCommand(CCSPlayerController? player, CommandInfo info, CommandDefinition cmd)
   {
-    SendCommandMessages(player, null, cmd, null, null, null, null, info.GetArg(0));
-    RunServerLines(cmd.Execute, player, null, null, null, null, null);
-    RunServerLines(cmd.SetCvar, player, null, null, null, null, null);
+    if (!TryReadArgs(player, info, cmd, 1, false, out var args))
+      return false;
+
+    SendCommandMessages(player, null, cmd, args[0], args[1], args[2], null, info.GetArg(0));
+    RunServerLines(cmd.Execute, player, null, args[0], args[1], args[2], null);
+    RunServerLines(cmd.SetCvar, player, null, args[0], args[1], args[2], null);
     return true;
+  }
+
+  private static string ReadName(CommandInfo info, int first, int count)
+  {
+    if (count <= 1)
+      return info.GetArg(first);
+
+    var parts = new string[count];
+    for (int i = 0; i < count; i++)
+      parts[i] = info.GetArg(first + i);
+
+    return string.Join(' ', parts);
   }
 
   private bool HandleMenuCommand(CCSPlayerController? player, CommandInfo info, CommandDefinition cmd)
@@ -649,8 +664,16 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
       return false;
     }
 
-    var targetName = info.GetArg(1);
+    int nameTokens = Math.Max(1, info.ArgCount - 1 - cmd.ArgCount);
+    var targetName = ReadName(info, 1, nameTokens);
     var targets = FindTargets(targetName, player, out var groupLabel);
+
+    if (targets.Count == 0 && nameTokens > 1)
+    {
+      nameTokens = 1;
+      targetName = info.GetArg(1);
+      targets = FindTargets(targetName, player, out groupLabel);
+    }
 
     if (targets.Count == 0)
     {
@@ -661,7 +684,7 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
     if (!FilterTargets(player, info, cmd, targets, false))
       return false;
 
-    if (!TryReadArgs(player, info, cmd, 2, true, out var args))
+    if (!TryReadArgs(player, info, cmd, 1 + nameTokens, true, out var args))
       return false;
 
     string label = targets.Count == 1 ? targets[0].PlayerName : groupLabel ?? targets[0].PlayerName;
@@ -670,6 +693,8 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
       ApplyCommandActions(player, target, cmd, args[0], args[1], args[2]);
 
     SendCommandMessages(player, targets[0], cmd, args[0], args[1], args[2], label, info.GetArg(0), targets);
+    RunServerLines(cmd.Execute, player, targets[0], args[0], args[1], args[2], label);
+    RunServerLines(cmd.SetCvar, player, targets[0], args[0], args[1], args[2], label);
     return true;
   }
 
@@ -681,8 +706,16 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
 
     if (info.ArgCount >= 2)
     {
-      var targetName = info.GetArg(1);
+      int nameTokens = Math.Max(1, info.ArgCount - 1 - cmd.ArgCount);
+      var targetName = ReadName(info, 1, nameTokens);
       targets = FindTargets(targetName, player, out groupLabel);
+
+      if (targets.Count == 0 && nameTokens > 1)
+      {
+        nameTokens = 1;
+        targetName = info.GetArg(1);
+        targets = FindTargets(targetName, player, out groupLabel);
+      }
 
       if (targets.Count == 0)
       {
@@ -693,7 +726,7 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
       if (!FilterTargets(player, info, cmd, targets, true))
         return false;
 
-      if (!TryReadArgs(player, info, cmd, 2, true, out args))
+      if (!TryReadArgs(player, info, cmd, 1 + nameTokens, true, out args))
         return false;
     }
     else
@@ -716,6 +749,8 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
       ApplyCommandActions(player, target, cmd, args[0], args[1], args[2]);
 
     SendCommandMessages(player, targets[0], cmd, args[0], args[1], args[2], label, info.GetArg(0), targets);
+    RunServerLines(cmd.Execute, player, targets[0], args[0], args[1], args[2], label);
+    RunServerLines(cmd.SetCvar, player, targets[0], args[0], args[1], args[2], label);
     return true;
   }
 

@@ -166,8 +166,15 @@ public partial class CommandMaker
 
     (c => c.SetAngle, ctx =>
     {
-      if (ctx.CsPawn is { } pawn && ctx.Triple(out float pitch, out float yaw, out float _))
-        pawn.Teleport(null, new QAngle(pitch, yaw, 0f), null);
+      if (ctx.CsPawn is not { } pawn)
+        return;
+
+      var parts = ctx.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+      int index = parts.Length >= 2 ? 1 : 0;
+
+      if (parts.Length > index
+          && float.TryParse(parts[index], NumberStyles.Float, CultureInfo.InvariantCulture, out float yaw))
+        pawn.Teleport(null, new QAngle(0f, yaw, 0f), null);
     }),
 
     (c => c.SetPlayerColor, ctx =>
