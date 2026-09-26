@@ -1,9 +1,10 @@
 using System.Drawing;
+using System.Numerics;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Utils;
+using CounterStrikeSharp.API.Modules.Timers;
 using static CounterStrikeSharp.API.Core.Listeners;
 using ByDexter.Shared;
 using ShowPlayerClips.Source2;
@@ -68,7 +69,7 @@ public class ShowPlayerClipsConfig : BasePluginConfig
 public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 {
   public override string ModuleName => "ShowPlayerClips";
-  public override string ModuleVersion => "1.1.0";
+  public override string ModuleVersion => "1.1.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -81,8 +82,8 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
   private const string BeamMarker = "showplayerclips_beam";
   private const float BoundsSize = 16384f;
 
-  private static readonly string[] TriggerClasses =
-  [
+  private static readonly HashSet<string> TriggerClasses = new(StringComparer.Ordinal)
+  {
     "trigger_teleport",
     "trigger_push",
     "trigger_hurt",
@@ -97,39 +98,44 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     "func_buyzone",
     "func_bomb_target",
     "func_hostage_rescue",
-  ];
+  };
 
-  private readonly bool[] _enabled = new bool[MaxSlots];
-  private readonly System.Numerics.Vector3[] _lastViewerOrigin = new System.Numerics.Vector3[MaxSlots];
-  private readonly bool[] _hadViewer = new bool[MaxSlots];
+  private readonly HashSet<int> _viewers = [];
+  private readonly Dictionary<int, Vector3> _lastViewerOrigin = [];
+  private readonly List<int> _staleViewers = [];
+  private readonly Vector3[] _viewerPositions = new Vector3[MaxSlots];
+  private int _viewerCount;
 
   private readonly List<CEnvBeam> _beams = [];
   private readonly List<int> _beamSegment = [];
   private readonly List<int> _beamCategory = [];
   private readonly List<bool> _beamFlipped = [];
-
-  private readonly System.Numerics.Vector3[] _viewerPositions = new System.Numerics.Vector3[MaxSlots];
-  private int _viewerCount;
-
-  private readonly List<int> _candidates = [];
-  private readonly HashSet<int> _wantedSegments = [];
-  private readonly HashSet<int> _keptSegments = [];
   private readonly List<int> _freeSlots = [];
+  private readonly List<uint> _transmitIndices = [];
 
-  private readonly List<ClipSegment> _triggerSegments = [];
+  private List<ClipSegment> _triggerSegments = [];
+  private List<ClipSegment> _pendingTriggers = [];
   private int _triggerCount;
   private ClipMap? _mapClips;
   private ClipSegment[] _segments = [];
   private int[] _segmentCategory = [];
-  private float[] _candidateDistance = [];
   private string[] _categoryNames = [];
   private Color[] _categoryColors = [];
+
+  private int[] _candidates = [];
+  private float[] _candidateDistance = [];
+  private int[] _candidateViewer = [];
+  private int[] _wantedStamp = [];
+  private int[] _keptStamp = [];
+  private int _candidateCount;
+  private int _stamp;
 
   private string _mapName = string.Empty;
   private string _status = string.Empty;
   private bool _loading;
   private bool _forceRefresh;
   private float _nextRefresh;
+  private int _generation;
 
   public void OnConfigParsed(ShowPlayerClipsConfig config)
   {
@@ -161,28 +167,22 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     RegisterListener<OnTick>(OnTick);
     RegisterListener<CheckTransmit>(OnCheckTransmit);
 
-    RegisterEventHandler<EventRoundStart>((_, _) =>
-    {
-      RefreshTriggers();
-      Rebuild();
-      return HookResult.Continue;
-    });
-
-    RegisterListener<OnClientDisconnect>(slot =>
-    {
-      if (slot >= 0 && slot < MaxSlots)
-      {
-        _enabled[slot] = false;
-        _hadViewer[slot] = false;
-        _forceRefresh = true;
-      }
-    });
+    RegisterEventHandler<EventRoundStart>(OnRoundStart);
+    RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
 
     if (hotReload)
     {
       RemoveOrphanBeams();
       OnMapStart(Server.MapName);
+      return;
     }
+
+    Server.NextWorldUpdate(() =>
+    {
+      string mapName = Server.MapName;
+      if (_mapName.Length == 0 && !string.IsNullOrEmpty(mapName))
+        OnMapStart(mapName);
+    });
   }
 
   public override void Unload(bool hotReload)
@@ -191,8 +191,31 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     RemoveOrphanBeams();
   }
 
+  private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
+  {
+    if (RefreshTriggers())
+      Rebuild();
+
+    return HookResult.Continue;
+  }
+
+  private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+  {
+    int userId = Util.UserId(@event.Userid);
+
+    if (userId >= 0 && _viewers.Remove(userId))
+    {
+      _lastViewerOrigin.Remove(userId);
+      _forceRefresh = true;
+    }
+
+    return HookResult.Continue;
+  }
+
   private void OnMapStart(string mapName)
   {
+    int generation = ++_generation;
+
     _mapName = mapName;
     _mapClips = null;
     _triggerSegments.Clear();
@@ -200,20 +223,19 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     _segmentCategory = [];
     _categoryNames = [];
     _categoryColors = [];
-    _candidateDistance = [];
     _status = string.Empty;
     _loading = true;
     _forceRefresh = true;
 
-    Array.Clear(_enabled);
-    Array.Clear(_hadViewer);
+    _viewers.Clear();
+    _lastViewerOrigin.Clear();
     RemoveAllBeams();
 
     AddTimer(3f, () =>
     {
       RefreshTriggers();
       Rebuild();
-    });
+    }, TimerFlags.STOP_ON_MAPCHANGE);
 
     string moduleDirectory = ModuleDirectory;
     string gameDirectory = Server.GameDirectory;
@@ -224,11 +246,11 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       try
       {
         var map = LoadOrExtract(gameDirectory, moduleDirectory, mapName, types, out string info);
-        Server.NextFrame(() => Publish(map, info));
+        Server.NextFrame(() => Publish(generation, map, info));
       }
       catch (Exception ex)
       {
-        Server.NextFrame(() => Publish(null, ex.Message));
+        Server.NextFrame(() => Publish(generation, null, ex.Message));
       }
     });
   }
@@ -241,20 +263,22 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     _segmentCategory = [];
   }
 
-  private void Publish(ClipMap? map, string info)
+  private void Publish(int generation, ClipMap? map, string info)
   {
+    if (generation != _generation)
+      return;
+
     _loading = false;
-    _status = info;
+    _status = map == null ? info : string.Empty;
     _mapClips = map;
+
+    Rebuild();
 
     if (map == null)
     {
       Console.WriteLine($"[ShowPlayerClips] {info}");
-      Rebuild();
       return;
     }
-
-    Rebuild();
 
     string drawn = string.Join(", ", map.Categories.Select(pair => $"{pair.Key}={pair.Value.Count}"));
     Console.WriteLine($"[ShowPlayerClips] {_mapName}: {_segments.Length} cizgi ({info}) [{drawn}]. Haritada bulunan turler: {string.Join(", ", map.Available)}");
@@ -294,56 +318,87 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
     AddCategory("trigger", _triggerSegments);
 
+    int count = segments.Count;
+
     _categoryNames = [.. names];
     _categoryColors = [.. colors];
     _segments = [.. segments];
     _segmentCategory = [.. categories];
-    _candidateDistance = new float[_segments.Length];
+    _candidates = new int[count];
+    _candidateDistance = new float[count];
+    _candidateViewer = new int[count];
+    _wantedStamp = new int[count];
+    _keptStamp = new int[count];
+    _candidateCount = 0;
+    _stamp = 0;
+
+    for (int slot = 0; slot < _beams.Count; slot++)
+    {
+      _beamSegment[slot] = -1;
+      _beamCategory[slot] = -1;
+    }
+
+    if (count == 0)
+      RemoveAllBeams();
+
     _forceRefresh = true;
   }
 
-  private void RefreshTriggers()
+  private bool RefreshTriggers()
   {
-    _triggerSegments.Clear();
+    var found = _pendingTriggers;
+    found.Clear();
 
-    int found = 0;
+    int count = 0;
 
-    foreach (string designerName in TriggerClasses)
+    if (Util.Split(Config.Types).Contains("trigger", StringComparer.OrdinalIgnoreCase))
     {
-      foreach (var entity in Utilities.FindAllEntitiesByDesignerName<CBaseTrigger>(designerName))
+      foreach (var instance in Utilities.GetAllEntities())
       {
-        if (!entity.IsValid)
+        if (!TriggerClasses.Contains(instance.DesignerName))
           continue;
 
+        var entity = instance.As<CBaseEntity>();
         var origin = entity.AbsOrigin;
-        var mins = entity.Collision?.Mins;
-        var maxs = entity.Collision?.Maxs;
+        var angles = entity.AbsRotation;
+        var collision = entity.Collision;
 
-        if (origin == null || mins == null || maxs == null)
+        if (origin == null || angles == null || collision == null)
           continue;
 
-        var low = new System.Numerics.Vector3(origin.X + mins.X, origin.Y + mins.Y, origin.Z + mins.Z);
-        var high = new System.Numerics.Vector3(origin.X + maxs.X, origin.Y + maxs.Y, origin.Z + maxs.Z);
+        var mins = (Vector3)collision.Mins;
+        var maxs = (Vector3)collision.Maxs;
 
-        if (System.Numerics.Vector3.Distance(low, high) < 1f)
+        if (Vector3.Distance(mins, maxs) < 1f)
           continue;
 
-        AddBox(_triggerSegments, low, high);
-        found++;
+        AddBox(found, (Vector3)origin, (Vector3)angles, mins, maxs);
+        count++;
       }
     }
 
-    _triggerCount = found;
+    _triggerCount = count;
 
-    if (_mapClips != null && found > 0)
-      Console.WriteLine($"[ShowPlayerClips] {_mapName}: {found} trigger.");
+    if (found.SequenceEqual(_triggerSegments))
+      return false;
+
+    (_triggerSegments, _pendingTriggers) = (found, _triggerSegments);
+
+    if (_mapClips != null && count > 0)
+      Console.WriteLine($"[ShowPlayerClips] {_mapName}: {count} trigger.");
+
+    return true;
   }
 
-  private static void AddBox(List<ClipSegment> target, System.Numerics.Vector3 low, System.Numerics.Vector3 high)
+  private static void AddBox(List<ClipSegment> target, Vector3 origin, Vector3 angles, Vector3 low, Vector3 high)
   {
-    var center = (low + high) * 0.5f;
+    var rotation = angles == Vector3.Zero
+      ? Matrix4x4.Identity
+      : Matrix4x4.CreateRotationX(angles.Z * MathF.PI / 180f)
+        * Matrix4x4.CreateRotationY(angles.X * MathF.PI / 180f)
+        * Matrix4x4.CreateRotationZ(angles.Y * MathF.PI / 180f);
 
-    Span<System.Numerics.Vector3> corners =
+    Span<Vector3> corners =
     [
       new(low.X, low.Y, low.Z),
       new(high.X, low.Y, low.Z),
@@ -354,6 +409,11 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       new(high.X, high.Y, high.Z),
       new(low.X, high.Y, high.Z),
     ];
+
+    for (int i = 0; i < corners.Length; i++)
+      corners[i] = Vector3.Transform(corners[i], rotation) + origin;
+
+    var center = Vector3.Transform((low + high) * 0.5f, rotation) + origin;
 
     ReadOnlySpan<int> edges =
     [
@@ -366,11 +426,10 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     {
       var start = corners[edges[i]];
       var end = corners[edges[i + 1]];
-      var middle = (start + end) * 0.5f;
-      var normal = middle - center;
+      var normal = (start + end) * 0.5f - center;
 
       float length = normal.Length();
-      normal = length > 0.001f ? normal / length : System.Numerics.Vector3.Zero;
+      normal = length > 0.001f ? normal / length : Vector3.Zero;
 
       target.Add(new ClipSegment(start, end, normal));
     }
@@ -432,7 +491,11 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       return;
 
     foreach (string file in Directory.GetFiles(directory, $"{mapName}_*.spc"))
-      File.Delete(file);
+    {
+      string stamp = Path.GetFileNameWithoutExtension(file)[(mapName.Length + 1)..];
+      if (stamp.Count(c => c == '_') == 2)
+        File.Delete(file);
+    }
   }
 
   private static string? FindMapVpk(string gameDirectory, string mapName)
@@ -462,11 +525,19 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
         return found[0];
     }
 
-    foreach (string root in AddonRoots(game))
-    {
-      if (!Directory.Exists(root))
-        continue;
+    var addonRoots = AddonRoots(game).Where(Directory.Exists).ToList();
 
+    foreach (string root in addonRoots)
+    {
+      foreach (string candidate in Directory.GetFiles(root, $"{mapName}.vpk", SearchOption.AllDirectories))
+      {
+        if (ClipMap.ContainsMap(candidate, mapName))
+          return candidate;
+      }
+    }
+
+    foreach (string root in addonRoots)
+    {
       foreach (string candidate in Directory.GetFiles(root, "*.vpk", SearchOption.AllDirectories))
       {
         if (ClipMap.ContainsMap(candidate, mapName))
@@ -493,7 +564,8 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
   private void OnToggleCommand(CCSPlayerController? player, CommandInfo info)
   {
-    if (player == null || !player.IsValid)
+    int userId = Util.UserId(player);
+    if (player == null || userId < 0)
       return;
 
     if (!Util.HasAccess(player, Config.Flag))
@@ -510,15 +582,19 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
     if (_segments.Length == 0)
     {
-      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["showclips.unavailable", _status]}");
+      string reason = _status.Length > 0 ? _status : string.Join(", ", Util.Split(Config.Types));
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["showclips.unavailable", reason]}");
       return;
     }
 
-    _enabled[player.Slot] = !_enabled[player.Slot];
-    _hadViewer[player.Slot] = false;
+    bool enabled = _viewers.Add(userId);
+    if (!enabled)
+      _viewers.Remove(userId);
+
+    _lastViewerOrigin.Remove(userId);
     _forceRefresh = true;
 
-    if (_enabled[player.Slot])
+    if (enabled)
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["showclips.enabled", _segments.Length, string.Join(", ", _categoryNames)]}");
     else
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["showclips.disabled"]}");
@@ -540,46 +616,44 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
   private void Refresh()
   {
-    var viewers = _viewerPositions;
     int viewerCount = 0;
     bool changed = _forceRefresh;
 
-    for (int slot = 0; slot < MaxSlots; slot++)
+    _staleViewers.Clear();
+
+    foreach (int userId in _viewers)
     {
-      if (!_enabled[slot])
+      var player = Util.FromUserId(userId);
+      if (player == null)
       {
-        if (_hadViewer[slot])
-        {
-          _hadViewer[slot] = false;
-          changed = true;
-        }
-
+        _staleViewers.Add(userId);
         continue;
       }
 
-      var player = Utilities.GetPlayerFromSlot(slot);
       var origin = ViewerOrigin(player);
-
-      if (origin == null)
+      if (origin == null || viewerCount >= MaxSlots)
       {
-        if (_hadViewer[slot])
-        {
-          _hadViewer[slot] = false;
+        if (_lastViewerOrigin.Remove(userId))
           changed = true;
-        }
 
         continue;
       }
 
-      var position = new System.Numerics.Vector3(origin.X, origin.Y, origin.Z);
-      viewers[viewerCount++] = position;
+      var position = origin.Value;
+      _viewerPositions[viewerCount++] = position;
 
-      if (!_hadViewer[slot] || System.Numerics.Vector3.Distance(_lastViewerOrigin[slot], position) > Config.MoveStep)
+      if (!_lastViewerOrigin.TryGetValue(userId, out var last) || Vector3.Distance(last, position) > Config.MoveStep)
       {
-        _lastViewerOrigin[slot] = position;
-        _hadViewer[slot] = true;
+        _lastViewerOrigin[userId] = position;
         changed = true;
       }
+    }
+
+    foreach (int userId in _staleViewers)
+    {
+      _viewers.Remove(userId);
+      _lastViewerOrigin.Remove(userId);
+      changed = true;
     }
 
     _forceRefresh = false;
@@ -588,67 +662,119 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     if (viewerCount == 0)
     {
       if (_beams.Count > 0)
-      {
         RemoveAllBeams();
-        RemoveOrphanBeams();
-      }
 
       return;
     }
 
-    if (!changed)
+    if (!changed && !BeamsLost())
       return;
 
-    _candidates.Clear();
+    int count = 0;
     float radiusSquared = Config.Radius * Config.Radius;
 
     for (int i = 0; i < _segments.Length; i++)
     {
       var middle = _segments[i].Middle;
       float best = float.MaxValue;
+      int nearest = 0;
 
       for (int v = 0; v < viewerCount; v++)
       {
-        float distance = System.Numerics.Vector3.DistanceSquared(middle, viewers[v]);
+        float distance = Vector3.DistanceSquared(middle, _viewerPositions[v]);
         if (distance < best)
+        {
           best = distance;
+          nearest = v;
+        }
       }
 
       if (best > radiusSquared)
         continue;
 
-      _candidateDistance[i] = best;
-      _candidates.Add(i);
+      _candidateViewer[i] = nearest;
+      _candidateDistance[count] = best;
+      _candidates[count++] = i;
     }
 
-    if (_candidates.Count > Config.MaxBeams)
+    if (count > Config.MaxBeams)
     {
-      _candidates.Sort((a, b) => _candidateDistance[a].CompareTo(_candidateDistance[b]));
-      _candidates.RemoveRange(Config.MaxBeams, _candidates.Count - Config.MaxBeams);
+      SelectNearest(_candidateDistance, _candidates, count, Config.MaxBeams);
+      count = Config.MaxBeams;
     }
+
+    _candidateCount = count;
 
     Apply();
   }
 
+  private static void SelectNearest(float[] keys, int[] items, int count, int keep)
+  {
+    int left = 0;
+    int right = count - 1;
+
+    while (left < right)
+    {
+      float pivot = keys[(left + right) >> 1];
+      int i = left;
+      int j = right;
+
+      while (i <= j)
+      {
+        while (keys[i] < pivot)
+          i++;
+        while (keys[j] > pivot)
+          j--;
+
+        if (i > j)
+          break;
+
+        (keys[i], keys[j]) = (keys[j], keys[i]);
+        (items[i], items[j]) = (items[j], items[i]);
+        i++;
+        j--;
+      }
+
+      if (keep <= j)
+        right = j;
+      else if (keep >= i)
+        left = i;
+      else
+        return;
+    }
+  }
+
+  private bool BeamsLost()
+  {
+    foreach (var beam in _beams)
+    {
+      if (!beam.IsValid)
+        return true;
+    }
+
+    return false;
+  }
+
   private void Apply()
   {
-    _wantedSegments.Clear();
-    foreach (int index in _candidates)
-      _wantedSegments.Add(index);
+    int stamp = ++_stamp;
 
-    _keptSegments.Clear();
+    for (int i = 0; i < _candidateCount; i++)
+      _wantedStamp[_candidates[i]] = stamp;
+
     _freeSlots.Clear();
 
     for (int slot = 0; slot < _beams.Count; slot++)
     {
       int segment = _beamSegment[slot];
 
-      if (_beams[slot].IsValid && segment >= 0 && _wantedSegments.Contains(segment))
+      if (segment >= 0 && _wantedStamp[segment] == stamp && _beams[slot].IsValid)
       {
-        _keptSegments.Add(segment);
+        _keptStamp[segment] = stamp;
 
-        if (_beamFlipped[slot] != ShouldFlip(segment))
-          ApplySegment(slot, segment);
+        bool flipped = ShouldFlip(segment);
+        if (_beamFlipped[slot] != flipped)
+          ApplySegment(slot, segment, flipped);
 
         continue;
       }
@@ -659,46 +785,49 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
     int nextFree = 0;
 
-    foreach (int index in _candidates)
+    for (int i = 0; i < _candidateCount; i++)
     {
-      if (_keptSegments.Contains(index))
+      int index = _candidates[i];
+      if (_keptStamp[index] == stamp)
         continue;
+
+      bool flipped = ShouldFlip(index);
 
       if (nextFree < _freeSlots.Count)
       {
-        ApplySegment(_freeSlots[nextFree++], index);
+        ApplySegment(_freeSlots[nextFree++], index, flipped);
         continue;
       }
 
-      var beam = CreateBeam(index);
+      var beam = CreateBeam(index, flipped);
       if (beam == null)
         break;
 
       _beams.Add(beam);
       _beamSegment.Add(index);
       _beamCategory.Add(_segmentCategory[index]);
-      _beamFlipped.Add(ShouldFlip(index));
+      _beamFlipped.Add(flipped);
     }
 
     for (int i = _freeSlots.Count - 1; i >= nextFree; i--)
       RemoveSlot(_freeSlots[i]);
   }
 
-  private void ApplySegment(int slot, int index)
+  private void ApplySegment(int slot, int index, bool flipped)
   {
     var beam = _beams[slot];
     int category = _segmentCategory[index];
 
     if (!beam.IsValid)
     {
-      var created = CreateBeam(index);
+      var created = CreateBeam(index, flipped);
       if (created == null)
         return;
 
       _beams[slot] = created;
       _beamSegment[slot] = index;
       _beamCategory[slot] = category;
-      _beamFlipped[slot] = ShouldFlip(index);
+      _beamFlipped[slot] = flipped;
       return;
     }
 
@@ -709,36 +838,27 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       _beamCategory[slot] = category;
     }
 
-    bool flipped = ShouldFlip(index);
     var (start, end) = Endpoints(index, flipped);
-
-    beam.Teleport(new Vector(start.X, start.Y, start.Z), new QAngle(), new Vector());
-    beam.EndPos.X = end.X;
-    beam.EndPos.Y = end.Y;
-    beam.EndPos.Z = end.Z;
-    Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+    MoveBeam(beam, start, end);
 
     _beamSegment[slot] = index;
     _beamFlipped[slot] = flipped;
   }
 
-  private static Vector? ViewerOrigin(CCSPlayerController? player)
+  private static Vector3? ViewerOrigin(CCSPlayerController player)
   {
-    if (player == null || !player.IsValid)
-      return null;
-
     var pawn = player.PlayerPawn.Value;
     if (pawn != null && pawn.IsValid && pawn.LifeState == (byte)LifeState_t.LIFE_ALIVE && pawn.AbsOrigin != null)
-      return pawn.AbsOrigin;
+      return (Vector3)pawn.AbsOrigin;
 
     var observer = player.Pawn.Value;
 
     var target = observer?.ObserverServices?.ObserverTarget.Value?.As<CBaseEntity>();
     if (target != null && target.IsValid && target.AbsOrigin != null)
-      return target.AbsOrigin;
+      return (Vector3)target.AbsOrigin;
 
     if (observer != null && observer.IsValid && observer.AbsOrigin != null)
-      return observer.AbsOrigin;
+      return (Vector3)observer.AbsOrigin;
 
     return null;
   }
@@ -746,42 +866,36 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
   private bool ShouldFlip(int index)
   {
     var segment = _segments[index];
-    if (segment.Normal == System.Numerics.Vector3.Zero || _viewerCount == 0)
+    if (segment.Normal == Vector3.Zero || _viewerCount == 0)
       return false;
 
     var middle = segment.Middle;
-    int nearest = 0;
-    float best = float.MaxValue;
-
-    for (int i = 0; i < _viewerCount; i++)
-    {
-      float distance = System.Numerics.Vector3.DistanceSquared(middle, _viewerPositions[i]);
-      if (distance < best)
-      {
-        best = distance;
-        nearest = i;
-      }
-    }
-
-    return System.Numerics.Vector3.Dot(segment.Normal, _viewerPositions[nearest] - middle) < 0f;
+    return Vector3.Dot(segment.Normal, _viewerPositions[_candidateViewer[index]] - middle) < 0f;
   }
 
-  private (System.Numerics.Vector3 Start, System.Numerics.Vector3 End) Endpoints(int index, bool flipped)
+  private (Vector3 Start, Vector3 End) Endpoints(int index, bool flipped)
   {
     var segment = _segments[index];
     var offset = segment.Normal * (flipped ? -Config.Offset : Config.Offset);
     return (segment.Start + offset, segment.End + offset);
   }
 
-  private CEnvBeam? CreateBeam(int index)
+  private static void MoveBeam(CEnvBeam beam, Vector3 start, Vector3 end)
+  {
+    beam.Teleport(start);
+    beam.EndPos.X = end.X;
+    beam.EndPos.Y = end.Y;
+    beam.EndPos.Z = end.Z;
+    Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+  }
+
+  private CEnvBeam? CreateBeam(int index, bool flipped)
   {
     var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam");
     if (beam == null || !beam.IsValid)
       return null;
 
-    var (start, end) = Endpoints(index, ShouldFlip(index));
-
-    beam.Globalname = BeamMarker;
+    var (start, end) = Endpoints(index, flipped);
 
     if (beam.Entity != null)
       beam.Entity.Name = BeamMarker;
@@ -795,11 +909,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
     beam.Render = _categoryColors[_segmentCategory[index]];
     Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
-    beam.Teleport(new Vector(start.X, start.Y, start.Z), new QAngle(), new Vector());
-    beam.EndPos.X = end.X;
-    beam.EndPos.Y = end.Y;
-    beam.EndPos.Z = end.Z;
-    Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+    MoveBeam(beam, start, end);
 
     return beam;
   }
@@ -853,7 +963,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       {
         try
         {
-          if (!beam.IsValid || (beam.Globalname != BeamMarker && beam.Entity?.Name != BeamMarker))
+          if (!beam.IsValid || (beam.Entity?.Name != BeamMarker && beam.Globalname != BeamMarker))
             continue;
 
           beam.Remove();
@@ -896,19 +1006,27 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     if (_beams.Count == 0)
       return;
 
+    bool collected = false;
+
     foreach ((CCheckTransmitInfo info, CCSPlayerController? viewer) in infoList)
     {
-      if (viewer == null || !viewer.IsValid)
+      if (viewer != null && viewer.IsValid && !viewer.IsHLTV && _viewers.Contains(Util.UserId(viewer)))
         continue;
 
-      if (!viewer.IsHLTV && _enabled[viewer.Slot])
-        continue;
-
-      foreach (var beam in _beams)
+      if (!collected)
       {
-        if (beam.IsValid)
-          info.TransmitEntities.Remove(beam);
+        _transmitIndices.Clear();
+        foreach (var beam in _beams)
+        {
+          if (beam.IsValid)
+            _transmitIndices.Add(beam.Index);
+        }
+
+        collected = true;
       }
+
+      for (int i = 0; i < _transmitIndices.Count; i++)
+        info.TransmitEntities.Remove(_transmitIndices[i]);
     }
   }
 }

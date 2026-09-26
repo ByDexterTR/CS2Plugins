@@ -18,7 +18,7 @@ Haritadaki görünmez tool fırçalarını renkli çizgilerle gösterir: clip, p
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 
 ## Kurulum
 

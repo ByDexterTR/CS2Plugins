@@ -18,7 +18,7 @@ Shows the map's invisible tool brushes as colored lines: clip, player clip, ladd
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 
 ## Installation
 
