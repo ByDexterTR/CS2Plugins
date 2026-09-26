@@ -16,7 +16,7 @@ Lets players mute game sounds they do not want to hear, by category. Preferences
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 - (If MySQL will be used) MySQL 8+ server
 
 ## Installation
@@ -66,4 +66,8 @@ csgo/addons/counterstrikesharp/configs/plugins/Sesler/Sesler.json
 
 ## Notes
 
+- **Mute Team** never mutes your own sounds; **Off** mutes them too.
+- **Mute Enemy** and **Mute Team** only apply to players on T or CT. Spectators only get **Off**.
+- A knife hitting a player plays one sound at the attacker and one at the victim. The victim-side hit sound is only muted in **Off**, so **Mute Enemy** does not cut the sound of your own hits.
+- Preferences load once the player's Steam ID is verified. For the first second after joining, `css_ses` may not respond.
 - If some sounds in a category you muted start coming through again after a CS2 update, the plugin needs an update.

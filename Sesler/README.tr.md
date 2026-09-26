@@ -16,7 +16,7 @@ Oyuncuların duymak istemediği oyun seslerini kategori bazında kapatmasını s
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 - (MySQL kullanılacaksa) MySQL 8+ sunucusu
 
 ## Kurulum
@@ -66,4 +66,8 @@ csgo/addons/counterstrikesharp/configs/plugins/Sesler/Sesler.json
 
 ## Notlar
 
+- **Takımı Sustur** kendi seslerinizi asla susturmaz; **Kapalı** onları da susturur.
+- **Düşmanı Sustur** ve **Takımı Sustur** yalnızca T veya CT takımındaki oyuncularda çalışır. İzleyicilerde sadece **Kapalı** geçerlidir.
+- Bıçak bir oyuncuya isabet ettiğinde biri saldıranda, biri kurbanda olmak üzere iki ses çalar. Kurban tarafındaki isabet sesi yalnızca **Kapalı** modunda susturulur; böylece **Düşmanı Sustur** kendi isabetlerinizin sesini kesmez.
+- Tercihler oyuncunun Steam ID'si doğrulandıktan sonra yüklenir. Sunucuya girdikten sonraki ilk saniyede `css_ses` yanıt vermeyebilir.
 - Bir CS2 güncellemesinden sonra kapattığınız kategorideki bazı sesler yeniden duyulmaya başlarsa, eklentinin güncellenmesi gerekiyor demektir.
