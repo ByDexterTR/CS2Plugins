@@ -19,6 +19,8 @@ public class PropAd
   [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] [JsonPropertyName("solid")] public bool Solid { get; set; }
   [JsonPropertyName("flag")] public string? Flag { get; set; }
   [JsonPropertyName("ignoreflag")] public string? IgnoreFlag { get; set; }
+
+  public PropAd Clone() => (PropAd)MemberwiseClone();
 }
 
 public class PropModel

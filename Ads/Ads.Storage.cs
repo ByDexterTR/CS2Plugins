@@ -295,7 +295,9 @@ public class AdsMySqlStorage : IAdsStorage
       Database = cfg.Database,
       UserID = cfg.User,
       Password = cfg.Password,
-      Pooling = true
+      Pooling = true,
+      ConnectionTimeout = 5,
+      DefaultCommandTimeout = 15
     }.ConnectionString;
 
     _database = cfg.Database;

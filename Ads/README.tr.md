@@ -22,7 +22,7 @@ Haritaya prop yerleştirir, ekrana yazı basar ve sohbete duyuru gönderir. Zama
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 
 ## Kurulum
 
@@ -522,7 +522,7 @@ Tablo ve database ilk yüklemede otomatik oluşturulur. Akış:
 
 1. Ekran/sohbet/event reklamlarını `ads.json`, katalogları `props.json` içine yazın.
 2. `css_adsimportsql` ile MySQL'e aktarın (ilgili tablolar temizlenip yeniden doldurulur).
-3. `ads_storage` değerini `mysql` yapın ve `css_adsreload` çalıştırın.
+3. `ads_storage` değerini `mysql` yapın ve **Eklenti Yönetimi → Ayarları yenile**'yi seçin.
 4. Database'deki kayıtları dosyalara geri almak için `css_adsexportsql` kullanın; `ads.json`, `props.json` ve `maps.json` aynı düzende yeniden yazılır.
 
 `ads_storage` `mysql` iken menü katalogları ve yerleştirilmiş kayıtlar da database'den okunur; JSON dosyaları yalnızca aktarım kaynağı/hedefi olarak kullanılır. `settings.json` her durumda dosyadan okunur.
@@ -538,5 +538,5 @@ Tablo ve database ilk yüklemede otomatik oluşturulur. Akış:
 - `ignoreflag` root yetkisini kapsamaz: root yetkili bir oyuncu, kendi yetki listesinde o flag yoksa reklamı görür. `flag` kontrolünde ise root her zaman kapsanır.
 - ScreenText yazılarını her oyuncu yalnızca kendi ekranında görür. Ölü oyunculara ekran yazısı gösterilmez.
 - HudSay, ekranın orta bölgesini kullanır; aynı bölgeyi kullanan başka bir eklenti varsa (menü, uyarı) ikisi sırayla basılıp titreme yapabilir.
-- **Ayarları yenile** ile `settings.json` anında tazelenir; yalnızca komut adları, `ads_storage` ve MySQL bağlantısı için eklentiyi yeniden yüklemek gerekir.
+- **Ayarları yenile** ile `settings.json` anında tazelenir; `ads_storage` ve MySQL bağlantısı da o anda değişir. Yalnızca komut adları için eklentiyi yeniden yüklemek gerekir.
 - Flag/Ignoreflag'i sohbetten girerken başka birinin yazdığı mesaj senin ayarını değiştiremez.

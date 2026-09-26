@@ -22,7 +22,7 @@ Places props on the map, draws messages on screen and sends announcements to cha
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 
 ## Installation
 
@@ -522,7 +522,7 @@ The database and the tables are created automatically on first load. The workflo
 
 1. Write the screen/chat/event ads into `ads.json` and the catalogs into `props.json`.
 2. Push them to MySQL with `css_adsimportsql` (the matching tables are wiped and refilled).
-3. Set `ads_storage` to `mysql` and run `css_adsreload`.
+3. Set `ads_storage` to `mysql` and choose **Plugin Management → Reload settings**.
 4. Use `css_adsexportsql` to pull the rows back into the files; `ads.json`, `props.json` and `maps.json` are rewritten in the same layout.
 
 While `ads_storage` is `mysql` the menu catalogs and the placed entries are read from the database too; the JSON files are then only used as the transfer source/target. `settings.json` is always read from disk.
@@ -538,5 +538,5 @@ While `ads_storage` is `mysql` the menu catalogs and the placed entries are read
 - `ignoreflag` does not cover root: a root player still sees the ad unless that flag is actually assigned to them. The `flag` check always covers root.
 - Every player only sees their own ScreenText on their own screen. No screen text is shown to dead players.
 - HudSay uses the center area of the screen; if another plugin (menu, warning) uses the same area, the two are printed alternately and may flicker.
-- `settings.json` is refreshed instantly from **Reload settings**; only command names, `ads_storage` and the MySQL connection need a plugin reload.
+- `settings.json` is refreshed instantly from **Reload settings**; `ads_storage` and the MySQL connection switch at that moment too. Only command names need a plugin reload.
 - When entering a flag/ignoreflag through chat, nobody else's message can change your setting.

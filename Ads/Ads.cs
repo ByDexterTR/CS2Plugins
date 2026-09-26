@@ -69,7 +69,7 @@ public class AdsConfig
 public partial class Ads : BasePlugin
 {
   public override string ModuleName => "Ads";
-  public override string ModuleVersion => "1.0.2";
+  public override string ModuleVersion => "1.0.3";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -90,7 +90,7 @@ public partial class Ads : BasePlugin
   private MapsData _mapsData = new();
   private string _mapName = "";
 
-  private void LoadSettings()
+  private void LoadSettings(bool keepOnError = false)
   {
     try
     {
@@ -98,10 +98,15 @@ public partial class Ads : BasePlugin
     }
     catch (Exception ex)
     {
+      if (keepOnError)
+        throw;
+
       Logger.LogError("Ayarlar yuklenemedi, varsayilanlar kullanilacak: {message}", ex.Message);
       Config = new AdsConfig();
     }
 
+    if (Config.HudTick < 1)
+      Config.HudTick = 1;
     if (Config.Forward < 1f)
       Config.Forward = 7f;
     if (Config.UnitsPerPx <= 0f)
@@ -128,26 +133,7 @@ public partial class Ads : BasePlugin
 
     HudGuard.Install(this);
 
-    if (Config.Storage.Equals("mysql", StringComparison.OrdinalIgnoreCase))
-    {
-      try
-      {
-        _mysql = new AdsMySqlStorage(Config.MySql);
-        _mysql.Init();
-        _storage = _mysql;
-      }
-      catch (Exception ex)
-      {
-        Logger.LogError("MySQL baglantisi kurulamadi, JSON kullanilacak: {message}", ex.Message);
-        _storage = _json;
-      }
-    }
-    else
-    {
-      _storage = _json;
-    }
-
-    LoadData();
+    _storage = _json;
     RegisterCommands();
 
     RegisterListener<OnServerPrecacheResources>(OnServerPrecacheResources);
@@ -155,70 +141,151 @@ public partial class Ads : BasePlugin
     RegisterListener<OnMapEnd>(OnMapEndHandler);
 
     RegisterEventAds();
-    SyncListeners();
 
-    if (hotReload)
-    {
-      _mapName = Server.MapName;
-      SpawnWorldAds();
-    }
+    Action? spawn = hotReload
+      ? () =>
+      {
+        _mapName = Server.MapName;
+        SpawnWorldAds();
+      }
+      : null;
+
+    if (Config.Storage.Equals("mysql", StringComparison.OrdinalIgnoreCase))
+      StartMySql(spawn);
+    else
+      LoadData(false, spawn);
   }
 
   public override void Unload(bool hotReload)
   {
+    _unloaded = true;
     _menus.Clear();
     ClearScreenTexts();
     RemoveWorldAds();
   }
 
-  private void LoadData()
+  private void StartMySql(Action? after)
   {
-    try
+    var mysql = new AdsMySqlStorage(Config.MySql);
+    _mysql = mysql;
+    _storage = mysql;
+
+    Background(() =>
     {
-      _data = _storage.Load();
-    }
-    catch (Exception ex)
+      try
+      {
+        mysql.Init();
+      }
+      catch (Exception ex)
+      {
+        Main(() =>
+        {
+          Logger.LogError("MySQL baglantisi kurulamadi, JSON kullanilacak: {message}", ex.Message);
+          if (ReferenceEquals(_storage, mysql))
+          {
+            _storage = _json;
+            LoadData(false, after);
+          }
+        });
+        return;
+      }
+
+      Main(() => LoadData(false, after));
+    });
+  }
+
+  private sealed record LoadResult(AdsData? Ads, PropsData? Props, MapsData? Maps, List<Exception> Errors);
+
+  private static LoadResult ReadAll(IAdsStorage storage)
+  {
+    var errors = new List<Exception>();
+    AdsData? ads = null;
+    PropsData? props = null;
+    MapsData? maps = null;
+
+    try { ads = storage.Load(); }
+    catch (Exception ex) { errors.Add(ex); }
+
+    try { props = storage.LoadProps(); }
+    catch (Exception ex) { errors.Add(ex); }
+
+    try { maps = storage.LoadMaps(); }
+    catch (Exception ex) { errors.Add(ex); }
+
+    return new LoadResult(ads, props, maps, errors);
+  }
+
+  private void LoadData(bool sync, Action? after = null, CCSPlayerController? player = null)
+  {
+    int version = ++_loadVersion;
+    var storage = _storage;
+
+    if (sync || !IsRemote(storage))
     {
-      Logger.LogError("Reklamlar yuklenemedi: {message}", ex.Message);
-      _data = new AdsData();
+      ApplyLoaded(ReadAll(storage), player);
+      after?.Invoke();
+      return;
     }
 
-    try
+    Background(() =>
     {
-      _propsData = _storage.LoadProps();
-    }
-    catch (Exception ex)
+      var result = ReadAll(storage);
+      Main(() =>
+      {
+        if (version != _loadVersion)
+          return;
+
+        ApplyLoaded(result, player);
+        after?.Invoke();
+      });
+    });
+  }
+
+  private void ApplyLoaded(LoadResult result, CCSPlayerController? player)
+  {
+    foreach (var error in result.Errors)
     {
-      Logger.LogError("Proplar yuklenemedi: {message}", ex.Message);
-      _propsData = new PropsData();
+      Logger.LogError("Veri yuklenemedi, onceki hali korunuyor: {message}", error.Message);
+      if (player != null)
+        Reply(player, ErrorText(error));
     }
 
-    try
-    {
-      _mapsData = _storage.LoadMaps();
-    }
-    catch (Exception ex)
-    {
-      Logger.LogError("Harita kayitlari yuklenemedi: {message}", ex.Message);
-      _mapsData = new MapsData();
-    }
+    if (result.Ads != null)
+      _data = result.Ads;
+
+    if (result.Props != null)
+      _propsData = result.Props;
+
+    if (result.Maps != null)
+      _mapsData = result.Maps;
 
     _data.Props = _mapsData.Props;
 
+    ClearScreenTexts();
     BuildQueues();
     BuildEvents();
     SyncListeners();
   }
-
-  private void SaveMaps() => _storage.SaveMaps(_mapsData);
 
   private bool _tickHooked;
   private bool _transmitHooked;
 
   private void SyncListeners()
   {
-    bool needTick = _data.ScreenTexts.Count > 0 || _data.HudSays.Count > 0 || _data.Events.Count > 0;
-    bool needTransmit = _data.ScreenTexts.Count > 0 || _data.Events.Count > 0 || HasHiddenProp();
+    bool renderEvents = false;
+    bool textEvents = false;
+
+    foreach (var ad in _data.Events)
+    {
+      string type = ad.Type.Trim().ToLowerInvariant();
+      if (type == "hudsay")
+        renderEvents = true;
+      else if (type == "screentext")
+        renderEvents = textEvents = true;
+    }
+
+    bool needTick = _data.ScreenTexts.Count > 0 || _data.HudSays.Count > 0 || _data.ChatSays.Count > 0 || renderEvents;
+    bool needTransmit = _data.ScreenTexts.Count > 0 || textEvents || HasHiddenProp();
 
     if (needTick != _tickHooked)
     {
@@ -254,7 +321,7 @@ public partial class Ads : BasePlugin
 
   private void OnServerPrecacheResources(ResourceManifest manifest)
   {
-    LoadData();
+    LoadData(true);
 
     var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -274,7 +341,9 @@ public partial class Ads : BasePlugin
   private void OnMapStartHandler(string mapName)
   {
     _mapName = mapName;
+    ClearEntityCache();
     _entities.Clear();
+    _hiddenEntities.Clear();
     Array.Clear(_selected);
     Array.Clear(_awaiting);
     Array.Clear(_axis);
@@ -282,7 +351,9 @@ public partial class Ads : BasePlugin
 
   private void OnMapEndHandler()
   {
+    ClearEntityCache();
     _entities.Clear();
+    _hiddenEntities.Clear();
     ClearScreenTexts();
     ResetQueues();
   }
@@ -296,17 +367,20 @@ public partial class Ads : BasePlugin
 
       int viewerSlot = viewer.Slot;
 
-      for (int slot = 0; slot < MaxSlots; slot++)
+      if (_screenTextCount > 0)
       {
-        if (slot == viewerSlot)
-          continue;
+        for (int slot = 0; slot < MaxSlots; slot++)
+        {
+          if (slot == viewerSlot)
+            continue;
 
-        var text = _screenTexts[slot];
-        if (text != null && text.IsValid)
-          info.TransmitEntities.Remove(text);
+          var text = _screenTexts[slot];
+          if (text != null && text.IsValid)
+            info.TransmitEntities.Remove(text);
+        }
       }
 
-      foreach (var placed in _entities)
+      foreach (var placed in _hiddenEntities)
       {
         if (placed.Entity == null || !placed.Entity.IsValid)
           continue;

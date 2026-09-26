@@ -53,11 +53,28 @@ public partial class Ads
     if (!Util.HasAccess(player, Config.Flag))
       return;
 
-    LoadData();
-    SpawnWorldAds();
+    var reply = Replier(player);
 
-    Reply(player, Localizer["ads.reloaded",
-      _data.Props.Count, _data.ScreenTexts.Count, _data.HudSays.Count, _data.ChatSays.Count, _data.Events.Count]);
+    LoadData(false, () =>
+    {
+      SpawnWorldAds();
+      reply(Localizer["ads.reloaded",
+        _data.Props.Count, _data.ScreenTexts.Count, _data.HudSays.Count, _data.ChatSays.Count, _data.Events.Count]);
+    }, player);
+  }
+
+  private Action<string> Replier(CCSPlayerController? player)
+  {
+    int userId = Util.UserId(player);
+    bool console = player == null;
+
+    return message =>
+    {
+      if (console)
+        Reply(null, message);
+      else if (Util.FromUserId(userId) is { } target)
+        Reply(target, message);
+    };
   }
 
   private void OnImportSqlCommand(CCSPlayerController? player, CommandInfo info)
@@ -78,115 +95,147 @@ public partial class Ads
 
   private void ImportSql(CCSPlayerController? player)
   {
+    AdsData fileAds;
+    PropsData fileProps;
+    MapsData fileMaps;
+
     try
     {
-      var mysql = GetMySql();
-
-      var fileAds = _json.Load();
-      var fileProps = _json.LoadProps();
-      var fileMaps = _json.LoadMaps();
-
-      mysql.Save(fileAds);
-      mysql.SaveProps(fileProps);
-      mysql.SaveMaps(fileMaps);
-
-      Reply(player, Localizer["ads.imported",
-        fileMaps.Props.Count, fileAds.Events.Count, AdsCount(fileAds)]);
+      fileAds = _json.Load();
+      fileProps = _json.LoadProps();
+      fileMaps = _json.LoadMaps();
     }
     catch (Exception ex)
     {
       Reply(player, Localizer["ads.sql_error", ex.Message]);
+      return;
     }
+
+    var mysql = MySqlTarget();
+    var reply = Replier(player);
+
+    Background(() =>
+    {
+      string message;
+      try
+      {
+        mysql.Init();
+        mysql.Save(fileAds);
+        mysql.SaveProps(fileProps);
+        mysql.SaveMaps(fileMaps);
+        message = Localizer["ads.imported", fileMaps.Props.Count, fileAds.Events.Count, AdsCount(fileAds)];
+      }
+      catch (Exception ex)
+      {
+        message = Localizer["ads.sql_error", ex.Message];
+      }
+
+      Main(() => reply(message));
+    });
   }
 
   private void ExportSql(CCSPlayerController? player)
   {
-    try
+    var mysql = MySqlTarget();
+    var json = _json;
+    var reply = Replier(player);
+
+    Background(() =>
     {
-      var mysql = GetMySql();
+      string message;
+      try
+      {
+        mysql.Init();
+        var dbAds = mysql.Load();
+        var dbProps = mysql.LoadProps();
+        var dbMaps = mysql.LoadMaps();
 
-      var dbAds = mysql.Load();
-      var dbProps = mysql.LoadProps();
-      var dbMaps = mysql.LoadMaps();
+        json.Backup();
+        json.Save(dbAds);
+        json.SaveProps(dbProps);
+        json.SaveMaps(dbMaps);
+        message = Localizer["ads.exported", dbMaps.Props.Count, dbAds.Events.Count, AdsCount(dbAds)];
+      }
+      catch (Exception ex)
+      {
+        message = Localizer["ads.sql_error", ex.Message];
+      }
 
-      _json.Backup();
-      _json.Save(dbAds);
-      _json.SaveProps(dbProps);
-      _json.SaveMaps(dbMaps);
-
-      Reply(player, Localizer["ads.exported",
-        dbMaps.Props.Count, dbAds.Events.Count, AdsCount(dbAds)]);
-    }
-    catch (Exception ex)
-    {
-      Reply(player, Localizer["ads.sql_error", ex.Message]);
-    }
+      Main(() => reply(message));
+    });
   }
 
-  private bool ReloadProps(CCSPlayerController? player)
+  private void ReloadProps(CCSPlayerController? player)
   {
-    try
-    {
-      _mapsData.Props = _storage.LoadMaps().Props;
-    }
-    catch (AdsFileException ex)
-    {
-      ReportFileError(player, ex);
-      return false;
-    }
+    var reply = Replier(player);
 
-    _data.Props = _mapsData.Props;
-    SpawnWorldAds();
-    SyncListeners();
-    return true;
+    Fetch(storage => storage.LoadMaps(), maps =>
+    {
+      _mapsData = maps;
+      _data.Props = _mapsData.Props;
+      SpawnWorldAds();
+      reply(Localizer["ads.reloaded_props", _data.Props.Count]);
+    }, ex => ReportFileError(player, ex));
   }
 
-  private bool ReloadAds(CCSPlayerController? player)
+  private void ReloadAds(CCSPlayerController? player)
   {
-    AdsData loaded;
-    try
-    {
-      loaded = _storage.Load();
-    }
-    catch (AdsFileException ex)
-    {
-      ReportFileError(player, ex);
-      return false;
-    }
+    var reply = Replier(player);
 
-    _data.ScreenTexts = loaded.ScreenTexts;
-    _data.HudSays = loaded.HudSays;
-    _data.ChatSays = loaded.ChatSays;
-    _data.Events = loaded.Events;
+    Fetch(storage => storage.Load(), loaded =>
+    {
+      _data.ScreenTexts = loaded.ScreenTexts;
+      _data.HudSays = loaded.HudSays;
+      _data.ChatSays = loaded.ChatSays;
+      _data.Events = loaded.Events;
 
-    ClearScreenTexts();
-    BuildQueues();
-    BuildEvents();
-    SyncListeners();
-    return true;
+      ClearScreenTexts();
+      BuildQueues();
+      BuildEvents();
+      SyncListeners();
+      reply(Localizer["ads.reloaded_ads",
+        _data.ScreenTexts.Count, _data.HudSays.Count, _data.ChatSays.Count, _data.Events.Count]);
+    }, ex => ReportFileError(player, ex));
   }
 
   private void ReloadSettings(CCSPlayerController? player)
   {
     try
     {
-      LoadSettings();
+      LoadSettings(true);
     }
-    catch (AdsFileException ex)
+    catch (Exception ex)
     {
       ReportFileError(player, ex);
       return;
     }
 
+    BuildQueues();
     SyncListeners();
     Reply(player, Localizer["ads.reloaded_settings", _json.SettingsFilePath]);
+
+    if (Config.Storage.Equals("mysql", StringComparison.OrdinalIgnoreCase))
+    {
+      StartMySql(SpawnWorldAds);
+    }
+    else if (IsRemote(_storage))
+    {
+      _mysql = null;
+      _storage = _json;
+      LoadData(false, SpawnWorldAds, player);
+    }
   }
 
-  private void ReportFileError(CCSPlayerController? player, AdsFileException ex)
+  private void ReportFileError(CCSPlayerController? player, Exception ex)
   {
     Logger.LogError("{message}", ex.Message);
-    Reply(player, Localizer["ads.file_error", ex.Message]);
+    if (player != null)
+      Reply(player, ErrorText(ex));
   }
+
+  private string ErrorText(Exception ex) => ex is AdsFileException
+    ? Localizer["ads.file_error", ex.Message]
+    : Localizer["ads.sql_error", ex.Message];
 
   private void PlaceProp(CCSPlayerController player, PropModel model)
   {
@@ -247,18 +296,6 @@ public partial class Ads
     return best;
   }
 
-  private void SaveMaps(CCSPlayerController? player)
-  {
-    try
-    {
-      SaveMaps();
-    }
-    catch (Exception ex)
-    {
-      Reply(player, Localizer["ads.save_error", ex.Message]);
-    }
-  }
-
   private bool TryGetAimPoint(CCSPlayerController? player, out System.Numerics.Vector3 hit, out CCSPlayerPawn? pawn)
   {
     hit = default;
@@ -286,13 +323,5 @@ public partial class Ads
   private static int AdsCount(AdsData data) =>
     data.ScreenTexts.Count + data.HudSays.Count + data.ChatSays.Count;
 
-  private AdsMySqlStorage GetMySql()
-  {
-    if (_mysql != null)
-      return _mysql;
-
-    _mysql = new AdsMySqlStorage(Config.MySql);
-    _mysql.Init();
-    return _mysql;
-  }
+  private AdsMySqlStorage MySqlTarget() => _mysql ?? new AdsMySqlStorage(Config.MySql);
 }

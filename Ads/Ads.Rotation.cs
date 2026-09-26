@@ -293,6 +293,8 @@ public partial class Ads
 
   private void CreateScreenText(int slot, CCSPlayerPawn pawn, ScreenTextAd ad, CCSPlayerController player)
   {
+    RemoveScreenText(slot);
+
     if (string.IsNullOrWhiteSpace(ad.Text))
       return;
 
@@ -318,6 +320,7 @@ public partial class Ads
 
     entity.AcceptInput("SetParent", pawn, null, "!activator");
     _screenTexts[slot] = entity;
+    _screenTextCount++;
 
     PlaceScreenText(slot, pawn, ad, true);
   }
@@ -362,11 +365,18 @@ public partial class Ads
     entity.Teleport(position, new QAngle(0f, eyeAngles.Y + 270f, 90f - eyeAngles.X), null);
   }
 
+  private int _screenTextCount;
+
   private void RemoveScreenText(int slot)
   {
     var entity = _screenTexts[slot];
+    if (entity == null)
+      return;
+
     _screenTexts[slot] = null;
-    if (entity != null && entity.IsValid)
+    _screenTextCount--;
+
+    if (entity.IsValid)
       entity.Remove();
   }
 

@@ -61,9 +61,9 @@ public partial class Ads
     switch (key)
     {
       case "map": return Server.MapName;
-      case "hostname": return ConVar.Find("hostname")?.StringValue ?? "";
-      case "ip": return ConVar.Find("ip")?.StringValue ?? "";
-      case "port": return ConVar.Find("hostport")?.GetPrimitiveValue<int>().ToString(CultureInfo.InvariantCulture) ?? "27015";
+      case "hostname": return (_hostname ??= ConVar.Find("hostname"))?.StringValue ?? "";
+      case "ip": return (_ip ??= ConVar.Find("ip"))?.StringValue ?? "";
+      case "port": return (_port ??= ConVar.Find("hostport"))?.GetPrimitiveValue<int>().ToString(CultureInfo.InvariantCulture) ?? "27015";
       case "maxplayers": return Server.MaxPlayers.ToString(CultureInfo.InvariantCulture);
 
       case "players": EnsureCounts(); return _cPlayers.ToString(CultureInfo.InvariantCulture);
@@ -86,7 +86,7 @@ public partial class Ads
       case "date": return DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
 
       case "player": return viewer?.PlayerName ?? "";
-      case "steamid": return viewer != null ? viewer.SteamID.ToString(CultureInfo.InvariantCulture) : "";
+      case "steamid": return viewer != null ? Util.SteamId(viewer).ToString(CultureInfo.InvariantCulture) : "";
       case "team": return ViewerTeam(viewer);
       case "kills": return Stat(viewer, 0);
       case "deaths": return Stat(viewer, 1);
@@ -142,16 +142,27 @@ public partial class Ads
     }
   }
 
-  private static int RoundNumber()
-  {
-    foreach (var proxy in Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules"))
-    {
-      var rules = proxy?.GameRules;
-      if (rules != null)
-        return rules.TotalRoundsPlayed + 1;
-    }
+  private ConVar? _hostname;
+  private ConVar? _ip;
+  private ConVar? _port;
+  private CCSGameRulesProxy? _rulesProxy;
+  private CTeam? _teamT;
+  private CTeam? _teamCt;
 
-    return 1;
+  private void ClearEntityCache()
+  {
+    _rulesProxy = null;
+    _teamT = null;
+    _teamCt = null;
+  }
+
+  private int RoundNumber()
+  {
+    if (_rulesProxy == null || !_rulesProxy.IsValid)
+      _rulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
+
+    var rules = _rulesProxy?.GameRules;
+    return rules == null ? 1 : rules.TotalRoundsPlayed + 1;
   }
 
   private static string ViewerTeam(CCSPlayerController? player) => player?.TeamNum switch
@@ -162,15 +173,25 @@ public partial class Ads
     _ => ""
   };
 
-  private static int TeamScore(int teamNum)
+  private int TeamScore(int teamNum)
   {
-    foreach (var team in Utilities.FindAllEntitiesByDesignerName<CTeam>("cs_team_manager"))
+    if (_teamT == null || !_teamT.IsValid || _teamCt == null || !_teamCt.IsValid)
     {
-      if (team != null && team.IsValid && team.TeamNum == teamNum)
-        return team.Score;
+      _teamT = _teamCt = null;
+      foreach (var team in Utilities.FindAllEntitiesByDesignerName<CTeam>("cs_team_manager"))
+      {
+        if (team == null || !team.IsValid)
+          continue;
+
+        if (team.TeamNum == (byte)CsTeam.Terrorist)
+          _teamT = team;
+        else if (team.TeamNum == (byte)CsTeam.CounterTerrorist)
+          _teamCt = team;
+      }
     }
 
-    return 0;
+    var cached = teamNum == (int)CsTeam.Terrorist ? _teamT : _teamCt;
+    return cached?.Score ?? 0;
   }
 
   private static string Stat(CCSPlayerController? player, int kind)

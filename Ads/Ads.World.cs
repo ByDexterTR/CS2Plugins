@@ -17,6 +17,7 @@ public partial class Ads
   }
 
   private readonly List<PlacedAd> _entities = new();
+  private readonly List<PlacedAd> _hiddenEntities = new();
 
   private const byte FSolidNotSolid = 4;
   private const byte CollisionGroupDebris = 2;
@@ -34,10 +35,17 @@ public partial class Ads
         continue;
 
       var entity = CreateProp(ad);
-      if (entity != null)
-        _entities.Add(new PlacedAd { Entity = entity, Flag = ad.Flag ?? "", IgnoreFlag = ad.IgnoreFlag ?? "", Index = i });
+      if (entity == null)
+        continue;
+
+      var placed = new PlacedAd { Entity = entity, Flag = ad.Flag ?? "", IgnoreFlag = ad.IgnoreFlag ?? "", Index = i };
+      _entities.Add(placed);
+
+      if (placed.Flag.Length > 0 || placed.IgnoreFlag.Length > 0)
+        _hiddenEntities.Add(placed);
     }
 
+    SyncListeners();
   }
 
   private void RemoveWorldAds()
@@ -48,13 +56,13 @@ public partial class Ads
         placed.Entity.Remove();
     }
     _entities.Clear();
+    _hiddenEntities.Clear();
 
-    foreach (var prop in Utilities.FindAllEntitiesByDesignerName<CDynamicProp>("prop_dynamic_override"))
+    foreach (var prop in Utilities.FindAllEntitiesByDesignerName<CDynamicProp>("prop_dynamic"))
     {
       if (prop.Entity != null && prop.IsValid && string.Equals(prop.Entity.Name, EntityName, StringComparison.Ordinal))
         prop.Remove();
     }
-
   }
 
   private CDynamicProp? CreateProp(PropAd ad)

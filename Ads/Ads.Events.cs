@@ -12,18 +12,35 @@ public partial class Ads
   private float[,] _eventCooldown = new float[0, MaxSlots];
   private readonly int[] _hudEventAd = new int[MaxSlots];
   private readonly int[] _textEventAd = new int[MaxSlots];
+  private readonly HashSet<string> _eventNames = new(StringComparer.Ordinal);
+  private string[] _eventKeys = Array.Empty<string>();
+  private string[] _eventTypes = Array.Empty<string>();
 
   private void BuildEvents()
   {
-    _eventScreenTexts = new ScreenTextAd[_data.Events.Count];
-    _eventCooldown = new float[_data.Events.Count, MaxSlots];
+    int count = _data.Events.Count;
+    _eventScreenTexts = new ScreenTextAd[count];
+    _eventCooldown = new float[count, MaxSlots];
+    _eventKeys = new string[count];
+    _eventTypes = new string[count];
+    _eventNames.Clear();
 
     Array.Fill(_hudEventAd, -1);
     Array.Fill(_textEventAd, -1);
 
-    for (int i = 0; i < _data.Events.Count; i++)
-      _eventScreenTexts[i] = _data.Events[i].ToScreenText();
+    for (int i = 0; i < count; i++)
+    {
+      var ad = _data.Events[i];
+      _eventScreenTexts[i] = ad.ToScreenText();
+      _eventKeys[i] = NormalizeEvent(ad.Event);
+      _eventTypes[i] = ad.Type.Trim().ToLowerInvariant();
+
+      if (!string.IsNullOrWhiteSpace(ad.Text))
+        _eventNames.Add(_eventKeys[i]);
+    }
   }
+
+  private bool Wants(string eventName) => _eventNames.Contains(eventName);
 
   private void RegisterEventAds()
   {
@@ -43,18 +60,26 @@ public partial class Ads
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
   {
     Server.NextFrame(SpawnWorldAds);
-    Trigger("round_start", null, null);
+
+    if (Wants("round_start"))
+      Trigger("round_start", null, null);
     return HookResult.Continue;
   }
 
   private HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
   {
+    if (!Wants("round_end"))
+      return HookResult.Continue;
+
     Trigger("round_end", null, null, ("winner", TeamName(@event.Winner)));
     return HookResult.Continue;
   }
 
   private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
   {
+    if (!Wants("player_hurt"))
+      return HookResult.Continue;
+
     Trigger("player_hurt", @event.Userid, @event.Attacker,
       ("damage", @event.DmgHealth.ToString()),
       ("health", @event.Health.ToString()),
@@ -65,6 +90,9 @@ public partial class Ads
 
   private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
   {
+    if (!Wants("player_death"))
+      return HookResult.Continue;
+
     Trigger("player_death", @event.Userid, @event.Attacker,
       ("weapon", @event.Weapon),
       ("headshot", @event.Headshot ? "1" : "0"));
@@ -73,6 +101,9 @@ public partial class Ads
 
   private HookResult OnPlayerTeam(EventPlayerTeam @event, GameEventInfo info)
   {
+    if (!Wants("player_team"))
+      return HookResult.Continue;
+
     if (@event.Disconnect)
       return HookResult.Continue;
 
@@ -82,15 +113,18 @@ public partial class Ads
 
   private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
   {
+    if (!Wants("player_connect_full"))
+      return HookResult.Continue;
+
     var player = @event.Userid;
     if (player == null || !player.IsValid || player.IsBot || player.IsHLTV)
       return HookResult.Continue;
 
-    int slot = player.Slot;
+    int userId = Util.UserId(player);
     AddTimer(2f, () =>
     {
-      var target = Utilities.GetPlayerFromSlot(slot);
-      if (target != null && target.IsValid && !target.IsBot)
+      var target = Util.FromUserId(userId);
+      if (target != null && !target.IsBot)
         Trigger("player_connect_full", target, null);
     });
     return HookResult.Continue;
@@ -108,6 +142,8 @@ public partial class Ads
     _overrideHud[slot] = null;
     _hudShown[slot] = false;
     _selected[slot] = null;
+    _awaiting[slot] = PendingInput.None;
+    _axis[slot] = 0;
 
     for (int i = 0; i < _eventCooldown.GetLength(0); i++)
       _eventCooldown[i, slot] = 0f;
@@ -117,12 +153,18 @@ public partial class Ads
 
   private HookResult OnBombBeginPlant(EventBombBeginplant @event, GameEventInfo info)
   {
+    if (!Wants("bomb_beginplant"))
+      return HookResult.Continue;
+
     Trigger("bomb_beginplant", @event.Userid, null, ("site", SiteName()));
     return HookResult.Continue;
   }
 
   private HookResult OnBombPlanted(EventBombPlanted @event, GameEventInfo info)
   {
+    if (!Wants("bomb_planted"))
+      return HookResult.Continue;
+
     var planter = @event.Userid;
     Server.NextFrame(() => Trigger("bomb_planted", planter, null, ("site", SiteName())));
     return HookResult.Continue;
@@ -130,12 +172,18 @@ public partial class Ads
 
   private HookResult OnBombBeginDefuse(EventBombBegindefuse @event, GameEventInfo info)
   {
+    if (!Wants("bomb_begindefuse"))
+      return HookResult.Continue;
+
     Trigger("bomb_begindefuse", @event.Userid, null, ("kit", @event.Haskit ? "1" : "0"));
     return HookResult.Continue;
   }
 
   private HookResult OnBombDefused(EventBombDefused @event, GameEventInfo info)
   {
+    if (!Wants("bomb_defused"))
+      return HookResult.Continue;
+
     Trigger("bomb_defused", @event.Userid, null, ("site", SiteName()));
     return HookResult.Continue;
   }
@@ -143,15 +191,12 @@ public partial class Ads
   private void Trigger(string eventName, CCSPlayerController? victim, CCSPlayerController? attacker,
     params (string Key, string Value)[] vars)
   {
-    if (_data.Events.Count == 0)
-      return;
-
     float now = Server.CurrentTime;
 
-    for (int i = 0; i < _data.Events.Count; i++)
+    for (int i = 0; i < _data.Events.Count && i < _eventKeys.Length; i++)
     {
       var ad = _data.Events[i];
-      if (!NormalizeEvent(ad.Event).Equals(eventName, StringComparison.OrdinalIgnoreCase))
+      if (!string.Equals(_eventKeys[i], eventName, StringComparison.Ordinal))
         continue;
 
       if (string.IsNullOrWhiteSpace(ad.Text))
@@ -178,7 +223,7 @@ public partial class Ads
     }
   }
 
-  private bool IsRefresh(EventAd ad, int index, int slot, float now) => ad.Type.ToLowerInvariant() switch
+  private bool IsRefresh(EventAd ad, int index, int slot, float now) => _eventTypes[index] switch
   {
     "hudsay" => _hudEventAd[slot] == index && now < _overrideHudUntil[slot],
     "screentext" => _textEventAd[slot] == index && now < _overrideTextUntil[slot],
@@ -187,7 +232,7 @@ public partial class Ads
 
   private void Show(EventAd ad, int index, CCSPlayerController recipient, int slot, string text, float now)
   {
-    switch (ad.Type.ToLowerInvariant())
+    switch (_eventTypes[index])
     {
       case "hudsay":
         _overrideHud[slot] = text;

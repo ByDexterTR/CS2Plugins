@@ -140,17 +140,8 @@ public partial class Ads
     var items = new List<WasdItem>
     {
       BackItem(ShowMainMenu),
-      Action("ads.menu_reload_props", p =>
-      {
-        if (ReloadProps(p))
-          Reply(p, Localizer["ads.reloaded_props", _data.Props.Count]);
-      }, ShowManageMenu),
-      Action("ads.menu_reload_ads", p =>
-      {
-        if (ReloadAds(p))
-          Reply(p, Localizer["ads.reloaded_ads",
-            _data.ScreenTexts.Count, _data.HudSays.Count, _data.ChatSays.Count, _data.Events.Count]);
-      }, ShowManageMenu),
+      Action("ads.menu_reload_props", ReloadProps, ShowManageMenu),
+      Action("ads.menu_reload_ads", ReloadAds, ShowManageMenu),
       Action("ads.menu_reload_settings", ReloadSettings, ShowManageMenu)
     };
 
