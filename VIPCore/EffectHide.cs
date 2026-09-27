@@ -238,8 +238,7 @@ public static class EffectHide
                     continue;
 
                 foreach (uint index in bucket)
-                    if (info.TransmitEntities.Contains(index))
-                        info.TransmitEntities.Remove(index);
+                    Transmit.Hide(info, index);
             }
         }
     }

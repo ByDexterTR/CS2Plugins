@@ -16,6 +16,7 @@
   <ItemGroup>
     <Compile Include="..\.Shared\NativeTrace.cs" Link=".Shared\NativeTrace.cs" />
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Compile Include="..\.Shared\Transmit.cs" Link=".Shared\Transmit.cs" />
   </ItemGroup>
 
   <ItemGroup>

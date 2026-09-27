@@ -226,10 +226,8 @@ public static class GlowPool
                 if (target != viewer.Slot && (mask & (1UL << target)) != 0)
                     continue;
 
-                if (info.TransmitEntities.Contains(handles.Glow))
-                    info.TransmitEntities.Remove(handles.Glow);
-                if (info.TransmitEntities.Contains(handles.Relay))
-                    info.TransmitEntities.Remove(handles.Relay);
+                Transmit.Hide(info, handles.Glow);
+                Transmit.Hide(info, handles.Relay);
             }
         }
 

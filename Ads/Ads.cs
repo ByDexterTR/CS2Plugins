@@ -376,7 +376,7 @@ public partial class Ads : BasePlugin
 
           var text = _screenTexts[slot];
           if (text != null && text.IsValid)
-            info.TransmitEntities.Remove(text);
+            Transmit.Hide(info, text);
         }
       }
 
@@ -386,7 +386,7 @@ public partial class Ads : BasePlugin
           continue;
 
         if (!CanSee(viewer, placed.Flag, placed.IgnoreFlag))
-          info.TransmitEntities.Remove(placed.Entity);
+          Transmit.Hide(info, placed.Entity);
       }
     }
   }

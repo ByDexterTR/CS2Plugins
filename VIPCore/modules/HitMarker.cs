@@ -234,8 +234,8 @@ public class HitMarker : VipModule
 
             ulong bit = 1UL << viewer.Slot;
             foreach (var (index, mask) in _viewers)
-                if ((mask & bit) == 0 && info.TransmitEntities.Contains(index))
-                    info.TransmitEntities.Remove(index);
+                if ((mask & bit) == 0)
+                    Transmit.Hide(info, index);
         }
     }
 }

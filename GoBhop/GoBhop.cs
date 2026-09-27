@@ -572,7 +572,7 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
         if (pawn == null || !pawn.IsValid)
           continue;
 
-        info.TransmitEntities.Remove(pawn);
+        Transmit.Hide(info, pawn);
 
         if (pawn.WeaponServices == null)
           continue;
@@ -580,7 +580,7 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
         foreach (var weapon in pawn.WeaponServices.MyWeapons)
         {
           if (weapon.Value != null && weapon.Value.IsValid)
-            info.TransmitEntities.Remove(weapon.Value);
+            Transmit.Hide(info, weapon.Value);
         }
       }
     }

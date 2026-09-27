@@ -1026,7 +1026,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       }
 
       for (int i = 0; i < _transmitIndices.Count; i++)
-        info.TransmitEntities.Remove(_transmitIndices[i]);
+        Transmit.Hide(info, _transmitIndices[i]);
     }
   }
 }

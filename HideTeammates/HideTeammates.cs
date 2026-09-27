@@ -217,7 +217,7 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
         if (pawn == null || !pawn.IsValid)
           continue;
 
-        info.TransmitEntities.Remove(pawn);
+        Transmit.Hide(info, pawn);
 
         var weapons = pawn.WeaponServices?.MyWeapons;
         if (weapons == null)
@@ -227,7 +227,7 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
         {
           var weapon = handle.Value;
           if (weapon != null && weapon.IsValid)
-            info.TransmitEntities.Remove(weapon);
+            Transmit.Hide(info, weapon);
         }
       }
     }

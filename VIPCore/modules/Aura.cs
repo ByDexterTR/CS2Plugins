@@ -290,8 +290,8 @@ public class Aura : VipModule
                     continue;
 
                 foreach (var beam in beams)
-                    if (beam != null && beam.IsValid && info.TransmitEntities.Contains(beam.Index))
-                        info.TransmitEntities.Remove(beam.Index);
+                    if (beam != null && beam.IsValid)
+                        Transmit.Hide(info, beam.Index);
             }
         }
     }

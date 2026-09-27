@@ -216,7 +216,7 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
       {
         var beam = _beams[slot];
         if (beam != null && beam.IsValid)
-          info.TransmitEntities.Remove(beam);
+          Transmit.Hide(info, beam);
       }
     }
   }

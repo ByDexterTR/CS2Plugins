@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Compile Include="..\.Shared\Transmit.cs" Link=".Shared\Transmit.cs" />
     <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
   </ItemGroup>
 

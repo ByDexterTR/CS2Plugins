@@ -291,8 +291,7 @@ public class WeaponGlow : VipModule
                 continue;
 
             foreach (uint glowIndex in _glows.Values)
-                if (info.TransmitEntities.Contains(glowIndex))
-                    info.TransmitEntities.Remove(glowIndex);
+                Transmit.Hide(info, glowIndex);
         }
     }
 }

@@ -180,7 +180,7 @@ public class Postprocessing : VipModule
 
                 var volume = _volumes[slot];
                 if (volume != null && volume.IsValid)
-                    info.TransmitEntities.Remove(volume);
+                    Transmit.Hide(info, volume);
             }
 
             if (_volumes[shown] == null)
@@ -188,7 +188,7 @@ public class Postprocessing : VipModule
 
             foreach (var mapVolume in _mapVolumes)
                 if (mapVolume.IsValid)
-                    info.TransmitEntities.Remove(mapVolume);
+                    Transmit.Hide(info, mapVolume);
         }
     }
 }

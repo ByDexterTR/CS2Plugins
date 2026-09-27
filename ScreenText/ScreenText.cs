@@ -281,7 +281,7 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
                 foreach (var (ent, _) in list)
                 {
                     if (ent.IsValid)
-                        info.TransmitEntities.Remove(ent);
+                        Transmit.Hide(info, ent);
                 }
             }
         }

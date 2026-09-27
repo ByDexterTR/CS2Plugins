@@ -52,8 +52,7 @@ public class Glaz : VipModule
                 if (entity == null || !entity.IsValid)
                     continue;
 
-                if (info.TransmitEntities.Contains(entity.Index))
-                    info.TransmitEntities.Remove(entity.Index);
+                Transmit.Hide(info, entity.Index);
             }
         }
     }

@@ -551,7 +551,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
 
         var volume = _volumes[slot];
         if (volume != null && volume.IsValid)
-          info.TransmitEntities.Remove(volume);
+          Transmit.Hide(info, volume);
       }
 
       if (!Config.HideMapEffects || _volumes[viewerSlot] == null)
@@ -560,7 +560,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
       foreach (var volume in _mapVolumes)
       {
         if (volume.IsValid)
-          info.TransmitEntities.Remove(volume);
+          Transmit.Hide(info, volume);
       }
     }
   }

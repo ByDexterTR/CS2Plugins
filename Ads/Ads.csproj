@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Compile Include="..\.Shared\Transmit.cs" Link=".Shared\Transmit.cs" />
     <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
     <Compile Include="..\.Shared\HudGuard.cs" Link=".Shared\HudGuard.cs" />
     <Compile Include="..\.Shared\NativeTrace.cs" Link=".Shared\NativeTrace.cs" />

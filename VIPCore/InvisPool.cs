@@ -166,8 +166,7 @@ public static class InvisPool
                 if (target != nint.Zero && pawnHandle == target)
                     continue;
 
-                if (info.TransmitEntities.Contains(pawnIndex))
-                    info.TransmitEntities.Remove(pawnIndex);
+                Transmit.Hide(info, pawnIndex);
             }
 
             foreach (var (index, ownerHandle, team) in _extras)
@@ -175,8 +174,7 @@ public static class InvisPool
                 if (team == viewer.Team || (target != nint.Zero && ownerHandle == target))
                     continue;
 
-                if (info.TransmitEntities.Contains(index))
-                    info.TransmitEntities.Remove(index);
+                Transmit.Hide(info, index);
             }
         }
     }
