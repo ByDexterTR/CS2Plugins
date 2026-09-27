@@ -15,7 +15,7 @@ Alınan hasarı Fortnite'taki gibi önce zırhtan düşürür: zırh yettiği s�
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

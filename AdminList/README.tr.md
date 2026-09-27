@@ -23,7 +23,7 @@ Oyuncuların `css_admins` komutuyla o an çevrimiçi olan yetkilileri grup etike
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

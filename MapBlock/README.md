@@ -20,7 +20,7 @@ Automatically closes off certain areas of the map with fence models while the pl
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Installation
 

@@ -12,7 +12,7 @@ Cancels the blinding effect of flashbangs thrown by teammates. Enemy flashes kee
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Installation
 

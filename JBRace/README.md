@@ -17,7 +17,7 @@ Race event for Jailbreak servers. The warden sets a start and a finish point, an
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Installation
 

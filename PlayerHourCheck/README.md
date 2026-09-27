@@ -18,7 +18,7 @@ Checks the CS2 playtime of players connecting to the server; applies tiered puni
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 - An admin plugin providing the `css_kick` and `css_ban` commands so punishments can be applied (e.g. CS2-SimpleAdmin)
 - (Recommended) [Steam Web API key](https://steamcommunity.com/dev/apikey)
 - (If MySQL will be used) MySQL 8+ server

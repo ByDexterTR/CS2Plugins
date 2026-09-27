@@ -15,7 +15,7 @@ Teleports dead T players to a hidden bhop area set up on the map. The player is 
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Installation
 

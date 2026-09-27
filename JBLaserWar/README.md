@@ -23,7 +23,7 @@ Turns the round into a laser war. Bullets stop hurting anyone; every shot sends 
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Installation
 

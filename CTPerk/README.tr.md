@@ -20,7 +20,7 @@ CT takımına raunt bazlı güçlendirmeler (perk) seçtirir. Jailbreak'te T say
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

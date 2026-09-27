@@ -17,7 +17,7 @@ Warden'a tek bir işaret halkası verir; tuşa bastığı anda halka baktığı 
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

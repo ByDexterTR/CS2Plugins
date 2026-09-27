@@ -23,7 +23,7 @@ Roundu bir lazer savaşına çevirir. Mermiler kimseye zarar vermez; her atışt
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

@@ -20,7 +20,7 @@ Oyuncu sayısı düşükken haritanın belirli bölgelerini çit modelleriyle ot
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

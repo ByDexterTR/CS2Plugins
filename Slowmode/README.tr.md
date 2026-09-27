@@ -15,7 +15,7 @@ Sohbete genel yavaş mod uygular; açıkken oyuncular mesajlar arasında belirle
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

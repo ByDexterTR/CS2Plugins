@@ -13,7 +13,7 @@ Sohbet temizleme aracı. Oyuncular kendi ekranını, adminler tüm sunucunun soh
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

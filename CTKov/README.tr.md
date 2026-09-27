@@ -13,7 +13,7 @@ Tek komutla, warden yetkisi olmayan tüm CT oyuncularını T takımına gönderi
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

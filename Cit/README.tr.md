@@ -16,7 +16,7 @@ Baktığınız noktaya çit (tel örgü) veya kapalı panel modeli yerleştirmen
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

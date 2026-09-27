@@ -14,7 +14,7 @@ Bhop / KZ haritalarındaki kapıların hareket etmesini engeller. Böylece kapı
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

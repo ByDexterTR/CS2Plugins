@@ -26,7 +26,7 @@ T oyuncularının raunt başına bir kez "meslek" seçmesini sağlar. Her meslek
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

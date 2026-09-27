@@ -22,7 +22,7 @@ Haritaya prop yerleştirir, ekrana yazı basar ve sohbete duyuru gönderir. Zama
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

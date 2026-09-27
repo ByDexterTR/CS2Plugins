@@ -16,7 +16,7 @@ Spawn olan oyunculara yapılandırılabilir süreli hasar koruması verir. [CTSp
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

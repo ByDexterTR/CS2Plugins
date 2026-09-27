@@ -23,7 +23,7 @@ Gönderenin ekranı:  [ByDexter] Mesaj Alıcı kullanıcısına gönderildi.
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

@@ -58,7 +58,7 @@ CS2 sunucuları için 46 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

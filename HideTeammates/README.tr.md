@@ -17,7 +17,7 @@ Oyuncuların diğer oyuncu modellerini komutla gizlemesini sağlar. Gizlenen oyu
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

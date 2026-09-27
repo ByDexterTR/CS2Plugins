@@ -22,7 +22,7 @@ Oyunculara, görmeleri gerekmeyen şeyleri kaldıran bir FPS modu sunar: duvar a
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

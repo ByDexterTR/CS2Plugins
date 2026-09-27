@@ -13,7 +13,7 @@ Colors the player model with a smooth RGB (rainbow) cycle. Toggled with a comman
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Installation
 

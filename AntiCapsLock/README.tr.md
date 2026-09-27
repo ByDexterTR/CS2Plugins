@@ -17,7 +17,7 @@ Sohbette aşırı büyük harf kullanımını engeller; mesajın büyük harf or
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

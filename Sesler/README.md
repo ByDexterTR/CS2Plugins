@@ -16,7 +16,7 @@ Lets players mute game sounds they do not want to hear, by category. Preferences
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 - (If MySQL will be used) MySQL 8+ server
 
 ## Installation

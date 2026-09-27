@@ -20,7 +20,7 @@ Kod yazmadan, JSON dosyası üzerinden özel sunucu komutları oluşturmanızı 
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

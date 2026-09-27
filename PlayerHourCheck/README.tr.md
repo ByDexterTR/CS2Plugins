@@ -18,7 +18,7 @@ Sunucuya bağlanan oyuncuların CS2 oynama saatini kontrol eder; yetersiz saati 
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 - Ceza uygulamak için `css_kick` ve `css_ban` komutlarını sağlayan bir admin eklentisi (ör. CS2-SimpleAdmin)
 - (Önerilen) [Steam Web API anahtarı](https://steamcommunity.com/dev/apikey)
 - (MySQL kullanılacaksa) MySQL 8+ sunucusu

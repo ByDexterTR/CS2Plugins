@@ -16,7 +16,7 @@ Oyuncuların duymak istemediği oyun seslerini kategori bazında kapatmasını s
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 - (MySQL kullanılacaksa) MySQL 8+ sunucusu
 
 ## Kurulum

@@ -19,7 +19,7 @@ Oyunculara kişiye özel post processing efekti (bloom, blur, renk düzeltme, po
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 

@@ -16,7 +16,7 @@ Yetkililerin oyuncuları nişangâhındaki noktaya ışınlamasını (`!bring`) 
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.373
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
 ## Kurulum
 
