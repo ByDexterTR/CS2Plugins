@@ -1,0 +1,26 @@
+[
+  {
+    "model": "models/props/de_aztec/hr_aztec/aztec_pottery/aztec_pottery_bowl_02.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props/de_aztec/hr_aztec/aztec_pottery/aztec_pottery_vase_01.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props/de_aztec/hr_aztec/aztec_pottery/aztec_pottery_vase_02.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props/de_aztec/hr_aztec/aztec_pottery/aztec_pottery_vase_03.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props/de_aztec/hr_aztec/aztec_pottery/aztec_pottery_cup_01.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props/de_aztec/hr_aztec/aztec_pottery/aztec_pottery_vase_04.vmdl",
+    "count": 1
+  }
+]

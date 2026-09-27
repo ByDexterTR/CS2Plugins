@@ -1,0 +1,14 @@
+{
+  "fps_cmd": "css_fps",
+  "fps_flag": "",
+  "player_config": true,
+  "hide_unseen": 3,
+  "mute_unseen": 3,
+  "own_killfeed": true,
+  "hide_corpses": 1,
+  "corpse_delay": 0.5,
+  "hide_legs": true,
+  "hide_blood": 1,
+  "blood_delay": 0.5,
+  "hide_props": 1
+}

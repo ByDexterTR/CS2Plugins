@@ -1,0 +1,70 @@
+[
+  {
+    "model": "models/de_overpass/decorations/spray_can/spray_paint_can_1_low.vmdl",
+    "count": 38
+  },
+  {
+    "model": "models/de_overpass/decorations/food/drink_container_can_1.vmdl",
+    "count": 7
+  },
+  {
+    "model": "models/de_overpass/decorations/food/drink_container_cup_1.vmdl",
+    "count": 5
+  },
+  {
+    "model": "models/de_overpass/decorations/food/food_container_box_1.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/de_overpass/stuffed_animals/stuffed_elephant.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/de_overpass/trash/trash_03.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/de_overpass/trash/trash_09.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/de_overpass/trash/trash_11.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/de_overpass/trash/trash_12.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/de_overpass/decorations/food/food_container_box_2.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/de_overpass/stuffed_animals/stuffed_giraffe.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/de_overpass/trash/trash_01.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/de_overpass/trash/trash_06.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/de_overpass/trash/trash_07.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/de_overpass/trash/trash_16.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/de_overpass/trash/trash_18.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/food/bread/food_hotdog_1.vmdl",
+    "count": 1
+  }
+]

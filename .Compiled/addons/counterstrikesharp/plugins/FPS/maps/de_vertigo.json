@@ -1,0 +1,26 @@
+[
+  {
+    "model": "models/props/hr_vertigo/vertigo_traffic_cone/traffic_cone.vmdl",
+    "count": 46
+  },
+  {
+    "model": "models/props/de_nuke/hr_nuke/nuke_hard_hat/nuke_hard_hat.vmdl",
+    "count": 13
+  },
+  {
+    "model": "models/props/hr_vertigo/vertigo_paint_bucket/vertigo_paint_bucket.vmdl",
+    "count": 13
+  },
+  {
+    "model": "models/props/cs_office/water_bottle.vmdl",
+    "count": 5
+  },
+  {
+    "model": "models/props_urban/plastic_chair001.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props_junk/garbage_spraypaintcan01a.vmdl",
+    "count": 1
+  }
+]

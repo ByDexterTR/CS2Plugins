@@ -1,0 +1,278 @@
+[
+  {
+    "model": "models/generic/winebottle_kit_01/wine_bottle_02_a_breakable.vmdl",
+    "count": 39
+  },
+  {
+    "model": "models/generic/planter_kit_01/pk01_planter_09_hanging.vmdl",
+    "count": 29
+  },
+  {
+    "model": "models/generic/winebottle_kit_01/wine_bottle_02_b_breakable.vmdl",
+    "count": 24
+  },
+  {
+    "model": "models/generic/winebottle_kit_01/wine_bottle_01_a_breakable.vmdl",
+    "count": 18
+  },
+  {
+    "model": "models/generic/planter_kit_01/pk01_planter_09_empty.vmdl",
+    "count": 17
+  },
+  {
+    "model": "models/generic/planter_kit_01/pk01_planter_09_cressplant_breakable_a.vmdl",
+    "count": 14
+  },
+  {
+    "model": "models/cs_italy/italy_food_lemon/italy_food_lemon.vmdl",
+    "count": 12
+  },
+  {
+    "model": "models/generic/pictures_01/picture_01.vmdl",
+    "count": 11
+  },
+  {
+    "model": "models/cs_italy/italy_food_orange/italy_food_orange.vmdl",
+    "count": 9
+  },
+  {
+    "model": "models/de_inferno/inferno_kitchen_01/pan_1_2.vmdl",
+    "count": 9
+  },
+  {
+    "model": "models/generic/ceramic_kit_01/ceramic_pot_01.vmdl",
+    "count": 9
+  },
+  {
+    "model": "models/generic/planter_kit_01/pk01_planter_09.vmdl",
+    "count": 9
+  },
+  {
+    "model": "models/generic/planter_kit_01/pk01_planter_09_cressplant_breakable_c.vmdl",
+    "count": 9
+  },
+  {
+    "model": "models/generic/ceramic_kit_01/ceramic_bowl_01.vmdl",
+    "count": 8
+  },
+  {
+    "model": "models/cs_italy/italy_food_melon/italy_food_melon.vmdl",
+    "count": 7
+  },
+  {
+    "model": "models/generic/ceramic_kit_01/ceramic_small_base_01.vmdl",
+    "count": 7
+  },
+  {
+    "model": "models/generic/toolkit_01/nailbox_01.vmdl",
+    "count": 7
+  },
+  {
+    "model": "models/cs_italy/italy_food_pepper/italy_food_pepper_01.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/de_overpass/construction/traffic_cone_1.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/generic/ceramic_kit_01/ceramic_small_topper_01.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/generic/garden_kit_01/metal_bucket_01_a.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/generic/pictures_01/picture_03.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/generic/pictures_01/picture_04.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/generic/winebottle_kit_01/wine_bottle_02_c_breakable.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/cs_italy/italy_ashtray/italy_ashtray_02.vmdl",
+    "count": 5
+  },
+  {
+    "model": "models/de_overpass/trash/trash_02.vmdl",
+    "count": 5
+  },
+  {
+    "model": "models/generic/planter_kit_01/pk01_planter_09_holder_01_a.vmdl",
+    "count": 5
+  },
+  {
+    "model": "models/generic/postcard_kit_01/postcard_03.vmdl",
+    "count": 5
+  },
+  {
+    "model": "models/de_overpass/construction/paint_can/paint_can.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/de_overpass/trash/trash_03.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/generic/mailbox_kit_01/mailboxkit01_letter_01_a.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/generic/mailbox_kit_01/mailboxkit01_letter_02_a.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/generic/planter_kit_01/pk01_planter_09_cressplant_breakable_b.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/generic/postcard_kit_01/calendar_01.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/generic/postcard_kit_01/calendar_02.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/generic/postcard_kit_01/postcard_01.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/generic/postcard_kit_01/postcard_02.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/generic/tableware_kit_01/tablewarekit01_cup_01.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/cs_italy/italy_food_onion/italy_food_onion_01.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/de_overpass/trash/trash_01.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/food/fruits/banana01a.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/generic/barstool_01/barstool_01.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/generic/ceramic_kit_01/ceramic_small_vase_01.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/generic/pictures_01/picture_02.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/generic/plants/cress_plant_kit/cress_plant_03_a.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/de_inferno/inferno_kitchen_01/pan_3_2.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/bust_01/bust_01_a.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/bust_02/bust_02_a.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/garden_kit_01/metal_bucket_01_b.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/garden_kit_01/watering_can_01.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/gardening_tools_kit_01/gardening_tools_rake.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/tableware_kit_01/tablewarekit01_cupplate_01.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/toolkit_01/drill_01.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/toolkit_01/hammer_01.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/generic/toolkit_01/tapemeasure_01_closed.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/de_overpass/trash/trash_12.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/de_overpass/trash/trash_18.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/garden_kit_01/watering_can_01_b.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/gardening_tools_kit_01/gardening_tools_broom.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/lamp_kit_03/lamp_kit_03_lamp_01_shade_a.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/mailbox_kit_01/mailboxkit01_letter_03_a.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/plants/cress_plant_kit/cress_plant_01_a.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/plants/cress_plant_kit/cress_plant_02_a.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/streetsign_kit_01/sk01_pole_sign_02.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/streetsign_kit_01/sk01_pole_sign_07.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/tableware_kit_01/tablewarekit01_espressomaker_01.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/toolkit_01/hammer_02.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/generic/toolkit_01/tapemeasure_01_open.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props_interiors/dish_soap.vmdl",
+    "count": 1
+  }
+]

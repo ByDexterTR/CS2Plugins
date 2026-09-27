@@ -2,7 +2,7 @@
 
 *Bu dosyanın [İngilizcesi / English](README.md).*
 
-CS2 sunucuları için 45 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngilizce dil desteğiyle gelir, her biri tek başına kurulabilir ve kendi README dosyasında anlatılmıştır.
+CS2 sunucuları için 46 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngilizce dil desteğiyle gelir, her biri tek başına kurulabilir ve kendi README dosyasında anlatılmıştır.
 
 ## Eklentiler
 
@@ -27,6 +27,7 @@ CS2 sunucuları için 45 CounterStrikeSharp eklentisi. Hepsi Türkçe ve İngili
 | [CTSpawnKill](CTSpawnKill/README.tr.md) | CT'lere spawn sonrası kısa süreli hasar koruması | Jailbreak | CounterStrikeSharp |
 | [DiscordLogger](DiscordLogger/README.tr.md) | 35+ sunucu olayını 10 Discord webhook kanalına ve günlük dosyaya loglar | Yönetim | CounterStrikeSharp |
 | [FortniteArmor](FortniteArmor/README.tr.md) | Hasar önce zırhtan düşer, zırh bitmeden can azalmaz | Genel | CounterStrikeSharp |
+| [FPS](FPS/README.tr.md) | Oyuncu bazlı FPS menüsü: görünmeyen oyuncuları, cesetleri, kendi ayağını, kanı, mermi izlerini ve çöp prop'ları gizler; sadece kendi killfeed'i | Genel | CounterStrikeSharp |
 | [GoBhop](GoBhop/README.tr.md) | Ölü T'leri gizli bhop noktasına ışınlar | Jailbreak | CounterStrikeSharp |
 | [HideTeammates](HideTeammates/README.tr.md) | Takım arkadaşlarını (veya rakipleri/herkesi) gizler | Genel | CounterStrikeSharp |
 | [JBDoors](JBDoors/README.tr.md) | Tüm hücre kapılarını tek komutla açar/kapatır | Jailbreak | CounterStrikeSharp |

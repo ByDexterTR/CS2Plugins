@@ -1,0 +1,90 @@
+[
+  {
+    "model": "models/props/de_inferno/claypot03.vmdl",
+    "count": 17
+  },
+  {
+    "model": "models/props_junk/cinderblock01a.vmdl",
+    "count": 7
+  },
+  {
+    "model": "models/props_junk/garbage_sodacup01a.vmdl",
+    "count": 7
+  },
+  {
+    "model": "models/de_mirage/food/magixx_sauce_01a/magixx_sauce_bottle_breakable_01a.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/props_junk/metal_paintcan001a.vmdl",
+    "count": 6
+  },
+  {
+    "model": "models/props_junk/garbage_metalcan001a.vmdl",
+    "count": 5
+  },
+  {
+    "model": "models/props_junk/metalbucket01a.vmdl",
+    "count": 4
+  },
+  {
+    "model": "models/props/de_vostok/hammer01.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/props_junk/garbage_plasticbottle002a_fullsheet.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/props_junk/plasticcrate01a.vmdl",
+    "count": 3
+  },
+  {
+    "model": "models/props/cs_office/paper_towels.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props_c17/chair_stool01a.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props_furniture/cafe_barstool1.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props_junk/garbage_coffeemug001a_fullsheet.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props_junk/garbage_glassbottle003a.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props_junk/garbage_plasticbottle001a_fullsheet.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props_junk/garbage_spraypaintcan01a.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props_urban/plastic_water_jug001.vmdl",
+    "count": 2
+  },
+  {
+    "model": "models/props/de_vostok/screwdriver01.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props_c17/metalpot001a.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props_c17/metalpot002a.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props_junk/shoe001a.vmdl",
+    "count": 1
+  }
+]

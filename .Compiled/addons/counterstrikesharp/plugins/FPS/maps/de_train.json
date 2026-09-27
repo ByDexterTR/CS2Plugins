@@ -1,0 +1,26 @@
+[
+  {
+    "model": "models/de_overpass/construction/hat_construction/hat_construction_phy.vmdl",
+    "count": 11
+  },
+  {
+    "model": "models/cs_italy/props/radio/vintage_radio_1.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props/de_train/hr_train_s2/train_logos/train_logo_ae_letter_01.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props/de_train/hr_train_s2/train_logos/train_logo_e_letter_01.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props/de_train/hr_train_s2/train_logos/train_logo_o_letter_01.vmdl",
+    "count": 1
+  },
+  {
+    "model": "models/props/de_train/hr_train_s2/train_logos/train_logo_p_letter_01.vmdl",
+    "count": 1
+  }
+]

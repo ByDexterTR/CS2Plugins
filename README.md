@@ -2,7 +2,7 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-45 CounterStrikeSharp plugins for CS2 servers. All of them ship with Turkish and English language support, each one can be installed on its own, and each has its own README.
+46 CounterStrikeSharp plugins for CS2 servers. All of them ship with Turkish and English language support, each one can be installed on its own, and each has its own README.
 
 ## Plugins
 
@@ -27,6 +27,7 @@
 | [CTSpawnKill](CTSpawnKill/README.md) | Short damage protection for CTs after spawn | Jailbreak | CounterStrikeSharp |
 | [DiscordLogger](DiscordLogger/README.md) | Logs 35+ server events to 10 Discord webhook channels and a daily file | Admin | CounterStrikeSharp |
 | [FortniteArmor](FortniteArmor/README.md) | Damage hits armor first; health only drops once armor is gone | General | CounterStrikeSharp |
+| [FPS](FPS/README.md) | Per-player FPS menu: hides unseen players, corpses, own legs, blood, bullet holes and junk props; own-only killfeed | General | CounterStrikeSharp |
 | [GoBhop](GoBhop/README.md) | Teleports dead Ts to a hidden bhop area | Jailbreak | CounterStrikeSharp |
 | [HideTeammates](HideTeammates/README.md) | Hides teammates (or enemies/everyone) | General | CounterStrikeSharp |
 | [JBDoors](JBDoors/README.md) | Opens/closes every cell door with a single command | Jailbreak | CounterStrikeSharp |
