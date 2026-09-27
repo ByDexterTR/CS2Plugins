@@ -2,19 +2,20 @@
 
 *Bu dosyanın [İngilizcesi / English](README.md).*
 
-Ölü T oyuncularını haritada belirlenen gizli bhop noktasına ışınlar. Oyuncu gerçekte yaşar ama TAB'da ölü gözükür, kimse onu izleyemez ve göremez; hasar almaz ve silahsız doğar. T takımında son kişi kalınca GoBhop'takiler otomatik öldürülür ve GoBhop o raunt için kapanır. CSGO'daki [csgo_GoBhop](https://github.com/ByDexterTR/csgo_GoBhop) eklentisinin CS2 uyarlamasıdır.
+Ölü T oyuncularını haritada belirlenen gizli bhop noktasına ışınlar. Oyuncu gerçekte yaşar ama TAB'da ölü gözükür, dışarıdakiler onu göremez; hasar almaz ve silahsız doğar. T takımında son kişi kalınca GoBhop'takiler otomatik öldürülür ve GoBhop o raunt için kapanır. CSGO'daki [csgo_GoBhop](https://github.com/ByDexterTR/csgo_GoBhop) eklentisinin CS2 uyarlamasıdır.
 
 ## Özellikler
 
 - Ölü T oyuncusu `css_gobhop` menüsünden seçtiği noktaya canlı olarak ışınlanır; tek nokta varsa menüsüz direkt gider
-- TAB'da ölü gözükür, izlenemez; GoBhop'takilerle dışarıdakiler birbirini görmez ve duymaz
+- TAB'da ölü gözükür; GoBhop'takilerle dışarıdakiler birbirini görmez ve duymaz
+- GoBhop'taki birini izleyen ölü oyuncu GoBhop tarafını görür
 - Hasar almaz, silahsız doğar; silah alsa anında silinir, yere silah atamaz, yasaklı komutları kullanamaz
 - Noktalar harita başına isimli olarak `positions.json` dosyasında tutulur, oyun içinden yönetilir
 - Türkçe / İngilizce dil desteği (`lang/`)
 
 ## Gereksinimler
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 
 ## Kurulum
 
@@ -53,8 +54,8 @@ csgo/addons/counterstrikesharp/configs/plugins/GoBhop/GoBhop.json
 | `del_cmd` | string | `"css_delbhop"` | Virgülle ayrılmış isimli nokta silme komutu adları |
 | `reset_cmd` | string | `"css_resetbhop"` | Virgülle ayrılmış toplu silme komutu adları |
 | `blocked_cmd` | string | `"css_wp"` | GoBhop'tayken kullanılamayacak komutlar (virgülle ayrılır) |
-| `admin_flag` | string | `"@css/ban"` | Aç/kapat komutları için gereken yetki |
-| `set_flag` | string | `"@css/root"` | Nokta kaydetme için gereken yetki |
+| `admin_flag` | string | `"@css/ban"` | Aç/kapat komutları için virgülle ayrılmış yetkiler (boş bırakılırsa herkes kullanabilir) |
+| `set_flag` | string | `"@css/root"` | Nokta komutları için virgülle ayrılmış yetkiler (boş bırakılırsa herkes kullanabilir) |
 | `gobhop_min_alive_t` | int | `2` | Girişe izin verilen minimum canlı T sayısı |
 
 ### Örnek Config
@@ -98,6 +99,6 @@ csgo/addons/counterstrikesharp/plugins/GoBhop/positions.json
 ## Notlar
 
 - Oyuncu TAB'da sürekli ölü görünür; oyun bunu geri almaya çalışsa bile eklenti tekrar uygular.
-- Raunt sonu, eklenti kapanışı ve `css_offbhop` GoBhop'taki herkesi güvenle çıkarır; bu ölümler kill feed'de gösterilmez.
+- Raunt sonu, eklenti kapanışı, `css_offbhop` ve `kill` komutu oyuncuyu GoBhop'tan güvenle çıkarır; bu ölümler kill feed'de gösterilmez, ölüm eklemez, skoru düşürmez ve rakip takıma para vermez.
 - Kapalıyken (`css_offbhop` veya son T) başka bir eklenti GoBhop'taki oyuncuyu canlandırırsa spawn anında yakalanıp çıkarılır.
 - Komut adı değişiklikleri sunucu/eklenti yeniden başlatıldığında etkinleşir.

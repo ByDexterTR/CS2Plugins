@@ -2,19 +2,20 @@
 
 *Read this in [Turkish / Türkçe](README.tr.md).*
 
-Teleports dead T players to a hidden bhop area set up on the map. The player is actually alive but shows as dead on TAB, nobody can spectate or see them; they take no damage and spawn without weapons. When only one player is left on the T team everyone in GoBhop is killed automatically and GoBhop closes for that round. This is the CS2 port of the CSGO plugin [csgo_GoBhop](https://github.com/ByDexterTR/csgo_GoBhop).
+Teleports dead T players to a hidden bhop area set up on the map. The player is actually alive but shows as dead on TAB and players outside cannot see them; they take no damage and spawn without weapons. When only one player is left on the T team everyone in GoBhop is killed automatically and GoBhop closes for that round. This is the CS2 port of the CSGO plugin [csgo_GoBhop](https://github.com/ByDexterTR/csgo_GoBhop).
 
 ## Features
 
 - A dead T player is teleported alive to the point they pick from the `css_gobhop` menu; if there is only one point they go straight there without a menu
-- They show as dead on TAB and cannot be spectated; players inside and outside GoBhop cannot see or hear each other
+- They show as dead on TAB; players inside and outside GoBhop cannot see or hear each other
+- A dead player who spectates someone in GoBhop sees the GoBhop side
 - They take no damage and spawn without weapons; any weapon they pick up is removed instantly, they cannot drop weapons and cannot use blocked commands
 - Points are stored per map with names in the `positions.json` file and managed in-game
 - Turkish / English language support (`lang/`)
 
 ## Requirements
 
-- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.371
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.375
 
 ## Installation
 
@@ -53,8 +54,8 @@ csgo/addons/counterstrikesharp/configs/plugins/GoBhop/GoBhop.json
 | `del_cmd` | string | `"css_delbhop"` | Comma separated named point delete command names |
 | `reset_cmd` | string | `"css_resetbhop"` | Comma separated bulk delete command names |
 | `blocked_cmd` | string | `"css_wp"` | Commands that cannot be used while in GoBhop (comma separated) |
-| `admin_flag` | string | `"@css/ban"` | Permission required for the enable/disable commands |
-| `set_flag` | string | `"@css/root"` | Permission required for saving points |
+| `admin_flag` | string | `"@css/ban"` | Comma separated permissions for the enable/disable commands (empty means everyone) |
+| `set_flag` | string | `"@css/root"` | Comma separated permissions for the point commands (empty means everyone) |
 | `gobhop_min_alive_t` | int | `2` | Minimum living T count for entry to be allowed |
 
 ### Example Config
@@ -98,6 +99,6 @@ csgo/addons/counterstrikesharp/plugins/GoBhop/positions.json
 ## Notes
 
 - The player keeps showing as dead on TAB; even if the game tries to undo it the plugin reapplies it.
-- Round end, plugin unload and `css_offbhop` remove everyone in GoBhop safely; these deaths are not shown in the kill feed.
+- Round end, plugin unload, `css_offbhop` and the `kill` command remove players from GoBhop safely; these deaths are not shown in the kill feed, do not add a death or lower the score, and do not give money to the enemy team.
 - While disabled (`css_offbhop` or the last T), if another plugin revives a player in GoBhop they are caught at spawn and removed.
 - Command name changes take effect when the server/plugin is restarted.

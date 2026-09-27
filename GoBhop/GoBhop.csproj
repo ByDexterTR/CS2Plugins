@@ -6,10 +6,11 @@
     <Nullable>enable</Nullable>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.373" />
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.375" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,7 +18,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
-    <Compile Include="..\.Shared\Transmit.cs" Link=".Shared\Transmit.cs" />
     <Compile Include="..\.Shared\WasdMenu.cs" Link=".Shared\WasdMenu.cs" />
     <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
     <Using Include="ByDexter.Shared" />
