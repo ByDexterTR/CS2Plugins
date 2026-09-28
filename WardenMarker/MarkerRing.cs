@@ -8,7 +8,6 @@ namespace WardenMarker;
 
 public class Marker
 {
-  public int OwnerSlot;
   public uint Disc;
   public uint Glow;
   public readonly List<uint> Beams = new();
@@ -25,9 +24,9 @@ public static class MarkerRing
   private const int InnerSegments = 24;
   private const float RingHeight = 3f;
 
-  public static Marker Create(int ownerSlot, System.Numerics.Vector3 center, MarkerSettings settings, WardenMarkerConfig config)
+  public static Marker Create(System.Numerics.Vector3 center, MarkerSettings settings, WardenMarkerConfig config)
   {
-    var marker = new Marker { OwnerSlot = ownerSlot, Center = center };
+    var marker = new Marker { Center = center };
 
     float radius = settings.Ring.Size;
     var color = Resolve(settings.Ring.Color);
@@ -38,13 +37,13 @@ public static class MarkerRing
       var disc = SpawnDisc(origin, radius, settings.Disc.Alpha);
       if (disc != null)
       {
-        marker.Disc = disc.Index;
+        marker.Disc = disc.EntityHandle.Raw;
 
         if (settings.Disc.Glow && config.Disc.Glow)
         {
           var glow = SpawnGlow(origin, radius, color, config.Disc.GlowRange);
           if (glow != null)
-            marker.Glow = glow.Index;
+            marker.Glow = glow.EntityHandle.Raw;
         }
       }
     }
@@ -57,18 +56,66 @@ public static class MarkerRing
 
   public static void Destroy(Marker marker)
   {
-    foreach (uint index in marker.Beams)
-    {
-      var beam = Utilities.GetEntityFromIndex<CEnvBeam>((int)index);
-      if (beam != null && beam.IsValid && beam.DesignerName == "env_beam")
-        beam.Remove();
-    }
+    foreach (uint handle in marker.Beams)
+      Get(handle)?.Remove();
     marker.Beams.Clear();
 
-    RemoveProp(marker.Glow);
-    RemoveProp(marker.Disc);
+    Get(marker.Glow)?.Remove();
+    Get(marker.Disc)?.Remove();
     marker.Glow = 0;
     marker.Disc = 0;
+  }
+
+  public static bool IsAlive(Marker marker)
+  {
+    if (marker.Beams.Count == 0 || (marker.Disc != 0 && Get(marker.Disc) == null) || (marker.Glow != 0 && Get(marker.Glow) == null))
+      return false;
+
+    foreach (uint handle in marker.Beams)
+    {
+      if (Get(handle) == null)
+        return false;
+    }
+
+    return true;
+  }
+
+  public static bool Move(Marker marker, System.Numerics.Vector3 center)
+  {
+    var beams = new List<CEnvBeam>(marker.Beams.Count);
+    foreach (uint handle in marker.Beams)
+    {
+      if (Get(handle) is not { } entity)
+        return false;
+
+      beams.Add(entity.As<CEnvBeam>());
+    }
+
+    var disc = Get(marker.Disc);
+    var glow = Get(marker.Glow);
+    if (beams.Count == 0 || (marker.Disc != 0 && disc == null) || (marker.Glow != 0 && glow == null))
+      return false;
+
+    var delta = center - marker.Center;
+    foreach (var beam in beams)
+    {
+      var origin = beam.AbsOrigin;
+      if (origin == null)
+        return false;
+
+      beam.Teleport(new Vector(origin.X + delta.X, origin.Y + delta.Y, origin.Z + delta.Z), new QAngle(), new Vector());
+      beam.EndPos.X += delta.X;
+      beam.EndPos.Y += delta.Y;
+      beam.EndPos.Z += delta.Z;
+      Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+    }
+
+    var propOrigin = new Vector(center.X, center.Y, center.Z + 1f);
+    disc?.Teleport(propOrigin, new QAngle(), new Vector());
+    glow?.Teleport(propOrigin, new QAngle(), new Vector());
+
+    marker.Center = center;
+    return true;
   }
 
   public static Color Resolve(string color)
@@ -86,14 +133,13 @@ public static class MarkerRing
     return Color.White;
   }
 
-  private static void RemoveProp(uint index)
+  private static CBaseEntity? Get(uint handle)
   {
-    if (index == 0)
-      return;
+    if (handle == 0)
+      return null;
 
-    var prop = Utilities.GetEntityFromIndex<CDynamicProp>((int)index);
-    if (prop != null && prop.IsValid && prop.DesignerName == "prop_dynamic")
-      prop.Remove();
+    var entity = new CHandle<CBaseEntity>(handle).Value;
+    return entity != null && entity.IsValid ? entity : null;
   }
 
   private static CDynamicProp? SpawnDisc(Vector center, float radius, int alpha)
@@ -194,9 +240,14 @@ public static class MarkerRing
       var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam");
       if (beam != null && beam.IsValid)
       {
-        beam.Width = width;
-        beam.Render = color;
+        beam.DispatchSpawn();
+        beam.AcceptInput("TurnOn");
+
         beam.SetModel(BeamSprite);
+        beam.Width = width;
+        Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
+        beam.Render = color;
+        Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
         beam.Teleport(previous, new QAngle(), new Vector());
 
         beam.EndPos.X = next.X;
@@ -204,7 +255,7 @@ public static class MarkerRing
         beam.EndPos.Z = next.Z;
         Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
 
-        marker.Beams.Add(beam.Index);
+        marker.Beams.Add(beam.EntityHandle.Raw);
       }
 
       previous = next;

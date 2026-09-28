@@ -167,7 +167,7 @@ public partial class WardenMarker
 
     var center = marker.Center;
     MarkerRing.Destroy(marker);
-    _markers[slot] = MarkerRing.Create(slot, center, Get(player), Config);
+    _markers[slot] = MarkerRing.Create(center, Get(player), Config);
   }
 
   private static T Next<T>(List<T> values, T current) where T : notnull

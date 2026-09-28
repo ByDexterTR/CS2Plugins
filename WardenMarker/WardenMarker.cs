@@ -4,6 +4,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using static CounterStrikeSharp.API.Core.Listeners;
@@ -131,7 +132,6 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
   public WardenMarkerConfig Config { get; set; } = new();
 
   private const int MaxSlots = 64;
-  private const ulong InspectButton = 0x800000000;
 
   private readonly Marker?[] _markers = new Marker?[MaxSlots];
   private readonly MarkerSettings?[] _slots = new MarkerSettings?[MaxSlots];
@@ -140,6 +140,9 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
 
   private readonly Dictionary<ulong, MarkerSettings> _saved = new();
   private readonly object _saveLock = new();
+  private int _saveVersion;
+  private int _writtenVersion;
+  private string[] _flags = Array.Empty<string>();
   private string SavePath => Path.Combine(ModuleDirectory, "WardenMarker.json");
 
   private WasdMenuManager _menus = null!;
@@ -169,6 +172,7 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
     if (!config.Disc.Alphas.Contains(config.Disc.DefaultAlpha))
       config.Disc.DefaultAlpha = config.Disc.Alphas[0];
 
+    _flags = Util.Split(config.Flag);
     Config = config;
   }
 
@@ -188,6 +192,7 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
     RegisterListener<OnTick>(OnTick);
     RegisterListener<OnMapEnd>(ClearAll);
     RegisterListener<OnClientPutInServer>(OnClientPutInServer);
+    RegisterListener<OnClientAuthorized>(OnClientAuthorized);
     RegisterListener<OnClientDisconnectPost>(OnClientDisconnectPost);
 
     AddCommandListener("player_ping", OnPingCommand);
@@ -195,6 +200,7 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
     RegisterEventHandler<EventPlayerTeam>(OnPlayerTeam);
     RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+    RegisterEventHandler<EventRoundStart>(OnRoundStart);
 
     if (hotReload)
     {
@@ -220,6 +226,16 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
     _oldButtons[slot] = 0;
     _nextPlace[slot] = 0f;
     _slots[slot] = Resolve(Utilities.GetPlayerFromSlot(slot));
+  }
+
+  private void OnClientAuthorized(int slot, SteamID steamId)
+  {
+    if (slot < 0 || slot >= MaxSlots)
+      return;
+
+    var player = Utilities.GetPlayerFromSlot(slot);
+    if (player != null && player.IsValid && !player.IsBot)
+      _slots[slot] = Resolve(player);
   }
 
   private void OnClientDisconnectPost(int slot)
@@ -256,15 +272,38 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
     return HookResult.Continue;
   }
 
+  private HookResult OnRoundStart(EventRoundStart ev, GameEventInfo info)
+  {
+    for (int slot = 0; slot < MaxSlots; slot++)
+    {
+      if (_markers[slot] is not { } marker || MarkerRing.IsAlive(marker))
+        continue;
+
+      var player = Utilities.GetPlayerFromSlot(slot);
+      if (Config.ClearOnRoundEnd || player == null || !player.IsValid || player.TeamNum != (byte)CsTeam.CounterTerrorist)
+      {
+        Clear(slot);
+        continue;
+      }
+
+      MarkerRing.Destroy(marker);
+      _markers[slot] = MarkerRing.Create(marker.Center, Get(player), Config);
+    }
+
+    return HookResult.Continue;
+  }
+
   private HookResult OnPingCommand(CCSPlayerController? player, CommandInfo info)
   {
     if (player == null || !player.IsValid || player.Slot >= MaxSlots)
       return HookResult.Continue;
 
-    if (Get(player).Key != "ping" || !CanPlace(player))
+    if (Get(player).Key != "ping" || !CanUse(player))
       return HookResult.Continue;
 
-    PlaceFromEyes(player);
+    if (Server.CurrentTime >= _nextPlace[player.Slot])
+      PlaceFromEyes(player);
+
     return HookResult.Handled;
   }
 
@@ -273,28 +312,24 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
     for (int slot = 0; slot < MaxSlots; slot++)
     {
       var player = Utilities.GetPlayerFromSlot(slot);
-      if (player == null || !player.IsValid || player.IsBot)
+      if (player == null || !player.IsValid || player.TeamNum != (byte)CsTeam.CounterTerrorist
+          || player.IsBot || !Util.TryGetButtons(player, out var buttons))
       {
         _oldButtons[slot] = 0;
         continue;
       }
 
-      if (!Util.TryGetButtons(player, out var current))
+      var old = (PlayerButtons)_oldButtons[slot];
+      _oldButtons[slot] = (ulong)buttons;
+
+      var wanted = Get(player).Key switch
       {
-        _oldButtons[slot] = 0;
-        continue;
-      }
+        "use" => PlayerButtons.Use,
+        "inspect" => PlayerButtons.Inspect,
+        _ => (PlayerButtons)0
+      };
 
-      ulong buttons = (ulong)current;
-      ulong old = _oldButtons[slot];
-      _oldButtons[slot] = buttons;
-
-      string key = Get(player).Key;
-      if (key == "ping" || key == "off" || _menus.IsOpen(player))
-        continue;
-
-      ulong wanted = key == "inspect" ? InspectButton : (ulong)PlayerButtons.Use;
-      if ((buttons & wanted) == 0 || (old & wanted) != 0)
+      if ((buttons & wanted) == 0 || (old & wanted) != 0 || _menus.IsOpen(player))
         continue;
 
       if (CanPlace(player))
@@ -302,29 +337,24 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
     }
   }
 
-  private bool CanPlace(CCSPlayerController player)
-  {
-    if (!Util.IsAlive(player) || player.TeamNum != (byte)CsTeam.CounterTerrorist)
-      return false;
+  private bool CanPlace(CCSPlayerController player) =>
+    Server.CurrentTime >= _nextPlace[player.Slot] && CanUse(player);
 
-    if (!HasAccess(player))
-      return false;
-
-    return Server.CurrentTime >= _nextPlace[player.Slot];
-  }
+  private bool CanUse(CCSPlayerController player) =>
+    player.TeamNum == (byte)CsTeam.CounterTerrorist && Util.IsAlive(player) && HasAccess(player);
 
   private bool HasAccess(CCSPlayerController player)
   {
-    var flags = Util.Split(Config.Flag);
-    if (flags.Length == 0)
+    if (_flags.Length == 0)
       return true;
 
-    var data = AdminManager.GetPlayerAdminData(player);
-    if (data == null)
-      return false;
+    foreach (var flag in _flags)
+    {
+      if (AdminManager.PlayerHasPermissions(player, flag))
+        return true;
+    }
 
-    var owned = data.GetAllFlags();
-    return flags.Any(flag => owned.Contains(flag));
+    return false;
   }
 
   private void PlaceFromEyes(CCSPlayerController player)
@@ -344,7 +374,10 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
 
     var eye = new System.Numerics.Vector3(pawn.AbsOrigin.X, pawn.AbsOrigin.Y, pawn.AbsOrigin.Z + pawn.ViewOffset.Z);
     if (System.Numerics.Vector3.Distance(eye, hit.Value) > Config.MaxDistance)
+    {
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["marker.no_hit"]}");
       return;
+    }
 
     Place(player, hit.Value);
   }
@@ -352,16 +385,17 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
   private void Place(CCSPlayerController player, System.Numerics.Vector3 center)
   {
     int slot = player.Slot;
-    var settings = Get(player);
+    _nextPlace[slot] = Server.CurrentTime + Config.Cooldown;
 
     if (_markers[slot] is { } existing)
     {
+      if (MarkerRing.Move(existing, center))
+        return;
+
       MarkerRing.Destroy(existing);
-      _markers[slot] = null;
     }
 
-    _markers[slot] = MarkerRing.Create(slot, center, settings, Config);
-    _nextPlace[slot] = Server.CurrentTime + Config.Cooldown;
+    _markers[slot] = MarkerRing.Create(center, Get(player), Config);
   }
 
   private void Clear(int slot)
@@ -413,12 +447,13 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
       }
     };
 
-    if (player == null || !player.IsValid || player.IsBot)
+    ulong steamId = SteamId(player);
+    if (steamId == 0)
       return settings;
 
     lock (_saveLock)
     {
-      if (!_saved.TryGetValue(Util.SteamId(player), out var stored))
+      if (!_saved.TryGetValue(steamId, out var stored))
         return settings;
 
       settings.Key = NormalizeKey(stored.Key);
@@ -441,16 +476,26 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
     _ => "use"
   };
 
+  private static ulong SteamId(CCSPlayerController? player)
+  {
+    if (player == null || !player.IsValid || player.IsBot)
+      return 0UL;
+
+    ulong id = player.AuthorizedSteamID?.SteamId64 ?? 0UL;
+    return id > 76561197960265728UL && (id & 0xFFFFFFFFUL) != 0xFFFFFFFFUL ? id : 0UL;
+  }
+
   private void Remember(CCSPlayerController player)
   {
-    if (!player.IsValid || player.IsBot)
+    ulong steamId = SteamId(player);
+    if (steamId == 0)
       return;
 
     var settings = Get(player);
 
     lock (_saveLock)
     {
-      _saved[Util.SteamId(player)] = new MarkerSettings
+      _saved[steamId] = new MarkerSettings
       {
         Key = settings.Key,
         Ring = new MarkerRingSettings { Color = settings.Ring.Color, Size = settings.Ring.Size, Width = settings.Ring.Width },
@@ -486,16 +531,27 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
   private void SaveAsync()
   {
     Dictionary<string, MarkerSettings> snapshot;
+    int version;
     lock (_saveLock)
+    {
       snapshot = _saved.ToDictionary(entry => entry.Key.ToString(), entry => entry.Value);
+      version = ++_saveVersion;
+    }
 
     var path = SavePath;
     Task.Run(() =>
     {
       try
       {
+        var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
         lock (_saveLock)
-          File.WriteAllText(path, JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true }));
+        {
+          if (version < _writtenVersion)
+            return;
+
+          File.WriteAllText(path, json);
+          _writtenVersion = version;
+        }
       }
       catch
       {
