@@ -14,6 +14,8 @@ using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 using static CounterStrikeSharp.API.Core.Listeners;
 using ByDexter.Shared;
+using ByDexter.Shared.Source2;
+using FPS.Visibility;
 using CSVector = CounterStrikeSharp.API.Modules.Utils.Vector;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Timer = CounterStrikeSharp.API.Modules.Timers.Timer;
@@ -100,7 +102,7 @@ public class PropRecord
 public class FPS : BasePlugin
 {
   public override string ModuleName => "FPS";
-  public override string ModuleVersion => "1.0.0";
+  public override string ModuleVersion => "1.0.1";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -135,7 +137,7 @@ public class FPS : BasePlugin
   private const int MaxEntities = 16384;
   private const int HoldTicks = 64;
   private const int SafeHoldTicks = 16;
-  private const int RecheckTicks = 2;
+  private const int RecheckTicks = 4;
   private const int MaxHiddenTicks = 32;
   private const int GraceTicks = 16;
   private const float ShoulderBase = 48f;
@@ -151,8 +153,10 @@ public class FPS : BasePlugin
   private const float ClipMargin = 8f;
   private const int DyingTicks = 8;
   private const int FfaTicks = 64;
+  private const int RadarTicks = 4;
   private const int EffectDispatchMessage = 400;
   private const int WeaponSoundMessage = 369;
+  private const int ParticleMessage = 145;
   private const int FireBulletsMessage = 452;
   private const int ClearWorldDecalsMessage = 202;
   private const int ClearEntityDecalsMessage = 203;
@@ -165,6 +169,10 @@ public class FPS : BasePlugin
   private readonly int[] _unseen = new int[MaxSlots];
   private readonly int[] _mute = new int[MaxSlots];
   private readonly ulong[] _hiddenMask = new ulong[MaxSlots];
+  private readonly int[] _radarAt = new int[MaxSlots];
+  private readonly ulong[] _dormantMask = new ulong[MaxSlots];
+  private ulong _dormantViewers;
+  private ulong _propViewers;
   private ulong _muteMask;
   private readonly int[] _flags = new int[MaxSlots];
   private readonly float[] _deathTime = new float[MaxSlots];
@@ -198,6 +206,9 @@ public class FPS : BasePlugin
     public int PosTick;
     public int WeaponTick;
     public int WeaponCount;
+    public int CellTick;
+    public int Cell;
+    public int AheadCell;
   }
 
   private readonly Snap[] _snap = new Snap[MaxSlots];
@@ -234,10 +245,15 @@ public class FPS : BasePlugin
   private bool _propsVerified;
 
   private WasdMenuManager _menus = null!;
+  private volatile VisMap? _vis;
+  private volatile WorldBvh? _world;
+  private int _visGeneration;
+  private CancellationTokenSource? _visCancel;
   private CheckTransmit _onCheckTransmit = null!;
   private UserMessage.UserMessageHandler _onEffect = null!;
   private UserMessage.UserMessageHandler _onFireBullets = null!;
   private UserMessage.UserMessageHandler _onWeaponSound = null!;
+  private UserMessage.UserMessageHandler _onParticle = null!;
   private bool _soundHooked;
   private bool _transmitHooked;
   private bool _bloodHooked;
@@ -255,6 +271,7 @@ public class FPS : BasePlugin
     _onEffect = OnEffect;
     _onFireBullets = msg => MuteHidden(msg, (int)(msg.ReadUInt("player") & 0x3FFF));
     _onWeaponSound = msg => MuteHidden(msg, msg.ReadInt("entidx"));
+    _onParticle = OnParticle;
 
     _menus = new WasdMenuManager(this,
       () => Localizer["menu.scroll"],
@@ -287,6 +304,16 @@ public class FPS : BasePlugin
       RegisterListener<OnMapStart>(_ => ClearProps());
     }
 
+    if (Config.HideUnseen != 0)
+    {
+      RegisterListener<OnMapStart>(_ =>
+      {
+        ResetVisibility();
+        AddTimer(1f, PrepareVisibility, TimerFlags.STOP_ON_MAPCHANGE);
+      });
+      RegisterListener<OnMapEnd>(ResetVisibility);
+    }
+
     Server.NextWorldUpdate(() =>
     {
       foreach (var player in Utilities.GetPlayers())
@@ -296,14 +323,124 @@ public class FPS : BasePlugin
       }
 
       if (Config.HideProps != Off)
-        FindProps();
+        FindProps(false);
+
+      if (Config.HideUnseen != 0)
+        PrepareVisibility();
 
       UpdateHooks();
     });
   }
 
+  private void ResetVisibility()
+  {
+    _visCancel?.Cancel();
+    _visCancel = null;
+    _visGeneration++;
+    _vis = null;
+    _world = null;
+  }
+
+  private void PrepareVisibility()
+  {
+    ResetVisibility();
+
+    string map = Server.MapName;
+    string game = Server.GameDirectory;
+    string maps = MapsDirectory;
+    int generation = _visGeneration;
+    var cancel = _visCancel = new CancellationTokenSource();
+    var spawns = new List<Vector3>();
+
+    foreach (var name in new[] { "info_player_terrorist", "info_player_counterterrorist", "info_deathmatch_spawn", "info_player_start" })
+    {
+      foreach (var spawn in Utilities.FindAllEntitiesByDesignerName<CBaseEntity>(name))
+      {
+        var origin = spawn.AbsOrigin;
+        if (origin != null)
+          spawns.Add(new Vector3(origin.X, origin.Y, origin.Z));
+      }
+    }
+
+    var match = MapMatch.Capture();
+
+    Task.Run(() =>
+    {
+      try
+      {
+        var candidates = MapPhysics.FindVpks(Path.Combine(game, "csgo"), map);
+        if (candidates.Count == 0)
+          candidates = MapPhysics.FindVpks(game, map);
+
+        if (candidates.Count == 0)
+        {
+          Logger.LogWarning("[FPS] {Map}: harita fizigi bulunamadi, gorunurluk icin oyun trace'i kullaniliyor", map);
+          return;
+        }
+
+        if (match.Pick(candidates, map) is not { } picked)
+        {
+          Logger.LogWarning("[FPS] {Map}: bulunan {Count} harita dosyasi sunucudaki haritayla eslesmedi, gorunurluk icin oyun trace'i kullaniliyor", map, candidates.Count);
+          return;
+        }
+
+        var (vpk, physics, world, _) = picked;
+        string? source = MapPhysics.SourceId(vpk);
+        string path = Path.Combine(maps, source == null ? $"{map}.vis" : $"{map}.{source}.vis");
+        string hash = VisMap.HashOf(physics);
+        VisMap? vis = null;
+
+        try
+        {
+          vis = VisMap.Load(path, hash);
+        }
+        catch (Exception ex)
+        {
+          Logger.LogWarning("[FPS] {Map}: {File} okunamadi: {Error}", map, Path.GetFileName(path), ex.Message);
+        }
+
+        if (vis == null)
+        {
+          Server.NextFrame(() =>
+          {
+            if (generation == _visGeneration)
+              _world = world;
+          });
+
+          if (File.Exists(path))
+            Logger.LogWarning("[FPS] {Map}: gorunurluk verisi guncel degil, yeniden hesaplaniyor", map);
+
+          var watch = Stopwatch.StartNew();
+          int threads = Math.Max(1, Environment.ProcessorCount / 2);
+          vis = VisMap.Bake(world, WorldBvh.PlayerSolid(physics), spawns, hash, threads, cancel.Token);
+          vis.Save(path);
+          Logger.LogInformation("[FPS] {Map}: gorunurluk verisi {Seconds:F1} sn'de hesaplandi ({Cells} hucre, {Threads} cekirdek)",
+            map, watch.Elapsed.TotalSeconds, vis.Count, threads);
+        }
+
+        Server.NextFrame(() =>
+        {
+          if (generation != _visGeneration)
+            return;
+
+          _world = world;
+          _vis = vis;
+          _snapTick = -1;
+        });
+      }
+      catch (OperationCanceledException)
+      {
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, "[FPS] {Map}: gorunurluk verisi hazirlanamadi", map);
+      }
+    });
+  }
+
   public override void Unload(bool hotReload)
   {
+    ResetVisibility();
     SetTransmitHook(false);
     SetBloodHook(false);
     SetSoundHook(false);
@@ -516,6 +653,8 @@ public class FPS : BasePlugin
     _unseen[slot] = 0;
     _mute[slot] = 0;
     _hiddenMask[slot] = 0;
+    _dormantMask[slot] = 0;
+    _dormantViewers &= ~(1UL << slot);
     _flags[slot] = 0;
     _players[slot] = null;
     _pawns[slot] = null;
@@ -541,6 +680,7 @@ public class FPS : BasePlugin
     bool transmit = Config.HideCorpses == Force;
     _bloodMask = 0;
     _muteMask = 0;
+    _propViewers = 0;
     _killfeedCount = 0;
 
     for (int slot = 0; slot < MaxSlots; slot++)
@@ -556,6 +696,9 @@ public class FPS : BasePlugin
 
       if ((flags & Blood) != 0)
         _bloodMask |= 1UL << slot;
+
+      if ((flags & Props) != 0)
+        _propViewers |= 1UL << slot;
 
       if ((flags & Killfeed) != 0)
         _killfeedCount++;
@@ -595,11 +738,18 @@ public class FPS : BasePlugin
 
     _transmitHooked = on;
     _snapTick = -1;
+    _dormantViewers = 0;
 
     if (on)
+    {
       RegisterListener(_onCheckTransmit);
+      HookUserMessage(ParticleMessage, _onParticle, HookMode.Pre);
+    }
     else
+    {
       RemoveListener(_onCheckTransmit);
+      UnhookUserMessage(ParticleMessage, _onParticle, HookMode.Pre);
+    }
   }
 
   private void SetBloodHook(bool on)
@@ -788,7 +938,7 @@ public class FPS : BasePlugin
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
   {
-    Server.NextFrame(FindProps);
+    Server.NextFrame(() => FindProps(true));
     return HookResult.Continue;
   }
 
@@ -804,7 +954,7 @@ public class FPS : BasePlugin
     _propWords.Clear();
   }
 
-  private void FindProps()
+  private void FindProps(bool roundStart)
   {
     ClearProps();
 
@@ -857,6 +1007,9 @@ public class FPS : BasePlugin
       if (prop.IsValid)
         prop.Remove();
     }
+
+    if (!roundStart)
+      return;
 
     if (_mapProps == null)
     {
@@ -1123,6 +1276,56 @@ public class FPS : BasePlugin
     return HookResult.Continue;
   }
 
+  private HookResult OnParticle(UserMessage msg)
+  {
+    ulong mask = msg.Recipients.GetRecipientMask();
+    ulong viewers = mask & (_dormantViewers | _propViewers);
+    if (viewers == 0)
+      return HookResult.Continue;
+
+    string debug = msg.DebugString;
+    ulong remove = 0;
+    int at = 0;
+
+    while ((at = debug.IndexOf("entity_handle: ", at, StringComparison.Ordinal)) >= 0)
+    {
+      uint raw = 0;
+      for (at += 15; at < debug.Length && char.IsAsciiDigit(debug[at]); at++)
+        raw = raw * 10 + (uint)(debug[at] - '0');
+
+      int index = (int)(raw & 0x3FFF);
+      if (_isProp[index])
+      {
+        remove |= viewers & _propViewers;
+        continue;
+      }
+
+      int t = SlotOf(index);
+      if (t < 0)
+        continue;
+
+      ulong pending = viewers;
+      while (pending != 0)
+      {
+        int v = BitOperations.TrailingZeroCount(pending);
+        pending &= pending - 1;
+
+        if (((_dormantMask[v] >> t) & 1) != 0)
+          remove |= 1UL << v;
+      }
+    }
+
+    if (remove == 0)
+      return HookResult.Continue;
+
+    ulong rest = mask & ~remove;
+    if (rest == 0)
+      return HookResult.Stop;
+
+    msg.Recipients = new RecipientFilter(rest);
+    return HookResult.Continue;
+  }
+
   private int SlotOf(int index)
   {
     if (index <= 0)
@@ -1196,6 +1399,7 @@ public class FPS : BasePlugin
       s.Corpse = false;
       s.PosTick = -1;
       s.WeaponTick = -1;
+      s.CellTick = -1;
 
       var player = _players[slot];
       if (player == null || !player.IsValid)
@@ -1258,7 +1462,10 @@ public class FPS : BasePlugin
       if ((uint)viewer >= MaxSlots)
         continue;
 
+      ulong previous = _hiddenMask[viewer];
       _hiddenMask[viewer] = 0;
+      _dormantMask[viewer] = 0;
+      _dormantViewers &= ~(1UL << viewer);
       int flags = _flags[viewer];
       bool corpses = forceCorpses || (flags & Corpses) != 0;
       if (!corpses && _unseen[viewer] == 0 && (flags & Props) == 0)
@@ -1266,11 +1473,11 @@ public class FPS : BasePlugin
 
       uint* dont = *(uint**)(entry + 8);
       if (dont != null)
-        Filter(*(uint**)entry, dont, viewer, flags, corpses, tick);
+        Filter(*(uint**)entry, dont, viewer, flags, corpses, previous, tick);
     }
   }
 
-  private unsafe void Filter(uint* bits, uint* dont, int v, int flags, bool corpses, int tick)
+  private unsafe void Filter(uint* bits, uint* dont, int v, int flags, bool corpses, ulong previous, int tick)
   {
     if ((flags & Props) != 0)
     {
@@ -1287,6 +1494,7 @@ public class FPS : BasePlugin
     bool unseen = mode != 0 && sv.Alive;
     int observed = corpses && !sv.Alive ? ObservedPawn(v) : 0;
     ulong hidden = 0;
+    ulong gone = 0;
 
     for (int t = 0; t < MaxSlots; t++)
     {
@@ -1300,7 +1508,10 @@ public class FPS : BasePlugin
       if (!st.Alive)
       {
         if (corpses && st.Corpse && st.Pawn != observed)
+        {
           Clear(bits, dont, st.Pawn);
+          gone |= 1UL << t;
+        }
         continue;
       }
 
@@ -1310,12 +1521,27 @@ public class FPS : BasePlugin
       if (mode != 3 && Teammates(t, v) != (mode == 1))
         continue;
 
-      if (IsVisible(v, t, tick))
-        continue;
+      if (!IsVisible(v, t, tick))
+        hidden |= 1UL << t;
+    }
 
-      hidden |= 1UL << t;
+    if (hidden != 0 && _pawns[v] is { } pawn)
+    {
+      int age = tick - _radarAt[v];
+      if ((hidden & ~previous) != 0 && (age <= 0 || age > RadarTicks))
+        hidden &= previous;
 
-      Clear(bits, dont, st.Pawn);
+      if (tick - _radarAt[v] >= RadarTicks)
+      {
+        _radarAt[v] = tick;
+        pawn.NextRadarUpdateTime = 0f;
+      }
+    }
+
+    for (ulong pending = hidden; pending != 0; pending &= pending - 1)
+    {
+      int t = BitOperations.TrailingZeroCount(pending);
+      Clear(bits, dont, _snap[t].Pawn);
 
       int weapons = Weapons(t, tick);
       for (int w = 0; w < weapons; w++)
@@ -1323,6 +1549,9 @@ public class FPS : BasePlugin
     }
 
     _hiddenMask[v] = hidden;
+    _dormantMask[v] = hidden | gone;
+    if ((hidden | gone) != 0)
+      _dormantViewers |= 1UL << v;
   }
 
   private bool Teammates(int a, int b) => !_ffa && _snap[a].Team == _snap[b].Team;
@@ -1393,6 +1622,12 @@ public class FPS : BasePlugin
     ref var sv = ref _snap[v];
     ref var st = ref _snap[t];
 
+    if (Vector3.DistanceSquared(sv.Origin, st.Origin) < NearDistanceSqr)
+      return Show(pair, tick, HoldTicks);
+
+    if (_vis is { } vis && !MaybeVisible(vis, v, t))
+      return Hidden(pair, tick);
+
     if (!_seen[pair] && tick - _checkedAt[pair] < MaxHiddenTicks
         && Vector3.DistanceSquared(sv.Origin, _fromPos[pair]) < MoveSqr
         && Vector3.DistanceSquared(st.Origin, _toPos[pair]) < MoveSqr)
@@ -1402,15 +1637,23 @@ public class FPS : BasePlugin
     }
 
     if (_traceTime > TraceBudget)
-      return Show(pair, tick, SafeHoldTicks);
+    {
+      if (_seen[pair] || tick - _checkedAt[pair] >= MaxHiddenTicks)
+        return Show(pair, tick, SafeHoldTicks);
+
+      _nextCheck[pair] = tick + 1;
+      return false;
+    }
 
     long start = Stopwatch.GetTimestamp();
     bool visible = CanSee(v, t);
     _traceTime += Stopwatch.GetTimestamp() - start;
 
-    if (visible)
-      return Show(pair, tick, HoldTicks);
+    return visible ? Show(pair, tick, HoldTicks) : Hidden(pair, tick);
+  }
 
+  private bool Hidden(int pair, int tick)
+  {
     if (_seen[pair])
     {
       _seen[pair] = false;
@@ -1419,18 +1662,17 @@ public class FPS : BasePlugin
       return true;
     }
 
-    _seen[pair] = false;
     _checkedAt[pair] = tick;
-    _fromPos[pair] = sv.Origin;
-    _toPos[pair] = st.Origin;
-    _nextCheck[pair] = tick + RecheckTicks;
+    _fromPos[pair] = _snap[pair / MaxSlots].Origin;
+    _toPos[pair] = _snap[pair % MaxSlots].Origin;
+    _nextCheck[pair] = tick + RecheckTicks + (pair & 1);
     return false;
   }
 
   private bool Show(int pair, int tick, int hold)
   {
     _seen[pair] = true;
-    _visibleUntil[pair] = tick + hold;
+    _visibleUntil[pair] = tick + hold + (pair & 7);
     return true;
   }
 
@@ -1440,9 +1682,6 @@ public class FPS : BasePlugin
     ref var st = ref _snap[t];
 
     var delta = st.Origin - sv.Origin;
-    if (delta.LengthSquared() < NearDistanceSqr)
-      return true;
-
     var pawn = _pawns[v];
     if (pawn == null)
       return true;
@@ -1492,6 +1731,30 @@ public class FPS : BasePlugin
     return false;
   }
 
+  private bool MaybeVisible(VisMap vis, int v, int t)
+  {
+    ref var sv = ref Cells(vis, v);
+    ref var st = ref Cells(vis, t);
+
+    if (sv.Cell < 0 || st.Cell < 0 || sv.AheadCell < 0 || st.AheadCell < 0)
+      return true;
+
+    return vis.Visible(sv.Cell, st.Cell) || vis.Visible(sv.AheadCell, st.Cell)
+      || vis.Visible(sv.Cell, st.AheadCell) || vis.Visible(sv.AheadCell, st.AheadCell);
+  }
+
+  private ref Snap Cells(VisMap vis, int slot)
+  {
+    ref var s = ref _snap[slot];
+    if (s.CellTick == _snapTick)
+      return ref s;
+
+    s.CellTick = _snapTick;
+    s.Cell = vis.CellOf(s.Origin);
+    s.AheadCell = vis.CellOf(s.Origin + new Vector3(s.Velocity.X, s.Velocity.Y, 0f) * Lead(s.Ping));
+    return ref s;
+  }
+
   private static float Lead(int ping) => Math.Clamp(0.15f + ping / 1000f, 0.15f, 0.5f);
 
   private void Origins(int v, CCSPlayerPawn pawn)
@@ -1524,6 +1787,16 @@ public class FPS : BasePlugin
 
   private Vector3 Reach(CCSPlayerPawn pawn, Vector3 from, Vector3 to)
   {
+    if (_world is { } world)
+    {
+      float fraction = world.Fraction(from, to);
+      if (fraction >= 1f)
+        return to;
+
+      float distance = Vector3.Distance(from, to);
+      return from + (to - from) * (distance > 0f ? Math.Max(0f, fraction - ClipMargin / distance) : 0f);
+    }
+
     _traceStart.X = from.X; _traceStart.Y = from.Y; _traceStart.Z = from.Z;
     _traceEnd.X = to.X; _traceEnd.Y = to.Y; _traceEnd.Z = to.Z;
 
@@ -1545,6 +1818,9 @@ public class FPS : BasePlugin
 
   private bool Clear(CCSPlayerPawn pawn, Vector3 from, Vector3 to)
   {
+    if (_world is { } world)
+      return !world.Blocked(from, to);
+
     _traceStart.X = from.X; _traceStart.Y = from.Y; _traceStart.Z = from.Z;
     _traceEnd.X = to.X; _traceEnd.Y = to.Y; _traceEnd.Z = to.Z;
 

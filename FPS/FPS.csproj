@@ -7,16 +7,26 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CounterStrikeSharp.API" Version="1.0.375" ExcludeAssets="runtime" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.7" />
+    <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
     <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
     <Compile Include="..\.Shared\WasdMenu.cs" Link=".Shared\WasdMenu.cs" />
+    <Compile Include="..\.Shared\Source2\VpkArchive.cs" Link=".Shared\Source2\VpkArchive.cs" />
+    <Compile Include="..\.Shared\Source2\Source2Resource.cs" Link=".Shared\Source2\Source2Resource.cs" />
+    <Compile Include="..\.Shared\Source2\Kv3Binary.cs" Link=".Shared\Source2\Kv3Binary.cs" />
+    <Compile Include="..\.Shared\Source2\PhysExtractor.cs" Link=".Shared\Source2\PhysExtractor.cs" />
+    <Compile Include="..\.Shared\Source2\MapPhysics.cs" Link=".Shared\Source2\MapPhysics.cs" />
+    <Compile Include="..\.Shared\Source2\WorldBvh.cs" Link=".Shared\Source2\WorldBvh.cs" />
+    <Compile Include="..\.Shared\MapMatch.cs" Link=".Shared\MapMatch.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -127,6 +127,20 @@ Ready lists come for de_ancient, de_ancient_night, de_anubis, de_cache, de_dust2
 - Only small props that players walk through and kick are hidden. A prop that blocks players is never hidden, even if it is in the list.
 - The list is checked against the map when the map loads. After a CS2 update, a model that is gone or that now blocks players, a changed count, or a new junk prop that is not in the list is reported as a warning in the server console. Delete the map's file to build the list again.
 
+## Visibility Data
+
+```
+csgo/addons/counterstrikesharp/plugins/FPS/maps/<map>.vis
+```
+
+**Behind walls** uses a visibility table per map, built from the map's own geometry. Most hidden players are decided from this table without extra line of sight checks, so the server does very little work even when every player uses the feature.
+
+- Ready tables come for the same maps as the junk prop lists.
+- On a map without a table (workshop maps included), the table is built in the background when the map loads and saved to this folder. It takes from a few seconds to about half a minute depending on the map and uses half of the CPU cores at low priority. Until it is ready, every player is checked with line of sight traces.
+- A workshop map's table is saved as `<map>.<workshop id>.vis`, so workshop maps with the same name never share a table. When several map files carry the loaded map's name, the plugin compares each with the running map and uses the one that matches.
+- After a CS2 update that changes a map, the table no longer matches the map and is built again automatically.
+- Delete a map's `.vis` file to build it again.
+
 ## Notes
 
 - **Behind walls** only works while you are alive. While dead or spectating, every player stays visible.

@@ -127,6 +127,20 @@ de_ancient, de_ancient_night, de_anubis, de_cache, de_dust2, de_inferno, de_mira
 - Sadece oyuncuların içinden geçip tekmelediği küçük prop'lar gizlenir. Oyuncuyu engelleyen bir prop listede olsa bile gizlenmez.
 - Liste, harita yüklendiğinde haritayla karşılaştırılır. Bir CS2 güncellemesinden sonra artık olmayan ya da oyuncuyu engeller hale gelen bir model, değişen bir adet veya listede olmayan yeni bir çöp prop sunucu konsolunda uyarı olarak yazılır. Listeyi yeniden çıkarmak için haritanın dosyasını silin.
 
+## Görünürlük Verisi
+
+```
+csgo/addons/counterstrikesharp/plugins/FPS/maps/<harita>.vis
+```
+
+**Duvar arkası**, haritanın kendi geometrisinden hazırlanan harita bazlı bir görünürlük tablosu kullanır. Gizlenen oyuncuların çoğu ek görüş kontrolü yapılmadan bu tablodan belirlenir, böylece tüm oyuncular özelliği kullanırken bile sunucu çok az iş yapar.
+
+- Çöp prop listeleriyle aynı haritalar için hazır tablo gelir.
+- Tablosu olmayan haritada (atölye haritaları dahil) tablo, harita yüklenirken arka planda hazırlanır ve bu klasöre kaydedilir. Haritaya göre birkaç saniye ile yarım dakika arası sürer, işlemci çekirdeklerinin yarısını düşük öncelikle kullanır. Hazır olana kadar her oyuncu görüş kontrolüyle denetlenir.
+- Atölye haritalarının tablosu `<harita>.<atölye id>.vis` adıyla kaydedilir, aynı isimli atölye haritaları tabloyu paylaşmaz. Yüklü haritanın adını taşıyan birden fazla harita dosyası varsa eklenti her birini çalışan haritayla karşılaştırır ve eşleşeni kullanır.
+- Bir CS2 güncellemesi haritayı değiştirirse tablo haritayla uyuşmaz ve otomatik yeniden hazırlanır.
+- Yeniden hazırlatmak için haritanın `.vis` dosyasını silin.
+
 ## Notlar
 
 - **Duvar arkası** sadece hayattayken çalışır. Ölüyken veya izlerken tüm oyuncular görünür kalır.
