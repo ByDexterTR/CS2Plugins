@@ -7,6 +7,7 @@ using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Timers;
 using static CounterStrikeSharp.API.Core.Listeners;
 using ByDexter.Shared;
+using ByDexter.Shared.Source2;
 using ShowPlayerClips.Source2;
 
 namespace ShowPlayerClips;
@@ -69,7 +70,7 @@ public class ShowPlayerClipsConfig : BasePluginConfig
 public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 {
   public override string ModuleName => "ShowPlayerClips";
-  public override string ModuleVersion => "1.1.1";
+  public override string ModuleVersion => "1.1.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -437,17 +438,32 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
   private static ClipMap? LoadOrExtract(string gameDirectory, string moduleDirectory, string mapName, string[] types, out string info)
   {
-    string? vpk = FindMapVpk(gameDirectory, mapName);
+    var candidates = MapPhysics.FindVpks(gameDirectory, mapName);
 
-    if (vpk == null)
+    if (candidates.Count == 0)
     {
       info = $"'{mapName}.vpk' bulunamadi.";
       return null;
     }
 
+    string vpk = candidates[0];
+    if (candidates.Count > 1)
+    {
+      var match = MapMatch.CaptureAsync().GetAwaiter().GetResult();
+      if (match.Pick(candidates, mapName) is not { } picked)
+      {
+        info = $"'{mapName}' icin {candidates.Count} harita dosyasi bulundu, hicbiri sunucudaki haritayla eslesmedi.";
+        return null;
+      }
+
+      vpk = picked.Vpk;
+    }
+
+    string? source = MapPhysics.SourceId(vpk);
+    string key = source == null ? mapName : $"{mapName}@{source}";
     var file = new FileInfo(vpk);
     string stamp = $"{file.Length:x}_{file.LastWriteTimeUtc.Ticks:x}_{TypeKey(types)}";
-    string cachePath = Path.Combine(moduleDirectory, "cache", $"{mapName}_{stamp}.spc");
+    string cachePath = Path.Combine(moduleDirectory, "cache", $"{key}_{stamp}.spc");
 
     var cached = ClipMap.Load(cachePath);
     if (cached != null)
@@ -460,7 +476,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
     try
     {
-      CleanCache(Path.Combine(moduleDirectory, "cache"), mapName);
+      CleanCache(Path.Combine(moduleDirectory, "cache"), key);
       map.Save(cachePath);
     }
     catch
@@ -495,70 +511,6 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       string stamp = Path.GetFileNameWithoutExtension(file)[(mapName.Length + 1)..];
       if (stamp.Count(c => c == '_') == 2)
         File.Delete(file);
-    }
-  }
-
-  private static string? FindMapVpk(string gameDirectory, string mapName)
-  {
-    if (string.IsNullOrEmpty(gameDirectory))
-      return null;
-
-    string game = Path.GetFullPath(gameDirectory);
-
-    var mapRoots = new List<string>
-    {
-      Path.Combine(game, "maps"),
-      Path.Combine(game, "csgo", "maps"),
-    };
-
-    foreach (string root in mapRoots)
-    {
-      if (!Directory.Exists(root))
-        continue;
-
-      string direct = Path.Combine(root, $"{mapName}.vpk");
-      if (File.Exists(direct))
-        return direct;
-
-      var found = Directory.GetFiles(root, $"{mapName}.vpk", SearchOption.AllDirectories);
-      if (found.Length > 0)
-        return found[0];
-    }
-
-    var addonRoots = AddonRoots(game).Where(Directory.Exists).ToList();
-
-    foreach (string root in addonRoots)
-    {
-      foreach (string candidate in Directory.GetFiles(root, $"{mapName}.vpk", SearchOption.AllDirectories))
-      {
-        if (ClipMap.ContainsMap(candidate, mapName))
-          return candidate;
-      }
-    }
-
-    foreach (string root in addonRoots)
-    {
-      foreach (string candidate in Directory.GetFiles(root, "*.vpk", SearchOption.AllDirectories))
-      {
-        if (ClipMap.ContainsMap(candidate, mapName))
-          return candidate;
-      }
-    }
-
-    return null;
-  }
-
-  private static IEnumerable<string> AddonRoots(string gameDirectory)
-  {
-    string? current = gameDirectory;
-
-    for (int depth = 0; depth < 5 && current != null; depth++)
-    {
-      yield return Path.Combine(current, "csgo_addons");
-      yield return Path.Combine(current, "csgo_community_addons");
-      yield return Path.Combine(current, "steamapps", "workshop", "content", "730");
-
-      current = Path.GetDirectoryName(current);
     }
   }
 

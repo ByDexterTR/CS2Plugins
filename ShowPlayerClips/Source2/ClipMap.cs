@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text;
+using ByDexter.Shared.Source2;
 
 namespace ShowPlayerClips.Source2;
 
@@ -23,60 +24,13 @@ public sealed class ClipMap
     }
   }
 
-  public static bool ContainsMap(string vpkPath, string mapName)
-  {
-    try
-    {
-      using var archive = new VpkArchive(vpkPath);
-      return FindPhysicsEntry(archive, mapName) != null || archive.Contains($"maps/{mapName}.vpk");
-    }
-    catch
-    {
-      return false;
-    }
-  }
-
-  private static string? FindPhysicsEntry(VpkArchive archive, string mapName)
-  {
-    string[] candidates =
-    [
-      $"maps/{mapName}/world_physics.vmdl_c",
-      $"maps/{mapName}/world_physics.vphys_c",
-    ];
-
-    foreach (string candidate in candidates)
-    {
-      if (archive.Contains(candidate))
-        return candidate;
-    }
-
-    return archive.Find("world_physics.vmdl_c") ?? archive.Find("world_physics.vphys_c");
-  }
-
-  private static byte[]? ReadPhysics(string vpkPath, string mapName)
-  {
-    using var archive = new VpkArchive(vpkPath);
-
-    string? entry = FindPhysicsEntry(archive, mapName);
-    if (entry != null)
-      return archive.Read(entry);
-
-    byte[]? nested = archive.Read($"maps/{mapName}.vpk");
-    if (nested == null)
-      return null;
-
-    using var inner = new VpkArchive(nested);
-    string? innerEntry = FindPhysicsEntry(inner, mapName);
-    return innerEntry == null ? null : inner.Read(innerEntry);
-  }
-
   public static ClipMap Extract(string vpkPath, string mapName, IEnumerable<string>? wantedCategories = null, int maxTriangles = 400000)
   {
     var wanted = wantedCategories == null
       ? null
       : new HashSet<string>(wantedCategories, StringComparer.OrdinalIgnoreCase);
 
-    byte[]? resource = ReadPhysics(vpkPath, mapName);
+    byte[]? resource = MapPhysics.Read(vpkPath, mapName);
     if (resource == null)
       throw new InvalidDataException($"'{Path.GetFileName(vpkPath)}' icinde world_physics bulunamadi.");
 

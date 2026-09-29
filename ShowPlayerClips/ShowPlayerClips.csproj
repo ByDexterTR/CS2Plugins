@@ -18,6 +18,13 @@
 
   <ItemGroup>
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Compile Include="..\.Shared\Source2\VpkArchive.cs" Link=".Shared\Source2\VpkArchive.cs" />
+    <Compile Include="..\.Shared\Source2\Source2Resource.cs" Link=".Shared\Source2\Source2Resource.cs" />
+    <Compile Include="..\.Shared\Source2\Kv3Binary.cs" Link=".Shared\Source2\Kv3Binary.cs" />
+    <Compile Include="..\.Shared\Source2\PhysExtractor.cs" Link=".Shared\Source2\PhysExtractor.cs" />
+    <Compile Include="..\.Shared\Source2\MapPhysics.cs" Link=".Shared\Source2\MapPhysics.cs" />
+    <Compile Include="..\.Shared\Source2\WorldBvh.cs" Link=".Shared\Source2\WorldBvh.cs" />
+    <Compile Include="..\.Shared\MapMatch.cs" Link=".Shared\MapMatch.cs" />
     <Compile Include="..\.Shared\Transmit.cs" Link=".Shared\Transmit.cs" />
     <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
   </ItemGroup>
