@@ -6,7 +6,7 @@ Oyunculara, görmeleri gerekmeyen şeyleri kaldıran bir FPS modu sunar: duvar a
 
 ## Özellikler
 
-- `css_fps` (sohbette `!fps`) her zaman kullanılabilir: WASD ayar menüsünü açar, `player_config` `false` ise FPS modunu açıp kapatır
+- `css_fps` (sohbette `!fps`) her zaman kullanılabilir: WASD ayar menüsünü açar, `player_configable` `false` ise FPS modunu açıp kapatır
 - Oyuncu seçimleri SteamID ile `players.json` dosyasına kaydedilir, her girişte uygulanır
 - **Duvar arkası:** görüş hattınızda olmayan oyuncular size gönderilmez. Herkes, sadece takım arkadaşları veya sadece rakipler seçilebilir
 - **Duvar arkası ses:** sizden gizlenen oyuncuların atış ve silah sesleri susturulur. Herkes, sadece takım arkadaşları veya sadece rakipler seçilebilir
@@ -14,10 +14,10 @@ Oyunculara, görmeleri gerekmeyen şeyleri kaldıran bir FPS modu sunar: duvar a
 - **Killfeed:** killfeed'de sadece sizin öldürdükleriniz (ve sizin ölümünüz) görünür
 - **Cesetler:** ölen oyuncuların cesetleri kısa bir süre sonra kaybolur
 - **Ayaklar:** aşağı baktığınızda kendi ayaklarınızı görmezsiniz
-- **Kan ve mermi izi:** oyunculardaki kan ve vuruş efektleri gösterilmez; kan izleri ve mermi delikleri belirlenen aralıkla silinir
+- **Kan:** oyunculardaki kan ve vuruş efektleri gösterilmez
+- **Mermi izi:** duvarlardaki mermi delikleri ve lekeler, oluştuktan belirlenen süre sonra silinir
 - **Çöp prop:** şişe, teneke, çömlek gibi küçük fırlatılabilir prop'lar gösterilmez. Liste harita bazında `maps` klasöründe tutulur
-- Ceset, kan ve çöp prop herkes için zorunlu yapılabilir: prop'lar haritadan silinir, ceset ve kan tüm oyunculardan kaldırılır
-- Her özellik `settings.json` üzerinden kapatılabilir. Kapalı bir özellik hiç çalışmaz
+- Her özellik `settings.json` üzerinden kapatılabilir, yeni oyuncular için varsayılanı ayarlanabilir. Kapalı bir özellik hiç çalışmaz
 - Türkçe / İngilizce dil desteği (`lang/`)
 
 ## Gereksinimler
@@ -32,12 +32,13 @@ Oyunculara, görmeleri gerekmeyen şeyleri kaldıran bir FPS modu sunar: duvar a
    ```
 2. Sunucuyu yeniden başlatın veya `css_plugins load FPS` komutunu çalıştırın.
 3. `settings.json` yoksa eklenti klasöründe otomatik oluşturulur. Dosya okunamazsa `settings.old.json` olarak saklanır ve varsayılan ayarlarla yeniden yazılır.
+4. Eski sürümden kalan `settings.json` seçimleriniz korunarak yeni yapıya otomatik çevrilir. Eski dosya `settings.v1.json` olarak saklanır.
 
 ## Komutlar
 
 | Komut | Açıklama | Yetki |
 | --- | --- | --- |
-| `css_fps` | `player_config: true`: FPS ayarları menüsünü açar. `player_config: false`: FPS modunu açar/kapatır. Seçim kaydedilir | `fps_flag` (varsayılan: herkes) |
+| `css_fps` | `player_configable: true`: FPS ayarları menüsünü açar. `player_configable: false`: FPS modunu açar/kapatır. Seçim kaydedilir | `fps_flag` (varsayılan: herkes) |
 
 Menüde **W/S** kaydırır, **E** seçili ayarı değiştirir, **R** menüyü kapatır.
 
@@ -49,35 +50,57 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 
 | Ayar | Tip | Varsayılan | Açıklama |
 | --- | --- | --- | --- |
+| `ConfigVersion` | int | `2` | Ayar dosyasının yapı sürümü, değiştirmeyin |
 | `fps_cmd` | string | `"css_fps"` | Virgülle ayrılmış komut adları |
 | `fps_flag` | string | `""` | Gerekli yetki; boş string = herkes kullanabilir |
-| `player_config` | bool | `true` | `true`: oyuncular her ayarı menüden kendisi değiştirir, `false`: oyuncular sadece FPS modunu açıp kapatabilir ve aşağıdaki ayarları alır |
-| `hide_unseen` | int | `3` | Duvar arkasındaki oyuncuları gizlemenin varsayılanı. `0`: kapalı (menüde yok), `1`: takım arkadaşları, `2`: rakip takım, `3`: herkes |
-| `mute_unseen` | int | `3` | Gizlenen oyuncuların silahlarını susturmanın varsayılanı. `0`: kapalı (menüde yok), `1`: takım arkadaşları, `2`: rakip takım, `3`: herkes. `hide_unseen` `0` iken etkisi yoktur |
-| `own_killfeed` | bool | `true` | `true`: varsayılan açık, menüden değiştirilebilir, `false`: kapalı, menüde yok |
-| `hide_corpses` | int | `1` | `0`: kapalı, `1`: varsayılan açık ve menüden değiştirilebilir, `2`: tüm oyunculardan gizlenir, menüde yok |
-| `corpse_delay` | float | `0.5` | Ölümden sonra cesedin kaybolma süresi (saniye) |
-| `hide_legs` | bool | `true` | `true`: varsayılan açık, menüden değiştirilebilir, `false`: kapalı, menüde yok |
-| `hide_blood` | int | `1` | `0`: kapalı, `1`: varsayılan açık ve menüden değiştirilebilir, `2`: tüm oyunculara uygulanır, menüde yok |
-| `blood_delay` | float | `0.5` | Kan izleri ve mermi deliklerinin silinme aralığı (saniye, en az `0.1`) |
-| `hide_props` | int | `1` | `0`: kapalı, `1`: varsayılan açık ve menüden değiştirilebilir, `2`: çöp prop'lar herkes için haritadan silinir, menüde yok |
+| `player_configable` | bool | `true` | `true`: oyuncular her ayarı menüden kendisi değiştirir, `false`: sunucu ayarları sabittir, oyuncular sadece FPS modunu açıp kapatabilir |
+| `hide_unseen_enable` | bool | `true` | Duvar arkasındaki oyuncuları gizleme sunucuda kullanılsın |
+| `hide_unseen_default` | int | `3` | Duvar arkasındaki oyuncuları gizlemenin varsayılanı. `0`: kapalı, `1`: takım arkadaşları, `2`: rakip takım, `3`: herkes |
+| `mute_unseen_enable` | bool | `true` | Gizlenen oyuncuların silah seslerini kapatma sunucuda kullanılsın. `hide_unseen_enable` `false` iken etkisi yoktur |
+| `mute_unseen_default` | int | `3` | Gizlenen oyuncuları susturmanın varsayılanı. `0`: kapalı, `1`: takım arkadaşları, `2`: rakip takım, `3`: herkes |
+| `own_killfeed_enable` | bool | `true` | Killfeed'de sadece kendi öldürdüklerini görme sunucuda kullanılsın |
+| `own_killfeed_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
+| `hide_ragdoll_enable` | bool | `true` | Cesetleri gizleme sunucuda kullanılsın |
+| `hide_ragdoll_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
+| `hide_ragdoll_delay` | float | `0.5` | Ölümden sonra cesedin kaybolma süresi (saniye) |
+| `hide_legs_enable` | bool | `true` | Kendi ayaklarını gizleme sunucuda kullanılsın |
+| `hide_legs_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
+| `hide_blood_enable` | bool | `true` | Kanı gizleme sunucuda kullanılsın |
+| `hide_blood_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
+| `hide_bullethole_enable` | bool | `true` | Mermi izlerini silme sunucuda kullanılsın |
+| `hide_bullethole_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
+| `hide_bullethole_delay` | float | `1.0` | Mermi izlerinin kaç saniye sonra silineceği (en az `0.1`) |
+| `hide_props_enable` | bool | `true` | Çöp prop'ları gizleme sunucuda kullanılsın |
+| `hide_props_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
+
+`_enable` değeri `false` olan ayar menüde görünmez ve hiç çalışmaz. `player_configable: false` iken her oyuncu `_default` değerlerini alır ve sadece FPS modunu açıp kapatabilir.
 
 ### Örnek Config
 
 ```json
 {
+  "ConfigVersion": 2,
   "fps_cmd": "css_fps,css_fpsboost",
   "fps_flag": "",
-  "player_config": true,
-  "hide_unseen": 2,
-  "mute_unseen": 0,
-  "own_killfeed": true,
-  "hide_corpses": 1,
-  "corpse_delay": 0.5,
-  "hide_legs": true,
-  "hide_blood": 2,
-  "blood_delay": 0.5,
-  "hide_props": 2
+  "player_configable": true,
+  "hide_unseen_enable": true,
+  "hide_unseen_default": 2,
+  "mute_unseen_enable": false,
+  "mute_unseen_default": 3,
+  "own_killfeed_enable": true,
+  "own_killfeed_default": 0,
+  "hide_ragdoll_enable": true,
+  "hide_ragdoll_default": 1,
+  "hide_ragdoll_delay": 1.0,
+  "hide_legs_enable": true,
+  "hide_legs_default": 1,
+  "hide_blood_enable": true,
+  "hide_blood_default": 0,
+  "hide_bullethole_enable": true,
+  "hide_bullethole_default": 1,
+  "hide_bullethole_delay": 2.0,
+  "hide_props_enable": true,
+  "hide_props_default": 1
 }
 ```
 
@@ -91,7 +114,8 @@ csgo/addons/counterstrikesharp/plugins/FPS/players.json
 {
   "76561198000000000": {
     "hide_unseen": 2,
-    "hide_props": 0
+    "hide_props": 0,
+    "hide_blood": 1
   },
   "76561198111111111": {
     "fps": 0
@@ -99,7 +123,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/players.json
 }
 ```
 
-Sadece oyuncunun sunucu varsayılanından farklı seçtiği ayarlar tutulur; `0` o özelliğin oyuncuda kapalı olduğu anlamına gelir. `"fps": 0`, oyuncunun `player_config` `false` iken FPS modunu kapattığını gösterir. Her şeyi varsayılana döndüren oyuncu dosyadan silinir. Elle de düzenlenebilir, değişiklik eklenti yeniden yüklendiğinde okunur.
+Sadece oyuncunun sunucu varsayılanından farklı seçtiği ayarlar tutulur; `0` o özelliğin oyuncuda kapalı, `1` açık olduğu anlamına gelir. `"fps": 0`, oyuncunun `player_configable` `false` iken FPS modunu kapattığını gösterir. Her şeyi varsayılana döndüren oyuncu dosyadan silinir. Elle de düzenlenebilir, değişiklik eklenti yeniden yüklendiğinde okunur.
 
 ## Çöp Prop Listeleri
 
@@ -149,9 +173,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<harita>.vis
 - `mp_teammates_are_enemies` `1` iken (ör. deathmatch), takım/rakip seçimlerinde herkes rakip sayılır.
 - Bir oyuncuyu izlerken onun cesedi gizlenmez, böylece kamera takılı kalmaz.
 - **Duvar arkası ses** sadece o an sizden gizlenen oyuncuları susturur; ayak sesleri ve diğer sesler etkilenmez.
-- **Kan ve mermi izi** sadece oyun sırasında oluşan izleri siler; haritanın kendi decal'leri kalır.
-- `hide_props: 2` iken prop'lar her raunt silinir, kimse onları alamaz veya tekmeleyemez.
-- `hide_corpses: 2` iken GOTV de cesetleri görmez.
+- **Mermi izi** sadece oyun sırasında oluşan izleri siler; haritanın kendi decal'leri kalır. Duvarlardaki kan lekeleri de mermi izleriyle birlikte silinir.
 - **Ayaklar** kendi modelinizi diğer oyuncuların fark edemeyeceği kadar az saydam yapar. Oyuncu saydamlığını değiştiren başka bir eklenti ayaklarınızı yeniden görünür yapabilir.
-- **Killfeed:** GOTV killfeed'in tamamını almaya devam eder. Killfeed'i değiştiren başka bir eklenti (ör. DM) varsa killfeed iki kez görünebilir; o sunucuda `own_killfeed: false` yapın.
+- **Killfeed:** GOTV killfeed'in tamamını almaya devam eder. Killfeed'i değiştiren başka bir eklenti (ör. DM) varsa killfeed iki kez görünebilir; o sunucuda `own_killfeed_enable: false` yapın.
 - `settings.json` ve komut adı değişiklikleri sunucu/eklenti yeniden başlatıldığında etkinleşir.

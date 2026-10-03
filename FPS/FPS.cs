@@ -24,41 +24,71 @@ namespace FPS;
 
 public class FPSConfig
 {
+  [JsonPropertyName("ConfigVersion")]
+  public int Version { get; set; } = 2;
+
   [JsonPropertyName("fps_cmd")]
   public string Commands { get; set; } = "css_fps";
 
   [JsonPropertyName("fps_flag")]
   public string Flag { get; set; } = "";
 
-  [JsonPropertyName("player_config"), JsonConverter(typeof(LooseBool))]
+  [JsonPropertyName("player_configable"), JsonConverter(typeof(LooseBool))]
   public bool PlayerConfig { get; set; } = true;
 
-  [JsonPropertyName("hide_unseen"), JsonConverter(typeof(LooseInt))]
-  public int HideUnseen { get; set; } = 3;
+  [JsonPropertyName("hide_unseen_enable"), JsonConverter(typeof(LooseBool))]
+  public bool HideUnseenEnable { get; set; } = true;
 
-  [JsonPropertyName("mute_unseen"), JsonConverter(typeof(LooseInt))]
-  public int MuteUnseen { get; set; } = 3;
+  [JsonPropertyName("hide_unseen_default"), JsonConverter(typeof(LooseInt))]
+  public int HideUnseenDefault { get; set; } = 3;
 
-  [JsonPropertyName("own_killfeed"), JsonConverter(typeof(LooseBool))]
-  public bool OwnKillfeed { get; set; } = true;
+  [JsonPropertyName("mute_unseen_enable"), JsonConverter(typeof(LooseBool))]
+  public bool MuteUnseenEnable { get; set; } = true;
 
-  [JsonPropertyName("hide_corpses"), JsonConverter(typeof(LooseInt))]
-  public int HideCorpses { get; set; } = 1;
+  [JsonPropertyName("mute_unseen_default"), JsonConverter(typeof(LooseInt))]
+  public int MuteUnseenDefault { get; set; } = 3;
 
-  [JsonPropertyName("corpse_delay")]
-  public float CorpseDelay { get; set; } = 0.5f;
+  [JsonPropertyName("own_killfeed_enable"), JsonConverter(typeof(LooseBool))]
+  public bool OwnKillfeedEnable { get; set; } = true;
 
-  [JsonPropertyName("hide_legs"), JsonConverter(typeof(LooseBool))]
-  public bool HideLegs { get; set; } = true;
+  [JsonPropertyName("own_killfeed_default"), JsonConverter(typeof(LooseInt))]
+  public int OwnKillfeedDefault { get; set; } = 1;
 
-  [JsonPropertyName("hide_blood"), JsonConverter(typeof(LooseInt))]
-  public int HideBlood { get; set; } = 1;
+  [JsonPropertyName("hide_ragdoll_enable"), JsonConverter(typeof(LooseBool))]
+  public bool HideRagdollEnable { get; set; } = true;
 
-  [JsonPropertyName("blood_delay")]
-  public float BloodDelay { get; set; } = 0.5f;
+  [JsonPropertyName("hide_ragdoll_default"), JsonConverter(typeof(LooseInt))]
+  public int HideRagdollDefault { get; set; } = 1;
 
-  [JsonPropertyName("hide_props"), JsonConverter(typeof(LooseInt))]
-  public int HideProps { get; set; } = 1;
+  [JsonPropertyName("hide_ragdoll_delay")]
+  public float HideRagdollDelay { get; set; } = 0.5f;
+
+  [JsonPropertyName("hide_legs_enable"), JsonConverter(typeof(LooseBool))]
+  public bool HideLegsEnable { get; set; } = true;
+
+  [JsonPropertyName("hide_legs_default"), JsonConverter(typeof(LooseInt))]
+  public int HideLegsDefault { get; set; } = 1;
+
+  [JsonPropertyName("hide_blood_enable"), JsonConverter(typeof(LooseBool))]
+  public bool HideBloodEnable { get; set; } = true;
+
+  [JsonPropertyName("hide_blood_default"), JsonConverter(typeof(LooseInt))]
+  public int HideBloodDefault { get; set; } = 1;
+
+  [JsonPropertyName("hide_bullethole_enable"), JsonConverter(typeof(LooseBool))]
+  public bool HideBulletholeEnable { get; set; } = true;
+
+  [JsonPropertyName("hide_bullethole_default"), JsonConverter(typeof(LooseInt))]
+  public int HideBulletholeDefault { get; set; } = 1;
+
+  [JsonPropertyName("hide_bullethole_delay")]
+  public float HideBulletholeDelay { get; set; } = 1.0f;
+
+  [JsonPropertyName("hide_props_enable"), JsonConverter(typeof(LooseBool))]
+  public bool HidePropsEnable { get; set; } = true;
+
+  [JsonPropertyName("hide_props_default"), JsonConverter(typeof(LooseInt))]
+  public int HidePropsDefault { get; set; } = 1;
 }
 
 public class LooseInt : JsonConverter<int>
@@ -102,7 +132,7 @@ public class PropRecord
 public class FPS : BasePlugin
 {
   public override string ModuleName => "FPS";
-  public override string ModuleVersion => "1.0.1";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -110,15 +140,14 @@ public class FPS : BasePlugin
 
   public FPSConfig Config { get; set; } = new();
 
-  private const int Off = 0;
-  private const int Enable = 1;
-  private const int Force = 2;
+  private const int ConfigVersion = 2;
 
   private const int Killfeed = 1;
   private const int Corpses = 2;
   private const int Legs = 4;
   private const int Blood = 8;
   private const int Props = 16;
+  private const int Bullethole = 32;
 
   private const string UnseenKey = "hide_unseen";
   private const string MuteKey = "mute_unseen";
@@ -126,9 +155,10 @@ public class FPS : BasePlugin
   private static readonly (int Flag, string Key)[] FlagKeys =
   {
     (Killfeed, "own_killfeed"),
-    (Corpses, "hide_corpses"),
+    (Corpses, "hide_ragdoll"),
     (Legs, "hide_legs"),
     (Blood, "hide_blood"),
+    (Bullethole, "hide_bullethole"),
     (Props, "hide_props")
   };
 
@@ -144,16 +174,18 @@ public class FPS : BasePlugin
   private const float ShoulderPerMs = 0.64f;
   private const float ShoulderMax = 144f;
   private const float BodyPad = 20f;
+  private const float HeadPad = 16f;
+  private const float LeadBase = 0.3f;
   private const float MovingSqr = 10f * 10f;
-  private const float MoveSqr = 24f * 24f;
+  private const float MoveSqr = 8f * 8f;
   private const float NearDistanceSqr = 160f * 160f;
   private const ulong LosMask = (ulong)Contents.Solid;
   private const ulong LosExclude = (ulong)(Contents.Player | Contents.Npc | Contents.Debris | Contents.Window | Contents.PassBullets);
-  private const int OriginTicks = 4;
+  private const int OriginTicks = 2;
   private const float ClipMargin = 8f;
   private const int DyingTicks = 8;
   private const int FfaTicks = 64;
-  private const int RadarTicks = 4;
+  private const int RadarTicks = 1;
   private const int EffectDispatchMessage = 400;
   private const int WeaponSoundMessage = 369;
   private const int ParticleMessage = 145;
@@ -178,6 +210,7 @@ public class FPS : BasePlugin
   private readonly float[] _deathTime = new float[MaxSlots];
   private readonly int[] _dyingTick = new int[MaxSlots];
   private ulong _bloodMask;
+  private ulong _bulletMask;
   private int _killfeedCount;
   private readonly Dictionary<ulong, Dictionary<string, int>> _saved = new();
   private readonly object _ioLock = new();
@@ -230,7 +263,7 @@ public class FPS : BasePlugin
   private readonly CSVector _traceStart = new();
   private readonly CSVector _traceEnd = new();
   private readonly TraceOptions _traceOptions = new() { InteractsWith = (Contents)LosMask, InteractsExclude = (Contents)LosExclude };
-  private readonly Vector3[] _current = new Vector3[5];
+  private readonly Vector3[] _current = new Vector3[7];
   private readonly Vector3[] _ahead = new Vector3[2];
   private readonly Vector3[] _origins = new Vector3[MaxSlots * 6];
   private readonly int[] _originTick = new int[MaxSlots];
@@ -257,12 +290,13 @@ public class FPS : BasePlugin
   private bool _soundHooked;
   private bool _transmitHooked;
   private bool _bloodHooked;
+  private bool _decalHooked;
   private Timer? _decalTimer;
 
   public override void Load(bool hotReload)
   {
-    LoadSettings();
-    LoadPlayers();
+    bool migrated = LoadSettings();
+    LoadPlayers(migrated);
 
     _slotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
     _teammatesAreEnemies = ConVar.Find("mp_teammates_are_enemies");
@@ -285,26 +319,26 @@ public class FPS : BasePlugin
     RegisterListener<OnClientAuthorized>(OnClientAuthorized);
     RegisterListener<OnClientDisconnect>(OnClientDisconnect);
 
-    if (Config.OwnKillfeed)
+    if (Config.OwnKillfeedEnable)
       RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre, HookMode.Pre);
 
-    if (Config.HideUnseen != 0)
+    if (Config.HideUnseenEnable)
       RegisterEventHandler<EventPlayerDeath>(OnPlayerDying, HookMode.Pre);
 
-    if (Config.HideCorpses != Off)
+    if (Config.HideRagdollEnable)
       RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
 
-    if (Config.HideLegs)
+    if (Config.HideLegsEnable)
       RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
 
-    if (Config.HideProps != Off)
+    if (Config.HidePropsEnable)
     {
       RegisterEventHandler<EventRoundStart>(OnRoundStart);
       RegisterListener<OnEntityDeleted>(OnEntityDeleted);
       RegisterListener<OnMapStart>(_ => ClearProps());
     }
 
-    if (Config.HideUnseen != 0)
+    if (Config.HideUnseenEnable)
     {
       RegisterListener<OnMapStart>(_ =>
       {
@@ -322,10 +356,10 @@ public class FPS : BasePlugin
         InitPlayer(player);
       }
 
-      if (Config.HideProps != Off)
+      if (Config.HidePropsEnable)
         FindProps(false);
 
-      if (Config.HideUnseen != 0)
+      if (Config.HideUnseenEnable)
         PrepareVisibility();
 
       UpdateHooks();
@@ -443,10 +477,11 @@ public class FPS : BasePlugin
     ResetVisibility();
     SetTransmitHook(false);
     SetBloodHook(false);
+    SetDecalHook(false);
     SetSoundHook(false);
     _menus.Clear();
 
-    if (!Config.HideLegs)
+    if (!Config.HideLegsEnable)
       return;
 
     foreach (var player in Utilities.GetPlayers())
@@ -456,14 +491,31 @@ public class FPS : BasePlugin
     }
   }
 
-  private void LoadSettings()
+  private bool LoadSettings()
   {
+    bool migrated = false;
+
     lock (_ioLock)
     {
       try
       {
         if (File.Exists(SettingsPath))
-          Config = JsonSerializer.Deserialize<FPSConfig>(File.ReadAllText(SettingsPath), JsonOpts) ?? new FPSConfig();
+        {
+          string json = File.ReadAllText(SettingsPath);
+          using var document = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+
+          if (Number(document.RootElement, "ConfigVersion", 1) < ConfigVersion)
+          {
+            Config = Migrate(document.RootElement);
+            File.Copy(SettingsPath, Path.Combine(ModuleDirectory, "settings.v1.json"), true);
+            migrated = true;
+            Logger.LogInformation("[FPS] settings.json surum {Version} yapisina tasindi, eski dosya settings.v1.json olarak saklandi", ConfigVersion);
+          }
+          else
+          {
+            Config = JsonSerializer.Deserialize<FPSConfig>(json, JsonOpts) ?? new FPSConfig();
+          }
+        }
       }
       catch (Exception ex)
       {
@@ -482,13 +534,17 @@ public class FPS : BasePlugin
 
       try
       {
-        Config.HideUnseen = Math.Clamp(Config.HideUnseen, 0, 3);
-        Config.MuteUnseen = Config.HideUnseen == 0 ? 0 : Math.Clamp(Config.MuteUnseen, 0, 3);
-        Config.HideCorpses = Math.Clamp(Config.HideCorpses, Off, Force);
-        Config.HideBlood = Math.Clamp(Config.HideBlood, Off, Force);
-        Config.HideProps = Math.Clamp(Config.HideProps, Off, Force);
-        Config.CorpseDelay = Math.Max(0f, Config.CorpseDelay);
-        Config.BloodDelay = Math.Max(0.1f, Config.BloodDelay);
+        Config.Version = ConfigVersion;
+        Config.HideUnseenDefault = Math.Clamp(Config.HideUnseenDefault, 0, 3);
+        Config.MuteUnseenDefault = Math.Clamp(Config.MuteUnseenDefault, 0, 3);
+        Config.OwnKillfeedDefault = Math.Clamp(Config.OwnKillfeedDefault, 0, 1);
+        Config.HideRagdollDefault = Math.Clamp(Config.HideRagdollDefault, 0, 1);
+        Config.HideLegsDefault = Math.Clamp(Config.HideLegsDefault, 0, 1);
+        Config.HideBloodDefault = Math.Clamp(Config.HideBloodDefault, 0, 1);
+        Config.HideBulletholeDefault = Math.Clamp(Config.HideBulletholeDefault, 0, 1);
+        Config.HidePropsDefault = Math.Clamp(Config.HidePropsDefault, 0, 1);
+        Config.HideRagdollDelay = Math.Max(0f, Config.HideRagdollDelay);
+        Config.HideBulletholeDelay = Math.Max(0.1f, Config.HideBulletholeDelay);
 
         File.WriteAllText(SettingsPath, JsonSerializer.Serialize(Config, JsonOpts));
       }
@@ -497,9 +553,67 @@ public class FPS : BasePlugin
         Logger.LogError(ex, "[FPS] settings.json yazilamadi: {Path}", SettingsPath);
       }
     }
+
+    return migrated;
   }
 
-  private void LoadPlayers()
+  private static FPSConfig Migrate(JsonElement old)
+  {
+    var config = new FPSConfig();
+    if (old.TryGetProperty("fps_cmd", out var cmd) && cmd.ValueKind == JsonValueKind.String)
+      config.Commands = cmd.GetString() ?? config.Commands;
+    if (old.TryGetProperty("fps_flag", out var flag) && flag.ValueKind == JsonValueKind.String)
+      config.Flag = flag.GetString() ?? "";
+
+    config.PlayerConfig = Number(old, "player_config", 1) != 0;
+
+    int unseen = Math.Clamp(Number(old, "hide_unseen", 3), 0, 3);
+    config.HideUnseenEnable = unseen != 0;
+    config.HideUnseenDefault = unseen != 0 ? unseen : 3;
+
+    int mute = Math.Clamp(Number(old, "mute_unseen", 3), 0, 3);
+    config.MuteUnseenEnable = unseen != 0 && mute != 0;
+    config.MuteUnseenDefault = mute != 0 ? mute : 3;
+
+    config.OwnKillfeedEnable = Number(old, "own_killfeed", 1) != 0;
+    config.HideRagdollEnable = Number(old, "hide_corpses", 1) != 0;
+    config.HideRagdollDelay = Decimal(old, "corpse_delay", config.HideRagdollDelay);
+    config.HideLegsEnable = Number(old, "hide_legs", 1) != 0;
+    config.HideBloodEnable = config.HideBulletholeEnable = Number(old, "hide_blood", 1) != 0;
+    config.HideBulletholeDelay = Decimal(old, "blood_delay", config.HideBulletholeDelay);
+    config.HidePropsEnable = Number(old, "hide_props", 1) != 0;
+    return config;
+  }
+
+  private static int Number(JsonElement root, string key, int fallback)
+  {
+    if (!root.TryGetProperty(key, out var value))
+      return fallback;
+
+    return value.ValueKind switch
+    {
+      JsonValueKind.True => 1,
+      JsonValueKind.False => 0,
+      JsonValueKind.Number => (int)value.GetDouble(),
+      JsonValueKind.String when int.TryParse(value.GetString(), out int number) => number,
+      JsonValueKind.String when bool.TryParse(value.GetString(), out bool flag) => flag ? 1 : 0,
+      _ => fallback
+    };
+  }
+
+  private static float Decimal(JsonElement root, string key, float fallback)
+  {
+    if (!root.TryGetProperty(key, out var value))
+      return fallback;
+
+    if (value.ValueKind == JsonValueKind.Number)
+      return (float)value.GetDouble();
+
+    return value.ValueKind == JsonValueKind.String && float.TryParse(value.GetString(), System.Globalization.NumberStyles.Float,
+      System.Globalization.CultureInfo.InvariantCulture, out float number) ? number : fallback;
+  }
+
+  private void LoadPlayers(bool migrate)
   {
     lock (_ioLock)
     {
@@ -518,8 +632,19 @@ public class FPS : BasePlugin
 
         foreach (var (key, values) in raw)
         {
-          if (ulong.TryParse(key, out var steamId) && values != null && values.Count > 0)
-            _saved[steamId] = values;
+          if (!ulong.TryParse(key, out var steamId) || values == null || values.Count == 0)
+            continue;
+
+          if (migrate)
+          {
+            if (values.Remove("hide_corpses", out int corpses))
+              values["hide_ragdoll"] = corpses;
+
+            if (values.TryGetValue("hide_blood", out int blood))
+              values["hide_bullethole"] = blood;
+          }
+
+          _saved[steamId] = values;
         }
       }
       catch (Exception ex)
@@ -527,6 +652,9 @@ public class FPS : BasePlugin
         Logger.LogError(ex, "[FPS] players.json okunamadi");
       }
     }
+
+    if (migrate && _saved.Count > 0)
+      SavePlayers();
   }
 
   private void SavePlayers()
@@ -547,19 +675,51 @@ public class FPS : BasePlugin
     });
   }
 
+  private bool MuteEnabled => Config.HideUnseenEnable && Config.MuteUnseenEnable;
+
+  private bool Enabled(int flag) => flag switch
+  {
+    Killfeed => Config.OwnKillfeedEnable,
+    Corpses => Config.HideRagdollEnable,
+    Legs => Config.HideLegsEnable,
+    Blood => Config.HideBloodEnable,
+    Bullethole => Config.HideBulletholeEnable,
+    Props => Config.HidePropsEnable,
+    _ => false
+  };
+
+  private bool OnByDefault(int flag) => flag switch
+  {
+    Killfeed => Config.OwnKillfeedDefault != 0,
+    Corpses => Config.HideRagdollDefault != 0,
+    Legs => Config.HideLegsDefault != 0,
+    Blood => Config.HideBloodDefault != 0,
+    Bullethole => Config.HideBulletholeDefault != 0,
+    Props => Config.HidePropsDefault != 0,
+    _ => false
+  };
+
   private int Available()
   {
     int flags = 0;
-    if (Config.OwnKillfeed)
-      flags |= Killfeed;
-    if (Config.HideCorpses == Enable)
-      flags |= Corpses;
-    if (Config.HideLegs)
-      flags |= Legs;
-    if (Config.HideBlood == Enable)
-      flags |= Blood;
-    if (Config.HideProps == Enable)
-      flags |= Props;
+    foreach (var (flag, _) in FlagKeys)
+    {
+      if (Enabled(flag))
+        flags |= flag;
+    }
+
+    return flags;
+  }
+
+  private int Defaults()
+  {
+    int flags = 0;
+    foreach (var (flag, _) in FlagKeys)
+    {
+      if (Enabled(flag) && OnByDefault(flag))
+        flags |= flag;
+    }
+
     return flags;
   }
 
@@ -576,7 +736,7 @@ public class FPS : BasePlugin
 
     ApplyPrefs(player.Slot, VerifiedSteamId(player));
 
-    if (Config.HideLegs)
+    if (Config.HideLegsEnable)
       SetLegs(player, (_flags[player.Slot] & Legs) != 0);
   }
 
@@ -584,9 +744,9 @@ public class FPS : BasePlugin
   {
     _human[slot] = true;
     _steamIds[slot] = steamId;
-    _unseen[slot] = Config.HideUnseen;
-    _mute[slot] = Config.MuteUnseen;
-    _flags[slot] = Available();
+    _unseen[slot] = Config.HideUnseenEnable ? Config.HideUnseenDefault : 0;
+    _mute[slot] = MuteEnabled ? Config.MuteUnseenDefault : 0;
+    _flags[slot] = Defaults();
 
     if (steamId != 0 && _saved.TryGetValue(steamId, out var values))
     {
@@ -597,15 +757,20 @@ public class FPS : BasePlugin
       }
       else
       {
-        if (Config.HideUnseen != 0 && values.TryGetValue(UnseenKey, out int unseen))
+        if (Config.HideUnseenEnable && values.TryGetValue(UnseenKey, out int unseen))
           _unseen[slot] = Math.Clamp(unseen, 0, 3);
 
-        if (Config.MuteUnseen != 0 && values.TryGetValue(MuteKey, out int mute))
+        if (MuteEnabled && values.TryGetValue(MuteKey, out int mute))
           _mute[slot] = Math.Clamp(mute, 0, 3);
 
         foreach (var (flag, key) in FlagKeys)
         {
-          if ((_flags[slot] & flag) != 0 && values.TryGetValue(key, out int on) && on == 0)
+          if (!Enabled(flag) || !values.TryGetValue(key, out int on))
+            continue;
+
+          if (on != 0)
+            _flags[slot] |= flag;
+          else
             _flags[slot] &= ~flag;
         }
       }
@@ -639,7 +804,7 @@ public class FPS : BasePlugin
 
     ApplyPrefs(slot, steamId.SteamId64);
 
-    if (Config.HideLegs)
+    if (Config.HideLegsEnable)
       SetLegs(player, (_flags[slot] & Legs) != 0);
   }
 
@@ -676,9 +841,9 @@ public class FPS : BasePlugin
 
   private void UpdateHooks()
   {
-    bool anyHuman = false;
-    bool transmit = Config.HideCorpses == Force;
+    bool transmit = false;
     _bloodMask = 0;
+    _bulletMask = 0;
     _muteMask = 0;
     _propViewers = 0;
     _killfeedCount = 0;
@@ -688,7 +853,6 @@ public class FPS : BasePlugin
       if (!_human[slot])
         continue;
 
-      anyHuman = true;
       int flags = _flags[slot];
 
       if (_unseen[slot] != 0 || (flags & (Corpses | Props)) != 0)
@@ -696,6 +860,9 @@ public class FPS : BasePlugin
 
       if ((flags & Blood) != 0)
         _bloodMask |= 1UL << slot;
+
+      if ((flags & Bullethole) != 0)
+        _bulletMask |= 1UL << slot;
 
       if ((flags & Props) != 0)
         _propViewers |= 1UL << slot;
@@ -708,7 +875,8 @@ public class FPS : BasePlugin
     }
 
     SetTransmitHook(transmit);
-    SetBloodHook(_bloodMask != 0 || (anyHuman && Config.HideBlood == Force));
+    SetBloodHook(_bloodMask != 0);
+    SetDecalHook(_bulletMask != 0);
     SetSoundHook(_muteMask != 0);
   }
 
@@ -760,13 +928,24 @@ public class FPS : BasePlugin
     _bloodHooked = on;
 
     if (on)
-    {
       HookUserMessage(EffectDispatchMessage, _onEffect, HookMode.Pre);
-      _decalTimer = AddTimer(Config.BloodDelay, ClearDecals, TimerFlags.REPEAT);
+    else
+      UnhookUserMessage(EffectDispatchMessage, _onEffect, HookMode.Pre);
+  }
+
+  private void SetDecalHook(bool on)
+  {
+    if (on == _decalHooked)
+      return;
+
+    _decalHooked = on;
+
+    if (on)
+    {
+      _decalTimer = AddTimer(Config.HideBulletholeDelay, ClearDecals, TimerFlags.REPEAT);
     }
     else
     {
-      UnhookUserMessage(EffectDispatchMessage, _onEffect, HookMode.Pre);
       _decalTimer?.Kill();
       _decalTimer = null;
     }
@@ -783,7 +962,7 @@ public class FPS : BasePlugin
       return;
     }
 
-    if (Config.HideUnseen == 0 && Available() == 0)
+    if (!Config.HideUnseenEnable && Available() == 0)
     {
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["fps.no_options"]}");
       return;
@@ -817,7 +996,7 @@ public class FPS : BasePlugin
     _steamIds[slot] = steamId;
     Remember(slot);
 
-    if (Config.HideLegs)
+    if (Config.HideLegsEnable)
       SetLegs(player, (_flags[slot] & Legs) != 0);
 
     player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer[on ? "fps.enabled" : "fps.disabled"]}");
@@ -828,7 +1007,7 @@ public class FPS : BasePlugin
     int slot = player.Slot;
     var items = new List<WasdItem>();
 
-    if (Config.HideUnseen != 0)
+    if (Config.HideUnseenEnable)
     {
       items.Add(new WasdItem
       {
@@ -837,7 +1016,7 @@ public class FPS : BasePlugin
       });
     }
 
-    if (Config.MuteUnseen != 0)
+    if (MuteEnabled)
     {
       items.Add(new WasdItem
       {
@@ -914,17 +1093,17 @@ public class FPS : BasePlugin
     }
     else
     {
-      if (Config.HideUnseen != 0 && _unseen[slot] != Config.HideUnseen)
+      if (Config.HideUnseenEnable && _unseen[slot] != Config.HideUnseenDefault)
         values[UnseenKey] = _unseen[slot];
 
-      if (Config.MuteUnseen != 0 && _mute[slot] != Config.MuteUnseen)
+      if (MuteEnabled && _mute[slot] != Config.MuteUnseenDefault)
         values[MuteKey] = _mute[slot];
 
-      int available = Available();
       foreach (var (flag, key) in FlagKeys)
       {
-        if ((available & flag) != 0 && (_flags[slot] & flag) == 0)
-          values[key] = 0;
+        bool on = (_flags[slot] & flag) != 0;
+        if (Enabled(flag) && on != OnByDefault(flag))
+          values[key] = on ? 1 : 0;
       }
     }
 
@@ -967,7 +1146,6 @@ public class FPS : BasePlugin
     }
 
     var found = new Dictionary<string, int>();
-    var remove = new List<CBaseModelEntity>();
 
     foreach (var prop in Utilities.FindAllEntitiesByDesignerName<CBaseModelEntity>(PropClass))
     {
@@ -983,12 +1161,6 @@ public class FPS : BasePlugin
       if (_mapProps != null && !_mapProps.ContainsKey(model))
         continue;
 
-      if (Config.HideProps == Force)
-      {
-        remove.Add(prop);
-        continue;
-      }
-
       int index = (int)prop.Index;
       if (index <= 0 || index >= MaxEntities || _isProp[index])
         continue;
@@ -1000,12 +1172,6 @@ public class FPS : BasePlugin
       if (_propMask[word] == 0)
         _propWords.Add(word);
       _propMask[word] |= 1u << (index & 31);
-    }
-
-    foreach (var prop in remove)
-    {
-      if (prop.IsValid)
-        prop.Remove();
     }
 
     if (!roundStart)
@@ -1212,25 +1378,10 @@ public class FPS : BasePlugin
     return HookResult.Continue;
   }
 
-  private ulong BloodTargets()
-  {
-    if (Config.HideBlood != Force)
-      return _bloodMask;
-
-    ulong mask = 0;
-    for (int slot = 0; slot < MaxSlots; slot++)
-    {
-      if (_human[slot])
-        mask |= 1UL << slot;
-    }
-
-    return mask;
-  }
-
   private HookResult OnEffect(UserMessage msg)
   {
     ulong mask = msg.Recipients.GetRecipientMask();
-    ulong targets = Config.HideBlood == Force ? mask : mask & _bloodMask;
+    ulong targets = mask & _bloodMask;
     if (targets == 0 || !OnPlayer(msg.DebugString))
       return HookResult.Continue;
 
@@ -1366,7 +1517,7 @@ public class FPS : BasePlugin
 
   private void ClearDecals()
   {
-    ulong targets = BloodTargets();
+    ulong targets = _bulletMask;
     if (targets == 0)
       return;
 
@@ -1389,7 +1540,7 @@ public class FPS : BasePlugin
     if (tick % FfaTicks == 0)
       _ffa = _teammatesAreEnemies?.GetPrimitiveValue<bool>() == true;
     float now = Server.CurrentTime;
-    float delay = Config.CorpseDelay;
+    float delay = Config.HideRagdollDelay;
 
     for (int slot = 0; slot < MaxSlots; slot++)
     {
@@ -1450,7 +1601,6 @@ public class FPS : BasePlugin
     if (tick != _snapTick)
       BuildSnapshot(tick);
 
-    bool forceCorpses = Config.HideCorpses == Force;
     nint* list = (nint*)infoList.Handle;
     nint* entries = (nint*)list[0];
     int count = (int)list[1];
@@ -1467,7 +1617,7 @@ public class FPS : BasePlugin
       _dormantMask[viewer] = 0;
       _dormantViewers &= ~(1UL << viewer);
       int flags = _flags[viewer];
-      bool corpses = forceCorpses || (flags & Corpses) != 0;
+      bool corpses = (flags & Corpses) != 0;
       if (!corpses && _unseen[viewer] == 0 && (flags & Props) == 0)
         continue;
 
@@ -1700,6 +1850,8 @@ public class FPS : BasePlugin
     _current[2] = chest + pad;
     _current[3] = chest - pad;
     _current[4] = st.Origin + new Vector3(0f, 0f, 8f);
+    _current[5] = head + pad * (HeadPad / BodyPad);
+    _current[6] = head - pad * (HeadPad / BodyPad);
 
     foreach (var point in _current)
     {
@@ -1755,7 +1907,7 @@ public class FPS : BasePlugin
     return ref s;
   }
 
-  private static float Lead(int ping) => Math.Clamp(0.15f + ping / 1000f, 0.15f, 0.5f);
+  private static float Lead(int ping) => Math.Clamp(LeadBase + ping / 1000f, LeadBase, 0.6f);
 
   private void Origins(int v, CCSPlayerPawn pawn)
   {
