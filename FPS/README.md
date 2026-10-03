@@ -14,7 +14,7 @@ Gives players an FPS mode that removes things they do not need to see: players h
 - **Killfeed:** only your own kills (and your own death) appear in the killfeed
 - **Corpses:** dead players' bodies disappear after a short delay
 - **Legs:** you do not see your own legs when you look down
-- **Blood:** blood and hit effects on players are not shown
+- **Blood:** blood and hit effects on players are not shown, or blood stains are wiped after a set time
 - **Bullet holes:** bullet holes and stains on walls are wiped a set time after they appear
 - **Junk props:** small throwable props such as bottles, cans and pots are not shown. The list is kept per map in the `maps` folder
 - Each feature can be turned off in `settings.json`, and its default for new players can be set. A feature that is off does no work at all
@@ -67,6 +67,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 | `hide_legs_default` | int | `1` | `0`: off by default, `1`: on by default |
 | `hide_blood_enable` | bool | `true` | Hiding blood is used on the server |
 | `hide_blood_default` | int | `1` | `0`: off by default, `1`: on by default |
+| `hide_blood_delay` | float | `0` | `0`: blood is never shown. Above `0`: blood is shown and its stains are wiped after this many seconds (minimum `0.1`) |
 | `hide_bullethole_enable` | bool | `true` | Wiping bullet holes is used on the server |
 | `hide_bullethole_default` | int | `1` | `0`: off by default, `1`: on by default |
 | `hide_bullethole_delay` | float | `1.0` | Seconds after which bullet holes are wiped (minimum `0.1`) |
@@ -96,6 +97,7 @@ A setting whose `_enable` is `false` is not in the menu and does no work. With `
   "hide_legs_default": 1,
   "hide_blood_enable": true,
   "hide_blood_default": 0,
+  "hide_blood_delay": 0,
   "hide_bullethole_enable": true,
   "hide_bullethole_default": 1,
   "hide_bullethole_delay": 2.0,
@@ -173,7 +175,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<map>.vis
 - When `mp_teammates_are_enemies` is `1` (e.g. deathmatch), everyone counts as an enemy for the team/enemy choices.
 - While you spectate a player, their corpse is not hidden, so the camera does not get stuck.
 - **Behind walls sound** only mutes players that are hidden from you at that moment; footsteps and other sounds are not affected.
-- **Bullet holes** only wipes marks left during play; decals that are part of the map stay. Blood stains on walls are wiped together with bullet holes.
+- **Bullet holes** only wipes marks left during play; decals that are part of the map stay. Blood stains on walls are wiped together with bullet holes, and when `hide_blood_delay` wipes blood stains, bullet holes on screen at that moment are wiped too.
 - **Legs** makes your own model slightly transparent, which other players cannot notice. Another plugin that changes player transparency can turn your legs back on.
 - **Killfeed:** GOTV still receives the full killfeed. If another plugin (e.g. DM) also changes the killfeed, kills can show up twice; set `own_killfeed_enable: false` on that server.
 - Changes to `settings.json` and command names take effect when the server/plugin is restarted.

@@ -16,6 +16,7 @@
   "hide_legs_default": 1,
   "hide_blood_enable": true,
   "hide_blood_default": 1,
+  "hide_blood_delay": 0,
   "hide_bullethole_enable": true,
   "hide_bullethole_default": 1,
   "hide_bullethole_delay": 1,

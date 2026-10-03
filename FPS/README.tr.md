@@ -14,7 +14,7 @@ Oyunculara, görmeleri gerekmeyen şeyleri kaldıran bir FPS modu sunar: duvar a
 - **Killfeed:** killfeed'de sadece sizin öldürdükleriniz (ve sizin ölümünüz) görünür
 - **Cesetler:** ölen oyuncuların cesetleri kısa bir süre sonra kaybolur
 - **Ayaklar:** aşağı baktığınızda kendi ayaklarınızı görmezsiniz
-- **Kan:** oyunculardaki kan ve vuruş efektleri gösterilmez
+- **Kan:** oyunculardaki kan ve vuruş efektleri gösterilmez ya da kan izleri belirlenen süre sonra silinir
 - **Mermi izi:** duvarlardaki mermi delikleri ve lekeler, oluştuktan belirlenen süre sonra silinir
 - **Çöp prop:** şişe, teneke, çömlek gibi küçük fırlatılabilir prop'lar gösterilmez. Liste harita bazında `maps` klasöründe tutulur
 - Her özellik `settings.json` üzerinden kapatılabilir, yeni oyuncular için varsayılanı ayarlanabilir. Kapalı bir özellik hiç çalışmaz
@@ -67,6 +67,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 | `hide_legs_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
 | `hide_blood_enable` | bool | `true` | Kanı gizleme sunucuda kullanılsın |
 | `hide_blood_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
+| `hide_blood_delay` | float | `0` | `0`: kan hiç gösterilmez. `0`'dan büyük: kan gösterilir, kan izleri bu kadar saniye sonra silinir (en az `0.1`) |
 | `hide_bullethole_enable` | bool | `true` | Mermi izlerini silme sunucuda kullanılsın |
 | `hide_bullethole_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
 | `hide_bullethole_delay` | float | `1.0` | Mermi izlerinin kaç saniye sonra silineceği (en az `0.1`) |
@@ -96,6 +97,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
   "hide_legs_default": 1,
   "hide_blood_enable": true,
   "hide_blood_default": 0,
+  "hide_blood_delay": 0,
   "hide_bullethole_enable": true,
   "hide_bullethole_default": 1,
   "hide_bullethole_delay": 2.0,
@@ -173,7 +175,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<harita>.vis
 - `mp_teammates_are_enemies` `1` iken (ör. deathmatch), takım/rakip seçimlerinde herkes rakip sayılır.
 - Bir oyuncuyu izlerken onun cesedi gizlenmez, böylece kamera takılı kalmaz.
 - **Duvar arkası ses** sadece o an sizden gizlenen oyuncuları susturur; ayak sesleri ve diğer sesler etkilenmez.
-- **Mermi izi** sadece oyun sırasında oluşan izleri siler; haritanın kendi decal'leri kalır. Duvarlardaki kan lekeleri de mermi izleriyle birlikte silinir.
+- **Mermi izi** sadece oyun sırasında oluşan izleri siler; haritanın kendi decal'leri kalır. Duvarlardaki kan lekeleri de mermi izleriyle birlikte silinir; `hide_blood_delay` kan izlerini silerken o an ekrandaki mermi izleri de silinir.
 - **Ayaklar** kendi modelinizi diğer oyuncuların fark edemeyeceği kadar az saydam yapar. Oyuncu saydamlığını değiştiren başka bir eklenti ayaklarınızı yeniden görünür yapabilir.
 - **Killfeed:** GOTV killfeed'in tamamını almaya devam eder. Killfeed'i değiştiren başka bir eklenti (ör. DM) varsa killfeed iki kez görünebilir; o sunucuda `own_killfeed_enable: false` yapın.
 - `settings.json` ve komut adı değişiklikleri sunucu/eklenti yeniden başlatıldığında etkinleşir.

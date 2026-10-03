@@ -75,6 +75,9 @@ public class FPSConfig
   [JsonPropertyName("hide_blood_default"), JsonConverter(typeof(LooseInt))]
   public int HideBloodDefault { get; set; } = 1;
 
+  [JsonPropertyName("hide_blood_delay")]
+  public float HideBloodDelay { get; set; } = 0f;
+
   [JsonPropertyName("hide_bullethole_enable"), JsonConverter(typeof(LooseBool))]
   public bool HideBulletholeEnable { get; set; } = true;
 
@@ -210,7 +213,8 @@ public class FPS : BasePlugin
   private readonly float[] _deathTime = new float[MaxSlots];
   private readonly int[] _dyingTick = new int[MaxSlots];
   private ulong _bloodMask;
-  private ulong _bulletMask;
+  private ulong _wipeMask;
+  private readonly float[] _wipeAt = new float[MaxSlots];
   private int _killfeedCount;
   private readonly Dictionary<ulong, Dictionary<string, int>> _saved = new();
   private readonly object _ioLock = new();
@@ -544,6 +548,7 @@ public class FPS : BasePlugin
         Config.HideBulletholeDefault = Math.Clamp(Config.HideBulletholeDefault, 0, 1);
         Config.HidePropsDefault = Math.Clamp(Config.HidePropsDefault, 0, 1);
         Config.HideRagdollDelay = Math.Max(0f, Config.HideRagdollDelay);
+        Config.HideBloodDelay = Config.HideBloodDelay <= 0f ? 0f : Math.Max(0.1f, Config.HideBloodDelay);
         Config.HideBulletholeDelay = Math.Max(0.1f, Config.HideBulletholeDelay);
 
         File.WriteAllText(SettingsPath, JsonSerializer.Serialize(Config, JsonOpts));
@@ -843,7 +848,7 @@ public class FPS : BasePlugin
   {
     bool transmit = false;
     _bloodMask = 0;
-    _bulletMask = 0;
+    _wipeMask = 0;
     _muteMask = 0;
     _propViewers = 0;
     _killfeedCount = 0;
@@ -858,11 +863,11 @@ public class FPS : BasePlugin
       if (_unseen[slot] != 0 || (flags & (Corpses | Props)) != 0)
         transmit = true;
 
-      if ((flags & Blood) != 0)
+      if ((flags & Blood) != 0 && Config.HideBloodDelay == 0f)
         _bloodMask |= 1UL << slot;
 
-      if ((flags & Bullethole) != 0)
-        _bulletMask |= 1UL << slot;
+      if (WipeInterval(slot) < float.MaxValue)
+        _wipeMask |= 1UL << slot;
 
       if ((flags & Props) != 0)
         _propViewers |= 1UL << slot;
@@ -876,7 +881,7 @@ public class FPS : BasePlugin
 
     SetTransmitHook(transmit);
     SetBloodHook(_bloodMask != 0);
-    SetDecalHook(_bulletMask != 0);
+    SetDecalHook(_wipeMask != 0);
     SetSoundHook(_muteMask != 0);
   }
 
@@ -942,7 +947,7 @@ public class FPS : BasePlugin
 
     if (on)
     {
-      _decalTimer = AddTimer(Config.HideBulletholeDelay, ClearDecals, TimerFlags.REPEAT);
+      _decalTimer = AddTimer(0.1f, ClearDecals, TimerFlags.REPEAT);
     }
     else
     {
@@ -1515,9 +1520,35 @@ public class FPS : BasePlugin
     return entity != null && entity.IsValid && entity.DesignerName == "player";
   }
 
+  private float WipeInterval(int slot)
+  {
+    int flags = _flags[slot];
+    float interval = float.MaxValue;
+
+    if ((flags & Bullethole) != 0)
+      interval = Config.HideBulletholeDelay;
+
+    if ((flags & Blood) != 0 && Config.HideBloodDelay > 0f)
+      interval = Math.Min(interval, Config.HideBloodDelay);
+
+    return interval;
+  }
+
   private void ClearDecals()
   {
-    ulong targets = _bulletMask;
+    float now = Server.CurrentTime;
+    ulong targets = 0;
+
+    for (ulong pending = _wipeMask; pending != 0; pending &= pending - 1)
+    {
+      int slot = BitOperations.TrailingZeroCount(pending);
+      if (now < _wipeAt[slot])
+        continue;
+
+      targets |= 1UL << slot;
+      _wipeAt[slot] = now + WipeInterval(slot);
+    }
+
     if (targets == 0)
       return;
 
