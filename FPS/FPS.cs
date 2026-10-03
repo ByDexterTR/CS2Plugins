@@ -135,7 +135,7 @@ public class PropRecord
 public class FPS : BasePlugin
 {
   public override string ModuleName => "FPS";
-  public override string ModuleVersion => "1.0.2";
+  public override string ModuleVersion => "1.0.3";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -233,6 +233,7 @@ public class FPS : BasePlugin
   private struct Snap
   {
     public int Pawn;
+    public uint Raw;
     public bool Alive;
     public bool Corpse;
     public byte Team;
@@ -256,6 +257,7 @@ public class FPS : BasePlugin
   private readonly int[] _nextCheck = new int[MaxSlots * MaxSlots];
   private readonly int[] _checkedAt = new int[MaxSlots * MaxSlots];
   private readonly bool[] _seen = new bool[MaxSlots * MaxSlots];
+  private readonly uint[] _known = new uint[MaxSlots * MaxSlots];
   private readonly Vector3[] _fromPos = new Vector3[MaxSlots * MaxSlots];
   private readonly Vector3[] _toPos = new Vector3[MaxSlots * MaxSlots];
   private long _traceTime;
@@ -841,6 +843,7 @@ public class FPS : BasePlugin
       _visibleUntil[row] = _visibleUntil[column] = 0;
       _nextCheck[row] = _nextCheck[column] = 0;
       _seen[row] = _seen[column] = false;
+      _known[row] = _known[column] = 0;
     }
   }
 
@@ -1600,6 +1603,7 @@ public class FPS : BasePlugin
         _pawns[slot] = pawn = new CCSPlayerPawn(ptr);
 
       s.Pawn = (int)(raw & 0x3FFF);
+      s.Raw = raw;
       s.Team = player.TeamNum;
       s.Alive = pawn.LifeState == (byte)LifeState_t.LIFE_ALIVE && pawn.Health > 0 && (uint)(tick - _dyingTick[slot]) > DyingTicks;
       s.Corpse = !s.Alive && now - _deathTime[slot] >= delay;
@@ -1642,6 +1646,9 @@ public class FPS : BasePlugin
       int viewer = *(int*)(entry + _slotOffset);
       if ((uint)viewer >= MaxSlots)
         continue;
+
+      if (*(byte*)(entry + _slotOffset + 4) != 0)
+        Array.Clear(_known, viewer * MaxSlots, MaxSlots);
 
       ulong previous = _hiddenMask[viewer];
       _hiddenMask[viewer] = 0;
@@ -1702,8 +1709,14 @@ public class FPS : BasePlugin
       if (mode != 3 && Teammates(t, v) != (mode == 1))
         continue;
 
-      if (!IsVisible(v, t, tick))
+      if (IsVisible(v, t, tick))
+        continue;
+
+      int pair = v * MaxSlots + t;
+      if (_known[pair] == st.Raw)
         hidden |= 1UL << t;
+      else
+        _known[pair] = st.Raw;
     }
 
     if (hidden != 0 && _pawns[v] is { } pawn)
@@ -1933,8 +1946,8 @@ public class FPS : BasePlugin
       return ref s;
 
     s.CellTick = _snapTick;
-    s.Cell = vis.CellOf(s.Origin);
-    s.AheadCell = vis.CellOf(s.Origin + new Vector3(s.Velocity.X, s.Velocity.Y, 0f) * Lead(s.Ping));
+    s.Cell = vis.Locate(s.Origin, _world);
+    s.AheadCell = vis.Locate(s.Origin + new Vector3(s.Velocity.X, s.Velocity.Y, 0f) * Lead(s.Ping), _world);
     return ref s;
   }
 

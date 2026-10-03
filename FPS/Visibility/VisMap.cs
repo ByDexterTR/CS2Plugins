@@ -8,13 +8,19 @@ namespace FPS.Visibility;
 public sealed class VisMap
 {
   private const uint Magic = 0x53495646;
-  private const int Version = 1;
+  private const int Version = 3;
 
   public const float CellSize = 64f;
   public const float CellHeight = 64f;
   private const float EyeHeight = 64f;
   private const float CrouchEyeHeight = 46f;
-  private const float MaxStepUp = 56f;
+  private const float StepUp = 56f;
+  private const float MaxStepUp = 80f;
+  private const float StairStep = 44f;
+  private const float ClipGround = 24f;
+  private const float LocateHeight = 36f;
+  private const float LocateReach = 72f;
+  private const float LocateRise = 48f;
   private const float MaxDrop = 240f;
   private const int Dilation = 2;
   private static readonly float[] TargetHeights = [68f, 36f, 8f, 100f];
@@ -28,6 +34,7 @@ public sealed class VisMap
   public int NZ { get; private set; }
 
   private int[] _cells = [];
+  private Vector3[] _floors = [];
   private ulong[] _bits = [];
   private int _words;
 
@@ -56,6 +63,46 @@ public sealed class VisMap
     return -1;
   }
 
+  public int Locate(Vector3 origin, WorldBvh? world)
+  {
+    int found = CellOf(origin);
+    if (found >= 0 || world == null)
+      return found;
+
+    int x = (int)MathF.Floor((origin.X - Min.X) / CellSize);
+    int y = (int)MathF.Floor((origin.Y - Min.Y) / CellSize);
+    int z = (int)MathF.Floor((origin.Z - Min.Z) / CellHeight);
+    var eye = origin + new Vector3(0f, 0f, LocateHeight);
+    float best = float.MaxValue;
+
+    for (int k = z + 1; k >= z - 1; k--)
+    for (int dy = -1; dy <= 1; dy++)
+    for (int dx = -1; dx <= 1; dx++)
+    {
+      int cx = x + dx, cy = y + dy;
+      if ((uint)k >= (uint)NZ || (uint)cx >= (uint)NX || (uint)cy >= (uint)NY)
+        continue;
+
+      int cell = _cells[(k * NY + cy) * NX + cx];
+      if (cell < 0)
+        continue;
+
+      var floor = _floors[cell];
+      float flat = (floor.X - origin.X) * (floor.X - origin.X) + (floor.Y - origin.Y) * (floor.Y - origin.Y);
+      if (flat > LocateReach * LocateReach || MathF.Abs(floor.Z - origin.Z) > LocateRise)
+        continue;
+
+      float distance = Vector3.DistanceSquared(floor, origin);
+      if (distance >= best || world.Blocked(eye, floor + new Vector3(0f, 0f, LocateHeight)))
+        continue;
+
+      best = distance;
+      found = cell;
+    }
+
+    return found;
+  }
+
   public bool Visible(int from, int to) => (_bits[(long)from * _words + (to >> 6)] & (1UL << (to & 63))) != 0;
 
   public static VisMap Bake(WorldBvh world, WorldBvh clip, IReadOnlyList<Vector3> spawns, string hash, int threads, CancellationToken token)
@@ -73,6 +120,7 @@ public sealed class VisMap
     token.ThrowIfCancellationRequested();
 
     map.Count = floors.Count;
+    map._floors = [.. floors];
     map._words = (floors.Count + 63) >> 6;
     var raw = new ulong[(long)floors.Count * map._words];
     Run(threads, floors.Count, token, a => map.BakeRow(world, floors, raw, a));
@@ -100,14 +148,15 @@ public sealed class VisMap
 
       for (int guard = 0; guard < 32 && start > bottom; guard++)
       {
-        float t = world.Fraction(new Vector3(px, py, start), new Vector3(px, py, bottom));
+        float t = clip.Fraction(new Vector3(px, py, start), new Vector3(px, py, bottom));
         if (t >= 1f)
           break;
 
         float z = start + t * (bottom - start);
         var floor = new Vector3(px, py, z);
+        bool grounded = world.Fraction(floor + new Vector3(0f, 0f, 1f), floor - new Vector3(0f, 0f, ClipGround)) < 1f;
 
-        if (!clip.Blocked(floor + new Vector3(0f, 0f, 2f), floor + new Vector3(0f, 0f, 70f)))
+        if (grounded && !clip.Blocked(floor + new Vector3(0f, 0f, 2f), floor + new Vector3(0f, 0f, 70f)))
         {
           int k = (int)((z - Min.Z) / CellHeight);
           int slot = (k * NY + y) * NX + x;
@@ -164,7 +213,7 @@ public sealed class VisMap
     foreach (var spawn in spawns)
     {
       var from = spawn + new Vector3(0f, 0f, 32f);
-      float t = world.Fraction(from, from - new Vector3(0f, 0f, 232f));
+      float t = clip.Fraction(from, from - new Vector3(0f, 0f, 232f));
       if (t >= 1f)
         continue;
 
@@ -230,6 +279,9 @@ public sealed class VisMap
     if (Vertical(clip, a, top) || Vertical(clip, b, top))
       return false;
 
+    if (b.Z - a.Z > StepUp && !Stairs(clip, a, b))
+      return false;
+
     foreach (float height in BodyHeights)
     {
       var pa = new Vector3(a.X, a.Y, top + height);
@@ -239,6 +291,19 @@ public sealed class VisMap
     }
 
     return true;
+  }
+
+  private static bool Stairs(WorldBvh clip, Vector3 low, Vector3 high)
+  {
+    var middle = (low + high) * 0.5f;
+    var from = new Vector3(middle.X, middle.Y, high.Z + 70f);
+    var to = new Vector3(middle.X, middle.Y, low.Z - 8f);
+    float t = clip.Fraction(from, to);
+    if (t >= 1f)
+      return false;
+
+    float z = from.Z + (to.Z - from.Z) * t;
+    return z - low.Z <= StairStep && high.Z - z <= StairStep;
   }
 
   private static bool Vertical(WorldBvh clip, Vector3 floor, float top)
@@ -396,6 +461,13 @@ public sealed class VisMap
       foreach (int cell in _cells)
         writer.Write(cell);
 
+      foreach (var floor in _floors)
+      {
+        writer.Write(floor.X);
+        writer.Write(floor.Y);
+        writer.Write(floor.Z);
+      }
+
       foreach (ulong word in _bits)
         writer.Write(word);
     }
@@ -429,6 +501,10 @@ public sealed class VisMap
     map._cells = new int[map.NX * map.NY * map.NZ];
     for (int i = 0; i < map._cells.Length; i++)
       map._cells[i] = reader.ReadInt32();
+
+    map._floors = new Vector3[map.Count];
+    for (int i = 0; i < map.Count; i++)
+      map._floors[i] = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
 
     map._words = (map.Count + 63) >> 6;
     map._bits = new ulong[(long)map.Count * map._words];
