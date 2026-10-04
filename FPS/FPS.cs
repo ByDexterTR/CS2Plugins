@@ -135,7 +135,7 @@ public class PropRecord
 public class FPS : BasePlugin
 {
   public override string ModuleName => "FPS";
-  public override string ModuleVersion => "1.0.3";
+  public override string ModuleVersion => "1.0.4";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -213,8 +213,9 @@ public class FPS : BasePlugin
   private readonly float[] _deathTime = new float[MaxSlots];
   private readonly int[] _dyingTick = new int[MaxSlots];
   private ulong _bloodMask;
-  private ulong _wipeMask;
-  private readonly float[] _wipeAt = new float[MaxSlots];
+  private ulong _bulletWipeMask;
+  private ulong _bloodWipeMask;
+  private readonly double[] _wipeAt = new double[MaxSlots];
   private int _killfeedCount;
   private readonly Dictionary<ulong, Dictionary<string, int>> _saved = new();
   private readonly object _ioLock = new();
@@ -333,6 +334,12 @@ public class FPS : BasePlugin
 
     if (Config.HideRagdollEnable)
       RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
+
+    if (Config.HideBulletholeEnable)
+      RegisterEventHandler<EventWeaponFire>(OnWeaponFire);
+
+    if (Config.HideBloodEnable && Config.HideBloodDelay > 0f)
+      RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
 
     if (Config.HideLegsEnable)
       RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
@@ -828,6 +835,7 @@ public class FPS : BasePlugin
     _dormantMask[slot] = 0;
     _dormantViewers &= ~(1UL << slot);
     _flags[slot] = 0;
+    _wipeAt[slot] = 0;
     _players[slot] = null;
     _pawns[slot] = null;
     ResetPairs(slot);
@@ -851,7 +859,8 @@ public class FPS : BasePlugin
   {
     bool transmit = false;
     _bloodMask = 0;
-    _wipeMask = 0;
+    _bulletWipeMask = 0;
+    _bloodWipeMask = 0;
     _muteMask = 0;
     _propViewers = 0;
     _killfeedCount = 0;
@@ -866,11 +875,16 @@ public class FPS : BasePlugin
       if (_unseen[slot] != 0 || (flags & (Corpses | Props)) != 0)
         transmit = true;
 
-      if ((flags & Blood) != 0 && Config.HideBloodDelay == 0f)
-        _bloodMask |= 1UL << slot;
+      if ((flags & Blood) != 0)
+      {
+        if (Config.HideBloodDelay > 0f)
+          _bloodWipeMask |= 1UL << slot;
+        else
+          _bloodMask |= 1UL << slot;
+      }
 
-      if (WipeInterval(slot) < float.MaxValue)
-        _wipeMask |= 1UL << slot;
+      if ((flags & Bullethole) != 0)
+        _bulletWipeMask |= 1UL << slot;
 
       if ((flags & Props) != 0)
         _propViewers |= 1UL << slot;
@@ -884,7 +898,7 @@ public class FPS : BasePlugin
 
     SetTransmitHook(transmit);
     SetBloodHook(_bloodMask != 0);
-    SetDecalHook(_wipeMask != 0);
+    SetDecalHook((_bulletWipeMask | _bloodWipeMask) != 0);
     SetSoundHook(_muteMask != 0);
   }
 
@@ -1523,33 +1537,47 @@ public class FPS : BasePlugin
     return entity != null && entity.IsValid && entity.DesignerName == "player";
   }
 
-  private float WipeInterval(int slot)
+  private static double Clock => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
+
+  private HookResult OnWeaponFire(EventWeaponFire @event, GameEventInfo info)
   {
-    int flags = _flags[slot];
-    float interval = float.MaxValue;
+    ScheduleWipe(_bulletWipeMask, Config.HideBulletholeDelay);
+    return HookResult.Continue;
+  }
 
-    if ((flags & Bullethole) != 0)
-      interval = Config.HideBulletholeDelay;
+  private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
+  {
+    ScheduleWipe(_bloodWipeMask, Config.HideBloodDelay);
+    return HookResult.Continue;
+  }
 
-    if ((flags & Blood) != 0 && Config.HideBloodDelay > 0f)
-      interval = Math.Min(interval, Config.HideBloodDelay);
+  private void ScheduleWipe(ulong viewers, float delay)
+  {
+    if (viewers == 0)
+      return;
 
-    return interval;
+    double due = Clock + delay;
+    for (ulong pending = viewers; pending != 0; pending &= pending - 1)
+    {
+      int slot = BitOperations.TrailingZeroCount(pending);
+      if (_wipeAt[slot] == 0 || due < _wipeAt[slot])
+        _wipeAt[slot] = due;
+    }
   }
 
   private void ClearDecals()
   {
-    float now = Server.CurrentTime;
+    double now = Clock;
     ulong targets = 0;
 
-    for (ulong pending = _wipeMask; pending != 0; pending &= pending - 1)
+    for (ulong pending = _bulletWipeMask | _bloodWipeMask; pending != 0; pending &= pending - 1)
     {
       int slot = BitOperations.TrailingZeroCount(pending);
-      if (now < _wipeAt[slot])
+      if (_wipeAt[slot] == 0 || now < _wipeAt[slot])
         continue;
 
       targets |= 1UL << slot;
-      _wipeAt[slot] = now + WipeInterval(slot);
+      _wipeAt[slot] = 0;
     }
 
     if (targets == 0)

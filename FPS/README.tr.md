@@ -70,7 +70,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 | `hide_blood_delay` | float | `0` | `0`: kan hiç gösterilmez. `0`'dan büyük: kan gösterilir, kan izleri bu kadar saniye sonra silinir (en az `0.1`) |
 | `hide_bullethole_enable` | bool | `true` | Mermi izlerini silme sunucuda kullanılsın |
 | `hide_bullethole_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
-| `hide_bullethole_delay` | float | `1.0` | Mermi izlerinin kaç saniye sonra silineceği (en az `0.1`) |
+| `hide_bullethole_delay` | float | `1.0` | Atıştan kaç saniye sonra mermi izlerinin silineceği (en az `0.1`) |
 | `hide_props_enable` | bool | `true` | Çöp prop'ları gizleme sunucuda kullanılsın |
 | `hide_props_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
 
@@ -175,7 +175,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<harita>.vis
 - `mp_teammates_are_enemies` `1` iken (ör. deathmatch), takım/rakip seçimlerinde herkes rakip sayılır.
 - Bir oyuncuyu izlerken onun cesedi gizlenmez, böylece kamera takılı kalmaz.
 - **Duvar arkası ses** sadece o an sizden gizlenen oyuncuları susturur; ayak sesleri ve diğer sesler etkilenmez.
-- **Mermi izi** sadece oyun sırasında oluşan izleri siler; haritanın kendi decal'leri kalır. Duvarlardaki kan lekeleri de mermi izleriyle birlikte silinir; `hide_blood_delay` kan izlerini silerken o an ekrandaki mermi izleri de silinir.
+- **Mermi izi** sadece oyun sırasında oluşan izleri siler; haritanın kendi decal'leri kalır. Oyun izleri tek tek değil, oyuncunun ekranındaki hepsini birden silebiliyor. Süre ilk yeni iz ya da lekeyle başlar; dolduğunda o oyuncunun ekranındaki tüm izler ve lekeler, az önce oluşanlar dahil, birlikte gider. Kan lekeleri ve mermi izleri her zaman birlikte silinir.
 - **Ayaklar** kendi modelinizi diğer oyuncuların fark edemeyeceği kadar az saydam yapar. Oyuncu saydamlığını değiştiren başka bir eklenti ayaklarınızı yeniden görünür yapabilir.
 - **Killfeed:** GOTV killfeed'in tamamını almaya devam eder. Killfeed'i değiştiren başka bir eklenti (ör. DM) varsa killfeed iki kez görünebilir; o sunucuda `own_killfeed_enable: false` yapın.
 - `settings.json` ve komut adı değişiklikleri sunucu/eklenti yeniden başlatıldığında etkinleşir.

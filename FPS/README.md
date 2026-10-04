@@ -70,7 +70,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 | `hide_blood_delay` | float | `0` | `0`: blood is never shown. Above `0`: blood is shown and its stains are wiped after this many seconds (minimum `0.1`) |
 | `hide_bullethole_enable` | bool | `true` | Wiping bullet holes is used on the server |
 | `hide_bullethole_default` | int | `1` | `0`: off by default, `1`: on by default |
-| `hide_bullethole_delay` | float | `1.0` | Seconds after which bullet holes are wiped (minimum `0.1`) |
+| `hide_bullethole_delay` | float | `1.0` | Seconds after a shot before bullet holes are wiped (minimum `0.1`) |
 | `hide_props_enable` | bool | `true` | Hiding junk props is used on the server |
 | `hide_props_default` | int | `1` | `0`: off by default, `1`: on by default |
 
@@ -175,7 +175,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<map>.vis
 - When `mp_teammates_are_enemies` is `1` (e.g. deathmatch), everyone counts as an enemy for the team/enemy choices.
 - While you spectate a player, their corpse is not hidden, so the camera does not get stuck.
 - **Behind walls sound** only mutes players that are hidden from you at that moment; footsteps and other sounds are not affected.
-- **Bullet holes** only wipes marks left during play; decals that are part of the map stay. Blood stains on walls are wiped together with bullet holes, and when `hide_blood_delay` wipes blood stains, bullet holes on screen at that moment are wiped too.
+- **Bullet holes** only wipes marks left during play; decals that are part of the map stay. The game can only wipe every mark on a player's screen at once, not one by one. The timer starts with the first new hole or stain, and when it runs out every hole and stain on that player's screen goes together, including ones made a moment earlier. Blood stains and bullet holes are always wiped together.
 - **Legs** makes your own model slightly transparent, which other players cannot notice. Another plugin that changes player transparency can turn your legs back on.
 - **Killfeed:** GOTV still receives the full killfeed. If another plugin (e.g. DM) also changes the killfeed, kills can show up twice; set `own_killfeed_enable: false` on that server.
 - Changes to `settings.json` and command names take effect when the server/plugin is restarted.
