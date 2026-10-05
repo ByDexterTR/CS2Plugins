@@ -165,12 +165,13 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<harita>.vis
 - Tablosu olmayan haritada (atölye haritaları dahil) tablo, harita yüklenirken arka planda hazırlanır ve bu klasöre kaydedilir. Haritaya göre birkaç saniye ile yarım dakika arası sürer, işlemci çekirdeklerinin yarısını düşük öncelikle kullanır. Hazır olana kadar her oyuncu görüş kontrolüyle denetlenir.
 - Atölye haritalarının tablosu `<harita>.<atölye id>.vis` adıyla kaydedilir, aynı isimli atölye haritaları tabloyu paylaşmaz. Yüklü haritanın adını taşıyan birden fazla harita dosyası varsa eklenti her birini çalışan haritayla karşılaştırır ve eşleşeni kullanır.
 - Bir CS2 güncellemesi haritayı değiştirirse tablo haritayla uyuşmaz ve otomatik yeniden hazırlanır.
+- Oyuncuların ayrı alanlara ışınlandığı arena ve çok bölümlü haritalar da kapsanır: tablo; spawn, ışınlanma noktası veya nav işaretinden ulaşılabilen her alanı içerir.
 - Yeniden hazırlatmak için haritanın `.vis` dosyasını silin.
 
 ## Notlar
 
 - **Duvar arkası** sadece hayattayken çalışır. Ölüyken veya izlerken tüm oyuncular görünür kalır.
-- Gizlenen oyuncu görüş hattı açıldığı anda, köşeden çıkmak üzereyken de görünür. Pingi yüksek oyunculara daha erken gösterilir, görünen bir oyuncu da hemen gizlenmez. Çarpışma, mermi ve hasar etkilenmez.
+- Gizlenen oyuncu görüş hattı açıldığı anda, köşeden çıkmak üzereyken de görünür. Siperin hemen arkasında duran, kutuya zıplayan ya da merdiven veya rampadan çıkan oyuncu, kafası siperi aşmadan biraz önce gösterilir. Bir oyuncu sizi görebiliyorsa siz de onu görürsünüz. Pingi yüksek oyunculara daha erken gösterilir, görünen bir oyuncu da hemen gizlenmez. Çarpışma, mermi ve hasar etkilenmez.
 - Size çok yakın olan oyuncular hiç gizlenmez.
 - `mp_teammates_are_enemies` `1` iken (ör. deathmatch), takım/rakip seçimlerinde herkes rakip sayılır.
 - Bir oyuncuyu izlerken onun cesedi gizlenmez, böylece kamera takılı kalmaz.

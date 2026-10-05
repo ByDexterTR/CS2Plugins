@@ -8,7 +8,7 @@ namespace FPS.Visibility;
 public sealed class VisMap
 {
   private const uint Magic = 0x53495646;
-  private const int Version = 3;
+  private const int Version = 4;
 
   public const float CellSize = 64f;
   public const float CellHeight = 64f;

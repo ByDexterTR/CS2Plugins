@@ -135,7 +135,7 @@ public class PropRecord
 public class FPS : BasePlugin
 {
   public override string ModuleName => "FPS";
-  public override string ModuleVersion => "1.0.4";
+  public override string ModuleVersion => "1.0.5";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -178,6 +178,7 @@ public class FPS : BasePlugin
   private const float ShoulderMax = 144f;
   private const float BodyPad = 20f;
   private const float HeadPad = 16f;
+  private const float PeekRise = 48f;
   private const float LeadBase = 0.3f;
   private const float MovingSqr = 10f * 10f;
   private const float MoveSqr = 8f * 8f;
@@ -185,6 +186,7 @@ public class FPS : BasePlugin
   private const ulong LosMask = (ulong)Contents.Solid;
   private const ulong LosExclude = (ulong)(Contents.Player | Contents.Npc | Contents.Debris | Contents.Window | Contents.PassBullets);
   private const int OriginTicks = 2;
+  private const int Eyes = 7;
   private const float ClipMargin = 8f;
   private const int DyingTicks = 8;
   private const int FfaTicks = 64;
@@ -271,8 +273,8 @@ public class FPS : BasePlugin
   private readonly CSVector _traceEnd = new();
   private readonly TraceOptions _traceOptions = new() { InteractsWith = (Contents)LosMask, InteractsExclude = (Contents)LosExclude };
   private readonly Vector3[] _current = new Vector3[7];
-  private readonly Vector3[] _ahead = new Vector3[2];
-  private readonly Vector3[] _origins = new Vector3[MaxSlots * 6];
+  private readonly Vector3[] _ahead = new Vector3[3];
+  private readonly Vector3[] _origins = new Vector3[MaxSlots * Eyes];
   private readonly int[] _originTick = new int[MaxSlots];
   private readonly bool[] _moving = new bool[MaxSlots];
 
@@ -399,7 +401,7 @@ public class FPS : BasePlugin
     var cancel = _visCancel = new CancellationTokenSource();
     var spawns = new List<Vector3>();
 
-    foreach (var name in new[] { "info_player_terrorist", "info_player_counterterrorist", "info_deathmatch_spawn", "info_player_start" })
+    foreach (var name in new[] { "info_player_terrorist", "info_player_counterterrorist", "info_deathmatch_spawn", "info_player_start", "info_teleport_destination", "point_nav_walkable" })
     {
       foreach (var spawn in Utilities.FindAllEntitiesByDesignerName<CBaseEntity>(name))
       {
@@ -1737,7 +1739,7 @@ public class FPS : BasePlugin
       if (mode != 3 && Teammates(t, v) != (mode == 1))
         continue;
 
-      if (IsVisible(v, t, tick))
+      if (Seen(v, t, tick))
         continue;
 
       int pair = v * MaxSlots + t;
@@ -1829,6 +1831,8 @@ public class FPS : BasePlugin
     return s.WeaponCount;
   }
 
+  private bool Seen(int v, int t, int tick) => IsVisible(v, t, tick) || IsVisible(t, v, tick);
+
   private bool IsVisible(int v, int t, int tick)
   {
     int pair = v * MaxSlots + t;
@@ -1908,7 +1912,7 @@ public class FPS : BasePlugin
     if (pawn == null)
       return true;
 
-    int o = v * 6;
+    int o = v * Eyes;
     Origins(v, pawn);
 
     var head = st.Origin + new Vector3(0f, 0f, st.EyeZ + 4f);
@@ -1935,6 +1939,10 @@ public class FPS : BasePlugin
         || Clear(pawn, _origins[o + 1], chest) || Clear(pawn, _origins[o + 2], chest))
       return true;
 
+    var rise = Reach(pawn, head, head + new Vector3(0f, 0f, PeekRise));
+    if (Clear(pawn, _origins[o], rise) || Clear(pawn, _origins[o + 6], head) || Clear(pawn, _origins[o + 6], chest))
+      return true;
+
     var targetMove = new Vector3(st.Velocity.X, st.Velocity.Y, 0f);
     if (!_moving[v] && targetMove.LengthSquared() < MovingSqr)
       return false;
@@ -1942,6 +1950,7 @@ public class FPS : BasePlugin
     var target = st.Origin + targetMove * Lead(sv.Ping);
     _ahead[0] = target + new Vector3(0f, 0f, st.EyeZ + 4f);
     _ahead[1] = target + new Vector3(0f, 0f, 36f);
+    _ahead[2] = _ahead[0] + new Vector3(0f, 0f, PeekRise);
 
     foreach (var point in _ahead)
     {
@@ -1989,7 +1998,7 @@ public class FPS : BasePlugin
 
     _originTick[v] = tick;
     ref var sv = ref _snap[v];
-    int o = v * 6;
+    int o = v * Eyes;
 
     float yaw = pawn.EyeAngles.Y * (MathF.PI / 180f);
     var right = new Vector3(MathF.Sin(yaw), -MathF.Cos(yaw), 0f);
@@ -2007,6 +2016,7 @@ public class FPS : BasePlugin
     _origins[o + 3] = ahead;
     _origins[o + 4] = Reach(pawn, ahead, ahead + right * shoulder);
     _origins[o + 5] = Reach(pawn, ahead, ahead - right * shoulder);
+    _origins[o + 6] = Reach(pawn, eye, eye + new Vector3(0f, 0f, PeekRise));
   }
 
   private Vector3 Reach(CCSPlayerPawn pawn, Vector3 from, Vector3 to)
