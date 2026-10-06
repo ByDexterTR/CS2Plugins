@@ -8,6 +8,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Entities;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
@@ -135,7 +136,7 @@ public class PropRecord
 public class FPS : BasePlugin
 {
   public override string ModuleName => "FPS";
-  public override string ModuleVersion => "1.0.5";
+  public override string ModuleVersion => "1.0.6";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -171,6 +172,7 @@ public class FPS : BasePlugin
   private const int HoldTicks = 64;
   private const int SafeHoldTicks = 16;
   private const int RecheckTicks = 4;
+  private const int MaxRecheckTicks = 8;
   private const int MaxHiddenTicks = 32;
   private const int GraceTicks = 16;
   private const float ShoulderBase = 48f;
@@ -178,9 +180,12 @@ public class FPS : BasePlugin
   private const float ShoulderMax = 144f;
   private const float BodyPad = 20f;
   private const float HeadPad = 16f;
-  private const float PeekRise = 48f;
+  private const float MaxRise = 64f;
+  private const int ClimbTicks = 8;
   private const float LeadBase = 0.3f;
-  private const float MovingSqr = 10f * 10f;
+  private const float DriftSqr = 4f * 4f;
+  private const int PathTicks = 40;
+  private const int Hints = 8;
   private const float MoveSqr = 8f * 8f;
   private const float NearDistanceSqr = 160f * 160f;
   private const ulong LosMask = (ulong)Contents.Solid;
@@ -250,6 +255,15 @@ public class FPS : BasePlugin
     public int CellTick;
     public int Cell;
     public int AheadCell;
+    public float Climb;
+    public float ClimbZ;
+    public int ClimbTick;
+    public float Yaw;
+    public Vector2 Wish;
+    public bool Ground;
+    public int PathTick;
+    public int PathCount;
+    public Vector2 PathVelocity;
   }
 
   private readonly Snap[] _snap = new Snap[MaxSlots];
@@ -276,7 +290,24 @@ public class FPS : BasePlugin
   private readonly Vector3[] _ahead = new Vector3[3];
   private readonly Vector3[] _origins = new Vector3[MaxSlots * Eyes];
   private readonly int[] _originTick = new int[MaxSlots];
+  private readonly bool[] _rising = new bool[MaxSlots];
   private readonly bool[] _moving = new bool[MaxSlots];
+  private readonly Vector2[] _path = new Vector2[MaxSlots * PathTicks];
+  private readonly WorldBvh.Face[] _hints = new WorldBvh.Face[MaxSlots * MaxSlots * Hints];
+  private readonly byte[] _hintNext = new byte[MaxSlots * MaxSlots];
+  private int _hintPair;
+  private readonly WorldBvh.Face[] _reachHints = new WorldBvh.Face[MaxSlots * Eyes];
+  private WorldBvh.Face _spareHint;
+  private int _recheck = RecheckTicks;
+  private int _servicesOffset;
+  private int _forwardOffset;
+  private int _leftOffset;
+  private int _anglesOffset;
+  private int _flagsOffset;
+  private float _tickInterval = 1f / 64f;
+  private float _accelerate = 5.5f;
+  private float _friction = 5.2f;
+  private float _stopSpeed = 80f;
 
   private readonly bool[] _isProp = new bool[MaxEntities];
   private readonly List<int> _props = new();
@@ -308,6 +339,11 @@ public class FPS : BasePlugin
     LoadPlayers(migrated);
 
     _slotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
+    _servicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
+    _forwardOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_flForwardMove");
+    _leftOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_flLeftMove");
+    _anglesOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_angEyeAngles");
+    _flagsOffset = Schema.GetSchemaOffset("CBaseEntity", "m_fFlags");
     _teammatesAreEnemies = ConVar.Find("mp_teammates_are_enemies");
     _ffa = _teammatesAreEnemies?.GetPrimitiveValue<bool>() == true;
     _onCheckTransmit = OnCheckTransmit;
@@ -388,11 +424,19 @@ public class FPS : BasePlugin
     _visGeneration++;
     _vis = null;
     _world = null;
+    Array.Clear(_hints);
+    Array.Clear(_reachHints);
+    _spareHint = default;
   }
 
   private void PrepareVisibility()
   {
     ResetVisibility();
+
+    _tickInterval = Server.TickInterval;
+    _accelerate = ConVar.Find("sv_accelerate")?.GetPrimitiveValue<float>() ?? _accelerate;
+    _friction = ConVar.Find("sv_friction")?.GetPrimitiveValue<float>() ?? _friction;
+    _stopSpeed = ConVar.Find("sv_stopspeed")?.GetPrimitiveValue<float>() ?? _stopSpeed;
 
     string map = Server.MapName;
     string game = Server.GameDirectory;
@@ -401,8 +445,11 @@ public class FPS : BasePlugin
     var cancel = _visCancel = new CancellationTokenSource();
     var spawns = new List<Vector3>();
 
-    foreach (var name in new[] { "info_player_terrorist", "info_player_counterterrorist", "info_deathmatch_spawn", "info_player_start", "info_teleport_destination", "point_nav_walkable" })
+    foreach (var name in new[] { "info_player_terrorist", "info_player_counterterrorist", "info_deathmatch_spawn", "info_teleport_destination", "point_nav_walkable", "info_player_start" })
     {
+      if (name == "info_player_start" && spawns.Count > 0)
+        continue;
+
       foreach (var spawn in Utilities.FindAllEntitiesByDesignerName<CBaseEntity>(name))
       {
         var origin = spawn.AbsOrigin;
@@ -461,10 +508,11 @@ public class FPS : BasePlugin
 
           var watch = Stopwatch.StartNew();
           int threads = Math.Max(1, Environment.ProcessorCount / 2);
-          vis = VisMap.Bake(world, WorldBvh.PlayerSolid(physics), spawns, hash, threads, cancel.Token);
+          var nav = NavMesh.Polygons(MapPhysics.ReadNav(vpk, map));
+          vis = VisMap.Bake(world, WorldBvh.PlayerSolid(physics), WorldBvh.Ladders(physics), spawns, nav, hash, threads, cancel.Token);
           vis.Save(path);
-          Logger.LogInformation("[FPS] {Map}: gorunurluk verisi {Seconds:F1} sn'de hesaplandi ({Cells} hucre, {Threads} cekirdek)",
-            map, watch.Elapsed.TotalSeconds, vis.Count, threads);
+          Logger.LogInformation("[FPS] {Map}: gorunurluk verisi {Seconds:F1} sn'de hesaplandi ({Cells} hucre, {Threads} cekirdek, nav {Nav})",
+            map, watch.Elapsed.TotalSeconds, vis.Count, threads, nav == null ? "yok" : nav.Count);
         }
 
         Server.NextFrame(() =>
@@ -1599,6 +1647,10 @@ public class FPS : BasePlugin
   private void BuildSnapshot(int tick)
   {
     _snapTick = tick;
+    if (_traceTime > TraceBudget)
+      _recheck = Math.Min(_recheck + 1, MaxRecheckTicks);
+    else if (_traceTime < TraceBudget / 2 && _recheck > RecheckTicks)
+      _recheck--;
     _traceTime = 0;
 
     if (tick % FfaTicks == 0)
@@ -1640,7 +1692,7 @@ public class FPS : BasePlugin
     }
   }
 
-  private bool Position(int slot, int tick)
+  private unsafe bool Position(int slot, int tick)
   {
     ref var s = ref _snap[slot];
     if (s.PosTick == tick)
@@ -1657,7 +1709,71 @@ public class FPS : BasePlugin
     s.EyeZ = pawn.ViewOffset.Z;
     s.Ping = (int)(_players[slot]?.Ping ?? 0);
     s.PosTick = tick;
+
+    nint handle = pawn.Handle;
+    nint services = *(nint*)(handle + _servicesOffset);
+    float forward = services != 0 ? *(float*)(services + _forwardOffset) : 0f;
+    float left = services != 0 ? *(float*)(services + _leftOffset) : 0f;
+    s.Yaw = *(float*)(handle + _anglesOffset + 4) * (MathF.PI / 180f);
+    s.Ground = (*(uint*)(handle + _flagsOffset) & 1) != 0;
+    var wish = new Vector2(MathF.Cos(s.Yaw), MathF.Sin(s.Yaw)) * forward + new Vector2(-MathF.Sin(s.Yaw), MathF.Cos(s.Yaw)) * left;
+    float cap = MathF.Max(MathF.Abs(forward), MathF.Abs(left));
+    float length = wish.Length();
+    s.Wish = length > cap ? wish * (cap / length) : wish;
+
+    int age = tick - s.ClimbTick;
+    if (age >= ClimbTicks || age < 0)
+    {
+      s.Climb = age > 0 && age <= ClimbTicks * 4 ? (s.Origin.Z - s.ClimbZ) / (age * _tickInterval) : 0f;
+      s.ClimbZ = s.Origin.Z;
+      s.ClimbTick = tick;
+    }
+
     return true;
+  }
+
+  private Vector3 Drift(int slot, float lead)
+  {
+    ref var s = ref _snap[slot];
+    int steps = Math.Clamp((int)(lead / _tickInterval + 0.5f), 1, PathTicks);
+    int o = slot * PathTicks;
+    if (s.PathTick != _snapTick)
+    {
+      s.PathTick = _snapTick;
+      s.PathCount = 0;
+      s.PathVelocity = new Vector2(s.Velocity.X, s.Velocity.Y);
+    }
+
+    float wishSpeed = s.Wish.Length();
+    var wishDir = wishSpeed > 0f ? s.Wish / wishSpeed : Vector2.Zero;
+    while (s.PathCount < steps)
+    {
+      var velocity = s.PathVelocity;
+      if (s.Ground)
+      {
+        float speed = velocity.Length();
+        if (speed > 0.1f)
+          velocity *= MathF.Max(speed - MathF.Max(speed, _stopSpeed) * _friction * _tickInterval, 0f) / speed;
+
+        float add = wishSpeed - Vector2.Dot(velocity, wishDir);
+        if (add > 0f)
+          velocity += wishDir * MathF.Min(_accelerate * wishSpeed * _tickInterval, add);
+      }
+
+      s.PathVelocity = velocity;
+      _path[o + s.PathCount] = (s.PathCount > 0 ? _path[o + s.PathCount - 1] : Vector2.Zero) + velocity * _tickInterval;
+      s.PathCount++;
+    }
+
+    var drift = _path[o + steps - 1];
+    return new Vector3(drift.X, drift.Y, 0f);
+  }
+
+  private float Rise(int slot, int ping)
+  {
+    ref var s = ref _snap[slot];
+    float speed = MathF.Abs(s.Velocity.Z) > MathF.Abs(s.Climb) ? s.Velocity.Z : s.Climb;
+    return Math.Clamp(speed * Lead(ping), -MaxRise, MaxRise);
   }
 
   private unsafe void OnCheckTransmit(CCheckTransmitInfoList infoList)
@@ -1858,7 +1974,7 @@ public class FPS : BasePlugin
         && Vector3.DistanceSquared(sv.Origin, _fromPos[pair]) < MoveSqr
         && Vector3.DistanceSquared(st.Origin, _toPos[pair]) < MoveSqr)
     {
-      _nextCheck[pair] = tick + RecheckTicks;
+      _nextCheck[pair] = tick + _recheck;
       return false;
     }
 
@@ -1891,7 +2007,7 @@ public class FPS : BasePlugin
     _checkedAt[pair] = tick;
     _fromPos[pair] = _snap[pair / MaxSlots].Origin;
     _toPos[pair] = _snap[pair % MaxSlots].Origin;
-    _nextCheck[pair] = tick + RecheckTicks + (pair & 1);
+    _nextCheck[pair] = tick + _recheck + (pair & 1);
     return false;
   }
 
@@ -1914,6 +2030,7 @@ public class FPS : BasePlugin
 
     int o = v * Eyes;
     Origins(v, pawn);
+    _hintPair = v * MaxSlots + t;
 
     var head = st.Origin + new Vector3(0f, 0f, st.EyeZ + 4f);
     var chest = st.Origin + new Vector3(0f, 0f, 36f);
@@ -1939,18 +2056,21 @@ public class FPS : BasePlugin
         || Clear(pawn, _origins[o + 1], chest) || Clear(pawn, _origins[o + 2], chest))
       return true;
 
-    var rise = Reach(pawn, head, head + new Vector3(0f, 0f, PeekRise));
-    if (Clear(pawn, _origins[o], rise) || Clear(pawn, _origins[o + 6], head) || Clear(pawn, _origins[o + 6], chest))
+    float rise = Rise(t, sv.Ping);
+    if (MathF.Abs(rise) > 1f && Clear(pawn, _origins[o], Reach(pawn, head, head + new Vector3(0f, 0f, rise), ref _spareHint)))
       return true;
 
-    var targetMove = new Vector3(st.Velocity.X, st.Velocity.Y, 0f);
-    if (!_moving[v] && targetMove.LengthSquared() < MovingSqr)
+    if (_rising[v] && (Clear(pawn, _origins[o + 6], head) || Clear(pawn, _origins[o + 6], chest)))
+      return true;
+
+    var targetMove = Drift(t, Lead(sv.Ping));
+    if (!_moving[v] && targetMove.LengthSquared() < DriftSqr)
       return false;
 
-    var target = st.Origin + targetMove * Lead(sv.Ping);
+    var target = st.Origin + targetMove;
     _ahead[0] = target + new Vector3(0f, 0f, st.EyeZ + 4f);
     _ahead[1] = target + new Vector3(0f, 0f, 36f);
-    _ahead[2] = _ahead[0] + new Vector3(0f, 0f, PeekRise);
+    _ahead[2] = _ahead[0] + new Vector3(0f, 0f, rise);
 
     foreach (var point in _ahead)
     {
@@ -1984,7 +2104,7 @@ public class FPS : BasePlugin
 
     s.CellTick = _snapTick;
     s.Cell = vis.Locate(s.Origin, _world);
-    s.AheadCell = vis.Locate(s.Origin + new Vector3(s.Velocity.X, s.Velocity.Y, 0f) * Lead(s.Ping), _world);
+    s.AheadCell = vis.Locate(s.Origin + Drift(slot, Lead(s.Ping)), _world);
     return ref s;
   }
 
@@ -2000,30 +2120,31 @@ public class FPS : BasePlugin
     ref var sv = ref _snap[v];
     int o = v * Eyes;
 
-    float yaw = pawn.EyeAngles.Y * (MathF.PI / 180f);
-    var right = new Vector3(MathF.Sin(yaw), -MathF.Cos(yaw), 0f);
+    var right = new Vector3(MathF.Sin(sv.Yaw), -MathF.Cos(sv.Yaw), 0f);
     float shoulder = Math.Min(ShoulderBase + MathF.Floor(sv.Ping / 25f) * 25f * ShoulderPerMs, ShoulderMax);
     var eye = sv.Origin + new Vector3(0f, 0f, sv.EyeZ);
 
     _origins[o] = eye;
-    _origins[o + 1] = Reach(pawn, eye, eye + right * shoulder);
-    _origins[o + 2] = Reach(pawn, eye, eye - right * shoulder);
+    _origins[o + 1] = Reach(pawn, eye, eye + right * shoulder, ref _reachHints[o + 1]);
+    _origins[o + 2] = Reach(pawn, eye, eye - right * shoulder, ref _reachHints[o + 2]);
 
-    var move = new Vector3(sv.Velocity.X, sv.Velocity.Y, 0f);
-    _moving[v] = move.LengthSquared() >= MovingSqr;
-    var ahead = _moving[v] ? Reach(pawn, eye, eye + move * Lead(sv.Ping)) : eye;
+    var move = Drift(v, Lead(sv.Ping));
+    _moving[v] = move.LengthSquared() >= DriftSqr;
+    var ahead = _moving[v] ? Reach(pawn, eye, eye + move, ref _reachHints[o + 3]) : eye;
 
     _origins[o + 3] = ahead;
-    _origins[o + 4] = Reach(pawn, ahead, ahead + right * shoulder);
-    _origins[o + 5] = Reach(pawn, ahead, ahead - right * shoulder);
-    _origins[o + 6] = Reach(pawn, eye, eye + new Vector3(0f, 0f, PeekRise));
+    _origins[o + 4] = Reach(pawn, ahead, ahead + right * shoulder, ref _reachHints[o + 4]);
+    _origins[o + 5] = Reach(pawn, ahead, ahead - right * shoulder, ref _reachHints[o + 5]);
+    float rise = Rise(v, sv.Ping);
+    _rising[v] = MathF.Abs(rise) > 1f;
+    _origins[o + 6] = _rising[v] ? Reach(pawn, eye, eye + new Vector3(0f, 0f, rise), ref _reachHints[o + 6]) : eye;
   }
 
-  private Vector3 Reach(CCSPlayerPawn pawn, Vector3 from, Vector3 to)
+  private Vector3 Reach(CCSPlayerPawn pawn, Vector3 from, Vector3 to, ref WorldBvh.Face hint)
   {
     if (_world is { } world)
     {
-      float fraction = world.Fraction(from, to);
+      float fraction = world.Fraction(from, to, ref hint);
       if (fraction >= 1f)
         return to;
 
@@ -2053,7 +2174,23 @@ public class FPS : BasePlugin
   private bool Clear(CCSPlayerPawn pawn, Vector3 from, Vector3 to)
   {
     if (_world is { } world)
-      return !world.Blocked(from, to);
+    {
+      int h = _hintPair * Hints;
+      for (int k = 0; k < Hints; k++)
+      {
+        if (WorldBvh.Hits(in _hints[h + k], from, to))
+          return false;
+      }
+
+      int blocker = world.Blocker(from, to);
+      if (blocker < 0)
+        return true;
+
+      int next = _hintNext[_hintPair];
+      _hints[h + next] = world.FaceOf(blocker);
+      _hintNext[_hintPair] = (byte)((next + 1) % Hints);
+      return false;
+    }
 
     _traceStart.X = from.X; _traceStart.Y = from.Y; _traceStart.Z = from.Z;
     _traceEnd.X = to.X; _traceEnd.Y = to.Y; _traceEnd.Z = to.Z;

@@ -32,6 +32,28 @@ public static class MapPhysics
     return innerEntry == null ? null : inner.Read(innerEntry);
   }
 
+  public static byte[]? ReadNav(string vpkPath, string mapName)
+  {
+    try
+    {
+      using var archive = new VpkArchive(vpkPath);
+      byte[]? nav = archive.Read($"maps/{mapName}.nav");
+      if (nav != null)
+        return nav;
+
+      byte[]? nested = archive.Read($"maps/{mapName}.vpk");
+      if (nested == null)
+        return null;
+
+      using var inner = new VpkArchive(nested);
+      return inner.Read($"maps/{mapName}.nav");
+    }
+    catch
+    {
+      return null;
+    }
+  }
+
   public static string? FindVpk(string gameDirectory, string mapName) => FindVpks(gameDirectory, mapName).FirstOrDefault();
 
   public static List<string> FindVpks(string gameDirectory, string mapName)

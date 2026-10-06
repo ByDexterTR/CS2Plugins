@@ -166,12 +166,14 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<map>.vis
 - A workshop map's table is saved as `<map>.<workshop id>.vis`, so workshop maps with the same name never share a table. When several map files carry the loaded map's name, the plugin compares each with the running map and uses the one that matches.
 - After a CS2 update that changes a map, the table no longer matches the map and is built again automatically.
 - Arena and multi-area maps, where players are teleported into separate areas, are covered too: the table includes every area that can be reached from a spawn, teleport destination or nav marker.
+- The table covers every place a player can reach from the spawns, including stairs, ladders and jump-ups. When the map has a bot navigation mesh, it is also used to fill spots that are hard to reach (boxes, roofs, train tops) and to leave out-of-bounds rooms out. Maps without one are covered from their spawns, ladders and collision.
 - Delete a map's `.vis` file to build it again.
 
 ## Notes
 
 - **Behind walls** only works while you are alive. While dead or spectating, every player stays visible.
-- A hidden player appears as soon as there is a line of sight, including when they are about to peek. A player standing just behind cover, jumping onto a box or coming up stairs or a ramp is shown a little before their head clears it. If a player can see you, you can see them too. Players with higher ping see them earlier, and a player who was visible is not hidden right away. Collision, bullets and damage are not affected.
+- A hidden player appears as soon as there is a line of sight, including when they are about to peek. A player jumping onto a box or coming up stairs or a ramp is shown a little before their head clears the cover. If a player can see you, you can see them too. The movement keys a player is holding are used too, so a player who starts a strafe peek is shown a moment early, and one who stops is not shown ahead of time. Players with higher ping see them earlier, and a player who was visible is not hidden right away. Collision, bullets and damage are not affected.
+- On a very full server, hidden players are checked a little less often when the server is busy, instead of being shown to everyone.
 - Players who are very close to you are never hidden.
 - When `mp_teammates_are_enemies` is `1` (e.g. deathmatch), everyone counts as an enemy for the team/enemy choices.
 - While you spectate a player, their corpse is not hidden, so the camera does not get stuck.

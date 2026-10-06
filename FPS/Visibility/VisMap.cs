@@ -8,22 +8,36 @@ namespace FPS.Visibility;
 public sealed class VisMap
 {
   private const uint Magic = 0x53495646;
-  private const int Version = 4;
+  private const int Version = 6;
 
   public const float CellSize = 64f;
   public const float CellHeight = 64f;
   private const float EyeHeight = 64f;
   private const float CrouchEyeHeight = 46f;
-  private const float StepUp = 56f;
+  private const float StepUp = 64f;
   private const float MaxStepUp = 80f;
   private const float StairStep = 44f;
+  private const int StairSamples = 4;
   private const float ClipGround = 24f;
   private const float LocateHeight = 36f;
   private const float LocateReach = 72f;
   private const float LocateRise = 48f;
   private const float MaxDrop = 240f;
-  private const int Dilation = 2;
+  private const int ViewerDilation = 2;
+  private const int TargetDilation = 1;
+  private const int PlayMargin = 2;
+  private const float LadderReach = 40f;
+  private const float LadderBelow = 48f;
+  private const float LadderAbove = 72f;
+  private const float PlayAbove = 192f;
+  private const float PlayBelow = 64f;
+  private const float NavReach = 48f;
+  private const float NavFootprint = 192f;
+  private const float NavBelow = 48f;
+  private const float NavAbove = 80f;
+  private const float NavSpawns = 0.8f;
   private static readonly float[] TargetHeights = [68f, 36f, 8f, 100f];
+  private const float TargetCorner = 28f;
   private static readonly float[] BodyHeights = [24f, 48f, 70f];
 
   public string Hash { get; private set; } = "";
@@ -105,7 +119,7 @@ public sealed class VisMap
 
   public bool Visible(int from, int to) => (_bits[(long)from * _words + (to >> 6)] & (1UL << (to & 63))) != 0;
 
-  public static VisMap Bake(WorldBvh world, WorldBvh clip, IReadOnlyList<Vector3> spawns, string hash, int threads, CancellationToken token)
+  public static VisMap Bake(WorldBvh world, WorldBvh clip, IReadOnlyList<(Vector3 Min, Vector3 Max)> ladders, IReadOnlyList<Vector3> spawns, IReadOnlyList<Vector3[]>? nav, string hash, int threads, CancellationToken token)
   {
     var map = new VisMap { Hash = hash, Min = world.Min - new Vector3(0f, 0f, 8f) };
     var size = world.Max - map.Min;
@@ -115,8 +129,9 @@ public sealed class VisMap
     map._cells = new int[map.NX * map.NY * map.NZ];
     Array.Fill(map._cells, -1);
 
-    var floors = map.FindFloors(world, clip);
-    floors = map.Reachable(world, clip, floors, spawns);
+    var all = map.FindFloors(world, clip);
+    var floors = map.Reachable(world, clip, all, spawns, ladders);
+    floors = Trusted(nav, spawns) ? map.WithNav(all, floors, nav!) : map.WithinPlay(all, floors);
     token.ThrowIfCancellationRequested();
 
     map.Count = floors.Count;
@@ -205,8 +220,30 @@ public sealed class VisMap
   private (int X, int Y, int Z) Slot(Vector3 floor) =>
     ((int)((floor.X - Min.X) / CellSize), (int)((floor.Y - Min.Y) / CellSize), (int)((floor.Z - Min.Z) / CellHeight));
 
-  private List<Vector3> Reachable(WorldBvh world, WorldBvh clip, List<Vector3> floors, IReadOnlyList<Vector3> spawns)
+  private List<Vector3> Reachable(WorldBvh world, WorldBvh clip, List<Vector3> floors, IReadOnlyList<Vector3> spawns, IReadOnlyList<(Vector3 Min, Vector3 Max)> ladders)
   {
+    var climbs = new List<int>[floors.Count];
+    var groups = new List<List<int>>();
+    foreach (var (low, high) in ladders)
+    {
+      var group = new List<int>();
+      for (int i = 0; i < floors.Count; i++)
+      {
+        var f = floors[i];
+        float dx = MathF.Max(0f, MathF.Max(low.X - f.X, f.X - high.X));
+        float dy = MathF.Max(0f, MathF.Max(low.Y - f.Y, f.Y - high.Y));
+        if (dx * dx + dy * dy <= LadderReach * LadderReach && f.Z >= low.Z - LadderBelow && f.Z <= high.Z + LadderAbove)
+          group.Add(i);
+      }
+
+      if (group.Count < 2)
+        continue;
+
+      foreach (int i in group)
+        (climbs[i] ??= []).Add(groups.Count);
+      groups.Add(group);
+    }
+
     var seen = new bool[floors.Count];
     var queue = new Queue<int>();
 
@@ -233,6 +270,19 @@ public sealed class VisMap
       int a = queue.Dequeue();
       var fa = floors[a];
       var (ax, ay, az) = Slot(fa);
+
+      if (climbs[a] != null)
+      {
+        foreach (int g in climbs[a])
+        foreach (int b in groups[g])
+        {
+          if (!seen[b])
+          {
+            seen[b] = true;
+            queue.Enqueue(b);
+          }
+        }
+      }
 
       for (int z = az - 6; z <= az + 2; z++)
       for (int y = ay - 1; y <= ay + 1; y++)
@@ -273,13 +323,193 @@ public sealed class VisMap
     return kept;
   }
 
+  private static bool Trusted(IReadOnlyList<Vector3[]>? nav, IReadOnlyList<Vector3> spawns) =>
+    nav != null && nav.Count > 0 && (spawns.Count == 0 || spawns.Count(spawn => nav.Any(polygon => Near(polygon, spawn))) >= spawns.Count * NavSpawns);
+
+  private List<Vector3> WithNav(List<Vector3> all, List<Vector3> floors, IReadOnlyList<Vector3[]> nav)
+  {
+    var near = Buckets(nav, NavReach);
+    var footprint = Buckets(nav, NavFootprint);
+    var island = Islands(nav);
+
+    var reached = floors.Where(floor => footprint.ContainsKey(Column(floor))).ToList();
+    var played = new HashSet<int>();
+    foreach (var floor in reached)
+    {
+      if (!near.TryGetValue(Column(floor), out var list))
+        continue;
+
+      foreach (int i in list)
+      {
+        if (!played.Contains(island[i]) && Near(nav[i], floor, float.MaxValue))
+          played.Add(island[i]);
+      }
+    }
+
+    var kept = new List<Vector3>(reached);
+    var known = new HashSet<Vector3>(reached);
+    foreach (var floor in all)
+    {
+      if (!known.Contains(floor) && near.TryGetValue(Column(floor), out var list) && list.Exists(i => played.Contains(island[i]) && Near(nav[i], floor, NavAbove)))
+        kept.Add(floor);
+    }
+
+    Array.Fill(_cells, -1);
+    for (int i = 0; i < kept.Count; i++)
+    {
+      var (x, y, z) = Slot(kept[i]);
+      _cells[(z * NY + y) * NX + x] = i;
+    }
+
+    return kept;
+  }
+
+  private int Column(Vector3 floor)
+  {
+    var (x, y, _) = Slot(floor);
+    return y * NX + x;
+  }
+
+  private Dictionary<int, List<int>> Buckets(IReadOnlyList<Vector3[]> nav, float margin)
+  {
+    var buckets = new Dictionary<int, List<int>>();
+    for (int i = 0; i < nav.Count; i++)
+    {
+      float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+      foreach (var corner in nav[i])
+      {
+        minX = MathF.Min(minX, corner.X); maxX = MathF.Max(maxX, corner.X);
+        minY = MathF.Min(minY, corner.Y); maxY = MathF.Max(maxY, corner.Y);
+      }
+
+      int x0 = Math.Max(0, (int)((minX - margin - Min.X) / CellSize)), x1 = Math.Min(NX - 1, (int)((maxX + margin - Min.X) / CellSize));
+      int y0 = Math.Max(0, (int)((minY - margin - Min.Y) / CellSize)), y1 = Math.Min(NY - 1, (int)((maxY + margin - Min.Y) / CellSize));
+      for (int y = y0; y <= y1; y++)
+      for (int x = x0; x <= x1; x++)
+      {
+        if (!buckets.TryGetValue(y * NX + x, out var list))
+          buckets[y * NX + x] = list = [];
+        list.Add(i);
+      }
+    }
+
+    return buckets;
+  }
+
+  private static int[] Islands(IReadOnlyList<Vector3[]> nav)
+  {
+    var parent = new int[nav.Count];
+    for (int i = 0; i < parent.Length; i++)
+      parent[i] = i;
+
+    int Root(int i)
+    {
+      while (parent[i] != i)
+        i = parent[i] = parent[parent[i]];
+      return i;
+    }
+
+    var owner = new Dictionary<Vector3, int>();
+    for (int i = 0; i < nav.Count; i++)
+    {
+      foreach (var corner in nav[i])
+      {
+        if (owner.TryGetValue(corner, out int other))
+          parent[Root(i)] = Root(other);
+        else
+          owner[corner] = i;
+      }
+    }
+
+    var island = new int[nav.Count];
+    for (int i = 0; i < island.Length; i++)
+      island[i] = Root(i);
+    return island;
+  }
+
+  private List<Vector3> WithinPlay(List<Vector3> all, List<Vector3> floors)
+  {
+    if (all.Count == floors.Count)
+      return floors;
+
+    var columns = new Dictionary<int, (float Low, float High)>();
+    foreach (var floor in floors)
+    {
+      var (x, y, _) = Slot(floor);
+      for (int dy = -PlayMargin; dy <= PlayMargin; dy++)
+      for (int dx = -PlayMargin; dx <= PlayMargin; dx++)
+      {
+        if ((uint)(x + dx) >= (uint)NX || (uint)(y + dy) >= (uint)NY)
+          continue;
+
+        int key = (y + dy) * NX + x + dx;
+        columns[key] = columns.TryGetValue(key, out var range)
+          ? (MathF.Min(range.Low, floor.Z), MathF.Max(range.High, floor.Z))
+          : (floor.Z, floor.Z);
+      }
+    }
+
+    var kept = new List<Vector3>(floors);
+    var known = new HashSet<Vector3>(floors);
+    foreach (var floor in all)
+    {
+      var (x, y, _) = Slot(floor);
+      if (!known.Contains(floor) && columns.TryGetValue(y * NX + x, out var range)
+          && floor.Z >= range.Low - PlayBelow && floor.Z <= range.High + PlayAbove)
+        kept.Add(floor);
+    }
+
+    Array.Fill(_cells, -1);
+    for (int i = 0; i < kept.Count; i++)
+    {
+      var (x, y, z) = Slot(kept[i]);
+      _cells[(z * NY + y) * NX + x] = i;
+    }
+
+    return kept;
+  }
+
+  private static bool Near(Vector3[] polygon, Vector3 point) => Near(polygon, point, NavAbove);
+
+  private static bool Near(Vector3[] polygon, Vector3 point, float above)
+  {
+    float low = float.MaxValue, high = float.MinValue;
+    foreach (var corner in polygon)
+    {
+      low = MathF.Min(low, corner.Z);
+      high = MathF.Max(high, corner.Z);
+    }
+
+    if (above < float.MaxValue && (point.Z < low - NavBelow || point.Z > high + above))
+      return false;
+
+    bool inside = false;
+    float best = float.MaxValue;
+    for (int i = 0, j = polygon.Length - 1; i < polygon.Length; j = i++)
+    {
+      var a = new Vector2(polygon[i].X, polygon[i].Y);
+      var b = new Vector2(polygon[j].X, polygon[j].Y);
+      var p = new Vector2(point.X, point.Y);
+
+      if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < (b.X - a.X) * (p.Y - a.Y) / (b.Y - a.Y) + a.X)
+        inside = !inside;
+
+      var edge = b - a;
+      float t = edge.LengthSquared() > 0f ? Math.Clamp(Vector2.Dot(p - a, edge) / edge.LengthSquared(), 0f, 1f) : 0f;
+      best = MathF.Min(best, Vector2.DistanceSquared(p, a + edge * t));
+    }
+
+    return inside || best <= NavReach * NavReach;
+  }
+
   private static bool Walkable(WorldBvh clip, Vector3 a, Vector3 b)
   {
     float top = MathF.Max(a.Z, b.Z);
     if (Vertical(clip, a, top) || Vertical(clip, b, top))
       return false;
 
-    if (b.Z - a.Z > StepUp && !Stairs(clip, a, b))
+    var middle = (a + b) * 0.5f;
+    if (b.Z - a.Z > StepUp && !Stairs(clip, a, middle, b))
       return false;
 
     foreach (float height in BodyHeights)
@@ -293,17 +523,27 @@ public sealed class VisMap
     return true;
   }
 
-  private static bool Stairs(WorldBvh clip, Vector3 low, Vector3 high)
+  private static bool Stairs(WorldBvh clip, Vector3 low, Vector3 middle, Vector3 high)
   {
-    var middle = (low + high) * 0.5f;
-    var from = new Vector3(middle.X, middle.Y, high.Z + 70f);
-    var to = new Vector3(middle.X, middle.Y, low.Z - 8f);
-    float t = clip.Fraction(from, to);
-    if (t >= 1f)
-      return false;
+    float previous = low.Z;
+    for (int i = 1; i < StairSamples; i++)
+    {
+      float f = i / (float)StairSamples;
+      var point = f < 0.5f ? Vector3.Lerp(low, middle, f * 2f) : Vector3.Lerp(middle, high, f * 2f - 1f);
+      var from = new Vector3(point.X, point.Y, high.Z + 70f);
+      var to = new Vector3(point.X, point.Y, low.Z - 8f);
+      float t = clip.Fraction(from, to);
+      if (t >= 1f)
+        return false;
 
-    float z = from.Z + (to.Z - from.Z) * t;
-    return z - low.Z <= StairStep && high.Z - z <= StairStep;
+      float z = from.Z + (to.Z - from.Z) * t;
+      if (z - previous > StairStep || z < low.Z - StairStep)
+        return false;
+
+      previous = MathF.Max(previous, z);
+    }
+
+    return high.Z - previous <= StairStep;
   }
 
   private static bool Vertical(WorldBvh clip, Vector3 floor, float top)
@@ -321,6 +561,7 @@ public sealed class VisMap
     float h = CellSize * 0.45f;
     Span<Vector3> corners = [Vector3.Zero, new(h, h, 0f), new(-h, h, 0f), new(h, -h, 0f), new(-h, -h, 0f)];
     Span<Vector3> eyes = stackalloc Vector3[6];
+    Span<WorldBvh.Face> hints = stackalloc WorldBvh.Face[6];
     var fa = floors[a];
 
     for (int i = 0; i < 5; i++)
@@ -331,18 +572,29 @@ public sealed class VisMap
 
     for (int b = 0; b < floors.Count; b++)
     {
-      if (a == b || Sees(world, eyes, floors[b]))
+      if (a == b || Sees(world, eyes, hints, floors[b]))
         raw[row + (b >> 6)] |= 1UL << (b & 63);
     }
   }
 
-  private static bool Sees(WorldBvh world, ReadOnlySpan<Vector3> eyes, Vector3 target)
+  private static bool Sees(WorldBvh world, ReadOnlySpan<Vector3> eyes, Span<WorldBvh.Face> hints, Vector3 target)
   {
-    foreach (var eye in eyes)
+    for (int e = 0; e < eyes.Length; e++)
     {
       foreach (float height in TargetHeights)
       {
-        if (!world.Blocked(eye, target + new Vector3(0f, 0f, height)))
+        if (Clear(world, eyes[e], ref hints[e], target + new Vector3(0f, 0f, height)))
+          return true;
+      }
+    }
+
+    var head = target + new Vector3(0f, 0f, TargetHeights[0]);
+    Span<Vector3> sides = [new(TargetCorner, TargetCorner, 0f), new(-TargetCorner, TargetCorner, 0f), new(TargetCorner, -TargetCorner, 0f), new(-TargetCorner, -TargetCorner, 0f)];
+    for (int e = 0; e < eyes.Length; e++)
+    {
+      foreach (var side in sides)
+      {
+        if (Clear(world, eyes[e], ref hints[e], head + side))
           return true;
       }
     }
@@ -350,20 +602,32 @@ public sealed class VisMap
     return false;
   }
 
-  private ulong[] Dilate(List<Vector3> floors, ulong[] raw, int threads, CancellationToken token)
+  private static bool Clear(WorldBvh world, Vector3 eye, ref WorldBvh.Face hint, Vector3 target)
   {
-    int n = floors.Count;
-    var neighbours = new int[n][];
+    if (WorldBvh.Hits(hint, eye, target))
+      return false;
+
+    int blocker = world.Blocker(eye, target);
+    if (blocker < 0)
+      return true;
+
+    hint = world.FaceOf(blocker);
+    return false;
+  }
+
+  private int[][] Neighbours(List<Vector3> floors, int reach)
+  {
+    var neighbours = new int[floors.Count][];
     var list = new List<int>();
 
-    for (int c = 0; c < n; c++)
+    for (int c = 0; c < floors.Count; c++)
     {
       list.Clear();
       var (cx, cy, cz) = Slot(floors[c]);
 
       for (int z = cz - 1; z <= cz + 1; z++)
-      for (int y = cy - Dilation; y <= cy + Dilation; y++)
-      for (int x = cx - Dilation; x <= cx + Dilation; x++)
+      for (int y = cy - reach; y <= cy + reach; y++)
+      for (int x = cx - reach; x <= cx + reach; x++)
       {
         if ((uint)x >= (uint)NX || (uint)y >= (uint)NY || (uint)z >= (uint)NZ)
           continue;
@@ -376,11 +640,20 @@ public sealed class VisMap
       neighbours[c] = [.. list];
     }
 
+    return neighbours;
+  }
+
+  private ulong[] Dilate(List<Vector3> floors, ulong[] raw, int threads, CancellationToken token)
+  {
+    int n = floors.Count;
+    var viewers = Neighbours(floors, ViewerDilation);
+    var targets = Neighbours(floors, TargetDilation);
+
     var rows = new ulong[raw.Length];
     Run(threads, n, token, a =>
     {
       var target = rows.AsSpan((int)((long)a * _words), _words);
-      foreach (int na in neighbours[a])
+      foreach (int na in viewers[a])
       {
         var source = raw.AsSpan((int)((long)na * _words), _words);
         for (int w = 0; w < _words; w++)
@@ -401,7 +674,7 @@ public sealed class VisMap
         {
           int b = (w << 6) + BitOperations.TrailingZeroCount(word);
           word &= word - 1;
-          foreach (int nb in neighbours[b])
+          foreach (int nb in targets[b])
             target[nb >> 6] |= 1UL << (nb & 63);
         }
       }
@@ -449,7 +722,7 @@ public sealed class VisMap
       writer.Write(Hash);
       writer.Write(CellSize);
       writer.Write(CellHeight);
-      writer.Write(Dilation);
+      writer.Write(ViewerDilation * 10 + TargetDilation);
       writer.Write(Min.X);
       writer.Write(Min.Y);
       writer.Write(Min.Z);
@@ -485,7 +758,7 @@ public sealed class VisMap
     using var reader = new BinaryReader(zip);
 
     if (reader.ReadUInt32() != Magic || reader.ReadInt32() != Version || reader.ReadString() != hash
-        || reader.ReadSingle() != CellSize || reader.ReadSingle() != CellHeight || reader.ReadInt32() != Dilation)
+        || reader.ReadSingle() != CellSize || reader.ReadSingle() != CellHeight || reader.ReadInt32() != ViewerDilation * 10 + TargetDilation)
       return null;
 
     var map = new VisMap

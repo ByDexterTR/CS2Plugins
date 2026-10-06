@@ -166,12 +166,14 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<harita>.vis
 - Atölye haritalarının tablosu `<harita>.<atölye id>.vis` adıyla kaydedilir, aynı isimli atölye haritaları tabloyu paylaşmaz. Yüklü haritanın adını taşıyan birden fazla harita dosyası varsa eklenti her birini çalışan haritayla karşılaştırır ve eşleşeni kullanır.
 - Bir CS2 güncellemesi haritayı değiştirirse tablo haritayla uyuşmaz ve otomatik yeniden hazırlanır.
 - Oyuncuların ayrı alanlara ışınlandığı arena ve çok bölümlü haritalar da kapsanır: tablo; spawn, ışınlanma noktası veya nav işaretinden ulaşılabilen her alanı içerir.
+- Tablo, spawn'lardan merdiven, basamak ve zıplamayla ulaşılabilen her yeri kapsar. Haritada bot navigasyonu (nav) varsa, ulaşılması zor yerleri (kutu, çatı, tren üstü) tamamlamak ve harita dışı odaları ayıklamak için de kullanılır. Nav'ı olmayan haritalar spawn'lar, merdivenler ve çarpışma geometrisinden kapsanır.
 - Yeniden hazırlatmak için haritanın `.vis` dosyasını silin.
 
 ## Notlar
 
 - **Duvar arkası** sadece hayattayken çalışır. Ölüyken veya izlerken tüm oyuncular görünür kalır.
-- Gizlenen oyuncu görüş hattı açıldığı anda, köşeden çıkmak üzereyken de görünür. Siperin hemen arkasında duran, kutuya zıplayan ya da merdiven veya rampadan çıkan oyuncu, kafası siperi aşmadan biraz önce gösterilir. Bir oyuncu sizi görebiliyorsa siz de onu görürsünüz. Pingi yüksek oyunculara daha erken gösterilir, görünen bir oyuncu da hemen gizlenmez. Çarpışma, mermi ve hasar etkilenmez.
+- Gizlenen oyuncu görüş hattı açıldığı anda, köşeden çıkmak üzereyken de görünür. Kutuya zıplayan ya da merdiven veya rampadan çıkan oyuncu, kafası siperi aşmadan biraz önce gösterilir. Bir oyuncu sizi görebiliyorsa siz de onu görürsünüz. Oyuncunun bastığı hareket tuşlarına da bakılır: yana adım atarak köşeden çıkmaya başlayan oyuncu bir an erken gösterilir, duran oyuncu ise önceden gösterilmez. Pingi yüksek oyunculara daha erken gösterilir, görünen bir oyuncu da hemen gizlenmez. Çarpışma, mermi ve hasar etkilenmez.
+- Çok kalabalık bir sunucuda, sunucu yoğunken gizli oyuncular herkese gösterilmek yerine biraz daha seyrek kontrol edilir.
 - Size çok yakın olan oyuncular hiç gizlenmez.
 - `mp_teammates_are_enemies` `1` iken (ör. deathmatch), takım/rakip seçimlerinde herkes rakip sayılır.
 - Bir oyuncuyu izlerken onun cesedi gizlenmez, böylece kamera takılı kalmaz.

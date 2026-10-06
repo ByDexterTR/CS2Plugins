@@ -18,23 +18,55 @@ public sealed class WorldBvh
   private const int Bins = 12;
   private const int LeafSize = 4;
 
-  private Vector3[] _v0 = [];
-  private Vector3[] _e1 = [];
-  private Vector3[] _e2 = [];
-  private bool[] _oneSided = [];
+  private Face[] _faces = [];
   private Node[] _nodes = [];
   private int _nodeCount;
 
-  public int TriangleCount => _v0.Length;
+  public int TriangleCount => _faces.Length;
   public Vector3 Min => _nodes[0].Min;
   public Vector3 Max => _nodes[0].Max;
 
-  private static readonly string[] PlayerBlockers = ["playerclip", "passbullets", "window"];
+  private static readonly string[] PlayerBlockers = ["playerclip", "passbullets", "window", "solid"];
 
   public static WorldBvh Solid(byte[] physics) => Build(Extract(physics, attribute => attribute.InteractAs.Count == 0, false));
 
   public static WorldBvh PlayerSolid(byte[] physics) => Build(Extract(physics, attribute =>
     !Has(attribute.InteractExclude, "player") && (attribute.InteractAs.Count == 0 || PlayerBlockers.Any(tag => Has(attribute.InteractAs, tag))), true));
+
+  public static List<(Vector3 Min, Vector3 Max)> Ladders(byte[] physics)
+  {
+    var triangles = Extract(physics, attribute => Has(attribute.InteractAs, "ladder"), true);
+    var boxes = new List<(Vector3 Min, Vector3 Max)>();
+    foreach (var t in triangles)
+    {
+      var min = Vector3.Min(t.A, Vector3.Min(t.B, t.C)) - new Vector3(LadderJoin);
+      var max = Vector3.Max(t.A, Vector3.Max(t.B, t.C)) + new Vector3(LadderJoin);
+      boxes.Add((min, max));
+    }
+
+    bool merged = true;
+    while (merged)
+    {
+      merged = false;
+      for (int i = 0; i < boxes.Count && !merged; i++)
+      for (int j = i + 1; j < boxes.Count; j++)
+      {
+        var a = boxes[i];
+        var b = boxes[j];
+        if (a.Min.X > b.Max.X || b.Min.X > a.Max.X || a.Min.Y > b.Max.Y || b.Min.Y > a.Max.Y || a.Min.Z > b.Max.Z || b.Min.Z > a.Max.Z)
+          continue;
+
+        boxes[i] = (Vector3.Min(a.Min, b.Min), Vector3.Max(a.Max, b.Max));
+        boxes.RemoveAt(j);
+        merged = true;
+        break;
+      }
+    }
+
+    return boxes.Select(box => (box.Min + new Vector3(LadderJoin), box.Max - new Vector3(LadderJoin))).ToList();
+  }
+
+  private const float LadderJoin = 4f;
 
   private static bool Has(List<string> tags, string tag) => tags.Any(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase));
 
@@ -142,18 +174,12 @@ public sealed class WorldBvh
       }
     }
 
-    bvh._v0 = new Vector3[count];
-    bvh._e1 = new Vector3[count];
-    bvh._e2 = new Vector3[count];
-    bvh._oneSided = new bool[count];
+    bvh._faces = new Face[count];
 
     for (int i = 0; i < count; i++)
     {
       var t = triangles[index[i]];
-      bvh._v0[i] = t.A;
-      bvh._e1[i] = t.B - t.A;
-      bvh._e2[i] = t.C - t.A;
-      bvh._oneSided[i] = t.OneSided;
+      bvh._faces[i] = new Face(t.A, t.B - t.A, t.C - t.A, t.OneSided);
     }
 
     Array.Resize(ref bvh._nodes, bvh._nodeCount);
@@ -298,8 +324,16 @@ public sealed class WorldBvh
     return size.X * size.Y + size.Y * size.Z + size.Z * size.X;
   }
 
+  public bool Blocked(Vector3 from, Vector3 to) => Blocker(from, to) >= 0;
+
+  public readonly record struct Face(Vector3 V0, Vector3 E1, Vector3 E2, bool OneSided);
+
+  public Face FaceOf(int triangle) => _faces[triangle];
+
+  public static bool Hits(in Face face, Vector3 from, Vector3 to) => Hit(face, from, to - from) < 1f;
+
   [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-  public bool Blocked(Vector3 from, Vector3 to)
+  public int Blocker(Vector3 from, Vector3 to)
   {
     var direction = to - from;
     var inverse = new Vector3(1f / direction.X, 1f / direction.Y, 1f / direction.Z);
@@ -317,8 +351,8 @@ public sealed class WorldBvh
       {
         for (int i = node.LeftOrFirst; i < node.LeftOrFirst + node.Count; i++)
         {
-          if (Hit(i, from, direction) < 1f)
-            return true;
+          if (Hit(_faces[i], from, direction) < 1f)
+            return i;
         }
       }
       else if (top < 62)
@@ -328,29 +362,43 @@ public sealed class WorldBvh
       }
     }
 
-    return false;
+    return -1;
+  }
+
+  public float Fraction(Vector3 from, Vector3 to)
+  {
+    var hint = default(Face);
+    return Fraction(from, to, ref hint);
   }
 
   [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-  public float Fraction(Vector3 from, Vector3 to)
+  public float Fraction(Vector3 from, Vector3 to, ref Face hint)
   {
     var direction = to - from;
     var inverse = new Vector3(1f / direction.X, 1f / direction.Y, 1f / direction.Z);
     Span<int> stack = stackalloc int[64];
     int top = 0;
     stack[top++] = 0;
-    float best = 1f;
+    float best = Hit(hint, from, direction);
+    int found = -1;
 
     while (top > 0)
     {
       ref var node = ref _nodes[stack[--top]];
-      if (!Overlaps(node.Min, node.Max, from, inverse))
+      if (!Overlaps(node.Min, node.Max, from, inverse, best))
         continue;
 
       if (node.Count > 0)
       {
         for (int i = node.LeftOrFirst; i < node.LeftOrFirst + node.Count; i++)
-          best = MathF.Min(best, Hit(i, from, direction));
+        {
+          float t = Hit(_faces[i], from, direction);
+          if (t < best)
+          {
+            best = t;
+            found = i;
+          }
+        }
       }
       else if (top < 62)
       {
@@ -359,43 +407,44 @@ public sealed class WorldBvh
       }
     }
 
+    if (found >= 0)
+      hint = _faces[found];
+
     return best;
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private static bool Overlaps(Vector3 min, Vector3 max, Vector3 origin, Vector3 inverse)
+  private static bool Overlaps(Vector3 min, Vector3 max, Vector3 origin, Vector3 inverse, float limit = 1f)
   {
     var t0 = (min - origin) * inverse;
     var t1 = (max - origin) * inverse;
     var near = Vector3.Min(t0, t1);
     var far = Vector3.Max(t0, t1);
     float enter = MathF.Max(MathF.Max(near.X, near.Y), MathF.Max(near.Z, 0f));
-    float exit = MathF.Min(MathF.Min(far.X, far.Y), MathF.Min(far.Z, 1f));
+    float exit = MathF.Min(MathF.Min(far.X, far.Y), MathF.Min(far.Z, limit));
     return enter <= exit;
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private float Hit(int i, Vector3 origin, Vector3 direction)
+  private static float Hit(in Face face, Vector3 origin, Vector3 direction)
   {
-    var e1 = _e1[i];
-    var e2 = _e2[i];
-    var p = Vector3.Cross(direction, e2);
-    float det = Vector3.Dot(e1, p);
-    if (det < 1e-9f && (_oneSided[i] || det > -1e-9f))
+    var p = Vector3.Cross(direction, face.E2);
+    float det = Vector3.Dot(face.E1, p);
+    if (det < 1e-9f && (face.OneSided || det > -1e-9f))
       return 1f;
 
     float inverse = 1f / det;
-    var s = origin - _v0[i];
+    var s = origin - face.V0;
     float u = Vector3.Dot(s, p) * inverse;
     if (u < 0f || u > 1f)
       return 1f;
 
-    var q = Vector3.Cross(s, e1);
+    var q = Vector3.Cross(s, face.E1);
     float v = Vector3.Dot(direction, q) * inverse;
     if (v < 0f || u + v > 1f)
       return 1f;
 
-    float t = Vector3.Dot(e2, q) * inverse;
+    float t = Vector3.Dot(face.E2, q) * inverse;
     return t > 1e-4f && t < 0.9999f ? t : 1f;
   }
 }
