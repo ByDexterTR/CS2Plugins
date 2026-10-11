@@ -26,7 +26,7 @@ namespace FPS;
 public class FPSConfig
 {
   [JsonPropertyName("ConfigVersion")]
-  public int Version { get; set; } = 2;
+  public int Version { get; set; } = 3;
 
   [JsonPropertyName("fps_cmd")]
   public string Commands { get; set; } = "css_fps";
@@ -42,12 +42,6 @@ public class FPSConfig
 
   [JsonPropertyName("hide_unseen_default"), JsonConverter(typeof(LooseInt))]
   public int HideUnseenDefault { get; set; } = 3;
-
-  [JsonPropertyName("mute_unseen_enable"), JsonConverter(typeof(LooseBool))]
-  public bool MuteUnseenEnable { get; set; } = true;
-
-  [JsonPropertyName("mute_unseen_default"), JsonConverter(typeof(LooseInt))]
-  public int MuteUnseenDefault { get; set; } = 3;
 
   [JsonPropertyName("own_killfeed_enable"), JsonConverter(typeof(LooseBool))]
   public bool OwnKillfeedEnable { get; set; } = true;
@@ -77,7 +71,7 @@ public class FPSConfig
   public int HideBloodDefault { get; set; } = 1;
 
   [JsonPropertyName("hide_blood_delay")]
-  public float HideBloodDelay { get; set; } = 0f;
+  public float HideBloodDelay { get; set; } = 0.5f;
 
   [JsonPropertyName("hide_bullethole_enable"), JsonConverter(typeof(LooseBool))]
   public bool HideBulletholeEnable { get; set; } = true;
@@ -86,13 +80,16 @@ public class FPSConfig
   public int HideBulletholeDefault { get; set; } = 1;
 
   [JsonPropertyName("hide_bullethole_delay")]
-  public float HideBulletholeDelay { get; set; } = 1.0f;
+  public float HideBulletholeDelay { get; set; } = 0.5f;
 
   [JsonPropertyName("hide_props_enable"), JsonConverter(typeof(LooseBool))]
   public bool HidePropsEnable { get; set; } = true;
 
   [JsonPropertyName("hide_props_default"), JsonConverter(typeof(LooseInt))]
   public int HidePropsDefault { get; set; } = 1;
+
+  [JsonPropertyName("hide_props_kill"), JsonConverter(typeof(LooseBool))]
+  public bool HidePropsKill { get; set; } = false;
 }
 
 public class LooseInt : JsonConverter<int>
@@ -136,7 +133,7 @@ public class PropRecord
 public class FPS : BasePlugin
 {
   public override string ModuleName => "FPS";
-  public override string ModuleVersion => "1.0.6";
+  public override string ModuleVersion => "1.0.7";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -144,7 +141,7 @@ public class FPS : BasePlugin
 
   public FPSConfig Config { get; set; } = new();
 
-  private const int ConfigVersion = 2;
+  private const int ConfigVersion = 3;
 
   private const int Killfeed = 1;
   private const int Corpses = 2;
@@ -154,7 +151,6 @@ public class FPS : BasePlugin
   private const int Bullethole = 32;
 
   private const string UnseenKey = "hide_unseen";
-  private const string MuteKey = "mute_unseen";
   private const string FpsKey = "fps";
   private static readonly (int Flag, string Key)[] FlagKeys =
   {
@@ -197,9 +193,7 @@ public class FPS : BasePlugin
   private const int FfaTicks = 64;
   private const int RadarTicks = 1;
   private const int EffectDispatchMessage = 400;
-  private const int WeaponSoundMessage = 369;
   private const int ParticleMessage = 145;
-  private const int FireBulletsMessage = 452;
   private const int ClearWorldDecalsMessage = 202;
   private const int ClearEntityDecalsMessage = 203;
   private const uint DynamicDecals = 0xFFFFFFFE;
@@ -209,13 +203,11 @@ public class FPS : BasePlugin
   private readonly bool[] _human = new bool[MaxSlots];
   private readonly ulong[] _steamIds = new ulong[MaxSlots];
   private readonly int[] _unseen = new int[MaxSlots];
-  private readonly int[] _mute = new int[MaxSlots];
   private readonly ulong[] _hiddenMask = new ulong[MaxSlots];
   private readonly int[] _radarAt = new int[MaxSlots];
   private readonly ulong[] _dormantMask = new ulong[MaxSlots];
   private ulong _dormantViewers;
   private ulong _propViewers;
-  private ulong _muteMask;
   private readonly int[] _flags = new int[MaxSlots];
   private readonly float[] _deathTime = new float[MaxSlots];
   private readonly int[] _dyingTick = new int[MaxSlots];
@@ -324,10 +316,7 @@ public class FPS : BasePlugin
   private CancellationTokenSource? _visCancel;
   private CheckTransmit _onCheckTransmit = null!;
   private UserMessage.UserMessageHandler _onEffect = null!;
-  private UserMessage.UserMessageHandler _onFireBullets = null!;
-  private UserMessage.UserMessageHandler _onWeaponSound = null!;
   private UserMessage.UserMessageHandler _onParticle = null!;
-  private bool _soundHooked;
   private bool _transmitHooked;
   private bool _bloodHooked;
   private bool _decalHooked;
@@ -335,8 +324,8 @@ public class FPS : BasePlugin
 
   public override void Load(bool hotReload)
   {
-    bool migrated = LoadSettings();
-    LoadPlayers(migrated);
+    int from = LoadSettings();
+    LoadPlayers(from);
 
     _slotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
     _servicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
@@ -348,8 +337,6 @@ public class FPS : BasePlugin
     _ffa = _teammatesAreEnemies?.GetPrimitiveValue<bool>() == true;
     _onCheckTransmit = OnCheckTransmit;
     _onEffect = OnEffect;
-    _onFireBullets = msg => MuteHidden(msg, (int)(msg.ReadUInt("player") & 0x3FFF));
-    _onWeaponSound = msg => MuteHidden(msg, msg.ReadInt("entidx"));
     _onParticle = OnParticle;
 
     _menus = new WasdMenuManager(this,
@@ -385,8 +372,10 @@ public class FPS : BasePlugin
     if (Config.HidePropsEnable)
     {
       RegisterEventHandler<EventRoundStart>(OnRoundStart);
-      RegisterListener<OnEntityDeleted>(OnEntityDeleted);
       RegisterListener<OnMapStart>(_ => ClearProps());
+
+      if (!KillProps)
+        RegisterListener<OnEntityDeleted>(OnEntityDeleted);
     }
 
     if (Config.HideUnseenEnable)
@@ -541,7 +530,6 @@ public class FPS : BasePlugin
     SetTransmitHook(false);
     SetBloodHook(false);
     SetDecalHook(false);
-    SetSoundHook(false);
     _menus.Clear();
 
     if (!Config.HideLegsEnable)
@@ -554,9 +542,9 @@ public class FPS : BasePlugin
     }
   }
 
-  private bool LoadSettings()
+  private int LoadSettings()
   {
-    bool migrated = false;
+    int from = ConfigVersion;
 
     lock (_ioLock)
     {
@@ -567,16 +555,13 @@ public class FPS : BasePlugin
           string json = File.ReadAllText(SettingsPath);
           using var document = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
 
-          if (Number(document.RootElement, "ConfigVersion", 1) < ConfigVersion)
+          int version = Number(document.RootElement, "ConfigVersion", 1);
+          Config = version < 2 ? Migrate(document.RootElement) : JsonSerializer.Deserialize<FPSConfig>(json, JsonOpts) ?? new FPSConfig();
+
+          if (version < ConfigVersion)
           {
-            Config = Migrate(document.RootElement);
-            File.Copy(SettingsPath, Path.Combine(ModuleDirectory, "settings.v1.json"), true);
-            migrated = true;
-            Logger.LogInformation("[FPS] settings.json surum {Version} yapisina tasindi, eski dosya settings.v1.json olarak saklandi", ConfigVersion);
-          }
-          else
-          {
-            Config = JsonSerializer.Deserialize<FPSConfig>(json, JsonOpts) ?? new FPSConfig();
+            from = version;
+            Logger.LogInformation("[FPS] settings.json surum {Version} yapisina tasindi", ConfigVersion);
           }
         }
       }
@@ -599,7 +584,6 @@ public class FPS : BasePlugin
       {
         Config.Version = ConfigVersion;
         Config.HideUnseenDefault = Math.Clamp(Config.HideUnseenDefault, 0, 3);
-        Config.MuteUnseenDefault = Math.Clamp(Config.MuteUnseenDefault, 0, 3);
         Config.OwnKillfeedDefault = Math.Clamp(Config.OwnKillfeedDefault, 0, 1);
         Config.HideRagdollDefault = Math.Clamp(Config.HideRagdollDefault, 0, 1);
         Config.HideLegsDefault = Math.Clamp(Config.HideLegsDefault, 0, 1);
@@ -618,7 +602,7 @@ public class FPS : BasePlugin
       }
     }
 
-    return migrated;
+    return from;
   }
 
   private static FPSConfig Migrate(JsonElement old)
@@ -634,10 +618,6 @@ public class FPS : BasePlugin
     int unseen = Math.Clamp(Number(old, "hide_unseen", 3), 0, 3);
     config.HideUnseenEnable = unseen != 0;
     config.HideUnseenDefault = unseen != 0 ? unseen : 3;
-
-    int mute = Math.Clamp(Number(old, "mute_unseen", 3), 0, 3);
-    config.MuteUnseenEnable = unseen != 0 && mute != 0;
-    config.MuteUnseenDefault = mute != 0 ? mute : 3;
 
     config.OwnKillfeedEnable = Number(old, "own_killfeed", 1) != 0;
     config.HideRagdollEnable = Number(old, "hide_corpses", 1) != 0;
@@ -677,8 +657,10 @@ public class FPS : BasePlugin
       System.Globalization.CultureInfo.InvariantCulture, out float number) ? number : fallback;
   }
 
-  private void LoadPlayers(bool migrate)
+  private void LoadPlayers(int from)
   {
+    bool dirty = false;
+
     lock (_ioLock)
     {
       try
@@ -699,16 +681,22 @@ public class FPS : BasePlugin
           if (!ulong.TryParse(key, out var steamId) || values == null || values.Count == 0)
             continue;
 
-          if (migrate)
+          if (from < 2)
           {
             if (values.Remove("hide_corpses", out int corpses))
               values["hide_ragdoll"] = corpses;
 
             if (values.TryGetValue("hide_blood", out int blood))
               values["hide_bullethole"] = blood;
+
+            dirty = true;
           }
 
-          _saved[steamId] = values;
+          if (from < 3 && values.Remove("mute_unseen"))
+            dirty = true;
+
+          if (values.Count > 0)
+            _saved[steamId] = values;
         }
       }
       catch (Exception ex)
@@ -717,7 +705,7 @@ public class FPS : BasePlugin
       }
     }
 
-    if (migrate && _saved.Count > 0)
+    if (dirty)
       SavePlayers();
   }
 
@@ -739,8 +727,6 @@ public class FPS : BasePlugin
     });
   }
 
-  private bool MuteEnabled => Config.HideUnseenEnable && Config.MuteUnseenEnable;
-
   private bool Enabled(int flag) => flag switch
   {
     Killfeed => Config.OwnKillfeedEnable,
@@ -748,9 +734,11 @@ public class FPS : BasePlugin
     Legs => Config.HideLegsEnable,
     Blood => Config.HideBloodEnable,
     Bullethole => Config.HideBulletholeEnable,
-    Props => Config.HidePropsEnable,
+    Props => Config.HidePropsEnable && !KillProps,
     _ => false
   };
+
+  private bool KillProps => Config.HidePropsKill;
 
   private bool OnByDefault(int flag) => flag switch
   {
@@ -809,7 +797,6 @@ public class FPS : BasePlugin
     _human[slot] = true;
     _steamIds[slot] = steamId;
     _unseen[slot] = Config.HideUnseenEnable ? Config.HideUnseenDefault : 0;
-    _mute[slot] = MuteEnabled ? Config.MuteUnseenDefault : 0;
     _flags[slot] = Defaults();
 
     if (steamId != 0 && _saved.TryGetValue(steamId, out var values))
@@ -823,9 +810,6 @@ public class FPS : BasePlugin
       {
         if (Config.HideUnseenEnable && values.TryGetValue(UnseenKey, out int unseen))
           _unseen[slot] = Math.Clamp(unseen, 0, 3);
-
-        if (MuteEnabled && values.TryGetValue(MuteKey, out int mute))
-          _mute[slot] = Math.Clamp(mute, 0, 3);
 
         foreach (var (flag, key) in FlagKeys)
         {
@@ -847,7 +831,6 @@ public class FPS : BasePlugin
   private void SetFpsOff(int slot)
   {
     _unseen[slot] = 0;
-    _mute[slot] = 0;
     _flags[slot] = 0;
   }
 
@@ -880,7 +863,6 @@ public class FPS : BasePlugin
     _human[slot] = false;
     _steamIds[slot] = 0;
     _unseen[slot] = 0;
-    _mute[slot] = 0;
     _hiddenMask[slot] = 0;
     _dormantMask[slot] = 0;
     _dormantViewers &= ~(1UL << slot);
@@ -911,7 +893,6 @@ public class FPS : BasePlugin
     _bloodMask = 0;
     _bulletWipeMask = 0;
     _bloodWipeMask = 0;
-    _muteMask = 0;
     _propViewers = 0;
     _killfeedCount = 0;
 
@@ -941,34 +922,11 @@ public class FPS : BasePlugin
 
       if ((flags & Killfeed) != 0)
         _killfeedCount++;
-
-      if (_unseen[slot] != 0 && _mute[slot] != 0)
-        _muteMask |= 1UL << slot;
     }
 
     SetTransmitHook(transmit);
     SetBloodHook(_bloodMask != 0);
     SetDecalHook((_bulletWipeMask | _bloodWipeMask) != 0);
-    SetSoundHook(_muteMask != 0);
-  }
-
-  private void SetSoundHook(bool on)
-  {
-    if (on == _soundHooked)
-      return;
-
-    _soundHooked = on;
-
-    if (on)
-    {
-      HookUserMessage(FireBulletsMessage, _onFireBullets, HookMode.Pre);
-      HookUserMessage(WeaponSoundMessage, _onWeaponSound, HookMode.Pre);
-    }
-    else
-    {
-      UnhookUserMessage(FireBulletsMessage, _onFireBullets, HookMode.Pre);
-      UnhookUserMessage(WeaponSoundMessage, _onWeaponSound, HookMode.Pre);
-    }
   }
 
   private void SetTransmitHook(bool on)
@@ -1088,15 +1046,6 @@ public class FPS : BasePlugin
       });
     }
 
-    if (MuteEnabled)
-    {
-      items.Add(new WasdItem
-      {
-        Text = $"{Localizer["fps.mute_unseen"]}: {UnseenLabel(_mute[slot])}",
-        OnSelect = p => ChangeMode(p, _mute)
-      });
-    }
-
     int available = Available();
     foreach (var (flag, key) in FlagKeys)
     {
@@ -1168,9 +1117,6 @@ public class FPS : BasePlugin
       if (Config.HideUnseenEnable && _unseen[slot] != Config.HideUnseenDefault)
         values[UnseenKey] = _unseen[slot];
 
-      if (MuteEnabled && _mute[slot] != Config.MuteUnseenDefault)
-        values[MuteKey] = _mute[slot];
-
       foreach (var (flag, key) in FlagKeys)
       {
         bool on = (_flags[slot] & flag) != 0;
@@ -1218,6 +1164,7 @@ public class FPS : BasePlugin
     }
 
     var found = new Dictionary<string, int>();
+    var kill = new List<CBaseModelEntity>();
 
     foreach (var prop in Utilities.FindAllEntitiesByDesignerName<CBaseModelEntity>(PropClass))
     {
@@ -1233,6 +1180,12 @@ public class FPS : BasePlugin
       if (_mapProps != null && !_mapProps.ContainsKey(model))
         continue;
 
+      if (KillProps)
+      {
+        kill.Add(prop);
+        continue;
+      }
+
       int index = (int)prop.Index;
       if (index <= 0 || index >= MaxEntities || _isProp[index])
         continue;
@@ -1244,6 +1197,12 @@ public class FPS : BasePlugin
       if (_propMask[word] == 0)
         _propWords.Add(word);
       _propMask[word] |= 1u << (index & 31);
+    }
+
+    foreach (var prop in kill)
+    {
+      if (prop.IsValid)
+        prop.Remove();
     }
 
     if (!roundStart)
@@ -1458,40 +1417,6 @@ public class FPS : BasePlugin
       return HookResult.Continue;
 
     ulong rest = mask & ~targets;
-    if (rest == 0)
-      return HookResult.Stop;
-
-    msg.Recipients = new RecipientFilter(rest);
-    return HookResult.Continue;
-  }
-
-  private HookResult MuteHidden(UserMessage msg, int source)
-  {
-    int t = SlotOf(source);
-    if (t < 0)
-      return HookResult.Continue;
-
-    ulong mask = msg.Recipients.GetRecipientMask();
-    ulong listeners = mask & _muteMask;
-    ulong remove = 0;
-
-    while (listeners != 0)
-    {
-      int v = BitOperations.TrailingZeroCount(listeners);
-      listeners &= listeners - 1;
-
-      if (((_hiddenMask[v] >> t) & 1) == 0)
-        continue;
-
-      int mode = _mute[v];
-      if (mode == 3 || Teammates(t, v) == (mode == 1))
-        remove |= 1UL << v;
-    }
-
-    if (remove == 0)
-      return HookResult.Continue;
-
-    ulong rest = mask & ~remove;
     if (rest == 0)
       return HookResult.Stop;
 

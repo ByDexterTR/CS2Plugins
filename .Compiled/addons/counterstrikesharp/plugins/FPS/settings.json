@@ -1,12 +1,10 @@
 {
-  "ConfigVersion": 2,
+  "ConfigVersion": 3,
   "fps_cmd": "css_fps",
   "fps_flag": "",
   "player_configable": true,
   "hide_unseen_enable": true,
   "hide_unseen_default": 3,
-  "mute_unseen_enable": true,
-  "mute_unseen_default": 3,
   "own_killfeed_enable": true,
   "own_killfeed_default": 1,
   "hide_ragdoll_enable": true,
@@ -16,10 +14,11 @@
   "hide_legs_default": 1,
   "hide_blood_enable": true,
   "hide_blood_default": 1,
-  "hide_blood_delay": 0,
+  "hide_blood_delay": 0.5,
   "hide_bullethole_enable": true,
   "hide_bullethole_default": 1,
-  "hide_bullethole_delay": 1,
+  "hide_bullethole_delay": 0.5,
   "hide_props_enable": true,
-  "hide_props_default": 1
+  "hide_props_default": 1,
+  "hide_props_kill": true
 }

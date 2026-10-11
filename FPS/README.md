@@ -9,7 +9,6 @@ Gives players an FPS mode that removes things they do not need to see: players h
 - `css_fps` (`!fps` in chat) is always available: it opens a WASD settings menu, or turns FPS mode on/off when `player_configable` is `false`
 - Player choices are saved to `players.json` by SteamID and applied on every join
 - **Behind walls:** players out of your line of sight are not sent to you. Choose everyone, teammates only or enemies only
-- **Behind walls sound:** gunshots and weapon sounds of the players hidden from you are muted. Choose everyone, teammates only or enemies only
 - Hidden teammates are not shown through walls (no model, name or outline), but they and the enemies your team has spotted keep moving on the radar as usual
 - **Killfeed:** only your own kills (and your own death) appear in the killfeed
 - **Corpses:** dead players' bodies disappear after a short delay
@@ -32,7 +31,7 @@ Gives players an FPS mode that removes things they do not need to see: players h
    ```
 2. Restart the server or run `css_plugins load FPS`.
 3. `settings.json` is created in the plugin folder when it is missing. If the file cannot be read, it is kept as `settings.old.json` and written again with the default settings.
-4. A `settings.json` from an older version is converted to the new layout automatically, keeping your choices. The old file is kept as `settings.v1.json`.
+4. A `settings.json` from an older version is converted to the new layout automatically, keeping your choices.
 
 ## Commands
 
@@ -50,14 +49,12 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `ConfigVersion` | int | `2` | Settings layout version, do not change |
+| `ConfigVersion` | int | `3` | Settings layout version, do not change |
 | `fps_cmd` | string | `"css_fps"` | Comma separated command names |
 | `fps_flag` | string | `""` | Required permission; empty string = everyone can use it |
 | `player_configable` | bool | `true` | `true`: players change each setting themselves from the menu, `false`: the server settings are fixed and players can only turn FPS mode on/off |
 | `hide_unseen_enable` | bool | `true` | Hiding players behind walls is used on the server |
 | `hide_unseen_default` | int | `3` | Default for hiding players behind walls. `0`: off, `1`: teammates, `2`: enemy team, `3`: everyone |
-| `mute_unseen_enable` | bool | `true` | Muting the weapons of hidden players is used on the server. Has no effect while `hide_unseen_enable` is `false` |
-| `mute_unseen_default` | int | `3` | Default for muting hidden players. `0`: off, `1`: teammates, `2`: enemy team, `3`: everyone |
 | `own_killfeed_enable` | bool | `true` | Showing only your own kills in the killfeed is used on the server |
 | `own_killfeed_default` | int | `1` | `0`: off by default, `1`: on by default |
 | `hide_ragdoll_enable` | bool | `true` | Hiding corpses is used on the server |
@@ -73,6 +70,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 | `hide_bullethole_delay` | float | `1.0` | Seconds after a shot before bullet holes are wiped (minimum `0.1`) |
 | `hide_props_enable` | bool | `true` | Hiding junk props is used on the server |
 | `hide_props_default` | int | `1` | `0`: off by default, `1`: on by default |
+| `hide_props_kill` | bool | `false` | `false`: junk props are hidden per player. `true`: junk props are deleted for everyone at round start, and the setting leaves the menu |
 
 A setting whose `_enable` is `false` is not in the menu and does no work. With `player_configable: false` every player gets the `_default` values and can only turn FPS mode on/off.
 
@@ -80,14 +78,12 @@ A setting whose `_enable` is `false` is not in the menu and does no work. With `
 
 ```json
 {
-  "ConfigVersion": 2,
+  "ConfigVersion": 3,
   "fps_cmd": "css_fps,css_fpsboost",
   "fps_flag": "",
   "player_configable": true,
   "hide_unseen_enable": true,
   "hide_unseen_default": 2,
-  "mute_unseen_enable": false,
-  "mute_unseen_default": 3,
   "own_killfeed_enable": true,
   "own_killfeed_default": 0,
   "hide_ragdoll_enable": true,
@@ -102,7 +98,8 @@ A setting whose `_enable` is `false` is not in the menu and does no work. With `
   "hide_bullethole_default": 1,
   "hide_bullethole_delay": 2.0,
   "hide_props_enable": true,
-  "hide_props_default": 1
+  "hide_props_default": 1,
+  "hide_props_kill": false
 }
 ```
 
@@ -150,6 +147,7 @@ Ready lists come for de_ancient, de_ancient_night, de_anubis, de_cache, de_dust2
 
 - On a map without a list, the plugin builds the list on the first round and saves it to this folder.
 - Remove a line to keep that prop visible. An empty list (`[]`) hides nothing on that map.
+- With `hide_props_kill: true` the props in the list are deleted instead of hidden.
 - Only small props that players walk through and kick are hidden. A prop that blocks players is never hidden, even if it is in the list.
 - The list is checked against the map when the map loads. After a CS2 update, a model that is gone or that now blocks players, a changed count, or a new junk prop that is not in the list is reported as a warning in the server console. Delete the map's file to build the list again.
 
@@ -177,7 +175,6 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<map>.vis
 - Players who are very close to you are never hidden.
 - When `mp_teammates_are_enemies` is `1` (e.g. deathmatch), everyone counts as an enemy for the team/enemy choices.
 - While you spectate a player, their corpse is not hidden, so the camera does not get stuck.
-- **Behind walls sound** only mutes players that are hidden from you at that moment; footsteps and other sounds are not affected.
 - **Bullet holes** only wipes marks left during play; decals that are part of the map stay. The game can only wipe every mark on a player's screen at once, not one by one. The timer starts with the first new hole or stain, and when it runs out every hole and stain on that player's screen goes together, including ones made a moment earlier. Blood stains and bullet holes are always wiped together.
 - **Legs** makes your own model slightly transparent, which other players cannot notice. Another plugin that changes player transparency can turn your legs back on.
 - **Killfeed:** GOTV still receives the full killfeed. If another plugin (e.g. DM) also changes the killfeed, kills can show up twice; set `own_killfeed_enable: false` on that server.

@@ -9,7 +9,6 @@ Oyunculara, görmeleri gerekmeyen şeyleri kaldıran bir FPS modu sunar: duvar a
 - `css_fps` (sohbette `!fps`) her zaman kullanılabilir: WASD ayar menüsünü açar, `player_configable` `false` ise FPS modunu açıp kapatır
 - Oyuncu seçimleri SteamID ile `players.json` dosyasına kaydedilir, her girişte uygulanır
 - **Duvar arkası:** görüş hattınızda olmayan oyuncular size gönderilmez. Herkes, sadece takım arkadaşları veya sadece rakipler seçilebilir
-- **Duvar arkası ses:** sizden gizlenen oyuncuların atış ve silah sesleri susturulur. Herkes, sadece takım arkadaşları veya sadece rakipler seçilebilir
 - Gizlenen takım arkadaşları duvar arkasından görünmez (model, isim ve çizgi yok), ama onlar ve takımınızın gördüğü rakipler radarda her zamanki gibi hareket eder
 - **Killfeed:** killfeed'de sadece sizin öldürdükleriniz (ve sizin ölümünüz) görünür
 - **Cesetler:** ölen oyuncuların cesetleri kısa bir süre sonra kaybolur
@@ -32,7 +31,7 @@ Oyunculara, görmeleri gerekmeyen şeyleri kaldıran bir FPS modu sunar: duvar a
    ```
 2. Sunucuyu yeniden başlatın veya `css_plugins load FPS` komutunu çalıştırın.
 3. `settings.json` yoksa eklenti klasöründe otomatik oluşturulur. Dosya okunamazsa `settings.old.json` olarak saklanır ve varsayılan ayarlarla yeniden yazılır.
-4. Eski sürümden kalan `settings.json` seçimleriniz korunarak yeni yapıya otomatik çevrilir. Eski dosya `settings.v1.json` olarak saklanır.
+4. Eski sürümden kalan `settings.json` seçimleriniz korunarak yeni yapıya otomatik çevrilir.
 
 ## Komutlar
 
@@ -50,14 +49,12 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 
 | Ayar | Tip | Varsayılan | Açıklama |
 | --- | --- | --- | --- |
-| `ConfigVersion` | int | `2` | Ayar dosyasının yapı sürümü, değiştirmeyin |
+| `ConfigVersion` | int | `3` | Ayar dosyasının yapı sürümü, değiştirmeyin |
 | `fps_cmd` | string | `"css_fps"` | Virgülle ayrılmış komut adları |
 | `fps_flag` | string | `""` | Gerekli yetki; boş string = herkes kullanabilir |
 | `player_configable` | bool | `true` | `true`: oyuncular her ayarı menüden kendisi değiştirir, `false`: sunucu ayarları sabittir, oyuncular sadece FPS modunu açıp kapatabilir |
 | `hide_unseen_enable` | bool | `true` | Duvar arkasındaki oyuncuları gizleme sunucuda kullanılsın |
 | `hide_unseen_default` | int | `3` | Duvar arkasındaki oyuncuları gizlemenin varsayılanı. `0`: kapalı, `1`: takım arkadaşları, `2`: rakip takım, `3`: herkes |
-| `mute_unseen_enable` | bool | `true` | Gizlenen oyuncuların silah seslerini kapatma sunucuda kullanılsın. `hide_unseen_enable` `false` iken etkisi yoktur |
-| `mute_unseen_default` | int | `3` | Gizlenen oyuncuları susturmanın varsayılanı. `0`: kapalı, `1`: takım arkadaşları, `2`: rakip takım, `3`: herkes |
 | `own_killfeed_enable` | bool | `true` | Killfeed'de sadece kendi öldürdüklerini görme sunucuda kullanılsın |
 | `own_killfeed_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
 | `hide_ragdoll_enable` | bool | `true` | Cesetleri gizleme sunucuda kullanılsın |
@@ -73,6 +70,7 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 | `hide_bullethole_delay` | float | `1.0` | Atıştan kaç saniye sonra mermi izlerinin silineceği (en az `0.1`) |
 | `hide_props_enable` | bool | `true` | Çöp prop'ları gizleme sunucuda kullanılsın |
 | `hide_props_default` | int | `1` | `0`: varsayılan kapalı, `1`: varsayılan açık |
+| `hide_props_kill` | bool | `false` | `false`: çöp prop'lar oyuncu başına gizlenir. `true`: çöp prop'lar her raunt başında herkes için silinir, ayar menüden kalkar |
 
 `_enable` değeri `false` olan ayar menüde görünmez ve hiç çalışmaz. `player_configable: false` iken her oyuncu `_default` değerlerini alır ve sadece FPS modunu açıp kapatabilir.
 
@@ -80,14 +78,12 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
 
 ```json
 {
-  "ConfigVersion": 2,
+  "ConfigVersion": 3,
   "fps_cmd": "css_fps,css_fpsboost",
   "fps_flag": "",
   "player_configable": true,
   "hide_unseen_enable": true,
   "hide_unseen_default": 2,
-  "mute_unseen_enable": false,
-  "mute_unseen_default": 3,
   "own_killfeed_enable": true,
   "own_killfeed_default": 0,
   "hide_ragdoll_enable": true,
@@ -102,7 +98,8 @@ csgo/addons/counterstrikesharp/plugins/FPS/settings.json
   "hide_bullethole_default": 1,
   "hide_bullethole_delay": 2.0,
   "hide_props_enable": true,
-  "hide_props_default": 1
+  "hide_props_default": 1,
+  "hide_props_kill": false
 }
 ```
 
@@ -150,6 +147,7 @@ de_ancient, de_ancient_night, de_anubis, de_cache, de_dust2, de_inferno, de_mira
 
 - Listesi olmayan haritada eklenti listeyi ilk rauntta çıkarır ve bu klasöre kaydeder.
 - Bir prop'un görünmesini istiyorsanız satırını silin. Boş liste (`[]`) o haritada hiçbir şeyi gizlemez.
+- `hide_props_kill: true` iken listedeki prop'lar gizlenmek yerine silinir.
 - Sadece oyuncuların içinden geçip tekmelediği küçük prop'lar gizlenir. Oyuncuyu engelleyen bir prop listede olsa bile gizlenmez.
 - Liste, harita yüklendiğinde haritayla karşılaştırılır. Bir CS2 güncellemesinden sonra artık olmayan ya da oyuncuyu engeller hale gelen bir model, değişen bir adet veya listede olmayan yeni bir çöp prop sunucu konsolunda uyarı olarak yazılır. Listeyi yeniden çıkarmak için haritanın dosyasını silin.
 
@@ -177,7 +175,6 @@ csgo/addons/counterstrikesharp/plugins/FPS/maps/<harita>.vis
 - Size çok yakın olan oyuncular hiç gizlenmez.
 - `mp_teammates_are_enemies` `1` iken (ör. deathmatch), takım/rakip seçimlerinde herkes rakip sayılır.
 - Bir oyuncuyu izlerken onun cesedi gizlenmez, böylece kamera takılı kalmaz.
-- **Duvar arkası ses** sadece o an sizden gizlenen oyuncuları susturur; ayak sesleri ve diğer sesler etkilenmez.
 - **Mermi izi** sadece oyun sırasında oluşan izleri siler; haritanın kendi decal'leri kalır. Oyun izleri tek tek değil, oyuncunun ekranındaki hepsini birden silebiliyor. Süre ilk yeni iz ya da lekeyle başlar; dolduğunda o oyuncunun ekranındaki tüm izler ve lekeler, az önce oluşanlar dahil, birlikte gider. Kan lekeleri ve mermi izleri her zaman birlikte silinir.
 - **Ayaklar** kendi modelinizi diğer oyuncuların fark edemeyeceği kadar az saydam yapar. Oyuncu saydamlığını değiştiren başka bir eklenti ayaklarınızı yeniden görünür yapabilir.
 - **Killfeed:** GOTV killfeed'in tamamını almaya devam eder. Killfeed'i değiştiren başka bir eklenti (ör. DM) varsa killfeed iki kez görünebilir; o sunucuda `own_killfeed_enable: false` yapın.

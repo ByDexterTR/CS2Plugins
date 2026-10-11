@@ -2,7 +2,6 @@
   "chat_prefix": "[ByDexter]",
   "fps.menu_title": "FPS Settings",
   "fps.hide_unseen": "Behind walls",
-  "fps.mute_unseen": "Behind walls sound",
   "fps.own_killfeed": "Killfeed",
   "fps.hide_ragdoll": "Ragdoll",
   "fps.hide_legs": "Legs",
