@@ -133,7 +133,7 @@ public class PropRecord
 public class FPS : BasePlugin
 {
   public override string ModuleName => "FPS";
-  public override string ModuleVersion => "1.0.7";
+  public override string ModuleVersion => "1.0.8";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -296,6 +296,21 @@ public class FPS : BasePlugin
   private int _leftOffset;
   private int _anglesOffset;
   private int _flagsOffset;
+  private int _pawnHandleOffset;
+  private int _pingOffset;
+  private int _teamOffset;
+  private int _lifeOffset;
+  private int _healthOffset;
+  private int _velocityOffset;
+  private int _bodyOffset;
+  private int _sceneOffset;
+  private int _originOffset;
+  private int _eyeZOffset;
+  private int _radarOffset;
+  private int _weaponServicesOffset;
+  private int _myWeaponsOffset;
+  private readonly nint[] _pawnPtr = new nint[MaxSlots];
+  private readonly uint[] _pawnRaw = new uint[MaxSlots];
   private float _tickInterval = 1f / 64f;
   private float _accelerate = 5.5f;
   private float _friction = 5.2f;
@@ -333,6 +348,19 @@ public class FPS : BasePlugin
     _leftOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_flLeftMove");
     _anglesOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_angEyeAngles");
     _flagsOffset = Schema.GetSchemaOffset("CBaseEntity", "m_fFlags");
+    _pawnHandleOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
+    _pingOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_iPing");
+    _teamOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iTeamNum");
+    _lifeOffset = Schema.GetSchemaOffset("CBaseEntity", "m_lifeState");
+    _healthOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iHealth");
+    _velocityOffset = Schema.GetSchemaOffset("CBaseEntity", "m_vecAbsVelocity");
+    _bodyOffset = Schema.GetSchemaOffset("CBaseEntity", "m_CBodyComponent");
+    _sceneOffset = Schema.GetSchemaOffset("CBodyComponent", "m_pSceneNode");
+    _originOffset = Schema.GetSchemaOffset("CGameSceneNode", "m_vecAbsOrigin");
+    _eyeZOffset = Schema.GetSchemaOffset("CBaseModelEntity", "m_vecViewOffset") + Schema.GetSchemaOffset("CNetworkViewOffsetVector", "m_vecZ");
+    _radarOffset = Schema.GetSchemaOffset("CCSPlayerPawnBase", "m_fNextRadarUpdateTime");
+    _weaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
+    _myWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
     _teammatesAreEnemies = ConVar.Find("mp_teammates_are_enemies");
     _ffa = _teammatesAreEnemies?.GetPrimitiveValue<bool>() == true;
     _onCheckTransmit = OnCheckTransmit;
@@ -870,6 +898,7 @@ public class FPS : BasePlugin
     _wipeAt[slot] = 0;
     _players[slot] = null;
     _pawns[slot] = null;
+    _pawnPtr[slot] = 0;
     ResetPairs(slot);
     UpdateHooks();
   }
@@ -1569,7 +1598,7 @@ public class FPS : BasePlugin
     msg.Send(new RecipientFilter(targets));
   }
 
-  private void BuildSnapshot(int tick)
+  private unsafe void BuildSnapshot(int tick)
   {
     _snapTick = tick;
     if (_traceTime > TraceBudget)
@@ -1597,22 +1626,27 @@ public class FPS : BasePlugin
       if (player == null || !player.IsValid)
         continue;
 
-      uint raw = player.PlayerPawn.Raw;
-      nint ptr = EntitySystem.GetEntityByHandle(raw) ?? IntPtr.Zero;
-      if (ptr == IntPtr.Zero)
+      nint controller = player.Handle;
+      uint raw = *(uint*)(controller + _pawnHandleOffset);
+      nint ptr = raw == uint.MaxValue ? 0 : EntitySystem.GetEntityByHandle(raw) ?? 0;
+      if (ptr == 0)
       {
         _pawns[slot] = null;
+        _pawnPtr[slot] = 0;
         continue;
       }
 
-      var pawn = _pawns[slot];
-      if (pawn == null || pawn.Handle != ptr)
-        _pawns[slot] = pawn = new CCSPlayerPawn(ptr);
+      if (_pawns[slot] == null || _pawnPtr[slot] != ptr || _pawnRaw[slot] != raw)
+      {
+        _pawns[slot] = new CCSPlayerPawn(ptr);
+        _pawnPtr[slot] = ptr;
+        _pawnRaw[slot] = raw;
+      }
 
       s.Pawn = (int)(raw & 0x3FFF);
       s.Raw = raw;
-      s.Team = player.TeamNum;
-      s.Alive = pawn.LifeState == (byte)LifeState_t.LIFE_ALIVE && pawn.Health > 0 && (uint)(tick - _dyingTick[slot]) > DyingTicks;
+      s.Team = *(byte*)(controller + _teamOffset);
+      s.Alive = *(byte*)(ptr + _lifeOffset) == (byte)LifeState_t.LIFE_ALIVE && *(int*)(ptr + _healthOffset) > 0 && (uint)(tick - _dyingTick[slot]) > DyingTicks;
       s.Corpse = !s.Alive && now - _deathTime[slot] >= delay;
     }
   }
@@ -1623,19 +1657,22 @@ public class FPS : BasePlugin
     if (s.PosTick == tick)
       return true;
 
-    var pawn = _pawns[slot];
-    var origin = pawn?.AbsOrigin;
-    if (pawn == null || origin == null)
+    nint handle = _pawnPtr[slot];
+    var player = _players[slot];
+    if (s.Pawn == 0 || handle == 0 || player == null)
       return false;
 
-    var velocity = pawn.AbsVelocity;
-    s.Origin = new Vector3(origin.X, origin.Y, origin.Z);
-    s.Velocity = new Vector3(velocity.X, velocity.Y, velocity.Z);
-    s.EyeZ = pawn.ViewOffset.Z;
-    s.Ping = (int)(_players[slot]?.Ping ?? 0);
+    nint body = *(nint*)(handle + _bodyOffset);
+    nint node = body == 0 ? 0 : *(nint*)(body + _sceneOffset);
+    if (node == 0)
+      return false;
+
+    s.Origin = *(Vector3*)(node + _originOffset);
+    s.Velocity = *(Vector3*)(handle + _velocityOffset);
+    s.EyeZ = *(float*)(handle + _eyeZOffset);
+    s.Ping = (int)*(uint*)(player.Handle + _pingOffset);
     s.PosTick = tick;
 
-    nint handle = pawn.Handle;
     nint services = *(nint*)(handle + _servicesOffset);
     float forward = services != 0 ? *(float*)(services + _forwardOffset) : 0f;
     float left = services != 0 ? *(float*)(services + _leftOffset) : 0f;
@@ -1790,7 +1827,7 @@ public class FPS : BasePlugin
         _known[pair] = st.Raw;
     }
 
-    if (hidden != 0 && _pawns[v] is { } pawn)
+    if (hidden != 0 && _pawnPtr[v] is var viewerPawn && viewerPawn != 0)
     {
       int age = tick - _radarAt[v];
       if ((hidden & ~previous) != 0 && (age <= 0 || age > RadarTicks))
@@ -1799,7 +1836,7 @@ public class FPS : BasePlugin
       if (tick - _radarAt[v] >= RadarTicks)
       {
         _radarAt[v] = tick;
-        pawn.NextRadarUpdateTime = 0f;
+        *(float*)(viewerPawn + _radarOffset) = 0f;
       }
     }
 
@@ -1845,7 +1882,7 @@ public class FPS : BasePlugin
     dont[word] |= bit;
   }
 
-  private int Weapons(int slot, int tick)
+  private unsafe int Weapons(int slot, int tick)
   {
     ref var s = ref _snap[slot];
     if (s.WeaponTick == tick)
@@ -1854,13 +1891,19 @@ public class FPS : BasePlugin
     s.WeaponTick = tick;
     s.WeaponCount = 0;
 
-    var weapons = _pawns[slot]?.WeaponServices?.MyWeapons;
-    if (weapons == null)
+    nint pawn = _pawnPtr[slot];
+    nint services = pawn == 0 ? 0 : *(nint*)(pawn + _weaponServicesOffset);
+    if (services == 0)
       return 0;
 
-    foreach (var handle in weapons)
+    int count = *(int*)(services + _myWeaponsOffset);
+    uint* handles = *(uint**)(services + _myWeaponsOffset + 8);
+    if (count <= 0 || handles == null)
+      return 0;
+
+    for (int i = 0; i < count; i++)
     {
-      uint raw = handle.Raw;
+      uint raw = handles[i];
       if (raw == uint.MaxValue)
         continue;
 

@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 
 namespace ByDexter.Shared.Source2;
 
@@ -18,13 +19,23 @@ public sealed class WorldBvh
   private const int Bins = 12;
   private const int LeafSize = 4;
 
+  private const int StackSize = 256;
+
   private Face[] _faces = [];
   private Node[] _nodes = [];
   private int _nodeCount;
+  private Vector3 _min;
+  private Vector3 _max;
+
+  private int _width;
+  private float[] _minX = [], _minY = [], _minZ = [], _maxX = [], _maxY = [], _maxZ = [];
+  private int[] _child = [];
+  private int[] _count = [];
+  private int[] _valid = [];
 
   public int TriangleCount => _faces.Length;
-  public Vector3 Min => _nodes[0].Min;
-  public Vector3 Max => _nodes[0].Max;
+  public Vector3 Min => _min;
+  public Vector3 Max => _max;
 
   private static readonly string[] PlayerBlockers = ["playerclip", "passbullets", "window", "solid"];
 
@@ -182,8 +193,97 @@ public sealed class WorldBvh
       bvh._faces[i] = new Face(t.A, t.B - t.A, t.C - t.A, t.OneSided);
     }
 
-    Array.Resize(ref bvh._nodes, bvh._nodeCount);
+    bvh._min = bvh._nodes[0].Min;
+    bvh._max = bvh._nodes[0].Max;
+    bvh.Widen(Vector256.IsHardwareAccelerated ? 8 : 4);
+    bvh._nodes = [];
     return bvh;
+  }
+
+  private void Widen(int width)
+  {
+    _width = width;
+    var valid = new List<int> { 0 };
+    var slots = new List<(Vector3 Min, Vector3 Max, int Child, int Count)>();
+    var children = new List<int>(width);
+    var order = new Queue<(int Binary, int Wide)>();
+    order.Enqueue((0, 0));
+
+    while (order.Count > 0)
+    {
+      var (binary, at) = order.Dequeue();
+      children.Clear();
+
+      if (_nodes[binary].Count > 0)
+        children.Add(binary);
+      else
+      {
+        children.Add(_nodes[binary].LeftOrFirst);
+        children.Add(_nodes[binary].LeftOrFirst + 1);
+      }
+
+      while (children.Count < width)
+      {
+        int best = -1;
+        float bestArea = -1f;
+        for (int i = 0; i < children.Count; i++)
+        {
+          ref var c = ref _nodes[children[i]];
+          if (c.Count > 0)
+            continue;
+
+          float area = Area(c.Min, c.Max);
+          if (area > bestArea)
+          {
+            bestArea = area;
+            best = i;
+          }
+        }
+
+        if (best < 0)
+          break;
+
+        int split = children[best];
+        children[best] = _nodes[split].LeftOrFirst;
+        children.Add(_nodes[split].LeftOrFirst + 1);
+      }
+
+      while (slots.Count < (at + 1) * width)
+        slots.Add((Vector3.Zero, Vector3.Zero, 0, 0));
+
+      for (int i = 0; i < children.Count; i++)
+      {
+        ref var c = ref _nodes[children[i]];
+        if (c.Count > 0)
+        {
+          slots[at * width + i] = (c.Min, c.Max, c.LeftOrFirst, c.Count);
+          continue;
+        }
+
+        int next = valid.Count;
+        valid.Add(0);
+        order.Enqueue((children[i], next));
+        slots[at * width + i] = (c.Min, c.Max, next, 0);
+      }
+
+      valid[at] = (1 << children.Count) - 1;
+    }
+
+    int n = valid.Count * width;
+    _minX = new float[n]; _minY = new float[n]; _minZ = new float[n];
+    _maxX = new float[n]; _maxY = new float[n]; _maxZ = new float[n];
+    _child = new int[n];
+    _count = new int[n];
+    _valid = [.. valid];
+
+    for (int i = 0; i < slots.Count; i++)
+    {
+      var (min, max, child, count) = slots[i];
+      _minX[i] = min.X; _minY[i] = min.Y; _minZ[i] = min.Z;
+      _maxX[i] = max.X; _maxY[i] = max.Y; _maxZ[i] = max.Z;
+      _child[i] = child;
+      _count[i] = count;
+    }
   }
 
   private void Bounds(int nodeIndex, int[] index, Vector3[] mins, Vector3[] maxs)
@@ -332,38 +432,7 @@ public sealed class WorldBvh
 
   public static bool Hits(in Face face, Vector3 from, Vector3 to) => Hit(face, from, to - from) < 1f;
 
-  [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-  public int Blocker(Vector3 from, Vector3 to)
-  {
-    var direction = to - from;
-    var inverse = new Vector3(1f / direction.X, 1f / direction.Y, 1f / direction.Z);
-    Span<int> stack = stackalloc int[64];
-    int top = 0;
-    stack[top++] = 0;
-
-    while (top > 0)
-    {
-      ref var node = ref _nodes[stack[--top]];
-      if (!Overlaps(node.Min, node.Max, from, inverse))
-        continue;
-
-      if (node.Count > 0)
-      {
-        for (int i = node.LeftOrFirst; i < node.LeftOrFirst + node.Count; i++)
-        {
-          if (Hit(_faces[i], from, direction) < 1f)
-            return i;
-        }
-      }
-      else if (top < 62)
-      {
-        stack[top++] = node.LeftOrFirst;
-        stack[top++] = node.LeftOrFirst + 1;
-      }
-    }
-
-    return -1;
-  }
+  public int Blocker(Vector3 from, Vector3 to) => _width == 8 ? Blocker8(from, to) : Blocker4(from, to);
 
   public float Fraction(Vector3 from, Vector3 to)
   {
@@ -371,39 +440,109 @@ public sealed class WorldBvh
     return Fraction(from, to, ref hint);
   }
 
-  [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-  public float Fraction(Vector3 from, Vector3 to, ref Face hint)
+  public float Fraction(Vector3 from, Vector3 to, ref Face hint) => _width == 8 ? Fraction8(from, to, ref hint) : Fraction4(from, to, ref hint);
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  private static Vector3 Inverse(Vector3 d) => new(
+    d.X == 0f ? 1e30f : 1f / d.X,
+    d.Y == 0f ? 1e30f : 1f / d.Y,
+    d.Z == 0f ? 1e30f : 1f / d.Z);
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  private int Slabs8(int b, Vector256<float> ox, Vector256<float> oy, Vector256<float> oz, Vector256<float> ix, Vector256<float> iy, Vector256<float> iz, Vector256<float> limit)
+  {
+    var x1 = (Vector256.LoadUnsafe(ref _minX[b]) - ox) * ix;
+    var x2 = (Vector256.LoadUnsafe(ref _maxX[b]) - ox) * ix;
+    var y1 = (Vector256.LoadUnsafe(ref _minY[b]) - oy) * iy;
+    var y2 = (Vector256.LoadUnsafe(ref _maxY[b]) - oy) * iy;
+    var z1 = (Vector256.LoadUnsafe(ref _minZ[b]) - oz) * iz;
+    var z2 = (Vector256.LoadUnsafe(ref _maxZ[b]) - oz) * iz;
+    var enter = Vector256.Max(Vector256.Max(Vector256.Min(x1, x2), Vector256.Min(y1, y2)), Vector256.Max(Vector256.Min(z1, z2), Vector256<float>.Zero));
+    var exit = Vector256.Min(Vector256.Min(Vector256.Max(x1, x2), Vector256.Max(y1, y2)), Vector256.Min(Vector256.Max(z1, z2), limit));
+    return (int)Vector256.LessThanOrEqual(enter, exit).ExtractMostSignificantBits();
+  }
+
+  [MethodImpl(MethodImplOptions.AggressiveOptimization), SkipLocalsInit]
+  private int Blocker8(Vector3 from, Vector3 to)
   {
     var direction = to - from;
-    var inverse = new Vector3(1f / direction.X, 1f / direction.Y, 1f / direction.Z);
-    Span<int> stack = stackalloc int[64];
+    var inverse = Inverse(direction);
+    var ox = Vector256.Create(from.X); var oy = Vector256.Create(from.Y); var oz = Vector256.Create(from.Z);
+    var ix = Vector256.Create(inverse.X); var iy = Vector256.Create(inverse.Y); var iz = Vector256.Create(inverse.Z);
+    var limit = Vector256.Create(1f);
+    Span<int> stack = stackalloc int[StackSize];
     int top = 0;
     stack[top++] = 0;
-    float best = Hit(hint, from, direction);
-    int found = -1;
 
     while (top > 0)
     {
-      ref var node = ref _nodes[stack[--top]];
-      if (!Overlaps(node.Min, node.Max, from, inverse, best))
-        continue;
+      int node = stack[--top];
+      int b = node * 8;
+      int bits = Slabs8(b, ox, oy, oz, ix, iy, iz, limit) & _valid[node];
 
-      if (node.Count > 0)
+      while (bits != 0)
       {
-        for (int i = node.LeftOrFirst; i < node.LeftOrFirst + node.Count; i++)
+        int slot = b + BitOperations.TrailingZeroCount(bits);
+        bits &= bits - 1;
+        int count = _count[slot];
+
+        if (count > 0)
         {
-          float t = Hit(_faces[i], from, direction);
-          if (t < best)
+          for (int i = _child[slot], end = i + count; i < end; i++)
           {
-            best = t;
-            found = i;
+            if (Hit(_faces[i], from, direction) < 1f)
+              return i;
           }
         }
+        else if (top < StackSize)
+          stack[top++] = _child[slot];
       }
-      else if (top < 62)
+    }
+
+    return -1;
+  }
+
+  [MethodImpl(MethodImplOptions.AggressiveOptimization), SkipLocalsInit]
+  private float Fraction8(Vector3 from, Vector3 to, ref Face hint)
+  {
+    var direction = to - from;
+    var inverse = Inverse(direction);
+    var ox = Vector256.Create(from.X); var oy = Vector256.Create(from.Y); var oz = Vector256.Create(from.Z);
+    var ix = Vector256.Create(inverse.X); var iy = Vector256.Create(inverse.Y); var iz = Vector256.Create(inverse.Z);
+    float best = Hit(hint, from, direction);
+    var limit = Vector256.Create(best);
+    int found = -1;
+    Span<int> stack = stackalloc int[StackSize];
+    int top = 0;
+    stack[top++] = 0;
+
+    while (top > 0)
+    {
+      int node = stack[--top];
+      int b = node * 8;
+      int bits = Slabs8(b, ox, oy, oz, ix, iy, iz, limit) & _valid[node];
+
+      while (bits != 0)
       {
-        stack[top++] = node.LeftOrFirst;
-        stack[top++] = node.LeftOrFirst + 1;
+        int slot = b + BitOperations.TrailingZeroCount(bits);
+        bits &= bits - 1;
+        int count = _count[slot];
+
+        if (count > 0)
+        {
+          for (int i = _child[slot], end = i + count; i < end; i++)
+          {
+            float t = Hit(_faces[i], from, direction);
+            if (t < best)
+            {
+              best = t;
+              found = i;
+              limit = Vector256.Create(best);
+            }
+          }
+        }
+        else if (top < StackSize)
+          stack[top++] = _child[slot];
       }
     }
 
@@ -414,15 +553,107 @@ public sealed class WorldBvh
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private static bool Overlaps(Vector3 min, Vector3 max, Vector3 origin, Vector3 inverse, float limit = 1f)
+  private int Slabs4(int b, Vector128<float> ox, Vector128<float> oy, Vector128<float> oz, Vector128<float> ix, Vector128<float> iy, Vector128<float> iz, Vector128<float> limit)
   {
-    var t0 = (min - origin) * inverse;
-    var t1 = (max - origin) * inverse;
-    var near = Vector3.Min(t0, t1);
-    var far = Vector3.Max(t0, t1);
-    float enter = MathF.Max(MathF.Max(near.X, near.Y), MathF.Max(near.Z, 0f));
-    float exit = MathF.Min(MathF.Min(far.X, far.Y), MathF.Min(far.Z, limit));
-    return enter <= exit;
+    var x1 = (Vector128.LoadUnsafe(ref _minX[b]) - ox) * ix;
+    var x2 = (Vector128.LoadUnsafe(ref _maxX[b]) - ox) * ix;
+    var y1 = (Vector128.LoadUnsafe(ref _minY[b]) - oy) * iy;
+    var y2 = (Vector128.LoadUnsafe(ref _maxY[b]) - oy) * iy;
+    var z1 = (Vector128.LoadUnsafe(ref _minZ[b]) - oz) * iz;
+    var z2 = (Vector128.LoadUnsafe(ref _maxZ[b]) - oz) * iz;
+    var enter = Vector128.Max(Vector128.Max(Vector128.Min(x1, x2), Vector128.Min(y1, y2)), Vector128.Max(Vector128.Min(z1, z2), Vector128<float>.Zero));
+    var exit = Vector128.Min(Vector128.Min(Vector128.Max(x1, x2), Vector128.Max(y1, y2)), Vector128.Min(Vector128.Max(z1, z2), limit));
+    return (int)Vector128.LessThanOrEqual(enter, exit).ExtractMostSignificantBits();
+  }
+
+  [MethodImpl(MethodImplOptions.AggressiveOptimization), SkipLocalsInit]
+  private int Blocker4(Vector3 from, Vector3 to)
+  {
+    var direction = to - from;
+    var inverse = Inverse(direction);
+    var ox = Vector128.Create(from.X); var oy = Vector128.Create(from.Y); var oz = Vector128.Create(from.Z);
+    var ix = Vector128.Create(inverse.X); var iy = Vector128.Create(inverse.Y); var iz = Vector128.Create(inverse.Z);
+    var limit = Vector128.Create(1f);
+    Span<int> stack = stackalloc int[StackSize];
+    int top = 0;
+    stack[top++] = 0;
+
+    while (top > 0)
+    {
+      int node = stack[--top];
+      int b = node * 4;
+      int bits = Slabs4(b, ox, oy, oz, ix, iy, iz, limit) & _valid[node];
+
+      while (bits != 0)
+      {
+        int slot = b + BitOperations.TrailingZeroCount(bits);
+        bits &= bits - 1;
+        int count = _count[slot];
+
+        if (count > 0)
+        {
+          for (int i = _child[slot], end = i + count; i < end; i++)
+          {
+            if (Hit(_faces[i], from, direction) < 1f)
+              return i;
+          }
+        }
+        else if (top < StackSize)
+          stack[top++] = _child[slot];
+      }
+    }
+
+    return -1;
+  }
+
+  [MethodImpl(MethodImplOptions.AggressiveOptimization), SkipLocalsInit]
+  private float Fraction4(Vector3 from, Vector3 to, ref Face hint)
+  {
+    var direction = to - from;
+    var inverse = Inverse(direction);
+    var ox = Vector128.Create(from.X); var oy = Vector128.Create(from.Y); var oz = Vector128.Create(from.Z);
+    var ix = Vector128.Create(inverse.X); var iy = Vector128.Create(inverse.Y); var iz = Vector128.Create(inverse.Z);
+    float best = Hit(hint, from, direction);
+    var limit = Vector128.Create(best);
+    int found = -1;
+    Span<int> stack = stackalloc int[StackSize];
+    int top = 0;
+    stack[top++] = 0;
+
+    while (top > 0)
+    {
+      int node = stack[--top];
+      int b = node * 4;
+      int bits = Slabs4(b, ox, oy, oz, ix, iy, iz, limit) & _valid[node];
+
+      while (bits != 0)
+      {
+        int slot = b + BitOperations.TrailingZeroCount(bits);
+        bits &= bits - 1;
+        int count = _count[slot];
+
+        if (count > 0)
+        {
+          for (int i = _child[slot], end = i + count; i < end; i++)
+          {
+            float t = Hit(_faces[i], from, direction);
+            if (t < best)
+            {
+              best = t;
+              found = i;
+              limit = Vector128.Create(best);
+            }
+          }
+        }
+        else if (top < StackSize)
+          stack[top++] = _child[slot];
+      }
+    }
+
+    if (found >= 0)
+      hint = _faces[found];
+
+    return best;
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
