@@ -127,7 +127,7 @@ public class WeaponAmmo : VipModule
         if (!Active(player))
             return HookResult.Continue;
 
-        var weapon = player!.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
+        var weapon = PlayerCache.ActiveWeapon(player);
         if (weapon == null || !weapon.IsValid)
             return HookResult.Continue;
 
@@ -158,7 +158,7 @@ public class WeaponAmmo : VipModule
             if (weapon.ReserveAmmo.Length > 0)
             {
                 weapon.ReserveAmmo[0] = state.Reserve;
-                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+                NetState.Changed(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
             }
         }
         else
@@ -172,12 +172,12 @@ public class WeaponAmmo : VipModule
                 weapon.ReserveAmmo[0] = reserve - 1;
             else
                 weapon.ReserveAmmo[0] = reserve - Math.Min(state.FullClip, reserve);
-            Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+            NetState.Changed(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
         }
 
         state.Clip = state.FullClip;
         weapon.Clip1 = state.Clip;
-        Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+        NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
     }
 
     private static string? WeaponName(CBasePlayerWeapon weapon)
@@ -201,7 +201,7 @@ public class WeaponAmmo : VipModule
         if (entries.Count == 0)
             return;
 
-        var weapons = player!.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+        var weapons = PlayerCache.Pawn(player)?.WeaponServices?.MyWeapons;
         if (weapons == null)
             return;
 
@@ -254,13 +254,13 @@ public class WeaponAmmo : VipModule
         if (state.ManageClip && weapon.Clip1 != state.Clip)
         {
             weapon.Clip1 = state.Clip;
-            Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+            NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
         }
 
         if (state.ManageReserve && weapon.ReserveAmmo[0] != state.Reserve)
         {
             weapon.ReserveAmmo[0] = state.Reserve;
-            Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+            NetState.Changed(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
         }
     }
 
@@ -274,7 +274,7 @@ public class WeaponAmmo : VipModule
             if (entries.Count == 0)
                 continue;
 
-            var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+            var weapons = PlayerCache.Pawn(player)?.WeaponServices?.MyWeapons;
             if (weapons == null)
                 continue;
 
@@ -349,13 +349,13 @@ public class WeaponAmmo : VipModule
             if (!inReload && state.ManageClip && weapon.Clip1 != state.Clip)
             {
                 weapon.Clip1 = state.Clip;
-                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+                NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
             }
 
             if (state.ManageReserve && weapon.ReserveAmmo.Length > 0 && weapon.ReserveAmmo[0] != state.Reserve)
             {
                 weapon.ReserveAmmo[0] = state.Reserve;
-                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+                NetState.Changed(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
             }
 
             Snapshot(state);
@@ -367,7 +367,7 @@ public class WeaponAmmo : VipModule
 
     private void ResetPlayer(CCSPlayerController? player)
     {
-        var weapons = player?.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+        var weapons = PlayerCache.Pawn(player)?.WeaponServices?.MyWeapons;
         if (weapons == null)
             return;
 
@@ -386,13 +386,13 @@ public class WeaponAmmo : VipModule
             if (vdata.MaxClip1 > 0 && weapon.Clip1 > vdata.MaxClip1)
             {
                 weapon.Clip1 = vdata.MaxClip1;
-                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+                NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
             }
 
             if (weapon.ReserveAmmo.Length > 0 && weapon.ReserveAmmo[0] > vdata.PrimaryReserveAmmoMax)
             {
                 weapon.ReserveAmmo[0] = vdata.PrimaryReserveAmmoMax;
-                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+                NetState.Changed(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
             }
         }
     }

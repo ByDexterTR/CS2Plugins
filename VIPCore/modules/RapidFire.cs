@@ -11,8 +11,6 @@ public class RapidFire : VipModule
         public string OnlyWithWeapon { get; set; } = "";
 
         public int OnlyStance { get; set; } = 0;
-
-        [JsonPropertyName("firepercent")]
         public float FirePercent { get; set; } = 2f;
 
         private List<string>? _allow;
@@ -44,12 +42,12 @@ public class RapidFire : VipModule
     {
         foreach (var player in ActivePlayers())
         {
-            var pawn = player.PlayerPawn.Value;
-            var weapon = pawn?.WeaponServices?.ActiveWeapon.Value;
-            if (pawn == null || weapon == null || !weapon.IsValid)
+            var pawn = PlayerCache.Pawn(player);
+            var weapon = PlayerCache.ActiveWeapon(player);
+            if (pawn == null || weapon == null)
                 continue;
 
-            string name = weapon.DesignerName;
+            string? name = PlayerCache.ActiveWeaponDesigner(player);
             if (string.IsNullOrEmpty(name) || name.Contains("knife") || name.Contains("bayonet") || name.Contains("c4"))
                 continue;
 

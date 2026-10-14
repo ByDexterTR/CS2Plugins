@@ -65,7 +65,7 @@ public class Tag : VipModule
         if (player.Clan != tab)
         {
             player.Clan = tab;
-            Utilities.SetStateChanged(player, "CCSPlayerController", "m_szClan");
+            NetState.Changed(player, "CCSPlayerController", "m_szClan");
             new EventNextlevelChanged(false).FireEvent(false);
         }
         _tabApplied[player.Slot] = true;
@@ -81,7 +81,7 @@ public class Tag : VipModule
             return;
 
         player.Clan = "";
-        Utilities.SetStateChanged(player, "CCSPlayerController", "m_szClan");
+        NetState.Changed(player, "CCSPlayerController", "m_szClan");
         new EventNextlevelChanged(false).FireEvent(false);
     }
 

@@ -50,7 +50,7 @@ public class ColoredModel : VipModule
             if (_external[slot])
                 continue;
 
-            var pawn = player.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid)
                 continue;
 
@@ -74,18 +74,18 @@ public class ColoredModel : VipModule
             }
 
             pawn.Render = target;
-            Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+            NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
             _lastArgb[slot] = target.ToArgb();
         }
     }
 
     private static void Reset(int slot)
     {
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(slot));
         if (pawn == null || !pawn.IsValid)
             return;
 
         pawn.Render = System.Drawing.Color.FromArgb(InvisPool.Alpha(slot), 255, 255, 255);
-        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
 }

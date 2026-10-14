@@ -43,7 +43,7 @@ public static class FireUtil
 
     public static bool Blocked(CCSPlayerController? player)
     {
-        var origin = player?.PlayerPawn.Value?.AbsOrigin;
+        var origin = PlayerCache.Pawn(player)?.AbsOrigin;
         if (origin == null)
             return false;
 
@@ -86,7 +86,7 @@ public static class FireUtil
         if (ev.Weapon != "molotov" && ev.Weapon != "incgrenade")
             return HookResult.Continue;
 
-        var origin = ev.Userid?.PlayerPawn.Value?.AbsOrigin;
+        var origin = PlayerCache.Pawn(ev.Userid)?.AbsOrigin;
         if (origin == null)
             return HookResult.Continue;
 

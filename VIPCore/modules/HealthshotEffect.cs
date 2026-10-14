@@ -9,11 +9,10 @@ public class HealthshotEffect : VipModule
 {
     private class PoisonCfg
     {
-        [JsonPropertyName("minhp")]
         public int MinHp { get; set; } = 1;
         public int Damage { get; set; } = 2;
-        public float Time { get; set; } = 5f;
-        public float Tick { get; set; } = 0.5f;
+        public float Duration { get; set; } = 5f;
+        public float Interval { get; set; } = 0.5f;
         public float SoundVolume { get; set; } = 0.3f;
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
@@ -24,8 +23,8 @@ public class HealthshotEffect : VipModule
     private class HealCfg
     {
         public int Heal { get; set; } = 2;
-        public float Time { get; set; } = 5f;
-        public float Tick { get; set; } = 0.5f;
+        public float Duration { get; set; } = 5f;
+        public float Interval { get; set; } = 0.5f;
         public float SoundVolume { get; set; } = 0.5f;
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = false;
@@ -37,9 +36,8 @@ public class HealthshotEffect : VipModule
     private class SlowCfg
     {
         public int Percent { get; set; } = 30;
-        [JsonPropertyName("minspeed")]
         public float MinSpeed { get; set; } = 100f;
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
@@ -50,14 +48,14 @@ public class HealthshotEffect : VipModule
     private class SpeedCfg
     {
         public float SpeedMultiplier { get; set; } = 1.3f;
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public int Limit { get; set; } = 0;
     }
 
     private class StrengthCfg
     {
         public float DamageMultiplier { get; set; } = 1.5f;
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public float Radius { get; set; } = 0f;
         public bool IgnoreTeammates { get; set; } = false;
         public bool IgnoreSelf { get; set; } = false;
@@ -67,8 +65,8 @@ public class HealthshotEffect : VipModule
 
     private class WallhackCfg
     {
-        public float Time { get; set; } = 5f;
-        public float Tick { get; set; } = 0.25f;
+        public float Duration { get; set; } = 5f;
+        public float Interval { get; set; } = 0.25f;
         public string Color { get; set; } = GlowPool.DefaultColor;
         public float Radius { get; set; } = 0f;
         public bool SeeTeammates { get; set; }
@@ -78,8 +76,8 @@ public class HealthshotEffect : VipModule
 
     private class RadarhackCfg
     {
-        public float Time { get; set; } = 5f;
-        public float Tick { get; set; } = 0.25f;
+        public float Duration { get; set; } = 5f;
+        public float Interval { get; set; } = 0.25f;
         public float Radius { get; set; } = 0f;
         public bool SeeTeammates { get; set; }
         public int OnlyMode { get; set; } = 0;
@@ -89,7 +87,7 @@ public class HealthshotEffect : VipModule
     private class MagneticCfg
     {
         public float Strength { get; set; } = 30f;
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
@@ -100,35 +98,34 @@ public class HealthshotEffect : VipModule
     private class ResistCfg
     {
         public int Percent { get; set; } = 50;
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public int Limit { get; set; } = 0;
     }
 
     private class TimedCfg
     {
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public int Limit { get; set; } = 0;
     }
 
     private class GravityCfg
     {
         public float Scale { get; set; } = 0.5f;
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public int Limit { get; set; } = 0;
     }
 
     private class SizeCfg
     {
         public float Scale { get; set; } = 0.7f;
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public int Limit { get; set; } = 0;
     }
 
     private class NoRecoilCfg
     {
-        [JsonPropertyName("recoilpercent")]
         public float RecoilPercent { get; set; } = 0f;
-        public float Time { get; set; } = 5f;
+        public float Duration { get; set; } = 5f;
         public int Limit { get; set; } = 0;
     }
 
@@ -282,7 +279,7 @@ public class HealthshotEffect : VipModule
             if (player == null || !player.IsValid || player.IsBot || player.Slot >= 64)
                 continue;
 
-            var pawn = player.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid)
                 continue;
 
@@ -322,21 +319,21 @@ public class HealthshotEffect : VipModule
 
         var (time, limit) = mode switch
         {
-            "poison" when cfg.Poison != null => (cfg.Poison.Time, cfg.Poison.Limit),
-            "heal" when cfg.Heal != null => (cfg.Heal.Time, cfg.Heal.Limit),
-            "slow" when cfg.Slow != null => (cfg.Slow.Time, cfg.Slow.Limit),
-            "speed" when cfg.Speed != null => (cfg.Speed.Time, cfg.Speed.Limit),
-            "strength" when cfg.Strength != null => (cfg.Strength.Time, cfg.Strength.Limit),
-            "wallhack" when cfg.Wallhack != null => (cfg.Wallhack.Time, cfg.Wallhack.Limit),
-            "radarhack" when cfg.Radarhack != null => (cfg.Radarhack.Time, cfg.Radarhack.Limit),
-            "magnetic" when cfg.Magnetic != null => (cfg.Magnetic.Time, cfg.Magnetic.Limit),
-            "resist" when cfg.Resist != null => (cfg.Resist.Time, cfg.Resist.Limit),
-            "godmode" when cfg.Godmode != null => (cfg.Godmode.Time, cfg.Godmode.Limit),
-            "gravity" when cfg.Gravity != null => (cfg.Gravity.Time, cfg.Gravity.Limit),
-            "infiniteammo" when cfg.InfiniteAmmo != null => (cfg.InfiniteAmmo.Time, cfg.InfiniteAmmo.Limit),
-            "invisible" when cfg.Invisible != null => (cfg.Invisible.Time, cfg.Invisible.Limit),
-            "size" when cfg.Size != null => (cfg.Size.Time, cfg.Size.Limit),
-            "norecoil" when cfg.NoRecoil != null => (cfg.NoRecoil.Time, cfg.NoRecoil.Limit),
+            "poison" when cfg.Poison != null => (cfg.Poison.Duration, cfg.Poison.Limit),
+            "heal" when cfg.Heal != null => (cfg.Heal.Duration, cfg.Heal.Limit),
+            "slow" when cfg.Slow != null => (cfg.Slow.Duration, cfg.Slow.Limit),
+            "speed" when cfg.Speed != null => (cfg.Speed.Duration, cfg.Speed.Limit),
+            "strength" when cfg.Strength != null => (cfg.Strength.Duration, cfg.Strength.Limit),
+            "wallhack" when cfg.Wallhack != null => (cfg.Wallhack.Duration, cfg.Wallhack.Limit),
+            "radarhack" when cfg.Radarhack != null => (cfg.Radarhack.Duration, cfg.Radarhack.Limit),
+            "magnetic" when cfg.Magnetic != null => (cfg.Magnetic.Duration, cfg.Magnetic.Limit),
+            "resist" when cfg.Resist != null => (cfg.Resist.Duration, cfg.Resist.Limit),
+            "godmode" when cfg.Godmode != null => (cfg.Godmode.Duration, cfg.Godmode.Limit),
+            "gravity" when cfg.Gravity != null => (cfg.Gravity.Duration, cfg.Gravity.Limit),
+            "infiniteammo" when cfg.InfiniteAmmo != null => (cfg.InfiniteAmmo.Duration, cfg.InfiniteAmmo.Limit),
+            "invisible" when cfg.Invisible != null => (cfg.Invisible.Duration, cfg.Invisible.Limit),
+            "size" when cfg.Size != null => (cfg.Size.Duration, cfg.Size.Limit),
+            "norecoil" when cfg.NoRecoil != null => (cfg.NoRecoil.Duration, cfg.NoRecoil.Limit),
             _ => (0f, 0)
         };
 
@@ -362,7 +359,7 @@ public class HealthshotEffect : VipModule
                 break;
 
             case "size":
-                var pawn = player.PlayerPawn.Value;
+                var pawn = PlayerCache.Pawn(player);
                 if (pawn != null && pawn.IsValid)
                     ScalePool.Push(pawn, slot, ScalePool.Healthshot, cfg.Size!.Scale);
                 break;
@@ -374,7 +371,7 @@ public class HealthshotEffect : VipModule
         _taken[slot] = 1f;
         InvisPool.Set(slot, InvisPool.Healthshot, false);
 
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(slot));
         bool valid = pawn != null && pawn.IsValid;
 
         if (_gravity[slot])
@@ -442,26 +439,24 @@ public class HealthshotEffect : VipModule
         switch (state.Mode)
         {
             case "poison" when cfg.Poison != null:
-                state.NextTick = now + Math.Max(cfg.Poison.Tick, 0.05f);
+                state.NextTick = now + Math.Max(cfg.Poison.Interval, 0.05f);
                 Around(player, pawn, cfg.Poison.Radius, cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, false, target =>
                 {
                     if (target.Health <= cfg.Poison.MinHp)
                         return;
-                    target.Health = Math.Max(target.Health - cfg.Poison.Damage, cfg.Poison.MinHp);
-                    Utilities.SetStateChanged(target, "CBaseEntity", "m_iHealth");
+                    Health.Set(target, Math.Max(target.Health - cfg.Poison.Damage, cfg.Poison.MinHp));
                     SoundUtil.EmitToPawn(target, "Player.DamageBody.Victim", cfg.Poison.SoundVolume);
                 });
                 break;
 
             case "heal" when cfg.Heal != null:
-                state.NextTick = now + Math.Max(cfg.Heal.Tick, 0.05f);
+                state.NextTick = now + Math.Max(cfg.Heal.Interval, 0.05f);
                 Around(player, pawn, cfg.Heal.Radius, cfg.Heal.IgnoreTeammates, cfg.Heal.IgnoreSelf, cfg.Heal.IgnoreEnemy, target =>
                 {
                     int maxHp = target.MaxHealth > 0 ? target.MaxHealth : 100;
                     if (target.Health >= maxHp)
                         return;
-                    target.Health = Math.Min(target.Health + cfg.Heal.Heal, maxHp);
-                    Utilities.SetStateChanged(target, "CBaseEntity", "m_iHealth");
+                    Health.Set(target, Math.Min(target.Health + cfg.Heal.Heal, maxHp));
                     SoundUtil.EmitToPawn(target, "Healthshot.Success", cfg.Heal.SoundVolume);
                 });
                 break;
@@ -532,7 +527,7 @@ public class HealthshotEffect : VipModule
     {
         if (state.NextTick <= now)
         {
-            state.NextTick = now + Math.Max(cfg.Tick, 0.05f);
+            state.NextTick = now + Math.Max(cfg.Interval, 0.05f);
             state.Seen = Scan(player, pawn, cfg.Radius, cfg.SeeTeammates, cfg.OnlyMode);
         }
 
@@ -549,7 +544,7 @@ public class HealthshotEffect : VipModule
     {
         if (state.NextTick <= now)
         {
-            state.NextTick = now + Math.Max(cfg.Tick, 0.05f);
+            state.NextTick = now + Math.Max(cfg.Interval, 0.05f);
             state.Seen = Scan(player, pawn, cfg.Radius, cfg.SeeTeammates, cfg.OnlyMode);
         }
 
@@ -562,7 +557,7 @@ public class HealthshotEffect : VipModule
             if ((state.Seen & (1UL << index)) == 0)
                 continue;
 
-            var targetPawn = Utilities.GetPlayerFromSlot(index)?.PlayerPawn.Value;
+            var targetPawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(index));
             if (targetPawn != null && targetPawn.IsValid)
                 targetPawn.EntitySpottedState.SpottedByMask[slot / 32] |= 1u << (slot % 32);
         }
@@ -580,7 +575,7 @@ public class HealthshotEffect : VipModule
             if (!seeTeammates && target.Team == player.Team)
                 continue;
 
-            var targetPawn = target.PlayerPawn.Value;
+            var targetPawn = PlayerCache.Pawn(target);
             if (targetPawn == null || !targetPawn.IsValid || targetPawn.AbsOrigin == null)
                 continue;
 
@@ -617,7 +612,7 @@ public class HealthshotEffect : VipModule
             if (isTeammate && ignoreTeammates) continue;
             if (isEnemy && ignoreEnemy) continue;
 
-            var pawn = target.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(target);
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                 continue;
 
@@ -632,19 +627,15 @@ public class HealthshotEffect : VipModule
     {
         float scale = 1f;
 
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (victim != null && victim.Slot < 64)
             scale *= _taken[victim.Slot];
 
-        var attackerEntity = info.Attacker?.Value;
-        if (attackerEntity != null)
-        {
-            var attacker = PawnController(attackerEntity);
-            if (attacker != null && attacker.Slot < 64
-                && Server.TickCount - _strengthTick[attacker.Slot] <= 1
-                && (victim == null || victim.Slot != attacker.Slot))
-                scale *= _strength[attacker.Slot];
-        }
+        var attacker = DamageAttacker(info);
+        if (attacker != null && attacker.Slot < 64
+            && Server.TickCount - _strengthTick[attacker.Slot] <= 1
+            && (victim == null || victim.Slot != attacker.Slot))
+            scale *= _strength[attacker.Slot];
 
         if (Math.Abs(scale - 1f) < 0.001f)
             return HookResult.Continue;
@@ -659,7 +650,7 @@ public class HealthshotEffect : VipModule
         if (player == null || !player.IsValid || player.Slot >= 64 || _active[player.Slot]?.Mode != "infiniteammo")
             return HookResult.Continue;
 
-        var weapon = player.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
+        var weapon = PlayerCache.ActiveWeapon(player);
         if (weapon == null || !weapon.IsValid)
             return HookResult.Continue;
 
@@ -672,7 +663,7 @@ public class HealthshotEffect : VipModule
             return HookResult.Continue;
 
         weapon.Clip1 = maxClip;
-        Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+        NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
         return HookResult.Continue;
     }
 

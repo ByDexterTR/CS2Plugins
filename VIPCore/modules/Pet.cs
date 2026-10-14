@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Numerics;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
+using Vector = CounterStrikeSharp.API.Modules.Utils.Vector;
 
 namespace VIPCore;
 
@@ -36,7 +38,9 @@ public class Pet : VipModule
         public required CDynamicProp Prop;
         public required Entry Def;
         public required int UserId;
-        public Vector Position = new(0, 0, 0);
+        public required int Slot;
+        public Vector3 Position;
+        public Vector3 Owner;
         public float Yaw;
         public bool Running;
         public float LastTime;
@@ -46,8 +50,13 @@ public class Pet : VipModule
     private const float BobSpeed = 3.4f;
     private const float BobSize = 3f;
     private const float Smoothing = 6f;
+    private const float TeleportJump = 300f;
+    private const float SnapDistance = 1500f;
 
     private readonly Dictionary<int, Companion> _pets = new();
+    private readonly List<int> _gone = new();
+    private readonly Vector _draw = new();
+    private readonly QAngle _angle = new();
 
     public override string Name => "Pet";
     public override string DisplayName => Core.Localizer["vip.module.pet"];
@@ -140,7 +149,7 @@ public class Pet : VipModule
         if (def == null || def.Model.Length == 0)
             return;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         var origin = pawn?.AbsOrigin;
         if (pawn == null || !pawn.IsValid || origin == null)
             return;
@@ -182,7 +191,9 @@ public class Pet : VipModule
             Prop = prop,
             Def = def,
             UserId = userId,
-            Position = new Vector(start.X, start.Y, start.Z),
+            Slot = player.Slot,
+            Position = new Vector3(start.X, start.Y, start.Z),
+            Owner = new Vector3(origin.X, origin.Y, origin.Z),
             LastTime = Server.CurrentTime
         };
 
@@ -221,35 +232,47 @@ public class Pet : VipModule
             return;
 
         float now = Server.CurrentTime;
+        _gone.Clear();
 
-        foreach (int userId in _pets.Keys.ToList())
+        foreach (var (userId, pet) in _pets)
         {
-            var pet = _pets[userId];
             if (!pet.Prop.IsValid)
             {
-                Remove(userId);
+                _gone.Add(userId);
                 continue;
             }
 
-            var owner = Utilities.GetPlayerFromUserid(userId);
-            var pawn = owner?.PlayerPawn.Value;
-            var origin = pawn?.AbsOrigin;
-            if (owner == null || !owner.IsValid || pawn == null || !pawn.IsValid || origin == null || !IsAlive(owner))
+            var owner = Core.PlayerAt(pet.Slot);
+            nint pawn = owner?.UserId == userId ? PlayerCache.Pointer(owner) : 0;
+            if (pawn == 0 || !IsAlive(owner) || !PlayerCache.Origin(pawn, out var origin))
             {
-                Remove(userId);
+                _gone.Add(userId);
                 continue;
             }
-
-            var target = Chase(pet.Position, origin, pet.Def);
 
             float dt = Math.Clamp(now - pet.LastTime, 0f, 0.2f);
             pet.LastTime = now;
 
-            Step(pet, target, dt);
+            float ownerSpeed = PlayerCache.Velocity(pawn).Length();
+            float jump = Vector3.Distance(pet.Owner, origin);
+            pet.Owner = origin;
+
+            var target = Chase(pet.Position, origin, pet.Def);
+            bool teleported = jump > TeleportJump && jump > ownerSpeed * dt * 3f + 64f;
+            if (teleported || Vector3.Distance(pet.Position, origin) > SnapDistance)
+            {
+                pet.Position = target;
+                pet.Yaw = MathF.Atan2(origin.Y - target.Y, origin.X - target.X) * (180f / MathF.PI);
+            }
+
+            Step(pet, target, dt, MathF.Max(pet.Def.Speed, ownerSpeed * 1.1f));
         }
+
+        foreach (int userId in _gone)
+            Remove(userId);
     }
 
-    private static Vector Chase(Vector here, Vector origin, Entry def)
+    private static Vector3 Chase(Vector3 here, Vector3 origin, Entry def)
     {
         float height = origin.Z + (def.Flying ? def.Height : 0f);
 
@@ -258,45 +281,27 @@ public class Pet : VipModule
         float flat = MathF.Sqrt(dx * dx + dy * dy);
 
         if (flat <= def.Distance)
-            return new Vector(here.X, here.Y, height);
+            return new Vector3(here.X, here.Y, height);
 
         float keep = def.Distance / flat;
-        return new Vector(
-            origin.X - dx * keep,
-            origin.Y - dy * keep,
-            height);
+        return new Vector3(origin.X - dx * keep, origin.Y - dy * keep, height);
     }
 
-    private void Step(Companion pet, Vector target, float dt)
+    private void Step(Companion pet, Vector3 target, float dt, float speed)
     {
-        float dx = target.X - pet.Position.X;
-        float dy = target.Y - pet.Position.Y;
-        float dz = target.Z - pet.Position.Z;
-        float dist = MathF.Sqrt(dx * dx + dy * dy + dz * dz);
+        var delta = target - pet.Position;
+        float dist = delta.Length();
 
         float ease = MathF.Min(1f, Smoothing * dt);
-        float step = MathF.Min(pet.Def.Speed * dt, dist * ease + pet.Def.Speed * dt * 0.15f);
+        float step = MathF.Min(speed * dt, dist * ease + speed * dt * 0.15f);
         float moved = 0f;
 
         if (dist > 0.5f)
         {
             moved = MathF.Min(step, dist);
+            pet.Position = step >= dist ? target : pet.Position + delta * (step / dist);
 
-            if (step >= dist)
-            {
-                pet.Position.X = target.X;
-                pet.Position.Y = target.Y;
-                pet.Position.Z = target.Z;
-            }
-            else
-            {
-                float scale = step / dist;
-                pet.Position.X += dx * scale;
-                pet.Position.Y += dy * scale;
-                pet.Position.Z += dz * scale;
-            }
-
-            float want = MathF.Atan2(dy, dx) * (180f / MathF.PI);
+            float want = MathF.Atan2(delta.Y, delta.X) * (180f / MathF.PI);
             float turn = ((want - pet.Yaw + 540f) % 360f) - 180f;
             pet.Yaw += turn * MathF.Min(1f, 10f * dt);
         }
@@ -304,9 +309,12 @@ public class Pet : VipModule
         bool running = dt > 0f && moved / dt > RunThreshold;
 
         float bob = pet.Def.Flying ? MathF.Sin(Server.CurrentTime * BobSpeed) * BobSize : 0f;
-        var draw = new Vector(pet.Position.X, pet.Position.Y, pet.Position.Z + bob);
+        _draw.X = pet.Position.X;
+        _draw.Y = pet.Position.Y;
+        _draw.Z = pet.Position.Z + bob;
+        _angle.Y = pet.Yaw + pet.Def.Yaw;
 
-        pet.Prop.Teleport(draw, new QAngle(0, pet.Yaw + pet.Def.Yaw, 0), new Vector());
+        pet.Prop.Teleport(_draw, _angle, TrailBeam.ZeroVector);
 
         if (running == pet.Running)
             return;

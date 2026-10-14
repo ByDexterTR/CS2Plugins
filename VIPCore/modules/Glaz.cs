@@ -36,13 +36,14 @@ public class Glaz : VipModule
         return HookResult.Continue;
     }
 
-    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit(ReadOnlySpan<TransmitView> views)
     {
         if (_smokes.Count == 0)
             return;
 
-        foreach (var (info, player) in infoList)
+        foreach (var view in views)
         {
+            var player = view.Viewer;
             if (player == null || !Active(player))
                 continue;
 
@@ -52,7 +53,7 @@ public class Glaz : VipModule
                 if (entity == null || !entity.IsValid)
                     continue;
 
-                Transmit.Hide(info, entity.Index);
+                view.Hide(entity.Index);
             }
         }
     }

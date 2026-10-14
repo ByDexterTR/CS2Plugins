@@ -28,8 +28,8 @@ public class ZeusCooldown : VipModule
         if (!Active(player) || !IsAlive(player))
             return HookResult.Continue;
 
-        var weapon = player!.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
-        if (weapon == null || !weapon.IsValid || weapon.DesignerName != "weapon_taser")
+        var weapon = PlayerCache.ActiveWeapon(player);
+        if (weapon == null || PlayerCache.ActiveWeaponDesigner(player) != "weapon_taser")
             return HookResult.Continue;
 
         int slot = player.Slot;

@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.2.4";
+    public override string ModuleVersion => "1.2.5";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -28,6 +28,7 @@ public partial class VIPCore : BasePlugin
     private readonly List<VipModule> _modules = new();
     private readonly Dictionary<string, VipModule> _moduleByName = new();
     private readonly System.Collections.Concurrent.ConcurrentDictionary<(string Group, string Feature, Type Type), object?> _groupValueCache = new();
+    internal int GroupVersion;
     private readonly Dictionary<string, (int Tick, List<CCSPlayerController> Players)> _activeCache = new();
     private Dictionary<string, HashSet<string>> _pistolDisable = new();
     private Dictionary<string, HashSet<string>> _forced = new();
@@ -49,9 +50,23 @@ public partial class VIPCore : BasePlugin
             {
                 _tickPlayersAt = tick;
                 _tickPlayers = Utilities.GetPlayers();
+                Array.Clear(_bySlot);
+                foreach (var player in _tickPlayers)
+                    if ((uint)player.Slot < 64)
+                        _bySlot[player.Slot] = player;
             }
             return _tickPlayers;
         }
+    }
+
+    private readonly CCSPlayerController?[] _bySlot = new CCSPlayerController?[64];
+
+    public CCSPlayerController? PlayerAt(int slot)
+    {
+        if ((uint)slot >= 64)
+            return null;
+        _ = Players;
+        return _bySlot[slot];
     }
 
     private readonly System.Drawing.Color[] _roundColors = new System.Drawing.Color[64];
@@ -65,7 +80,11 @@ public partial class VIPCore : BasePlugin
             _roundColors[i] = TrailBeam.RandomColor();
     }
 
-    private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
     private static readonly JsonDocumentOptions DocOpts = new()
     {
         CommentHandling = JsonCommentHandling.Skip,
@@ -188,6 +207,8 @@ public partial class VIPCore : BasePlugin
             if (_loaded.Contains(module.Name))
                 module.OnUnload();
 
+        UnhookPostThink();
+
         if (ReferenceEquals(Current, this))
             Current = null;
     }
@@ -219,13 +240,13 @@ public partial class VIPCore : BasePlugin
         var list = cached.Players ?? new List<CCSPlayerController>();
         list.Clear();
 
-        if (_vips.Count > 0)
+        if (_vips.Count > 0 || BenchBotGroup != null)
         {
             foreach (var player in Players)
             {
-                if (player == null || !player.IsValid || player.IsBot)
+                if (player == null || !player.IsValid || (player.IsBot && BenchBotGroup == null))
                     continue;
-                if (player.PlayerPawn.Value?.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+                if (!PlayerCache.Alive(player))
                     continue;
                 if (!IsActive(player, feature))
                     continue;
@@ -269,16 +290,24 @@ public partial class VIPCore : BasePlugin
                 return;
             }
 
+            var migrated = ConfigMigrate.Settings(user);
             var defaults = JsonSerializer.SerializeToNode(new VipConfig(), JsonOpts) as JsonObject ?? new JsonObject();
             var added = new List<string>();
             var unknown = new List<string>();
             ConfigCheck.FillMissing(typeof(VipConfig), defaults, user, "", added, unknown);
 
-            if (added.Count > 0)
+            if (migrated.Count > 0 || added.Count > 0)
             {
+                if (migrated.Count > 0)
+                    File.Copy(path, path + ".bak", true);
                 File.WriteAllText(path, user.ToJsonString(JsonOpts));
-                Logger.LogInformation("VIPCore: settings.json icine eksik ayarlar eklendi: {0}", string.Join(", ", added));
             }
+
+            foreach (var change in migrated)
+                Logger.LogInformation("VIPCore: settings.json guncellendi: {0}", change);
+
+            if (added.Count > 0)
+                Logger.LogInformation("VIPCore: settings.json icine eksik ayarlar eklendi: {0}", string.Join(", ", added));
 
             foreach (var key in unknown)
                 Logger.LogWarning("VIPCore: settings.json icindeki \"{0}\" ayari taninmiyor.", key);
@@ -368,7 +397,8 @@ public partial class VIPCore : BasePlugin
         Dictionary<string, Dictionary<string, JsonElement>> parsed;
         try
         {
-            parsed = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, JsonElement>>>(File.ReadAllText(GroupsPath), GroupFileOpts)
+            string text = MigrateGroups(File.ReadAllText(GroupsPath));
+            parsed = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, JsonElement>>>(text, GroupFileOpts)
                      ?? new();
         }
         catch (Exception ex)
@@ -435,6 +465,7 @@ public partial class VIPCore : BasePlugin
             _forced = forced;
             _periods = periods;
             _groupValueCache.Clear();
+            GroupVersion++;
             _enabled.Clear();
 
             foreach (var (groupName, feats) in _groups)
@@ -444,6 +475,44 @@ public partial class VIPCore : BasePlugin
 
         foreach (var issue in ConfigCheck.Settings(Config, _moduleByName))
             Logger.LogWarning("VIPCore: settings.json {0}", issue);
+
+        if (!Config.VipTest.Enabled)
+            return;
+
+        foreach (var test in Config.VipTest.Groups)
+        {
+            if (!parsed.ContainsKey(test.Group))
+                Logger.LogWarning("VIPCore: settings.json viptest icindeki \"{0}\" diye bir grup yok.", test.Group);
+            else if (test.Time <= 0)
+                Logger.LogWarning("VIPCore: settings.json viptest icindeki \"{0}\" icin time 0, bu grup denenemez.", test.Group);
+        }
+    }
+
+    private string MigrateGroups(string text)
+    {
+        if (JsonNode.Parse(text, null, DocOpts) is not JsonObject root)
+            return text;
+
+        var changes = ConfigMigrate.Groups(root);
+        if (changes.Count == 0)
+            return text;
+
+        string migrated = root.ToJsonString(JsonOpts);
+        try
+        {
+            File.Copy(GroupsPath, GroupsPath + ".bak", true);
+            File.WriteAllText(GroupsPath, migrated);
+            Logger.LogInformation("VIPCore: vipgroups.json guncellendi, eski hali vipgroups.json.bak dosyasinda.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning("VIPCore: vipgroups.json guncellemesi diske yazilamadi ({0}), bu oturumda bellekte uygulandi.", ex.Message);
+        }
+
+        foreach (var change in changes)
+            Logger.LogInformation("VIPCore: vipgroups.json {0}", change);
+
+        return migrated;
     }
 
     private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
@@ -625,6 +694,7 @@ public partial class VIPCore : BasePlugin
     }
 
     private readonly ClientState[] _clientStates = new ClientState[64];
+    internal static string? BenchBotGroup { get; set; }
     private int _vipVersion = 1;
 
     private void VipsChanged() => Interlocked.Increment(ref _vipVersion);
@@ -662,11 +732,19 @@ public partial class VIPCore : BasePlugin
                 && _periods.TryGetValue(state.Group, out var window) && !window.IsOpen(now))
                 state.Group = null;
         }
+        else if (BenchBotGroup != null && player.IsValid)
+        {
+            state.SteamId = 76561190000000000UL + (ulong)slot;
+            state.Vip = true;
+            state.Group = BenchBotGroup;
+        }
 
         if (cacheable)
             _clientStates[slot] = state;
         return state;
     }
+
+    public ulong ClientSteamId(CCSPlayerController player) => Resolve(player).SteamId;
 
     public bool IsClientVip(CCSPlayerController player) =>
         player != null && Resolve(player).Vip;

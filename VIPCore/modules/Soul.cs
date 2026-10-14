@@ -100,7 +100,7 @@ public class Soul : VipModule
         if (cfg.Limit > 0 && _used.GetValueOrDefault(userId) >= cfg.Limit)
             return HookResult.Continue;
 
-        var origin = victim.PlayerPawn.Value?.AbsOrigin;
+        var origin = PlayerCache.Pawn(victim)?.AbsOrigin;
         if (origin == null)
             return HookResult.Continue;
 
@@ -241,7 +241,7 @@ public class Soul : VipModule
             if (!TryGetButtons(player, out var buttons) || (buttons & PlayerButtons.Use) == 0)
                 continue;
 
-            var origin = player.PlayerPawn.Value?.AbsOrigin;
+            var origin = PlayerCache.Pawn(player)?.AbsOrigin;
             if (origin == null)
                 continue;
 
@@ -258,7 +258,7 @@ public class Soul : VipModule
 
     private static void StartBar(CCSPlayerController reviver, float seconds)
     {
-        var pawn = reviver.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(reviver);
         if (pawn == null || !pawn.IsValid)
             return;
 
@@ -266,9 +266,9 @@ public class Soul : VipModule
         pawn.ProgressBarDuration = Math.Max((int)MathF.Ceiling(seconds), 1);
         pawn.BlockingUseActionInProgress = CSPlayerBlockingUseAction_t.k_CSPlayerBlockingUseAction_MapLongUseEntity_Pickup;
 
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawnBase", "m_flProgressBarStartTime");
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawnBase", "m_iProgressBarDuration");
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_iBlockingUseActionInProgress");
+        NetState.Changed(pawn, "CCSPlayerPawnBase", "m_flProgressBarStartTime");
+        NetState.Changed(pawn, "CCSPlayerPawnBase", "m_iProgressBarDuration");
+        NetState.Changed(pawn, "CCSPlayerPawn", "m_iBlockingUseActionInProgress");
     }
 
     private void StopBar(Ghost soul)
@@ -280,7 +280,7 @@ public class Soul : VipModule
         soul.HolderUserId = -1;
         soul.HoldTime = 0f;
 
-        var pawn = reviver?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(reviver);
         if (pawn == null || !pawn.IsValid)
             return;
 
@@ -288,9 +288,9 @@ public class Soul : VipModule
         pawn.ProgressBarDuration = 0;
         pawn.BlockingUseActionInProgress = CSPlayerBlockingUseAction_t.k_CSPlayerBlockingUseAction_None;
 
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawnBase", "m_flProgressBarStartTime");
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawnBase", "m_iProgressBarDuration");
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_iBlockingUseActionInProgress");
+        NetState.Changed(pawn, "CCSPlayerPawnBase", "m_flProgressBarStartTime");
+        NetState.Changed(pawn, "CCSPlayerPawnBase", "m_iProgressBarDuration");
+        NetState.Changed(pawn, "CCSPlayerPawn", "m_iBlockingUseActionInProgress");
     }
 
     private void Revive(CCSPlayerController owner, CCSPlayerController reviver, Ghost soul)
@@ -305,7 +305,7 @@ public class Soul : VipModule
         Server.NextFrame(() =>
         {
             var player = Utilities.GetPlayerFromUserid(userId);
-            var pawn = player?.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid)
                 return;
 
@@ -383,7 +383,7 @@ public class Soul : VipModule
             if (soul.Applied != color)
             {
                 beam.Render = color;
-                Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+                NetState.Changed(beam, "CBaseModelEntity", "m_clrRender");
             }
 
             var (a, b) = Edges[i];
@@ -392,7 +392,7 @@ public class Soul : VipModule
             beam.EndPos.X = px[b];
             beam.EndPos.Y = py[b];
             beam.EndPos.Z = pz[b];
-            Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+            NetState.Changed(beam, "CBeam", "m_vecEndPos");
         }
 
         soul.Applied = color;

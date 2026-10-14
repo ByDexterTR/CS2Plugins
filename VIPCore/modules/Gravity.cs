@@ -71,7 +71,7 @@ public class Gravity : VipModule
                 continue;
             }
 
-            var pawn = player.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid)
                 continue;
 
@@ -87,7 +87,7 @@ public class Gravity : VipModule
 
     private static void Reset(int slot)
     {
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(slot));
         if (pawn == null || !pawn.IsValid)
             return;
 

@@ -37,6 +37,6 @@ public class Fov : VipModule
 
         uint fov = value != "off" && uint.TryParse(value, out var f) ? f : 0;
         player.DesiredFOV = fov;
-        Utilities.SetStateChanged(player, "CBasePlayerController", "m_iDesiredFOV");
+        NetState.Changed(player, "CBasePlayerController", "m_iDesiredFOV");
     }
 }

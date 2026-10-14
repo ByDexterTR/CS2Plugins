@@ -60,14 +60,11 @@ public class AutoHS : VipModule
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        if (info.Attacker?.Value == null)
-            return HookResult.Continue;
-
-        var attacker = PawnController(info.Attacker.Value);
+        var attacker = DamageAttacker(info);
         if (!Active(attacker))
             return HookResult.Continue;
 
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (victim == null || victim.Slot == attacker!.Slot)
             return HookResult.Continue;
 

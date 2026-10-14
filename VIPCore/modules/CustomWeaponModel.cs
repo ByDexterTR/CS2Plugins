@@ -108,7 +108,7 @@ public class CustomWeaponModel : VipModule
 
         var entries = IsAlive(player) && Active(player) ? Usable(GroupValue<List<Entry>>(player), player) : new();
 
-        var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+        var weapons = PlayerCache.Pawn(player)?.WeaponServices?.MyWeapons;
         if (weapons == null)
             return;
 

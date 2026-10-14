@@ -109,8 +109,8 @@ public static class SpeedPool
             if (!any && !_managed[slot])
                 continue;
 
-            var player = Utilities.GetPlayerFromSlot(slot);
-            var pawn = player?.PlayerPawn.Value;
+            var player = _owner?.PlayerAt(slot);
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
             {
                 _managed[slot] = false;
@@ -124,7 +124,7 @@ public static class SpeedPool
                     continue;
 
                 pawn.VelocityModifier = 1f;
-                Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+                NetState.Changed(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
                 continue;
             }
 
@@ -138,7 +138,7 @@ public static class SpeedPool
                 continue;
 
             pawn.VelocityModifier = target;
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+            NetState.Changed(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
         }
     }
 }

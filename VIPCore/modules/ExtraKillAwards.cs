@@ -57,8 +57,8 @@ public class ExtraKillAwards : VipModule
             float unit = dist.TryGetProperty("unit", out var u) && u.TryGetSingle(out float uv) ? uv : 0f;
             int money = dist.TryGetProperty("money", out var m) && m.TryGetInt32(out int mv) ? mv : 0;
 
-            var aPos = attacker.PlayerPawn.Value?.AbsOrigin;
-            var vPos = victim.PlayerPawn.Value?.AbsOrigin;
+            var aPos = PlayerCache.Pawn(attacker)?.AbsOrigin;
+            var vPos = PlayerCache.Pawn(victim)?.AbsOrigin;
             if (unit > 0 && money > 0 && aPos != null && vPos != null)
             {
                 int steps = (int)(TrailBeam.Distance(aPos, vPos) / unit);
@@ -80,7 +80,7 @@ public class ExtraKillAwards : VipModule
         _cvMaxMoney ??= ConVar.Find("mp_maxmoney");
         int maxMoney = _cvMaxMoney?.GetPrimitiveValue<int>() ?? 16000;
         moneyServices.Account = Math.Min(moneyServices.Account + total, maxMoney);
-        Utilities.SetStateChanged(attacker, "CCSPlayerController", "m_pInGameMoneyServices");
+        NetState.Changed(attacker, "CCSPlayerController", "m_pInGameMoneyServices");
 
         attacker.PrintToChat($" {CC.Orchid}{Core.ChatPrefix}{CC.Default} {Core.Localizer["vip.killaward", total, string.Join(", ", reasons)]}");
         return HookResult.Continue;

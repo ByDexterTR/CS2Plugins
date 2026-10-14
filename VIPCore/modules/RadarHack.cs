@@ -1,5 +1,4 @@
 using CounterStrikeSharp.API;
-using CounterStrikeSharp.API.Core;
 
 namespace VIPCore;
 
@@ -13,6 +12,17 @@ public class RadarHack : VipModule
         public int OnlyMode { get; set; } = 0;
     }
 
+    private struct Viewers
+    {
+        public byte Team;
+        public bool Mates;
+        public int Mode;
+        public ulong Bits;
+    }
+
+    private static readonly Cfg DefaultCfg = new();
+    private readonly Viewers[] _viewers = new Viewers[64];
+
     public override string Name => "RadarHack";
     public override string DisplayName => Core.Localizer["vip.module.radarhack"];
 
@@ -22,42 +32,64 @@ public class RadarHack : VipModule
         Core.HookTick(OnTick);
     }
 
-    private void OnTick()
+    private unsafe void OnTick()
     {
         var vips = ActivePlayers();
         if (vips.Count == 0)
             return;
 
+        float now = Server.CurrentTime;
+        int groups = 0;
+
         foreach (var player in vips)
         {
-            var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+            int slot = player.Slot;
+            nint pawn = PlayerCache.Pointer(player);
+            if ((uint)slot >= 64 || pawn == 0)
+                continue;
+
+            var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
             if (cfg.DurationOff > 0)
             {
                 float on = Math.Max(cfg.DurationOn, 1f);
-                if (Server.CurrentTime % (on + cfg.DurationOff) >= on)
+                if (now % (on + cfg.DurationOff) >= on)
                     continue;
             }
 
-            int slot = player.Slot;
+            byte team = PlayerCache.Team(pawn);
+            int index = 0;
+            while (index < groups && (_viewers[index].Team != team || _viewers[index].Mates != cfg.SeeTeammates || _viewers[index].Mode != cfg.OnlyMode))
+                index++;
 
-            foreach (var enemy in Core.Players)
+            if (index == groups)
+                _viewers[groups++] = new Viewers { Team = team, Mates = cfg.SeeTeammates, Mode = cfg.OnlyMode };
+
+            _viewers[index].Bits |= 1UL << slot;
+        }
+
+        if (groups == 0)
+            return;
+
+        foreach (ref readonly var target in PlayerCache.AlivePlayers(Core.Players))
+        {
+            if (PlayerCache.RenderAlpha(target.Pawn) < 200)
+                continue;
+
+            ulong mask = 0;
+            for (int i = 0; i < groups; i++)
             {
-                if (enemy == null || !enemy.IsValid || enemy.Slot == slot || !IsAlive(enemy))
-                    continue;
-                if (!cfg.SeeTeammates && enemy.Team == player.Team)
-                    continue;
-
-                var enemyPawn = enemy.PlayerPawn.Value;
-                if (enemyPawn == null || !enemyPawn.IsValid)
-                    continue;
-
-                if (enemyPawn.Render.A < 200)
-                    continue;
-                if (!ActivityFilter.Matches(cfg.OnlyMode, enemy, enemyPawn))
-                    continue;
-
-                enemyPawn.EntitySpottedState.SpottedByMask[slot / 32] |= 1u << (slot % 32);
+                ref var viewers = ref _viewers[i];
+                if ((viewers.Mates || viewers.Team != target.Team) && ActivityFilter.Matches(viewers.Mode, target.Slot, target.Pawn))
+                    mask |= viewers.Bits;
             }
+
+            mask &= ~(1UL << target.Slot);
+            if (mask == 0)
+                continue;
+
+            uint* spotted = PlayerCache.SpottedByMask(target.Pawn);
+            spotted[0] |= (uint)mask;
+            spotted[1] |= (uint)(mask >> 32);
         }
     }
 }

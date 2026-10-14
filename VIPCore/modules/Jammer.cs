@@ -36,7 +36,7 @@ public class Jammer : VipModule
                 continue;
 
             _jammed[slot] = false;
-            var p = Utilities.GetPlayerFromSlot(slot);
+            var p = Core.PlayerAt(slot);
             if (p != null && p.IsValid && !p.IsBot)
                 p.ReplicateConVar("sv_disable_radar", "0");
         }
@@ -47,7 +47,7 @@ public class Jammer : VipModule
         _jammers.Clear();
         foreach (var player in ActivePlayers())
         {
-            var origin = player.PlayerPawn.Value?.AbsOrigin;
+            var origin = PlayerCache.Pawn(player)?.AbsOrigin;
             if (origin == null)
                 continue;
 
@@ -97,7 +97,7 @@ public class Jammer : VipModule
 
     private bool InJammerRange(CCSPlayerController target)
     {
-        var targetOrigin = target.PlayerPawn.Value?.AbsOrigin;
+        var targetOrigin = PlayerCache.Pawn(target)?.AbsOrigin;
         if (targetOrigin == null)
             return false;
 

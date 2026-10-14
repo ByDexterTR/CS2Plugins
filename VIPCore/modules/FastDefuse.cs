@@ -7,7 +7,7 @@ public class FastDefuse : VipModule
 {
     private class Cfg
     {
-        public float Time { get; set; } = 1.0f;
+        public float DefuseTime { get; set; } = 1.0f;
         public bool ImmuneWhileBurning { get; set; } = false;
     }
 
@@ -38,8 +38,8 @@ public class FastDefuse : VipModule
                 if (c4 == null || !c4.IsValid || !c4.BeingDefused)
                     continue;
 
-                c4.DefuseCountDown = Server.CurrentTime + cfg.Time;
-                Utilities.SetStateChanged(c4, "CPlantedC4", "m_flDefuseCountDown");
+                c4.DefuseCountDown = Server.CurrentTime + cfg.DefuseTime;
+                NetState.Changed(c4, "CPlantedC4", "m_flDefuseCountDown");
             }
         });
 

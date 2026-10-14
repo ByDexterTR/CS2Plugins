@@ -56,8 +56,8 @@ public class KillHeal : VipModule
             int hp = dist.TryGetProperty("money", out var m) && m.TryGetInt32(out int mv) ? mv
                 : dist.TryGetProperty("hp", out var h) && h.TryGetInt32(out int hv) ? hv : 0;
 
-            var aPos = attacker.PlayerPawn.Value?.AbsOrigin;
-            var vPos = victim.PlayerPawn.Value?.AbsOrigin;
+            var aPos = PlayerCache.Pawn(attacker)?.AbsOrigin;
+            var vPos = PlayerCache.Pawn(victim)?.AbsOrigin;
             if (unit > 0 && hp > 0 && aPos != null && vPos != null)
             {
                 int steps = (int)(TrailBeam.Distance(aPos, vPos) / unit);
@@ -72,7 +72,7 @@ public class KillHeal : VipModule
         if (total <= 0)
             return HookResult.Continue;
 
-        var pawn = attacker.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(attacker);
         if (pawn == null || !pawn.IsValid)
             return HookResult.Continue;
 
@@ -81,8 +81,7 @@ public class KillHeal : VipModule
             return HookResult.Continue;
 
         int healed = Math.Min(pawn.Health + total, maxHp) - pawn.Health;
-        pawn.Health += healed;
-        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+        Health.Set(pawn, pawn.Health + healed);
 
         attacker.PrintToChat($" {CC.Orchid}{Core.ChatPrefix}{CC.Default} {Core.Localizer["vip.killheal", healed, string.Join(", ", reasons)]}");
         return HookResult.Continue;

@@ -1,7 +1,4 @@
-using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 
 namespace VIPCore;
 
@@ -22,26 +19,13 @@ public class DuckSpeed : VipModule
     public override void OnLoad()
     {
         SpeedPool.Ensure(Core);
-        VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Hook(OnPostThink, HookMode.Post);
+        Core.HookPostThink(OnPostThink);
     }
 
-    public override void OnUnload() =>
-        VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Unhook(OnPostThink, HookMode.Post);
-
-    private HookResult OnPostThink(DynamicHook hook)
+    private void OnPostThink(CCSPlayerController player, CCSPlayerPawn pawn)
     {
-        var pawnBase = hook.GetParam<CCSPlayerPawnBase>(0);
-        if (pawnBase == null || !pawnBase.IsValid)
-            return HookResult.Continue;
-
-        var pawn = pawnBase.As<CCSPlayerPawn>();
-        var player = pawn.Controller.Value?.As<CCSPlayerController>();
-        if (player == null || !player.IsValid || player.IsBot || player.Slot >= 64)
-            return HookResult.Continue;
-
-        var movement = pawnBase.MovementServices?.As<CCSPlayer_MovementServices>();
-        if (movement == null || movement.DuckAmount <= 0.01f || !Active(player))
-            return HookResult.Continue;
+        if (player.Slot >= 64 || PlayerCache.DuckAmount(PlayerCache.Pointer(player)) <= 0.01f || !Active(player) || player.IsBot)
+            return;
 
         float percent = Math.Clamp((GroupValue<Cfg>(player) ?? DefaultCfg).Percent, VanillaDuckPercent, 100f);
         float target = percent / VanillaDuckPercent;
@@ -49,10 +33,9 @@ public class DuckSpeed : VipModule
         if (pawn.VelocityModifier < target)
         {
             pawn.VelocityModifier = target;
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+            NetState.Changed(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
         }
 
         SpeedPool.Floor(player.Slot, target);
-        return HookResult.Continue;
     }
 }

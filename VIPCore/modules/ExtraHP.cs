@@ -25,14 +25,13 @@ public class ExtraHP : VipModule
             if (!IsAlive(player))
                 return;
 
-            var pawn = player!.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid)
                 return;
 
             pawn.MaxHealth = hp;
-            pawn.Health = hp;
-            Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iMaxHealth");
-            Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+            NetState.Changed(pawn, "CBaseEntity", "m_iMaxHealth");
+            Health.Set(pawn, hp);
         });
 
         return HookResult.Continue;

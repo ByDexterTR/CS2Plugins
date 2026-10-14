@@ -7,9 +7,8 @@ public class Berserk : VipModule
 {
     private class Cfg
     {
-        public float Dpk { get; set; } = 0.2f;
-        [JsonPropertyName("maxdpk")]
-        public float MaxDpk { get; set; } = 5.0f;
+        public float DamagePerKill { get; set; } = 0.2f;
+        public float MaxDamageBonus { get; set; } = 5.0f;
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
     }
@@ -42,16 +41,13 @@ public class Berserk : VipModule
 
         var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
         int slot = attacker.Slot;
-        _bonus[slot] = Math.Min(_bonus[slot] + cfg.Dpk, Math.Max(cfg.MaxDpk, 0f));
+        _bonus[slot] = Math.Min(_bonus[slot] + cfg.DamagePerKill, Math.Max(cfg.MaxDamageBonus, 0f));
         return HookResult.Continue;
     }
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        if (info.Attacker?.Value == null)
-            return HookResult.Continue;
-
-        var attacker = PawnController(info.Attacker.Value);
+        var attacker = DamageAttacker(info);
         if (attacker == null || !Active(attacker))
             return HookResult.Continue;
 
@@ -60,7 +56,7 @@ public class Berserk : VipModule
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (victim != null)
         {
             if (cfg.IgnoreSelf && victim.Slot == attacker.Slot)

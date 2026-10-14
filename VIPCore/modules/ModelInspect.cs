@@ -229,7 +229,7 @@ public class ModelInspect : VipModule
             return;
         }
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
             return;
 

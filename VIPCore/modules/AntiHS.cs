@@ -6,7 +6,7 @@ public class AntiHS : VipModule
 {
     private class Cfg
     {
-        public int Percent { get; set; } = 0;
+        public int DamagePercent { get; set; } = 0;
         public string OnlyWithWeapon { get; set; } = "";
         public int Limit { get; set; } = 0;
 
@@ -27,16 +27,16 @@ public class AntiHS : VipModule
             || info.GetHitGroup() != HitGroup_t.HITGROUP_HEAD)
             return HookResult.Continue;
 
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (!Active(victim))
             return HookResult.Continue;
 
-        var attacker = PawnController(info.Attacker?.Value);
+        var attacker = DamageAttacker(info);
         if (attacker != null && attacker.Slot == victim!.Slot)
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(victim!) ?? DefaultCfg;
-        if (cfg.Percent >= 100)
+        if (cfg.DamagePercent >= 100)
             return HookResult.Continue;
 
         var allow = cfg.Allow;
@@ -47,7 +47,7 @@ public class AntiHS : VipModule
             return HookResult.Continue;
 
         LimitUse(victim.Slot);
-        info.Damage = MathF.Max(info.Damage * Math.Max(cfg.Percent, 0) / 100f, 0f);
+        info.Damage = MathF.Max(info.Damage * Math.Max(cfg.DamagePercent, 0) / 100f, 0f);
         return HookResult.Changed;
     }
 }

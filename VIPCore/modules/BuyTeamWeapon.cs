@@ -74,7 +74,7 @@ public class BuyTeamWeapon : VipModule
         if (!IsAlive(player))
             return;
 
-        if (player.PlayerPawn.Value?.InBuyZone != true)
+        if (PlayerCache.Pawn(player)?.InBuyZone != true)
         {
             Reply(info, Core.Localizer["vip.buy_not_in_buyzone"]);
             return;
@@ -97,7 +97,7 @@ public class BuyTeamWeapon : VipModule
         }
 
         money.Account -= price;
-        Utilities.SetStateChanged(player, "CCSPlayerController", "m_pInGameMoneyServices");
+        NetState.Changed(player, "CCSPlayerController", "m_pInGameMoneyServices");
 
         player.GiveNamedItem(entity);
         Reply(info, Core.Localizer["vip.buy_given", cmd, price]);

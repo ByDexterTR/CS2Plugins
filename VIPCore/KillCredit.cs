@@ -54,8 +54,8 @@ public static class KillCredit
         {
             stats.Kills++;
             attacker.Score += 2;
-            Utilities.SetStateChanged(attacker, "CCSPlayerController", "m_pActionTrackingServices");
-            Utilities.SetStateChanged(attacker, "CCSPlayerController", "m_iScore");
+            NetState.Changed(attacker, "CCSPlayerController", "m_pActionTrackingServices");
+            NetState.Changed(attacker, "CCSPlayerController", "m_iScore");
         }
 
         return HookResult.Changed;

@@ -10,8 +10,6 @@ public class NoRecoil : VipModule
         public string OnlyWithWeapon { get; set; } = "";
 
         public int OnlyStance { get; set; } = 0;
-
-        [JsonPropertyName("recoilpercent")]
         public float RecoilPercent { get; set; } = 0f;
 
         private List<string>? _allow;

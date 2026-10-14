@@ -29,20 +29,18 @@ internal static class ConfigCheck
         ["HealthshotBoost"] = "HealthshotEffect"
     };
 
-    private static readonly Dictionary<string, string> KeyRenames = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> RemovedKeys = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["FallDamage.count"] = "limit",
-        ["Respawn.timer"] = "time",
-        ["HealthRegen.max_hp"] = "",
-        ["TeamHeal.maxhp"] = "",
-        ["SmokeEffect.heal.maxhp"] = "",
-        ["WeaponGlow.visible"] = ""
+        "HealthRegen.max_hp",
+        "TeamHeal.maxhp",
+        "SmokeEffect.heal.maxhp",
+        "WeaponGlow.visible"
     };
 
     private static readonly Dictionary<string, string> KeyMoves = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["RapidFire.norecoil"] = "NoRecoil icindeki \"recoilpercent\"",
-        ["RapidFire.recoilpercent"] = "NoRecoil icindeki \"recoilpercent\""
+        ["RapidFire.norecoil"] = "NoRecoil icindeki \"recoil_percent\"",
+        ["RapidFire.recoilpercent"] = "NoRecoil icindeki \"recoil_percent\""
     };
 
     private sealed class Node
@@ -178,11 +176,15 @@ internal static class ConfigCheck
                 continue;
             }
 
-            if (KeyRenames.TryGetValue(child, out var renamed))
+            if (ConfigMigrate.RenamedKey(child) is string newName)
             {
-                issues.Add(renamed.Length > 0
-                    ? $"\"{groupName}\" -> {child} artik \"{renamed}\" olarak adlandiriliyor."
-                    : $"\"{groupName}\" -> {child} kaldirildi, satiri silin.");
+                issues.Add($"\"{groupName}\" -> {child} artik \"{newName}\" olarak adlandiriliyor.");
+                continue;
+            }
+
+            if (RemovedKeys.Contains(child))
+            {
+                issues.Add($"\"{groupName}\" -> {child} kaldirildi, satiri silin.");
                 continue;
             }
 

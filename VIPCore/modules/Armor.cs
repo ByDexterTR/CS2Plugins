@@ -49,7 +49,7 @@ public class Armor : VipModule
         if (!IsAlive(player) || !Active(player))
             return;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return;
 
@@ -59,6 +59,6 @@ public class Armor : VipModule
 
         int value = keepHigher ? Math.Max(cfg.Value, pawn.ArmorValue) : cfg.Value;
         pawn.ArmorValue = value;
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+        NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
     }
 }

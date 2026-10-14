@@ -24,7 +24,7 @@ public class AntiFlash : VipModule
         if (!Active(victim))
             return HookResult.Continue;
 
-        var pawn = victim!.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(victim);
         if (pawn == null || !pawn.IsValid)
             return HookResult.Continue;
 

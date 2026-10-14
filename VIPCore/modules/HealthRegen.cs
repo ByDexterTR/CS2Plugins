@@ -11,7 +11,7 @@ public class HealthRegen : VipModule
     {
         public int HpPerTick { get; set; } = 5;
         public float Interval { get; set; } = 1.0f;
-        public float DelayAfterDmg { get; set; } = 3.0f;
+        public float DelayAfterDamage { get; set; } = 3.0f;
     }
 
     private readonly Timer?[] _timers = new Timer?[64];
@@ -66,14 +66,14 @@ public class HealthRegen : VipModule
 
     private void Regen(int slot, Cfg cfg)
     {
-        var player = Utilities.GetPlayerFromSlot(slot);
+        var player = Core.PlayerAt(slot);
         if (!IsAlive(player) || !Active(player))
             return;
 
-        if (Server.CurrentTime - _lastHurt[slot] < cfg.DelayAfterDmg)
+        if (Server.CurrentTime - _lastHurt[slot] < cfg.DelayAfterDamage)
             return;
 
-        var pawn = player!.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return;
 
@@ -81,7 +81,6 @@ public class HealthRegen : VipModule
         if (pawn.Health >= maxHp)
             return;
 
-        pawn.Health = Math.Min(pawn.Health + cfg.HpPerTick, maxHp);
-        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+        Health.Set(pawn, Math.Min(pawn.Health + cfg.HpPerTick, maxHp));
     }
 }

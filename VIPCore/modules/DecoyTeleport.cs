@@ -32,7 +32,7 @@ public class DecoyTeleport : VipModule
         if (limit > 0 && _used[slot] >= limit)
             return HookResult.Continue;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return HookResult.Continue;
 

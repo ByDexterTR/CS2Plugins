@@ -57,7 +57,7 @@ public partial class VIPCore
       "only_with_weapon": "weapon_knife"
     },
     "FallDamage": {
-      "percent": 50,
+      "damage_percent": 50,
       "limit": 0
     },
     "FortniteArmor": {
@@ -72,7 +72,7 @@ public partial class VIPCore
     "HealthRegen": {
       "hp_per_tick": 3,
       "interval": 1,
-      "delay_after_dmg": 5
+      "delay_after_damage": 5
     },
     "Healthshot": 1,
     "JoinMessage": {
@@ -105,7 +105,7 @@ public partial class VIPCore
       "Kirmizi #FF0000"
     ],
     "SpawnProtection": {
-      "time": 2,
+      "duration": 2,
       "limit": 0
     },
     "Tag": {
@@ -141,7 +141,7 @@ public partial class VIPCore
     "ArmorRegen": {
       "armor_per_tick": 10,
       "interval": 1,
-      "delay_after_dmg": 2,
+      "delay_after_damage": 2,
       "max_armor": 100,
       "give_helmet_when_full": true
     },
@@ -227,15 +227,15 @@ public partial class VIPCore
       "only_with_weapon": "weapon_knife"
     },
     "FallDamage": {
-      "percent": 35,
+      "damage_percent": 35,
       "limit": 0
     },
     "FastDefuse": {
-      "time": 1,
+      "defuse_time": 1,
       "immune_while_burning": true
     },
     "FastPlant": {
-      "time": 1,
+      "plant_time": 1,
       "immune_while_burning": true
     },
     "FastReload": {
@@ -324,7 +324,7 @@ public partial class VIPCore
     "HealthRegen": {
       "hp_per_tick": 5,
       "interval": 1,
-      "delay_after_dmg": 4
+      "delay_after_damage": 4
     },
     "HitMarker": [
       {
@@ -468,7 +468,7 @@ public partial class VIPCore
       "Yesil #00FF00"
     ],
     "SpawnProtection": {
-      "time": 3,
+      "duration": 3,
       "limit": 0
     },
     "Tag": {
@@ -478,7 +478,7 @@ public partial class VIPCore
       "tab": "[PLUS]"
     },
     "TeamHeal": {
-      "minhp": 5,
+      "min_hp": 5,
       "percent": 50,
       "sound_volume": 0.5,
       "only_with_weapon": ""
@@ -511,8 +511,8 @@ public partial class VIPCore
       "@css/generic"
     ],
     "Adrenaline": {
-      "spk": 0.05,
-      "maxspk": 0.5,
+      "speed_per_kill": 0.05,
+      "max_speed_bonus": 0.5,
       "duration": 0
     },
     "AntiFlash": {
@@ -522,7 +522,7 @@ public partial class VIPCore
       "limit": 0
     },
     "AntiHS": {
-      "percent": 0,
+      "damage_percent": 0,
       "only_with_weapon": "",
       "limit": 0
     },
@@ -533,8 +533,8 @@ public partial class VIPCore
       "limit": 0
     },
     "Berserk": {
-      "dpk": 0.2,
-      "maxdpk": 5.0
+      "damage_per_kill": 0.2,
+      "max_damage_bonus": 5.0
     },
     "Bhop": {
       "autostrafe": true,
@@ -545,7 +545,7 @@ public partial class VIPCore
     "BulletEffect": {
       "poison": {
         "damage": 2,
-        "tick": 0.5,
+        "interval": 0.5,
         "duration": 3,
         "sound_volume": 0.3,
         "ignore_teammates": true,
@@ -633,7 +633,7 @@ public partial class VIPCore
       "only_with_weapon": ""
     },
     "FallDamage": {
-      "percent": 15,
+      "damage_percent": 15,
       "limit": 0
     },
     "FlashDuration": {
@@ -670,12 +670,12 @@ public partial class VIPCore
     "HealthRegen": {
       "hp_per_tick": 7,
       "interval": 1,
-      "delay_after_dmg": 3
+      "delay_after_damage": 3
     },
     "Healthshot": 2,
     "Invisibility": {
       "only_stopped": true,
-      "dmg_after_invis": 2,
+      "reveal_time": 2,
       "only_with_weapon": ""
     },
     "JoinMessage": {
@@ -686,198 +686,198 @@ public partial class VIPCore
       {
         "name": "Simsek",
         "particle": "particles/ui/status_levels/ui_status_level7_lightning.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Ates",
         "particle": "particles/maps/generic/steam_fire_test.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Kor",
         "particle": "particles/maps/cs_office/office_child_embers01a.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Toz Kasirgasi",
         "particle": "particles/maps/de_dust/dust_devil_smoke.vpcf",
-        "time": 5,
+        "lifetime": 5,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Yildirim",
         "particle": "particles/ui/ui_experience_award_innerpoint.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Kivilcim",
         "particle": "particles/inferno_fx/firework_crate_ground_effect_fallback1.vpcf",
-        "time": 2.5,
+        "lifetime": 2.5,
         "hs": true,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Statik Elektrik",
         "particle": "particles/ui/ui_electric_gold.vpcf",
-        "time": 2.5,
+        "lifetime": 2.5,
         "hs": true,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Parilti",
         "particle": "particles/ui/ui_element_horiz_star_glow.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": true,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Enerji",
         "particle": "particles/ui/ui_experience_award_rollingrings.vpcf",
-        "time": 2.5,
+        "lifetime": 2.5,
         "hs": true,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Don",
         "particle": "particles/testsystems/test_endcap_freeze.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": true,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Kan Golü",
         "particle": "particles/burning_fx/gas_cannister_idle_ring_embers.vpcf",
-        "time": 4,
+        "lifetime": 4,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Patlama",
         "particle": "particles/explosions_fx/explosion_hegrenade_snow.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Isin",
         "particle": "particles/ui/status_levels/ui_status_level_1.vpcf",
-        "time": 2.5,
+        "lifetime": 2.5,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Isin 2",
         "particle": "particles/ui/status_levels/ui_status_level_2.vpcf",
-        "time": 2.5,
+        "lifetime": 2.5,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Ruzgar",
         "particle": "particles/ui/status_levels/ui_status_level_3d.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Ulti",
         "particle": "particles/ui/status_levels/ui_status_level_8.vpcf",
-        "time": 2.5,
+        "lifetime": 2.5,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Su Patlamasi",
         "particle": "particles/explosions_fx/explosion_hegrenade_water.vpcf",
-        "time": 2.5,
+        "lifetime": 2.5,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Sok Dalgasi",
         "particle": "particles/explosions_fx/bumpmine_detonate.vpcf",
-        "time": 1.5,
+        "lifetime": 1.5,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Sok Kivilcimi",
         "particle": "particles/explosions_fx/bumpmine_detonate_sparks.vpcf",
-        "time": 1.5,
+        "lifetime": 1.5,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Molotof",
         "particle": "particles/inferno_fx/explosion_molotov_air.vpcf",
-        "time": 1.5,
+        "lifetime": 1.5,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Yakici Bomba",
         "particle": "particles/inferno_fx/explosion_incend_air.vpcf",
-        "time": 1.5,
+        "lifetime": 1.5,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Tavuk",
         "particle": "particles/money_fx/moneycrate_burst.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": true,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Para Yagmuru",
         "particle": "particles/money_fx/moneycrate_burst_money.vpcf",
-        "time": 4,
+        "lifetime": 4,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Para Cantasi",
         "particle": "particles/money_fx/moneybag_trail.vpcf",
-        "time": 5,
+        "lifetime": 5,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Kan Suyu",
         "particle": "particles/blood_impact/blood_impact_headshot.vpcf",
-        "time": 0.5,
+        "lifetime": 0.5,
         "hs": true,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Gaz Carpma",
         "particle": "particles/survival_fx/gas_cannister_impact.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       },
       {
         "name": "Kucuk Enerji",
         "particle": "particles/ui/ui_experience_award_rollingrings_inner.vpcf",
-        "time": 2.5,
+        "lifetime": 2.5,
         "hs": false,
-        "lastkill": false
+        "last_kill": false
       },
       {
         "name": "Gen Patlama",
         "particle": "particles/ui/status_levels/ui_status_level__gen_burst.vpcf",
-        "time": 1.5,
+        "lifetime": 1.5,
         "hs": false,
-        "lastkill": true
+        "last_kill": true
       }
     ],
     "KillIcon": {
@@ -901,7 +901,7 @@ public partial class VIPCore
       "only_with_weapon": ""
     },
     "Mole": {
-      "time": 2.5,
+      "duration": 2.5,
       "unit": 30,
       "only_with_weapon": "weapon_deagle",
       "ignore_teammates": true,
@@ -912,7 +912,7 @@ public partial class VIPCore
     "NoRecoil": {
       "only_with_weapon": "",
       "only_stance": 0,
-      "recoilpercent": 0.0
+      "recoil_percent": 0.0
     },
     "PlayerGlow": {
       "colors": [
@@ -988,7 +988,7 @@ public partial class VIPCore
     "RapidFire": {
       "only_with_weapon": "",
       "only_stance": 0,
-      "firepercent": 2.0
+      "fire_percent": 2.0
     },
     "ReflectDamage": {
       "reflect_percent": 50,
@@ -1000,7 +1000,7 @@ public partial class VIPCore
     },
     "Respawn": {
       "limit": 1,
-      "time": 3
+      "delay": 3
     },
     "Sacrifice": {
       "hp": 25,
@@ -1010,6 +1010,29 @@ public partial class VIPCore
     },
     "SmokeColor": [
       "Mavi #0000FF"
+    ],
+    "SpawnEffect": [
+      {
+        "name": "Simsek",
+        "particle": "particles/ui/status_levels/ui_status_level7_lightning.vpcf",
+        "lifetime": 3,
+        "follow": true,
+        "offset": 0
+      },
+      {
+        "name": "Enerji",
+        "particle": "particles/ui/ui_experience_award_rollingrings.vpcf",
+        "lifetime": 3,
+        "follow": true,
+        "offset": 0
+      },
+      {
+        "name": "Toz Kasirgasi",
+        "particle": "particles/maps/de_dust/dust_devil_smoke.vpcf",
+        "lifetime": 4,
+        "follow": false,
+        "offset": 0
+      }
     ],
     "Tag": {
       "tag": "{Orchid}[{Gold}ULTRA{Orchid}]",
@@ -1032,9 +1055,9 @@ public partial class VIPCore
       "beam_visible": "all",
       "heal": {
         "heal": 2,
-        "tick": 0.5,
+        "interval": 0.5,
         "radius": 180,
-        "beamcolor": "0 255 0",
+        "beam_color": "0 255 0",
         "duration_on": 1,
         "duration_off": 0,
         "ignore_teammates": false,
@@ -1043,9 +1066,9 @@ public partial class VIPCore
       },
       "poison": {
         "damage": 2,
-        "tick": 0.5,
+        "interval": 0.5,
         "radius": 180,
-        "beamcolor": "255 0 255",
+        "beam_color": "255 0 255",
         "duration_on": 1,
         "duration_off": 0,
         "ignore_teammates": true,
@@ -1054,9 +1077,9 @@ public partial class VIPCore
       },
       "slow": {
         "percent": 30,
-        "minspeed": 100,
+        "min_speed": 100,
         "radius": 180,
-        "beamcolor": "0 0 255",
+        "beam_color": "0 0 255",
         "duration_on": 1,
         "duration_off": 0,
         "ignore_teammates": true,
@@ -1065,9 +1088,9 @@ public partial class VIPCore
       },
       "speed": {
         "percent": 30,
-        "maxspeed": 400,
+        "max_speed": 400,
         "radius": 180,
-        "beamcolor": "255 255 0",
+        "beam_color": "255 255 0",
         "duration_on": 1,
         "duration_off": 0,
         "ignore_teammates": false,
@@ -1098,127 +1121,127 @@ public partial class VIPCore
       {
         "name": "Duman",
         "particle": "particles/explosions_fx/explosion_smokegrenade_s1_child_smoke_bottom.vpcf",
-        "time": 6,
+        "lifetime": 6,
         "defuse": false
       },
       {
         "name": "Su Sicramasi",
         "particle": "particles/water_impact/water_splash_02_continuous.vpcf",
-        "time": 4,
+        "lifetime": 4,
         "defuse": false
       },
       {
         "name": "Sis",
         "particle": "particles/ambient_fx/cbbl_movie_fog.vpcf",
-        "time": 8,
+        "lifetime": 8,
         "defuse": false
       },
       {
         "name": "Bomba Ping",
         "particle": "particles/ui/hud/ui_map_bomb_plant_ping.vpcf",
-        "time": 10,
+        "lifetime": 10,
         "defuse": false
       },
       {
         "name": "Ses Patlamasi",
         "particle": "particles/ui/rank_carepackage_recieve.vpcf",
-        "time": 4,
+        "lifetime": 4,
         "defuse": true
       },
       {
         "name": "Ses Portali",
         "particle": "particles/ui/status_levels/ui_status_level_4_energycirc.vpcf",
-        "time": 4,
+        "lifetime": 4,
         "defuse": true
       },
       {
         "name": "Bariyer",
         "particle": "particles/ui/status_levels/ui_status_level_7_energycirc.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "defuse": true
       },
       {
         "name": "Bariyer 2",
         "particle": "particles/ui/status_levels/ui_status_level_8_energycirc.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "defuse": true
       },
       {
         "name": "Kivilcim",
         "particle": "particles/ui/status_levels/ui_status_level_7_sparkles.vpcf",
-        "time": 2,
+        "lifetime": 2,
         "defuse": true
       },
       {
         "name": "Elektrik Flare",
         "particle": "particles/generic_fx/fx_electricspark_flare.vpcf",
-        "time": 1.5,
+        "lifetime": 1.5,
         "defuse": true
       },
       {
         "name": "Kirmizi Isik",
         "particle": "particles/ambient_fx/aircraft_navred.vpcf",
-        "time": 10,
+        "lifetime": 10,
         "defuse": false
       },
       {
         "name": "Yesil Isik",
         "particle": "particles/ambient_fx/aircraft_navgreen.vpcf",
-        "time": 10,
+        "lifetime": 10,
         "defuse": false
       },
       {
         "name": "Baca Dumani",
         "particle": "particles/ambient_fx/ambient_smokestack.vpcf",
-        "time": 8,
+        "lifetime": 8,
         "defuse": false
       },
       {
         "name": "Sandik Dumani",
         "particle": "particles/inventory_items/crate_emission_smoke.vpcf",
-        "time": 8,
+        "lifetime": 8,
         "defuse": false
       },
       {
         "name": "Yildirim",
         "particle": "particles/environment/de_train/train_lightning.vpcf",
-        "time": 4,
+        "lifetime": 4,
         "defuse": false
       },
       {
         "name": "Helikopter Toz",
         "particle": "particles/ambient_fx/copter_land_loop_1.vpcf",
-        "time": 8,
+        "lifetime": 8,
         "defuse": false
       },
       {
         "name": "Toz Patlamasi",
         "particle": "particles/breakable_fx/breakable_dust_expl.vpcf",
-        "time": 2,
+        "lifetime": 2,
         "defuse": true
       },
       {
         "name": "Tavuk Tuyu",
         "particle": "particles/critters/chicken/chicken_gone_feathers.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "defuse": true
       },
       {
         "name": "Alevli Tuy",
         "particle": "particles/critters/chicken/chicken_gone_feathers_fire.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "defuse": true
       },
       {
         "name": "Zombi Tavuk",
         "particle": "particles/critters/chicken/chicken_gone_zombie.vpcf",
-        "time": 3,
+        "lifetime": 3,
         "defuse": true
       },
       {
         "name": "Toz Firtinasi",
         "particle": "particles/inventory_items/crate_impact_smoke.vpcf",
-        "time": 4,
+        "lifetime": 4,
         "defuse": true
       }
     ],
@@ -1230,9 +1253,9 @@ public partial class VIPCore
     },
     "DecoyEffect": {
       "poison": {
-        "minhp": 10,
+        "min_hp": 10,
         "damage": 2,
-        "tick": 0.5,
+        "interval": 0.5,
         "sound_volume": 0.3,
         "radius": 200,
         "ignore_teammates": true,
@@ -1241,7 +1264,7 @@ public partial class VIPCore
       },
       "heal": {
         "heal": 2,
-        "tick": 0.5,
+        "interval": 0.5,
         "sound_volume": 0.5,
         "radius": 200,
         "ignore_teammates": false,
@@ -1251,8 +1274,8 @@ public partial class VIPCore
       },
       "slow": {
         "percent": 30,
-        "minspeed": 100,
-        "tick": 0.1,
+        "min_speed": 100,
+        "interval": 0.1,
         "radius": 200,
         "ignore_teammates": true,
         "ignore_self": true,
@@ -1260,7 +1283,7 @@ public partial class VIPCore
         "limit": 0
       },
       "wallhack": {
-        "tick": 0.25,
+        "interval": 0.25,
         "radius": 200,
         "color": "#612D53",
         "see_teammates": false,
@@ -1268,7 +1291,7 @@ public partial class VIPCore
         "limit": 0
       },
       "radarhack": {
-        "tick": 0.25,
+        "interval": 0.25,
         "radius": 200,
         "see_teammates": false,
         "only_mode": 0,
@@ -1311,7 +1334,7 @@ public partial class VIPCore
       "only_with_weapon": ""
     },
     "FallDamage": {
-      "percent": 0,
+      "damage_percent": 0,
       "limit": 0
     },
     "FortniteArmor": {
@@ -1344,17 +1367,17 @@ public partial class VIPCore
     "HealthRegen": {
       "hp_per_tick": 10,
       "interval": 1,
-      "delay_after_dmg": 2
+      "delay_after_damage": 2
     },
     "HealthshotEffect": {
       "speed": {
         "speed_multiplier": 1.3,
-        "time": 5,
+        "duration": 5,
         "limit": 0
       },
       "strength": {
         "damage_multiplier": 1.25,
-        "time": 5,
+        "duration": 5,
         "radius": 0,
         "ignore_teammates": false,
         "ignore_self": false,
@@ -1363,8 +1386,8 @@ public partial class VIPCore
       },
       "heal": {
         "heal": 2,
-        "time": 5,
-        "tick": 0.5,
+        "duration": 5,
+        "interval": 0.5,
         "sound_volume": 0.5,
         "radius": 200,
         "ignore_teammates": false,
@@ -1373,8 +1396,8 @@ public partial class VIPCore
         "limit": 0
       },
       "wallhack": {
-        "time": 5,
-        "tick": 0.25,
+        "duration": 5,
+        "interval": 0.25,
         "color": "#612D53",
         "radius": 0,
         "see_teammates": false,
@@ -1382,8 +1405,8 @@ public partial class VIPCore
         "limit": 0
       },
       "radarhack": {
-        "time": 5,
-        "tick": 0.25,
+        "duration": 5,
+        "interval": 0.25,
         "radius": 0,
         "see_teammates": false,
         "only_mode": 0,
@@ -1391,34 +1414,34 @@ public partial class VIPCore
       },
       "resist": {
         "percent": 50,
-        "time": 5,
+        "duration": 5,
         "limit": 0
       },
       "godmode": {
-        "time": 3,
+        "duration": 3,
         "limit": 1
       },
       "gravity": {
         "scale": 0.5,
-        "time": 5,
+        "duration": 5,
         "limit": 0
       },
       "infiniteammo": {
-        "time": 5,
+        "duration": 5,
         "limit": 0
       },
       "invisible": {
-        "time": 3,
+        "duration": 3,
         "limit": 1
       },
       "size": {
         "scale": 0.7,
-        "time": 5,
+        "duration": 5,
         "limit": 0
       },
       "norecoil": {
-        "recoilpercent": 0.0,
-        "time": 5,
+        "recoil_percent": 0.0,
+        "duration": 5,
         "limit": 0
       }
     },
@@ -1465,7 +1488,7 @@ public partial class VIPCore
     },
     "Respawn": {
       "limit": 2,
-      "time": 2
+      "delay": 2
     },
     "Ricochet": {
       "bounces": 3,
@@ -1492,13 +1515,13 @@ public partial class VIPCore
     ],
     "SmokeEffect": {
       "poison": {
-        "minhp": 10,
+        "min_hp": 10,
         "damage": 2,
-        "time": 20,
-        "tick": 0.5,
+        "duration": 20,
+        "interval": 0.5,
         "sound_volume": 0.3,
         "radius": 180,
-        "smokecolor": [
+        "smoke_color": [
           255,
           0,
           255
@@ -1509,11 +1532,11 @@ public partial class VIPCore
       },
       "heal": {
         "heal": 2,
-        "time": 20,
-        "tick": 0.5,
+        "duration": 20,
+        "interval": 0.5,
         "sound_volume": 0.5,
         "radius": 180,
-        "smokecolor": [
+        "smoke_color": [
           0,
           255,
           0
@@ -1525,10 +1548,10 @@ public partial class VIPCore
       },
       "slow": {
         "percent": 30,
-        "time": 20,
-        "minspeed": 100,
+        "duration": 20,
+        "min_speed": 100,
         "radius": 180,
-        "smokecolor": [
+        "smoke_color": [
           0,
           0,
           255
@@ -1539,10 +1562,10 @@ public partial class VIPCore
         "limit": 0
       },
       "wallhack": {
-        "time": 20,
-        "tick": 0.25,
+        "duration": 20,
+        "interval": 0.25,
         "radius": 180,
-        "smokecolor": [
+        "smoke_color": [
           97,
           45,
           83
@@ -1568,7 +1591,7 @@ public partial class VIPCore
       "color_steal": "#FF0033"
     },
     "SpawnProtection": {
-      "time": 4,
+      "duration": 4,
       "limit": 0
     },
     "Spy": true,

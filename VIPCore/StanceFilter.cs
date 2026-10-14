@@ -28,12 +28,13 @@ public static class StanceFilter
         if (!walking && !crouching && !jumping && !standing)
             return true;
 
-        bool onGround = ((PlayerFlags)pawn.Flags & PlayerFlags.FL_ONGROUND) != 0;
+        nint handle = pawn.Handle;
+        bool onGround = ((PlayerFlags)PlayerCache.Flags(handle) & PlayerFlags.FL_ONGROUND) != 0;
 
         if (jumping && !onGround)
             return true;
 
-        if (crouching && pawn.MovementServices?.As<CCSPlayer_MovementServices>().DuckAmount > 0.5f)
+        if (crouching && PlayerCache.DuckAmount(handle) > 0.5f)
             return true;
 
         if (!walking && !standing)
@@ -42,16 +43,8 @@ public static class StanceFilter
         if (!onGround)
             return false;
 
-        bool moving = Speed(pawn) >= MoveSpeed;
+        var velocity = PlayerCache.Velocity(handle);
+        bool moving = velocity.X * velocity.X + velocity.Y * velocity.Y >= MoveSpeed * MoveSpeed;
         return moving ? walking : standing;
-    }
-
-    private static float Speed(CCSPlayerPawn pawn)
-    {
-        var velocity = pawn.AbsVelocity;
-        if (velocity == null)
-            return 0f;
-
-        return MathF.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y);
     }
 }

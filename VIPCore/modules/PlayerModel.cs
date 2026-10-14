@@ -1,6 +1,7 @@
 using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 
 namespace VIPCore;
@@ -19,6 +20,7 @@ public class PlayerModel : VipModule
     {
         public List<ModelDef> Ct { get; set; } = new();
         public List<ModelDef> T { get; set; } = new();
+        public float DeathDelay { get; set; } = DeathClock.SafeDelay;
     }
 
     private static PlayerModel? _instance;
@@ -54,6 +56,7 @@ public class PlayerModel : VipModule
     {
         _instance = this;
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
+        DeathClock.Ensure(Core);
         Core.HookPrecache(manifest =>
         {
             foreach (var cfg in Core.GetAllGroupValues<Cfg>(Name))
@@ -69,14 +72,22 @@ public class PlayerModel : VipModule
         });
     }
 
+    public override void OnSelect(CCSPlayerController player, string value) => Server.NextFrame(() => Apply(player));
+
     private HookResult OnSpawn(EventPlayerSpawn ev, GameEventInfo info)
     {
         var player = ev.Userid;
         if (player != null && player.IsValid && player.Slot < 64)
             _legHidden[player.Slot] = false;
 
-        if (!Active(player))
-            return HookResult.Continue;
+        Server.NextFrame(() => Apply(player));
+        return HookResult.Continue;
+    }
+
+    private void Apply(CCSPlayerController? player)
+    {
+        if (!Active(player) || !IsAlive(player))
+            return;
 
         string category = player!.Team switch
         {
@@ -85,38 +96,41 @@ public class PlayerModel : VipModule
             _ => ""
         };
         if (category.Length == 0)
-            return HookResult.Continue;
+            return;
 
         string selection = CategorySetting(player, category);
         if (selection == "off")
-            return HookResult.Continue;
+            return;
 
         var cfg = GroupValue<Cfg>(player) ?? new Cfg();
         var list = category == "ct" ? cfg.Ct : cfg.T;
         var def = list.FirstOrDefault(m => m.Name == selection);
         if (def == null || def.Model.Length == 0)
-            return HookResult.Continue;
+            return;
 
-        Server.NextFrame(() =>
+        var pawn = PlayerCache.Pawn(player);
+        if (pawn == null || !pawn.IsValid)
+            return;
+
+        float wait = DeathClock.Wait(player, cfg.DeathDelay);
+        if (wait > 0f)
         {
-            if (!IsAlive(player))
-                return;
+            Core.AddTimer(wait, () => Apply(player), TimerFlags.STOP_ON_MAPCHANGE);
+            return;
+        }
 
-            var pawn = player.PlayerPawn.Value;
-            if (pawn == null || !pawn.IsValid)
-                return;
+        if (Spy.Disguised(player.Slot))
+            return;
 
+        if (pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.ModelState.ModelName != def.Model)
             pawn.SetModel(def.Model);
 
-            if (!def.Leg)
-            {
-                _legHidden[player.Slot] = true;
-                var render = pawn.Render;
-                pawn.Render = Color.FromArgb(InvisPool.Alpha(player.Slot), render.R, render.G, render.B);
-                Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
-            }
-        });
-
-        return HookResult.Continue;
+        if (_legHidden[player.Slot] == def.Leg)
+        {
+            _legHidden[player.Slot] = !def.Leg;
+            var render = pawn.Render;
+            pawn.Render = Color.FromArgb(InvisPool.Alpha(player.Slot), render.R, render.G, render.B);
+            NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
+        }
     }
 }

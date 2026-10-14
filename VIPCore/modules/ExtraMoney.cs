@@ -44,7 +44,7 @@ public class ExtraMoney : VipModule
                 return;
 
             money.Account = target;
-            Utilities.SetStateChanged(player, "CCSPlayerController", "m_pInGameMoneyServices");
+            NetState.Changed(player, "CCSPlayerController", "m_pInGameMoneyServices");
         });
 
         return HookResult.Continue;

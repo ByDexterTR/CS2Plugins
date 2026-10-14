@@ -30,7 +30,7 @@ public class FlashDuration : VipModule
         if (victim == null || !victim.IsValid)
             return HookResult.Continue;
 
-        var pawn = victim.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(victim);
         if (pawn == null || !pawn.IsValid || pawn.FlashDuration <= 0f)
             return HookResult.Continue;
 

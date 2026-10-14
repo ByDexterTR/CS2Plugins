@@ -102,7 +102,7 @@ public static class ParticleTrail
             return null;
 
         var start = new Vector(origin.X, origin.Y, origin.Z + offsetZ);
-        var particle = Create(entry, start, new QAngle(), hideModule, ownerSlot);
+        var particle = Create(entry, start, TrailBeam.ZeroAngle, hideModule, ownerSlot);
         if (particle == null)
             return null;
 
@@ -122,7 +122,7 @@ public static class ParticleTrail
             return null;
 
         var start = new Vector(origin.X, origin.Y, origin.Z + offsetZ);
-        var particle = Create(entry, start, new QAngle(), hideModule, ownerSlot);
+        var particle = Create(entry, start, TrailBeam.ZeroAngle, hideModule, ownerSlot);
         if (particle == null)
             return null;
 
@@ -171,7 +171,7 @@ public static class ParticleTrail
 
         particle.EffectName = entry.File;
         particle.StartActive = true;
-        particle.Teleport(start, angles, new Vector());
+        particle.Teleport(start, angles, TrailBeam.ZeroVector);
 
         if (entry.Tint.Length > 0)
         {

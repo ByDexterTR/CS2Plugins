@@ -57,11 +57,38 @@ public abstract class VipModule
 
     protected bool IsCurrent => ReferenceEquals(Core, VIPCore.Current);
 
-    protected bool Active(CCSPlayerController? player) => IsCurrent && player != null && Core.IsActive(player, Name);
+    protected bool Active([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] CCSPlayerController? player) => IsCurrent && player != null && Core.IsActive(player, Name);
     protected bool Granted(CCSPlayerController? player) => player != null && Core.IsGranted(player, Name);
-    protected string Setting(CCSPlayerController player) => Core.GetSetting(player.SteamID, Name);
-    protected string CategorySetting(CCSPlayerController player, string category) => Core.GetSetting(player.SteamID, $"{Name}@{category}");
-    protected T? GroupValue<T>(CCSPlayerController player) => Core.GetGroupValue<T>(player, Name);
+    protected string Setting(CCSPlayerController player) => Core.GetSetting(Core.ClientSteamId(player), Name);
+    protected string CategorySetting(CCSPlayerController player, string category) => Core.GetSetting(Core.ClientSteamId(player), $"{Name}@{category}");
+    private struct GroupSlot
+    {
+        public string? Group;
+        public Type? Type;
+        public int Version;
+        public object? Value;
+    }
+
+    private readonly GroupSlot[] _groupSlots = new GroupSlot[64];
+
+    protected T? GroupValue<T>(CCSPlayerController player)
+    {
+        int slot = player.Slot;
+        if ((uint)slot >= 64)
+            return Core.GetGroupValue<T>(player, Name);
+
+        string? group = Core.GetClientGroup(player);
+        if (group == null)
+            return default;
+
+        ref var cached = ref _groupSlots[slot];
+        if (ReferenceEquals(cached.Group, group) && cached.Type == typeof(T) && cached.Version == Core.GroupVersion)
+            return (T?)cached.Value;
+
+        var value = Core.GetGroupValue<T>(player, Name);
+        cached = new GroupSlot { Group = group, Type = typeof(T), Version = Core.GroupVersion, Value = value };
+        return value;
+    }
     protected IReadOnlyList<CCSPlayerController> ActivePlayers() => Core.ActivePlayers(Name);
 
     public static bool Allowed(CCSPlayerController? player, string? required, string? team) =>
@@ -120,27 +147,16 @@ public abstract class VipModule
     }
 
     protected static bool IsAlive(CCSPlayerController? p) =>
-        p != null && p.IsValid && p.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
+        PlayerCache.Alive(p);
 
-    protected static string? ActiveWeaponName(CCSPlayerController p)
-    {
-        var weapon = p.PlayerPawn.Value?.WeaponServices?.ActiveWeapon?.Value;
-        if (weapon == null || !weapon.IsValid || string.IsNullOrEmpty(weapon.DesignerName))
-            return null;
-
-        int itemDef = 0;
-        try { itemDef = weapon.AttributeManager.Item.ItemDefinitionIndex; }
-        catch { }
-
-        return WeaponUtil.NormalizeWeaponName(weapon.DesignerName, itemDef);
-    }
+    protected static string? ActiveWeaponName(CCSPlayerController p) => PlayerCache.ActiveWeaponName(p);
 
     protected static bool HasWeapon(CCSPlayerController? p, string designerName) =>
         CountWeapon(p, designerName) > 0;
 
     protected static int CountWeapon(CCSPlayerController? p, string designerName)
     {
-        var weapons = p?.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+        var weapons = PlayerCache.Pawn(p)?.WeaponServices?.MyWeapons;
         if (weapons == null)
             return 0;
 
@@ -167,7 +183,10 @@ public abstract class VipModule
         }
     }
 
-    protected static CCSPlayerController? PawnController(CEntityInstance? ent)
+    protected CCSPlayerController? DamageVictim(CEntityInstance entity) => Core.DamageVictim(entity);
+    protected CCSPlayerController? DamageAttacker(CTakeDamageInfo info) => Core.DamageAttacker(info);
+
+    public static CCSPlayerController? PawnController(CEntityInstance? ent)
     {
         if (ent == null || !ent.IsValid || ent.DesignerName != "player")
             return null;

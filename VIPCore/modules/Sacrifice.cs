@@ -41,7 +41,7 @@ public class Sacrifice : VipModule
             if (mate == null || !mate.IsValid || mate.Slot == slot || mate.Team != team || !IsAlive(mate))
                 continue;
 
-            var pawn = mate.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(mate);
             if (pawn == null || !pawn.IsValid)
                 continue;
 
@@ -50,8 +50,7 @@ public class Sacrifice : VipModule
                 int maxHp = pawn.MaxHealth > 0 ? pawn.MaxHealth : 100;
                 if (pawn.Health < maxHp)
                 {
-                    pawn.Health = Math.Min(pawn.Health + cfg.Hp, maxHp);
-                    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+                    Health.Set(pawn, Math.Min(pawn.Health + cfg.Hp, maxHp));
                 }
             }
 
@@ -60,7 +59,7 @@ public class Sacrifice : VipModule
                 int newArmor = Math.Min(pawn.ArmorValue + Math.Max(cfg.Armor, 0), 100);
                 mate.GiveNamedItem(cfg.Helmet ? "item_assaultsuit" : "item_kevlar");
                 pawn.ArmorValue = newArmor;
-                Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+                NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
             }
 
             foreach (var weapon in cfg.Give)

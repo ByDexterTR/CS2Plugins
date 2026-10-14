@@ -85,7 +85,7 @@ public class PlayerParticle : VipModule
         if (entry == null || entry.Particle.Length == 0)
             return;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return;
 

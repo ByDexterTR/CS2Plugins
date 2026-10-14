@@ -1,6 +1,7 @@
 using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Memory;
 
 namespace VIPCore;
@@ -10,7 +11,7 @@ public static class GlowPool
     public const string DefaultColor = "#612D53";
 
     private static VIPCore? _owner;
-    private static readonly (uint Glow, uint Relay)?[] _entities = new (uint, uint)?[64];
+    private static readonly (uint Glow, uint Relay, uint GlowHandle)?[] _entities = new (uint, uint, uint)?[64];
     private static readonly Color[] _colors = new Color[64];
     private static readonly ulong[] _visible = new ulong[64];
     private static int _users;
@@ -25,7 +26,7 @@ public static class GlowPool
             _glowOffsets[field] = offset;
         }
 
-        Utilities.SetStateChanged(entity, "CBaseModelEntity", "m_Glow", offset);
+        NetState.Changed(entity, "CBaseModelEntity", "m_Glow", offset);
     }
 
     public static void ApplyColor(CDynamicProp glow, Color color)
@@ -108,37 +109,34 @@ public static class GlowPool
             return;
         _builtAt = tick;
 
-        foreach (var player in core.Players)
+        ulong alive = 0;
+        foreach (ref readonly var target in PlayerCache.AlivePlayers(core.Players))
         {
-            if (player == null || !player.IsValid || player.Slot >= 64)
+            if (target.Team < 2)
                 continue;
 
-            int slot = player.Slot;
-            bool alive = player.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
-
-            if (!alive || player.TeamNum < 2)
-            {
-                if (_entities[slot] != null)
-                    Destroy(slot);
-                continue;
-            }
+            int slot = target.Slot;
+            alive |= 1UL << slot;
 
             if (_entities[slot] is { } handles)
             {
-                var existing = Utilities.GetEntityFromIndex<CDynamicProp>((int)handles.Glow);
-                if (existing != null && existing.IsValid)
+                if (EntitySystem.GetEntityByHandle(handles.GlowHandle) != null)
                     continue;
                 _entities[slot] = null;
             }
 
-            _entities[slot] = Create(player);
+            _entities[slot] = Create(target.Player);
             _colors[slot] = _entities[slot] != null ? TrailBeam.Resolve(DefaultColor) : default;
         }
+
+        for (int slot = 0; slot < 64; slot++)
+            if (_entities[slot] != null && (alive & (1UL << slot)) == 0)
+                Destroy(slot);
     }
 
-    private static (uint, uint)? Create(CCSPlayerController player)
+    private static (uint, uint, uint)? Create(CCSPlayerController player)
     {
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return null;
 
@@ -178,7 +176,7 @@ public static class GlowPool
         relay.AcceptInput("FollowEntity", pawn, relay, "!activator");
         glow.AcceptInput("FollowEntity", relay, glow, "!activator");
 
-        return (glow.Index, relay.Index);
+        return (glow.Index, relay.Index, glow.EntityHandle.Raw);
     }
 
     private static void Destroy(int slot)
@@ -207,13 +205,14 @@ public static class GlowPool
         _builtAt = -1;
     }
 
-    private static void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private static void OnCheckTransmit(ReadOnlySpan<TransmitView> views)
     {
         if (_users <= 0)
             return;
 
-        foreach (var (info, viewer) in infoList)
+        foreach (var view in views)
         {
+            var viewer = view.Viewer;
             if (viewer == null || !viewer.IsValid || viewer.Slot >= 64)
                 continue;
 
@@ -226,8 +225,8 @@ public static class GlowPool
                 if (target != viewer.Slot && (mask & (1UL << target)) != 0)
                     continue;
 
-                Transmit.Hide(info, handles.Glow);
-                Transmit.Hide(info, handles.Relay);
+                view.Hide(handles.Glow);
+                view.Hide(handles.Relay);
             }
         }
 

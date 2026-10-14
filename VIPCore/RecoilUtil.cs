@@ -52,12 +52,12 @@ public static class RecoilUtil
         if (player == null || !player.IsValid)
             return HookResult.Continue;
 
-        var pawn = player.PlayerPawn.Value;
-        var weapon = pawn?.WeaponServices?.ActiveWeapon.Value;
-        if (pawn == null || !pawn.IsValid || weapon == null || !weapon.IsValid)
+        var pawn = PlayerCache.Pawn(player);
+        var weapon = PlayerCache.ActiveWeapon(player);
+        if (pawn == null || weapon == null)
             return HookResult.Continue;
 
-        string name = weapon.DesignerName;
+        string? name = PlayerCache.ActiveWeaponDesigner(player);
         if (string.IsNullOrEmpty(name) || name.Contains("knife") || name.Contains("bayonet") || name.Contains("c4"))
             return HookResult.Continue;
 
@@ -91,55 +91,57 @@ public static class RecoilUtil
         if (pawn.ShotsFired != shots)
         {
             pawn.ShotsFired = shots;
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_iShotsFired");
+            NetState.Changed(pawn, "CCSPlayerPawn", "m_iShotsFired");
         }
 
         var csWeapon = weapon.As<CCSWeaponBase>();
         if (csWeapon.FlRecoilIndex > spray.Accum)
         {
             csWeapon.FlRecoilIndex = spray.Accum;
-            Utilities.SetStateChanged(weapon, "CCSWeaponBase", "m_flRecoilIndex");
+            NetState.Changed(weapon, "CCSWeaponBase", "m_flRecoilIndex");
         }
 
         if (csWeapon.IRecoilIndex > shots)
         {
             csWeapon.IRecoilIndex = shots;
-            Utilities.SetStateChanged(weapon, "CCSWeaponBase", "m_iRecoilIndex");
+            NetState.Changed(weapon, "CCSWeaponBase", "m_iRecoilIndex");
         }
 
         if (csWeapon.AccuracyPenalty > 0f)
         {
             csWeapon.AccuracyPenalty *= keep;
-            Utilities.SetStateChanged(weapon, "CCSWeaponBase", "m_fAccuracyPenalty");
+            NetState.Changed(weapon, "CCSWeaponBase", "m_fAccuracyPenalty");
         }
 
         if (csWeapon.TurningInaccuracy > 0f)
         {
             csWeapon.TurningInaccuracy *= keep;
-            Utilities.SetStateChanged(weapon, "CCSWeaponBase", "m_flTurningInaccuracy");
+            NetState.Changed(weapon, "CCSWeaponBase", "m_flTurningInaccuracy");
         }
 
         var aim = pawn.AimPunchServices;
         if (aim != null)
         {
-            Scale(aim.PredictableBaseAngle, keep);
-            Scale(aim.PredictableBaseAngleVel, keep);
-            Scale(aim.UnpredictableBaseAngle, keep);
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_pAimPunchServices");
+            bool changed = Scale(aim.PredictableBaseAngle, keep);
+            changed |= Scale(aim.PredictableBaseAngleVel, keep);
+            changed |= Scale(aim.UnpredictableBaseAngle, keep);
+            if (changed)
+                NetState.Changed(pawn, "CCSPlayerPawn", "m_pAimPunchServices");
         }
 
         var camera = pawn.CameraServices;
-        if (camera != null)
-        {
-            Scale(camera.CsViewPunchAngle, keep);
-            Utilities.SetStateChanged(pawn, "CBasePlayerPawn", "m_pCameraServices");
-        }
+        if (camera != null && Scale(camera.CsViewPunchAngle, keep))
+            NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
     }
 
-    private static void Scale(QAngle angle, float keep)
+    private static bool Scale(QAngle angle, float keep)
     {
+        if (angle.X == 0f && angle.Y == 0f && angle.Z == 0f)
+            return false;
+
         angle.X *= keep;
         angle.Y *= keep;
         angle.Z *= keep;
+        return true;
     }
 }

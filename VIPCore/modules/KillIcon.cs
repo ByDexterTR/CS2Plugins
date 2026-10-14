@@ -104,7 +104,7 @@ public class KillIcon : VipModule
 
     private static bool InAir(CCSPlayerController attacker)
     {
-        var pawn = attacker.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(attacker);
         return pawn != null && pawn.IsValid && (pawn.Flags & (1u << 0)) == 0;
     }
 

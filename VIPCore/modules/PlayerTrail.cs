@@ -14,7 +14,11 @@ public class PlayerTrail : VipModule
         public List<ParticleEntry> Particles { get; set; } = new();
     }
 
-    private readonly Vector[] _last = new Vector[64];
+    private const float MinSegment = 12f;
+    private static readonly Cfg DefaultCfg = new();
+    private readonly System.Numerics.Vector3[] _last = new System.Numerics.Vector3[64];
+    private readonly Vector _from = new();
+    private readonly Vector _to = new();
     private readonly CParticleSystem?[] _active = new CParticleSystem?[64];
     private readonly float[] _carried = new float[64];
 
@@ -32,9 +36,6 @@ public class PlayerTrail : VipModule
 
     public override void OnLoad()
     {
-        for (int i = 0; i < 64; i++)
-            _last[i] = new Vector(0, 0, 0);
-
         EffectHide.Ensure(Core);
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
@@ -63,7 +64,7 @@ public class PlayerTrail : VipModule
         int slot = player?.Slot ?? -1;
         if (slot >= 0 && slot < 64)
         {
-            _last[slot].X = _last[slot].Y = _last[slot].Z = 0;
+            _last[slot] = System.Numerics.Vector3.Zero;
             Remove(slot);
         }
 
@@ -97,7 +98,7 @@ public class PlayerTrail : VipModule
         if (entry == null || !entry.Follow)
             return;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return;
 
@@ -111,8 +112,7 @@ public class PlayerTrail : VipModule
         foreach (var player in ActivePlayers())
         {
             int slot = player.Slot;
-            var origin = player.PlayerPawn.Value?.AbsOrigin;
-            if (origin == null)
+            if (!PlayerCache.Origin(PlayerCache.Pointer(player), out var origin))
                 continue;
 
             var carried = _active[slot];
@@ -124,25 +124,28 @@ public class PlayerTrail : VipModule
                     continue;
                 }
 
-                carried.Teleport(new Vector(origin.X, origin.Y, origin.Z + _carried[slot]), new QAngle(), new Vector());
+                _from.X = origin.X;
+                _from.Y = origin.Y;
+                _from.Z = origin.Z + _carried[slot];
+                carried.Teleport(_from, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
                 continue;
             }
 
-            var last = _last[slot];
-            if (last.LengthSqr() == 0)
+            ref var last = ref _last[slot];
+            if (last == System.Numerics.Vector3.Zero)
             {
-                last.X = origin.X; last.Y = origin.Y; last.Z = origin.Z;
+                last = origin;
                 continue;
             }
 
-            float dist = TrailBeam.Distance(last, origin);
-            if (dist <= 5)
+            float dist = System.Numerics.Vector3.Distance(last, origin);
+            if (dist < MinSegment)
                 continue;
 
             if (dist < 250)
             {
                 string setting = Setting(player);
-                var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+                var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
                 var entry = ParticleTrail.Find(cfg.Particles, setting, player);
 
                 if (entry != null)
@@ -154,11 +157,13 @@ public class PlayerTrail : VipModule
                 else if (!ParticleTrail.IsParticle(setting))
                 {
                     var color = TrailBeam.IsRandom(setting) ? Core.RoundColor(slot) : TrailBeam.Resolve(setting);
-                    TrailBeam.Create(Core, origin, last, color, cfg.Width, cfg.Lifetime, EffectHide.PlayerTrail, slot);
+                    _from.X = origin.X; _from.Y = origin.Y; _from.Z = origin.Z;
+                    _to.X = last.X; _to.Y = last.Y; _to.Z = last.Z;
+                    TrailBeam.Create(Core, _from, _to, color, cfg.Width, cfg.Lifetime, EffectHide.PlayerTrail, slot);
                 }
             }
 
-            last.X = origin.X; last.Y = origin.Y; last.Z = origin.Z;
+            last = origin;
         }
     }
 }

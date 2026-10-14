@@ -49,7 +49,7 @@ public class ExtraSpeed : VipModule
             if (cached == null)
                 continue;
 
-            var player = Utilities.GetPlayerFromSlot(slot);
+            var player = Core.PlayerAt(slot);
             if (!IsAlive(player) || !Active(player))
                 continue;
 

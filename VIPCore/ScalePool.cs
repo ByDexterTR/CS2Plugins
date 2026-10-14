@@ -61,7 +61,7 @@ public static class ScalePool
 
         _scale[slot, source] = 0f;
 
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(slot));
         if (pawn != null && pawn.IsValid)
             PlayerSize.Set(pawn, Top(slot));
     }
@@ -99,7 +99,7 @@ public static class ScalePool
 
         Drop(slot);
 
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(slot));
         if (pawn != null && pawn.IsValid)
             PlayerSize.Set(pawn, _base[slot]);
     }

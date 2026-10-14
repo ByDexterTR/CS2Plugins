@@ -102,8 +102,8 @@ public class Ricochet : VipModule
         if (!Active(player) || !IsAlive(player))
             return HookResult.Continue;
 
-        var pawn = player!.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
+        var pawn = PlayerCache.Pawn(player);
+        if (pawn == null || !PlayerCache.Origin(PlayerCache.Pointer(player), out var origin))
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
@@ -115,7 +115,7 @@ public class Ricochet : VipModule
         if (!ConsumeBudget(player.Slot, Math.Max(cfg.MaxImpactsPerTick, 1)))
             return HookResult.Continue;
 
-        var eye = new Vector3(pawn.AbsOrigin.X, pawn.AbsOrigin.Y, pawn.AbsOrigin.Z + pawn.ViewOffset.Z);
+        var eye = new Vector3(origin.X, origin.Y, origin.Z + pawn.ViewOffset.Z);
         var impact = new Vector3(ev.X, ev.Y, ev.Z);
 
         var toImpact = impact - eye;
@@ -218,7 +218,7 @@ public class Ricochet : VipModule
 
     private void DealDamage(CCSPlayerController attacker, CCSPlayerController victim, float damage, Cfg cfg, string weapon)
     {
-        var pawn = victim.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(victim);
         if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
             return;
 
@@ -232,13 +232,12 @@ public class Ricochet : VipModule
         int health = pawn.Health - final;
         if (health > 0)
         {
-            pawn.Health = health;
-            Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+            Health.Set(pawn, health);
             return;
         }
 
         pawn.Health = 0;
-        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
 
         KillCredit.Register(victim.Slot, attacker.Slot, weapon);
         pawn.CommitSuicide(false, true);
@@ -255,25 +254,32 @@ public class Ricochet : VipModule
         float bestFraction = 1f;
         float radius = Math.Clamp(cfg.HitRadius, 1f, 128f);
 
-        foreach (var target in Core.Players)
+        nint shooterPawn = PlayerCache.Pointer(shooter);
+        byte shooterTeam = shooterPawn == 0 ? (byte)0 : PlayerCache.Team(shooterPawn);
+        var low = Vector3.Min(start, end) - new Vector3(radius, radius, radius + 96f);
+        var high = Vector3.Max(start, end) + new Vector3(radius, radius, radius);
+
+        foreach (ref readonly var target in PlayerCache.AlivePlayers(Core.Players))
         {
-            if (target == null || !target.IsValid || target.Slot == shooter.Slot || !IsAlive(target))
+            if (target.Slot == shooter.Slot || (cfg.IgnoreTeammates && target.Team == shooterTeam))
                 continue;
-            if (cfg.IgnoreTeammates && target.Team == shooter.Team)
+            if (!PlayerCache.Origin(target.Pawn, out var origin))
                 continue;
-
-            var pawn = target.PlayerPawn.Value;
-            if (pawn?.AbsOrigin == null)
+            if (origin.X < low.X || origin.Y < low.Y || origin.Z < low.Z || origin.X > high.X || origin.Y > high.Y || origin.Z > high.Z)
                 continue;
 
-            var feet = new Vector3(pawn.AbsOrigin.X, pawn.AbsOrigin.Y, pawn.AbsOrigin.Z + 4f);
-            var head = new Vector3(feet.X, feet.Y, pawn.AbsOrigin.Z + pawn.ViewOffset.Z + 8f);
+            var pawn = PlayerCache.Pawn(target.Player);
+            if (pawn == null)
+                continue;
+
+            var feet = new Vector3(origin.X, origin.Y, origin.Z + 4f);
+            var head = new Vector3(feet.X, feet.Y, origin.Z + pawn.ViewOffset.Z + 8f);
 
             if (!SegmentHitsCapsule(start, end, feet, head, radius, out float fraction) || fraction >= bestFraction)
                 continue;
 
             bestFraction = fraction;
-            best = target;
+            best = target.Player;
         }
 
         if (best != null)
@@ -362,6 +368,8 @@ public class Ricochet : VipModule
             flight.Beam.EmitSound(BounceSound, volume: flight.Volume);
     }
 
+    private readonly Vector _tail = new();
+
     private void Draw(Flight flight, Vector3 tail, Vector3 head)
     {
         var beam = flight.Beam;
@@ -375,12 +383,16 @@ public class Ricochet : VipModule
         if (beam == null)
             return;
 
-        beam.Teleport(new Vector(tail.X, tail.Y, tail.Z), new CounterStrikeSharp.API.Modules.Utils.QAngle(), new Vector());
+        _tail.X = tail.X;
+        _tail.Y = tail.Y;
+        _tail.Z = tail.Z;
+        beam.Teleport(_tail, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
 
-        beam.EndPos.X = head.X;
-        beam.EndPos.Y = head.Y;
-        beam.EndPos.Z = head.Z;
-        Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+        var endPos = beam.EndPos;
+        endPos.X = head.X;
+        endPos.Y = head.Y;
+        endPos.Z = head.Z;
+        NetState.Changed(beam, "CBeam", "m_vecEndPos");
     }
 
     private CEnvBeam? Acquire(Flight flight)
@@ -419,11 +431,11 @@ public class Ricochet : VipModule
     {
         beam.Width = flight.Width;
         beam.EndWidth = flight.Width;
-        Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
-        Utilities.SetStateChanged(beam, "CBeam", "m_fEndWidth");
+        NetState.Changed(beam, "CBeam", "m_fWidth");
+        NetState.Changed(beam, "CBeam", "m_fEndWidth");
 
         beam.Render = flight.Color;
-        Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(beam, "CBaseModelEntity", "m_clrRender");
     }
 
     private void Release(Flight flight)
@@ -442,11 +454,11 @@ public class Ricochet : VipModule
     {
         beam.Width = 0f;
         beam.EndWidth = 0f;
-        Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
-        Utilities.SetStateChanged(beam, "CBeam", "m_fEndWidth");
+        NetState.Changed(beam, "CBeam", "m_fWidth");
+        NetState.Changed(beam, "CBeam", "m_fEndWidth");
 
         beam.Render = Color.FromArgb(0, 0, 0, 0);
-        Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(beam, "CBaseModelEntity", "m_clrRender");
 
         if (beam.AbsOrigin == null)
             return;
@@ -454,7 +466,7 @@ public class Ricochet : VipModule
         beam.EndPos.X = beam.AbsOrigin.X;
         beam.EndPos.Y = beam.AbsOrigin.Y;
         beam.EndPos.Z = beam.AbsOrigin.Z;
-        Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+        NetState.Changed(beam, "CBeam", "m_vecEndPos");
     }
 
     private void WarnOnce()

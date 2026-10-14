@@ -10,7 +10,7 @@ public class Mole : VipModule
 {
     private class Cfg
     {
-        public float Time { get; set; } = 2.5f;
+        public float Duration { get; set; } = 2.5f;
         public float Unit { get; set; } = 30f;
         public string OnlyWithWeapon { get; set; } = "";
         public bool IgnoreTeammates { get; set; } = true;
@@ -80,7 +80,7 @@ public class Mole : VipModule
         if (LimitReached(attacker.Slot, cfg.Limit))
             return HookResult.Continue;
 
-        var pawn = victim.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(victim);
         var origin = pawn?.AbsOrigin;
         if (pawn == null || !pawn.IsValid || origin == null)
             return HookResult.Continue;
@@ -95,7 +95,7 @@ public class Mole : VipModule
         int round = _round;
         int userId = victim.UserId ?? -1;
 
-        Core.AddTimer(Math.Max(cfg.Time, 0.1f), () =>
+        Core.AddTimer(Math.Max(cfg.Duration, 0.1f), () =>
         {
             if (round != _round || userId < 0)
                 return;
@@ -106,7 +106,7 @@ public class Mole : VipModule
 
             _buried[p.Slot] = false;
 
-            var pw = p.PlayerPawn.Value;
+            var pw = PlayerCache.Pawn(p);
             if (pw == null || !pw.IsValid || !IsAlive(p))
                 return;
 
@@ -121,6 +121,6 @@ public class Mole : VipModule
     {
         pawn.MoveType = freeze ? MoveType_t.MOVETYPE_NONE : MoveType_t.MOVETYPE_WALK;
         Schema.SetSchemaValue(pawn.Handle, "CBaseEntity", "m_nActualMoveType", freeze ? 0 : 2);
-        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_MoveType");
+        NetState.Changed(pawn, "CBaseEntity", "m_MoveType");
     }
 }

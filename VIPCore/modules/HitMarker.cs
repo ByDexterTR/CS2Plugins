@@ -107,7 +107,7 @@ public class HitMarker : VipModule
         if (slot < 0 || slot >= 64)
             return;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
             return;
 
@@ -194,7 +194,7 @@ public class HitMarker : VipModule
                 continue;
             }
 
-            var pawn = live.Owner.IsValid ? live.Owner.PlayerPawn.Value : null;
+            var pawn = live.Owner.IsValid ? PlayerCache.Pawn(live.Owner) : null;
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                 continue;
 
@@ -222,20 +222,21 @@ public class HitMarker : VipModule
         ParticleTrail.Stop(live.Particle);
     }
 
-    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit(ReadOnlySpan<TransmitView> views)
     {
         if (_viewers.Count == 0)
             return;
 
-        foreach (var (info, viewer) in infoList)
+        foreach (var view in views)
         {
+            var viewer = view.Viewer;
             if (viewer == null || !viewer.IsValid || viewer.Slot >= 64)
                 continue;
 
             ulong bit = 1UL << viewer.Slot;
             foreach (var (index, mask) in _viewers)
                 if ((mask & bit) == 0)
-                    Transmit.Hide(info, index);
+                    view.Hide(index);
         }
     }
 }

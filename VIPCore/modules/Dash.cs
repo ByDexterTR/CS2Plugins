@@ -23,6 +23,7 @@ public class Dash : VipModule
 
     private const string JumpSound = "Default.WalkJump";
 
+    private static readonly Cfg DefaultCfg = new();
     private readonly State?[] _states = new State?[64];
     private static readonly int[] _dashTick = CreateTickBuffer();
 
@@ -54,23 +55,22 @@ public class Dash : VipModule
 
     private void OnTick()
     {
+        int tick = Server.TickCount;
         foreach (var player in ActivePlayers())
         {
-
-            var pawn = player.PlayerPawn.Value;
-            if (pawn == null || !pawn.IsValid)
+            nint pawn = PlayerCache.Pointer(player);
+            if (pawn == 0)
                 continue;
 
             int slot = player.Slot;
             var state = _states[slot] ??= new State();
 
-            if (!TryGetButtons(player, out var buttons))
+            if (!PlayerCache.Buttons(pawn, out ulong raw, out ulong queued))
                 continue;
 
-            bool jumpPressed = (buttons & PlayerButtons.Jump) != 0
-                || ((pawn.MovementServices?.QueuedButtonChangeMask ?? 0) & (ulong)PlayerButtons.Jump) != 0;
-
-            bool isOnGround = pawn.GroundEntity?.Value != null;
+            var buttons = (PlayerButtons)raw;
+            bool jumpPressed = (buttons & PlayerButtons.Jump) != 0 || (queued & (ulong)PlayerButtons.Jump) != 0;
+            bool isOnGround = PlayerCache.OnGroundEntity(pawn);
 
             if (state.WasOnGround && !isOnGround && jumpPressed)
                 state.Dashed = false;
@@ -78,12 +78,12 @@ public class Dash : VipModule
                 state.Dashed = false;
             else if (!isOnGround && jumpPressed && !state.Dashed)
             {
-                var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+                var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
                 if (state.JumpReleasedTicks >= 3 && (cfg.Limit <= 0 || state.Used < cfg.Limit))
                 {
                     state.Dashed = true;
                     state.Used++;
-                    _dashTick[slot] = Server.TickCount;
+                    _dashTick[slot] = tick;
 
                     float moveX = 0f;
                     float moveY = 0f;
@@ -97,17 +97,15 @@ public class Dash : VipModule
                         moveY = 1f;
 
                     float moveAngle = MathF.Atan2(moveX, moveY) * (180f / MathF.PI);
-                    var dashAngles = new QAngle(0, pawn.EyeAngles.Y + moveAngle, 0);
+                    float yaw = (PlayerCache.EyeAngles(pawn).Y + moveAngle) * (MathF.PI / 180f);
 
-                    var forward = new Vector();
-                    NativeAPI.AngleVectors(dashAngles.Handle, forward.Handle, 0, 0);
-
-                    pawn.AbsVelocity.X = forward.X * cfg.Unit;
-                    pawn.AbsVelocity.Y = forward.Y * cfg.Unit;
-                    pawn.AbsVelocity.Z = Math.Max(pawn.AbsVelocity.Z, 150f);
+                    ref var velocity = ref PlayerCache.Velocity(pawn);
+                    velocity.X = MathF.Cos(yaw) * cfg.Unit;
+                    velocity.Y = MathF.Sin(yaw) * cfg.Unit;
+                    velocity.Z = Math.Max(velocity.Z, 150f);
 
                     if (cfg.SoundVolume > 0f)
-                        pawn.EmitSound(JumpSound, volume: cfg.SoundVolume);
+                        PlayerCache.Pawn(player)?.EmitSound(JumpSound, volume: cfg.SoundVolume);
                 }
             }
 

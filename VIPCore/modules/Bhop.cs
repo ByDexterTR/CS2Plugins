@@ -14,6 +14,7 @@ public class Bhop : VipModule
         public float JumpVelocity { get; set; } = 300f;
     }
 
+    private static readonly Cfg DefaultCfg = new();
     private readonly int[] _lastJumpTick = new int[64];
 
     public override string Name => "Bhop";
@@ -26,33 +27,36 @@ public class Bhop : VipModule
         if (Core.IsFreezeTime())
             return;
 
+        int tick = Server.TickCount;
         foreach (var player in ActivePlayers())
         {
-
-            var pawn = player.PlayerPawn.Value;
-            if (pawn == null || !pawn.IsValid)
+            nint pawn = PlayerCache.Pointer(player);
+            if (pawn == 0)
                 continue;
 
             int slot = player.Slot;
-            var flags = (PlayerFlags)pawn.Flags;
+            bool hasButtons = PlayerCache.Buttons(pawn, out ulong buttons, out ulong queued);
+            if ((queued & (ulong)PlayerButtons.Jump) != 0)
+                _lastJumpTick[slot] = tick;
 
-            if ((pawn.MovementServices?.QueuedButtonChangeMask & (ulong)PlayerButtons.Jump) != 0)
-                _lastJumpTick[slot] = Server.TickCount;
-
-            bool held = TryGetButtons(player, out var buttons) && buttons.HasFlag(PlayerButtons.Jump);
-            bool jumpPressed = held || _lastJumpTick[slot] + 20 >= Server.TickCount;
-
-            if (!jumpPressed || !flags.HasFlag(PlayerFlags.FL_ONGROUND) || pawn.MoveType.HasFlag(MoveType_t.MOVETYPE_LADDER))
+            bool held = hasButtons && (buttons & (ulong)PlayerButtons.Jump) != 0;
+            bool jumpPressed = held || _lastJumpTick[slot] + 20 >= tick;
+            if (!jumpPressed || (PlayerCache.Flags(pawn) & (uint)PlayerFlags.FL_ONGROUND) == 0)
                 continue;
 
-            var cfg = GroupValue<Cfg>(player) ?? new Cfg();
-            pawn.AbsVelocity.Z = cfg.JumpVelocity;
+            var moveType = (MoveType_t)PlayerCache.MoveType(pawn);
+            if (moveType.HasFlag(MoveType_t.MOVETYPE_LADDER))
+                continue;
+
+            var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
+            ref var velocity = ref PlayerCache.Velocity(pawn);
+            velocity.Z = cfg.JumpVelocity;
 
             if (!cfg.Autostrafe)
                 continue;
 
-            float vX = pawn.AbsVelocity.X;
-            float vY = pawn.AbsVelocity.Y;
+            float vX = velocity.X;
+            float vY = velocity.Y;
             double speed = Math.Sqrt(vX * vX + vY * vY);
             double scale = 1d;
 
@@ -61,8 +65,8 @@ public class Bhop : VipModule
             else if (speed > cfg.MaxSpeed)
                 scale = cfg.MaxSpeed / speed;
 
-            pawn.AbsVelocity.X = (float)(vX * scale);
-            pawn.AbsVelocity.Y = (float)(vY * scale);
+            velocity.X = (float)(vX * scale);
+            velocity.Y = (float)(vY * scale);
         }
     }
 }

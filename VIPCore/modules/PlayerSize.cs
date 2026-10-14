@@ -48,7 +48,7 @@ public class PlayerSize : VipModule
 
     private static void Apply(CCSPlayerController? player, float scale)
     {
-        var pawn = player?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return;
 
@@ -75,7 +75,7 @@ public class PlayerSize : VipModule
         Server.NextFrame(() =>
         {
             if (pawn.IsValid)
-                Utilities.SetStateChanged(pawn, "CBaseEntity", "m_CBodyComponent");
+                NetState.Changed(pawn, "CBaseEntity", "m_CBodyComponent");
         });
     }
 }

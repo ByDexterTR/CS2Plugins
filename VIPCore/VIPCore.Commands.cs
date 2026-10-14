@@ -281,16 +281,8 @@ public partial class VIPCore
         if (player == null || !player.IsValid || player.IsBot)
             return;
 
-        var cfg = Config.VipTest;
-        if (cfg.Group.Length == 0 || cfg.Duration <= 0)
+        if (TestGroups().Count == 0)
         {
-            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_disabled"]}");
-            return;
-        }
-
-        if (!GroupExists(cfg.Group))
-        {
-            Logger.LogWarning("VIPCore: viptest icindeki \"{0}\" diye bir grup yok.", cfg.Group);
             info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_disabled"]}");
             return;
         }
@@ -301,43 +293,133 @@ public partial class VIPCore
             return;
         }
 
-        ulong steamId = player.SteamID;
+        CheckTest(player.SteamID, null);
+    }
+
+    private List<VipTestGroup> TestGroups()
+    {
+        var cfg = Config.VipTest;
+        if (!cfg.Enabled)
+            return new();
+
+        return cfg.Groups.Where(g => g.Time > 0 && GroupExists(g.Group)).ToList();
+    }
+
+    private long TestBlockedUntil(VipTestRecord? record)
+    {
+        if (record == null)
+            return 0;
+
+        var groups = Config.VipTest.Groups;
+        var used = groups.FirstOrDefault(g => g.Group == record.Group);
+        long interval = used != null ? used.Interval
+            : groups.Count == 0 || groups.Any(g => g.Interval <= 0) ? 0 : groups.Max(g => g.Interval);
+
+        return interval <= 0 ? long.MaxValue : record.UsedAt + interval;
+    }
+
+    private void CheckTest(ulong steamId, VipTestGroup? chosen)
+    {
         var storage = _storage;
 
         Task.Run(() =>
         {
-            bool used;
-            try { used = storage.TestUsed(steamId); }
-            catch { used = true; }
-
-            Server.NextFrame(() =>
+            VipTestRecord? record = null;
+            bool failed = false;
+            try { record = storage.LoadTest(steamId); }
+            catch (Exception ex)
             {
-                var target = Utilities.GetPlayerFromSteamId64(steamId);
-                if (target == null || !target.IsValid)
-                    return;
+                failed = true;
+                Logger.LogError("VIPCore: {0} icin VIP deneme kaydi okunamadi: {1}", steamId, ex.Message);
+            }
 
-                if (used)
-                {
-                    target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_used"]}");
-                    return;
-                }
-
-                if (IsClientVip(target))
-                {
-                    target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_already_vip"]}");
-                    return;
-                }
-
-                SetVip(steamId, cfg.Group, DateTimeOffset.UtcNow.ToUnixTimeSeconds() + cfg.Duration);
-                Task.Run(() =>
-                {
-                    try { storage.MarkTestUsed(steamId); }
-                    catch { }
-                });
-
-                target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_started", cfg.Group, FormatTimeLeft(cfg.Duration)]}");
-            });
+            Server.NextFrame(() => ResolveTest(steamId, chosen, record, failed));
         });
+    }
+
+    private void ResolveTest(ulong steamId, VipTestGroup? chosen, VipTestRecord? record, bool failed)
+    {
+        var target = Utilities.GetPlayerFromSteamId64(steamId);
+        if (target == null || !target.IsValid)
+            return;
+
+        if (failed)
+        {
+            target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_disabled"]}");
+            return;
+        }
+
+        if (IsClientVip(target))
+        {
+            target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_already_vip"]}");
+            return;
+        }
+
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        long until = TestBlockedUntil(record);
+        if (until == long.MaxValue)
+        {
+            target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_used"]}");
+            return;
+        }
+
+        if (until > now)
+        {
+            target.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_wait", FormatTimeLeft(until - now)]}");
+            return;
+        }
+
+        var groups = TestGroups();
+        if (chosen != null && !groups.Contains(chosen))
+            chosen = null;
+
+        if (chosen == null && groups.Count == 1)
+            chosen = groups[0];
+
+        if (chosen == null)
+        {
+            OpenTestMenu(target, groups);
+            return;
+        }
+
+        StartTest(target, chosen);
+    }
+
+    private void OpenTestMenu(CCSPlayerController player, List<VipTestGroup> groups)
+    {
+        if (groups.Count == 0)
+        {
+            player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_disabled"]}");
+            return;
+        }
+
+        var items = new List<(string display, Action<CCSPlayerController> onSelect)>();
+        foreach (var group in groups)
+        {
+            var g = group;
+            string again = g.Interval > 0 ? Localizer["vip.viptest_again", FormatTimeLeft(g.Interval)] : Localizer["vip.viptest_once"];
+            items.Add((Localizer["vip.viptest_option", g.Group, FormatTimeLeft(g.Time), again],
+                p => CheckTest(p.SteamID, g)));
+        }
+
+        OpenMenu(player, Localizer["vip.viptest_menu"], items);
+    }
+
+    private void StartTest(CCSPlayerController player, VipTestGroup group)
+    {
+        ulong steamId = player.SteamID;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var record = new VipTestRecord { Group = group.Group, UsedAt = now };
+        var storage = _storage;
+
+        SetVip(steamId, group.Group, now + group.Time);
+        Task.Run(() =>
+        {
+            try { storage.SaveTest(steamId, record); }
+            catch (Exception ex) { Logger.LogError("VIPCore: {0} icin VIP deneme kaydi yazilamadi: {1}", steamId, ex.Message); }
+        });
+
+        player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["vip.viptest_started", group.Group, FormatTimeLeft(group.Time)]}");
     }
 
     public void OnRemoveVipCommand(CCSPlayerController? player, CommandInfo info)

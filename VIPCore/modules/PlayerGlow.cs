@@ -92,7 +92,7 @@ public class PlayerGlow : VipModule
         if (!EffectHide.AnyViewer(EffectHide.PlayerGlow, player.Slot))
             return null;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return null;
 

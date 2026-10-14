@@ -67,7 +67,8 @@ public class VipConfig
         ["GrenadeTrail"] = "all",
         ["SaySound"] = "all",
         ["PlayerParticle"] = "all",
-        ["Pet"] = "all"
+        ["Pet"] = "all",
+        ["SpawnEffect"] = "all"
     };
 
     [JsonPropertyName("model_inspect")]
@@ -106,9 +107,16 @@ public class ModelInspectSettings
 
 public class VipTestSettings
 {
-    [JsonPropertyName("group")] public string Group { get; set; } = "";
-    [JsonPropertyName("duration")] public int Duration { get; set; } = 1800;
+    [JsonPropertyName("enabled")] public bool Enabled { get; set; } = false;
+    [JsonPropertyName("groups")] public List<VipTestGroup> Groups { get; set; } = new() { new VipTestGroup() };
     [JsonPropertyName("cmd")] public string Cmd { get; set; } = "css_viptest";
+}
+
+public class VipTestGroup
+{
+    [JsonPropertyName("group")] public string Group { get; set; } = "#Lite";
+    [JsonPropertyName("time")] public int Time { get; set; } = 1800;
+    [JsonPropertyName("interval")] public long Interval { get; set; } = 604800;
 }
 
 public class MySqlSettings

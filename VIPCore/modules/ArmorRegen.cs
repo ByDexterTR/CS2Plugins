@@ -11,7 +11,7 @@ public class ArmorRegen : VipModule
     {
         public int ArmorPerTick { get; set; } = 5;
         public float Interval { get; set; } = 1.0f;
-        public float DelayAfterDmg { get; set; } = 3.0f;
+        public float DelayAfterDamage { get; set; } = 3.0f;
         public int MaxArmor { get; set; } = 100;
         public bool GiveHelmetWhenFull { get; set; } = true;
     }
@@ -70,21 +70,21 @@ public class ArmorRegen : VipModule
 
     private void Regen(int slot, Cfg cfg)
     {
-        var player = Utilities.GetPlayerFromSlot(slot);
+        var player = Core.PlayerAt(slot);
         if (!IsAlive(player) || !Active(player))
             return;
 
-        if (Server.CurrentTime - _lastHurt[slot] < cfg.DelayAfterDmg)
+        if (Server.CurrentTime - _lastHurt[slot] < cfg.DelayAfterDamage)
             return;
 
-        var pawn = player!.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
             return;
 
         if (pawn.ArmorValue < cfg.MaxArmor)
         {
             pawn.ArmorValue = Math.Min(pawn.ArmorValue + cfg.ArmorPerTick, cfg.MaxArmor);
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+            NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
         }
 
         if (cfg.GiveHelmetWhenFull && !_helmetGiven[slot] && pawn.ArmorValue >= cfg.MaxArmor)
@@ -92,7 +92,7 @@ public class ArmorRegen : VipModule
             _helmetGiven[slot] = true;
             player.GiveNamedItem("item_assaultsuit");
             pawn.ArmorValue = cfg.MaxArmor;
-            Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+            NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
         }
     }
 }

@@ -10,10 +10,9 @@ public class DecoyEffect : VipModule
 {
     private class PoisonCfg
     {
-        [JsonPropertyName("minhp")]
         public int MinHp { get; set; } = 1;
         public int Damage { get; set; } = 2;
-        public float Tick { get; set; } = 0.5f;
+        public float Interval { get; set; } = 0.5f;
         public float SoundVolume { get; set; } = 0.3f;
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
@@ -24,7 +23,7 @@ public class DecoyEffect : VipModule
     private class HealCfg
     {
         public int Heal { get; set; } = 2;
-        public float Tick { get; set; } = 0.5f;
+        public float Interval { get; set; } = 0.5f;
         public float SoundVolume { get; set; } = 0.5f;
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = false;
@@ -36,9 +35,8 @@ public class DecoyEffect : VipModule
     private class SlowCfg
     {
         public int Percent { get; set; } = 30;
-        [JsonPropertyName("minspeed")]
         public float MinSpeed { get; set; } = 100f;
-        public float Tick { get; set; } = 0.1f;
+        public float Interval { get; set; } = 0.1f;
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
         public bool IgnoreSelf { get; set; } = true;
@@ -58,7 +56,7 @@ public class DecoyEffect : VipModule
 
     private class WallhackCfg
     {
-        public float Tick { get; set; } = 0.25f;
+        public float Interval { get; set; } = 0.25f;
         public string Color { get; set; } = GlowPool.DefaultColor;
         public float Radius { get; set; } = 180f;
         public bool SeeTeammates { get; set; }
@@ -68,7 +66,7 @@ public class DecoyEffect : VipModule
 
     private class RadarhackCfg
     {
-        public float Tick { get; set; } = 0.25f;
+        public float Interval { get; set; } = 0.25f;
         public float Radius { get; set; } = 180f;
         public bool SeeTeammates { get; set; }
         public int OnlyMode { get; set; } = 0;
@@ -272,32 +270,30 @@ public class DecoyEffect : VipModule
                     break;
 
                 case "poison" when cfg.Poison != null:
-                    decoy.NextTick = now + Math.Max(cfg.Poison.Tick, 0.05f);
+                    decoy.NextTick = now + Math.Max(cfg.Poison.Interval, 0.05f);
                     Apply(decoy, owner!, cfg.Poison.Radius, cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, false, pawn =>
                     {
                         if (pawn.Health <= cfg.Poison.MinHp)
                             return;
-                        pawn.Health = Math.Max(pawn.Health - cfg.Poison.Damage, cfg.Poison.MinHp);
-                        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+                        Health.Set(pawn, Math.Max(pawn.Health - cfg.Poison.Damage, cfg.Poison.MinHp));
                         SoundUtil.EmitToPawn(pawn, "Player.DamageBody.Victim", cfg.Poison.SoundVolume);
                     });
                     break;
 
                 case "heal" when cfg.Heal != null:
-                    decoy.NextTick = now + Math.Max(cfg.Heal.Tick, 0.05f);
+                    decoy.NextTick = now + Math.Max(cfg.Heal.Interval, 0.05f);
                     Apply(decoy, owner!, cfg.Heal.Radius, cfg.Heal.IgnoreTeammates, cfg.Heal.IgnoreSelf, cfg.Heal.IgnoreEnemy, pawn =>
                     {
                         int maxHp = pawn.MaxHealth > 0 ? pawn.MaxHealth : 100;
                         if (pawn.Health >= maxHp)
                             return;
-                        pawn.Health = Math.Min(pawn.Health + cfg.Heal.Heal, maxHp);
-                        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+                        Health.Set(pawn, Math.Min(pawn.Health + cfg.Heal.Heal, maxHp));
                         SoundUtil.EmitToPawn(pawn, "Healthshot.Success", cfg.Heal.SoundVolume);
                     });
                     break;
 
                 case "slow" when cfg.Slow != null:
-                    decoy.NextTick = now + Math.Max(cfg.Slow.Tick, 0.05f);
+                    decoy.NextTick = now + Math.Max(cfg.Slow.Interval, 0.05f);
                     float factor = Math.Max(1f - cfg.Slow.Percent / 100f, 0f);
                     if (cfg.Slow.MinSpeed > 0)
                         factor = Math.Max(factor, cfg.Slow.MinSpeed / 250f);
@@ -305,7 +301,7 @@ public class DecoyEffect : VipModule
                     {
                         var controller = pawn.Controller.Value?.As<CCSPlayerController>();
                         if (controller != null && controller.IsValid)
-                            SpeedPool.Request(controller.Slot, SpeedPool.DecoySlow, factor, SpeedPool.TicksFor(cfg.Slow.Tick));
+                            SpeedPool.Request(controller.Slot, SpeedPool.DecoySlow, factor, SpeedPool.TicksFor(cfg.Slow.Interval));
                     });
                     break;
             }
@@ -320,7 +316,7 @@ public class DecoyEffect : VipModule
 
         if (decoy.NextTick <= now)
         {
-            decoy.NextTick = now + Math.Max(cfg.Tick, 0.05f);
+            decoy.NextTick = now + Math.Max(cfg.Interval, 0.05f);
             decoy.Seen = 0;
 
             float radius = cfg.Radius > 0f ? cfg.Radius : 180f;
@@ -331,7 +327,7 @@ public class DecoyEffect : VipModule
                 if (!cfg.SeeTeammates && target.Team == owner.Team)
                     continue;
 
-                var pawn = target.PlayerPawn.Value;
+                var pawn = PlayerCache.Pawn(target);
                 if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                     continue;
 
@@ -361,7 +357,7 @@ public class DecoyEffect : VipModule
 
         if (decoy.NextTick <= now)
         {
-            decoy.NextTick = now + Math.Max(cfg.Tick, 0.05f);
+            decoy.NextTick = now + Math.Max(cfg.Interval, 0.05f);
             decoy.Seen = 0;
 
             float radius = cfg.Radius > 0f ? cfg.Radius : 180f;
@@ -372,7 +368,7 @@ public class DecoyEffect : VipModule
                 if (!cfg.SeeTeammates && target.Team == owner.Team)
                     continue;
 
-                var targetPawn = target.PlayerPawn.Value;
+                var targetPawn = PlayerCache.Pawn(target);
                 if (targetPawn == null || !targetPawn.IsValid || targetPawn.AbsOrigin == null)
                     continue;
 
@@ -394,7 +390,7 @@ public class DecoyEffect : VipModule
             if ((decoy.Seen & (1UL << index)) == 0)
                 continue;
 
-            var pawn = Utilities.GetPlayerFromSlot(index)?.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(index));
             if (pawn != null && pawn.IsValid)
                 pawn.EntitySpottedState.SpottedByMask[slot / 32] |= 1u << (slot % 32);
         }
@@ -418,10 +414,7 @@ public class DecoyEffect : VipModule
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        if (info.Attacker?.Value == null)
-            return HookResult.Continue;
-
-        var attacker = PawnController(info.Attacker.Value);
+        var attacker = DamageAttacker(info);
         if (attacker == null || attacker.Slot >= 64)
             return HookResult.Continue;
 
@@ -432,7 +425,7 @@ public class DecoyEffect : VipModule
         if (Math.Abs(scale - 1f) < 0.001f)
             return HookResult.Continue;
 
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (victim != null && victim.Slot == attacker.Slot)
             return HookResult.Continue;
 
@@ -487,7 +480,7 @@ public class DecoyEffect : VipModule
             if (isEnemy && ignoreEnemy)
                 continue;
 
-            var pawn = target.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(target);
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                 continue;
 

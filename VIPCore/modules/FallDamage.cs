@@ -6,7 +6,7 @@ public class FallDamage : VipModule
 {
     private class Cfg
     {
-        public int Percent { get; set; } = 100;
+        public int DamagePercent { get; set; } = 100;
         public int Limit { get; set; } = 0;
     }
 
@@ -34,19 +34,19 @@ public class FallDamage : VipModule
         if (((long)info.BitsDamageType & (long)DamageTypes_t.DMG_FALL) == 0)
             return HookResult.Continue;
 
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (!Active(victim))
             return HookResult.Continue;
 
         int slot = victim!.Slot;
         var cfg = GroupValue<Cfg>(victim) ?? new Cfg();
-        if (cfg.Percent >= 100)
+        if (cfg.DamagePercent >= 100)
             return HookResult.Continue;
 
         if (cfg.Limit > 0 && _used[slot] >= cfg.Limit)
             return HookResult.Continue;
 
-        float scale = cfg.Percent < 0 ? 1f - cfg.Percent / 100f : cfg.Percent / 100f;
+        float scale = cfg.DamagePercent < 0 ? 1f - cfg.DamagePercent / 100f : cfg.DamagePercent / 100f;
         info.Damage = MathF.Max(info.Damage * scale, 0f);
 
         _used[slot]++;

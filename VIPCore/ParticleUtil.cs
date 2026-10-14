@@ -25,7 +25,7 @@ public static class ParticleUtil
 
         particle.EffectName = effectPath;
         particle.StartActive = true;
-        particle.Teleport(position, new QAngle(), new Vector());
+        particle.Teleport(position, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
         particle.DispatchSpawn();
         particle.AcceptInput("Start");
 
@@ -57,7 +57,7 @@ public static class ParticleUtil
 
         particle.EffectName = effectPath;
         particle.StartActive = true;
-        particle.Teleport(new Vector(origin.X, origin.Y, origin.Z + offsetZ), new QAngle(), new Vector());
+        particle.Teleport(new Vector(origin.X, origin.Y, origin.Z + offsetZ), TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
         particle.DispatchSpawn();
         particle.AcceptInput("SetParent", parent, particle, "!activator");
         particle.AcceptInput("Start");

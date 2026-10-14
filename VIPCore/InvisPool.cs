@@ -105,16 +105,16 @@ public static class InvisPool
 
     private static void Paint(int slot)
     {
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(slot));
         if (pawn == null || !pawn.IsValid)
             return;
 
         var color = pawn.Render;
         pawn.Render = Color.FromArgb(Alpha(slot), color.R, color.G, color.B);
-        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
 
-    private static void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private static void OnCheckTransmit(ReadOnlySpan<TransmitView> views)
     {
         if (_count <= 0)
             return;
@@ -127,7 +127,7 @@ public static class InvisPool
             if (_sources[slot] == 0)
                 continue;
 
-            var player = Utilities.GetPlayerFromSlot(slot);
+            var player = _owner?.PlayerAt(slot);
             if (player == null || !player.IsValid)
             {
                 _sources[slot] = 0;
@@ -135,13 +135,15 @@ public static class InvisPool
                 continue;
             }
 
-            var pawn = player.PlayerPawn.Value;
-            if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+            var pawn = PlayerCache.Pawn(player);
+            nint handle = PlayerCache.Pointer(player);
+            if (pawn == null || handle == 0 || PlayerCache.LifeState(handle) != (byte)LifeState_t.LIFE_ALIVE)
                 continue;
 
-            _pawns.Add((pawn.Index, pawn.Handle, player.Team));
-            _hiddenHandle[slot] = pawn.Handle;
-            _hiddenTeam[slot] = player.Team;
+            var team = (CsTeam)PlayerCache.Team(handle);
+            _pawns.Add((pawn.Index, handle, team));
+            _hiddenHandle[slot] = handle;
+            _hiddenTeam[slot] = team;
         }
 
         if (_pawns.Count == 0)
@@ -151,30 +153,35 @@ public static class InvisPool
             if (_hiddenHandle[owner] != nint.Zero)
                 _extras.Add((index, _hiddenHandle[owner], _hiddenTeam[owner]));
 
-        foreach (var (info, viewer) in infoList)
+        foreach (var view in views)
         {
-            if (viewer == null || !viewer.IsValid || viewer.Team == CsTeam.Spectator)
+            var viewer = view.Viewer;
+            if (viewer == null || !viewer.IsValid)
                 continue;
 
-            var target = viewer.Pawn.Value?.ObserverServices?.ObserverTarget.Value?.Handle ?? nint.Zero;
+            var viewerTeam = viewer.Team;
+            if (viewerTeam == CsTeam.Spectator)
+                continue;
+
+            var target = PlayerCache.Alive(viewer) ? nint.Zero : viewer.Pawn.Value?.ObserverServices?.ObserverTarget.Value?.Handle ?? nint.Zero;
 
             foreach (var (pawnIndex, pawnHandle, team) in _pawns)
             {
-                if (team == viewer.Team)
+                if (team == viewerTeam)
                     continue;
 
                 if (target != nint.Zero && pawnHandle == target)
                     continue;
 
-                Transmit.Hide(info, pawnIndex);
+                view.Hide(pawnIndex);
             }
 
             foreach (var (index, ownerHandle, team) in _extras)
             {
-                if (team == viewer.Team || (target != nint.Zero && ownerHandle == target))
+                if (team == viewerTeam || (target != nint.Zero && ownerHandle == target))
                     continue;
 
-                Transmit.Hide(info, index);
+                view.Hide(index);
             }
         }
     }

@@ -8,9 +8,8 @@ public class Adrenaline : VipModule
 {
     private class Cfg
     {
-        public float Spk { get; set; } = 0.05f;
-        [JsonPropertyName("maxspk")]
-        public float MaxSpk { get; set; } = 0.5f;
+        public float SpeedPerKill { get; set; } = 0.05f;
+        public float MaxSpeedBonus { get; set; } = 0.5f;
         public float Duration { get; set; } = 0f;
     }
 
@@ -62,13 +61,13 @@ public class Adrenaline : VipModule
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(attacker) ?? new Cfg();
-        if (cfg.Spk <= 0f)
+        if (cfg.SpeedPerKill <= 0f)
             return HookResult.Continue;
 
         if (_bonus[slot] <= 0f)
             _active++;
 
-        _bonus[slot] = Math.Min(_bonus[slot] + cfg.Spk, Math.Max(cfg.MaxSpk, 0f));
+        _bonus[slot] = Math.Min(_bonus[slot] + cfg.SpeedPerKill, Math.Max(cfg.MaxSpeedBonus, 0f));
         _until[slot] = cfg.Duration > 0f ? Server.CurrentTime + cfg.Duration : 0f;
         return HookResult.Continue;
     }
@@ -84,7 +83,7 @@ public class Adrenaline : VipModule
             if (bonus <= 0f)
                 continue;
 
-            var player = Utilities.GetPlayerFromSlot(slot);
+            var player = Core.PlayerAt(slot);
             if (!IsAlive(player) || !Active(player) || (_until[slot] > 0f && Server.CurrentTime >= _until[slot]))
             {
                 Reset(slot);

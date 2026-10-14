@@ -91,7 +91,7 @@ public class GrenadeTimer : VipModule
                 return;
 
             grenade.DetonateTime += (float)Math.Clamp(value, 0.1, 20.0);
-            Utilities.SetStateChanged(grenade, "CBaseGrenade", "m_flDetonateTime");
+            NetState.Changed(grenade, "CBaseGrenade", "m_flDetonateTime");
 
             LimitUse(owner.Slot);
         });

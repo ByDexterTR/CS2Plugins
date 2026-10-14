@@ -44,7 +44,7 @@ public class Knockback : VipModule
         if (player == null || !player.IsValid || player.IsBot || !Active(player))
             return HookResult.Continue;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
             return HookResult.Continue;
 

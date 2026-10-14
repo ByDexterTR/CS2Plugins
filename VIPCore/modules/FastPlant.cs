@@ -7,7 +7,7 @@ public class FastPlant : VipModule
 {
     private class Cfg
     {
-        public float Time { get; set; } = 1.0f;
+        public float PlantTime { get; set; } = 1.0f;
         public bool ImmuneWhileBurning { get; set; } = false;
     }
 
@@ -33,7 +33,7 @@ public class FastPlant : VipModule
 
         Server.NextFrame(() =>
         {
-            var weapon = player!.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
+            var weapon = PlayerCache.ActiveWeapon(player);
             if (weapon == null || !weapon.IsValid || weapon.DesignerName != "weapon_c4")
                 return;
 
@@ -41,8 +41,8 @@ public class FastPlant : VipModule
             if (c4 == null || !c4.IsValid || !c4.StartedArming)
                 return;
 
-            c4.ArmedTime = Server.CurrentTime + cfg.Time;
-            Utilities.SetStateChanged(c4, "CC4", "m_fArmedTime");
+            c4.ArmedTime = Server.CurrentTime + cfg.PlantTime;
+            NetState.Changed(c4, "CC4", "m_fArmedTime");
         });
 
         return HookResult.Continue;

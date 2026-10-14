@@ -36,17 +36,19 @@ public class InfiniteAmmo : VipModule
         Core.RegisterEventHandler<EventWeaponFire>(OnFire);
     }
 
+    private readonly Dictionary<string, int> _maxClip = new();
+
     private HookResult OnFire(EventWeaponFire ev, GameEventInfo info)
     {
         var player = ev.Userid;
         if (!Active(player))
             return HookResult.Continue;
 
-        var weapon = player!.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
-        if (weapon == null || !weapon.IsValid)
+        var weapon = PlayerCache.ActiveWeapon(player);
+        string? name = PlayerCache.ActiveWeaponDesigner(player);
+        if (weapon == null || string.IsNullOrEmpty(name))
             return HookResult.Continue;
 
-        string name = weapon.DesignerName;
         if (name.Contains("knife") || name.Contains("bayonet") || name.Contains("taser"))
             return HookResult.Continue;
 
@@ -54,12 +56,13 @@ public class InfiniteAmmo : VipModule
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, name))
             return HookResult.Continue;
 
-        int maxClip = weapon.As<CCSWeaponBase>().VData?.MaxClip1 ?? 0;
+        if (!_maxClip.TryGetValue(name, out int maxClip))
+            _maxClip[name] = maxClip = weapon.As<CCSWeaponBase>().VData?.MaxClip1 ?? 0;
         if (maxClip <= 0)
             return HookResult.Continue;
 
         weapon.Clip1 = maxClip;
-        Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+        NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
         return HookResult.Continue;
     }
 }

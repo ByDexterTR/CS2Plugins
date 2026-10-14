@@ -23,11 +23,11 @@ public class FortniteArmor : VipModule
         if (info.Damage <= 0f)
             return HookResult.Continue;
 
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (!Active(victim) || !IsAlive(victim))
             return HookResult.Continue;
 
-        var pawn = victim!.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(victim);
         if (pawn == null || !pawn.IsValid)
             return HookResult.Continue;
 
@@ -48,7 +48,7 @@ public class FortniteArmor : VipModule
             return HookResult.Continue;
 
         pawn.ArmorValue = armor - absorbed;
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+        NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
 
         info.Damage = MathF.Max(info.Damage - absorbed, 0f);
         return HookResult.Changed;

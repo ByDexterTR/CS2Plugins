@@ -17,6 +17,6 @@ public interface IVipStorage
 
     void ApplySettings(ulong steamId, Dictionary<string, string?> ops);
 
-    bool TestUsed(ulong steamId);
-    void MarkTestUsed(ulong steamId);
+    VipTestRecord? LoadTest(ulong steamId);
+    void SaveTest(ulong steamId, VipTestRecord record);
 }

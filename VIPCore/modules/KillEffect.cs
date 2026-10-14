@@ -12,10 +12,8 @@ public class KillEffect : VipModule
     {
         public string Name { get; set; } = "";
         public string Particle { get; set; } = "";
-        public float Time { get; set; }
+        public float Lifetime { get; set; }
         public bool Hs { get; set; }
-
-        [JsonPropertyName("lastkill")]
         public bool LastKill { get; set; }
     }
 
@@ -79,7 +77,7 @@ public class KillEffect : VipModule
         if (!ffa && victim.Team == attacker.Team)
             return HookResult.Continue;
 
-        var origin = victim.PlayerPawn.Value?.AbsOrigin;
+        var origin = PlayerCache.Pawn(victim)?.AbsOrigin;
         if (origin == null)
             return HookResult.Continue;
 
@@ -95,7 +93,7 @@ public class KillEffect : VipModule
             return HookResult.Continue;
 
         var pos = new Vector(origin.X, origin.Y, origin.Z + 40f);
-        ParticleUtil.Burst(Core, entry.Particle, pos, entry.Time > 0 ? entry.Time : 2.0f, EffectHide.KillEffect, attacker.Slot);
+        ParticleUtil.Burst(Core, entry.Particle, pos, entry.Lifetime > 0 ? entry.Lifetime : 2.0f, EffectHide.KillEffect, attacker.Slot);
         return HookResult.Continue;
     }
 
@@ -118,7 +116,7 @@ public class KillEffect : VipModule
             if (player.Team != victim.Team)
                 continue;
 
-            var pawn = player.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn != null && pawn.IsValid && pawn.LifeState == (byte)LifeState_t.LIFE_ALIVE)
                 return false;
         }

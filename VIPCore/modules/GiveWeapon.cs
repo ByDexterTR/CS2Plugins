@@ -131,7 +131,7 @@ public class GiveWeapon : VipModule
         var result = new List<(CBasePlayerWeapon, string)>();
         slotKnown = false;
 
-        var weapons = player.PlayerPawn.Value?.WeaponServices?.MyWeapons;
+        var weapons = PlayerCache.Pawn(player)?.WeaponServices?.MyWeapons;
         if (weapons == null)
             return result;
 

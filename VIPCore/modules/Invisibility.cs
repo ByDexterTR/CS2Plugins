@@ -8,7 +8,7 @@ public class Invisibility : VipModule
     private class Cfg
     {
         public bool OnlyStopped { get; set; } = true;
-        public float DmgAfterInvis { get; set; } = 0f;
+        public float RevealTime { get; set; } = 0f;
         public string OnlyWithWeapon { get; set; } = "";
 
         private List<string>? _allow;
@@ -43,7 +43,7 @@ public class Invisibility : VipModule
         if (slot < 0 || slot >= 64 || !Active(player))
             return;
 
-        float dmgAfter = (GroupValue<Cfg>(player!) ?? DefaultCfg).DmgAfterInvis;
+        float dmgAfter = (GroupValue<Cfg>(player!) ?? DefaultCfg).RevealTime;
         if (dmgAfter > 0)
             _revealedUntil[slot] = Server.CurrentTime + dmgAfter;
     }
@@ -66,7 +66,7 @@ public class Invisibility : VipModule
 
         var cfg = GroupValue<Cfg>(player!) ?? DefaultCfg;
 
-        if (cfg.DmgAfterInvis > 0 && Server.CurrentTime < _revealedUntil[slot])
+        if (cfg.RevealTime > 0 && Server.CurrentTime < _revealedUntil[slot])
             return false;
 
         var allow = cfg.Allow;
@@ -75,7 +75,7 @@ public class Invisibility : VipModule
 
         if (cfg.OnlyStopped)
         {
-            var vel = player!.PlayerPawn.Value?.AbsVelocity;
+            var vel = PlayerCache.Pawn(player)?.AbsVelocity;
             if (vel == null)
                 return false;
 

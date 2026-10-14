@@ -8,7 +8,7 @@ public class SpawnProtection : VipModule
 {
     private class Cfg
     {
-        public float Time { get; set; } = 2f;
+        public float Duration { get; set; } = 2f;
         public int Limit { get; set; } = 0;
     }
 
@@ -43,7 +43,7 @@ public class SpawnProtection : VipModule
             return HookResult.Continue;
         }
 
-        float seconds = cfg.Time;
+        float seconds = cfg.Duration;
         if (seconds <= 0f)
         {
             _until[slot] = 0f;
@@ -61,7 +61,7 @@ public class SpawnProtection : VipModule
 
         Core.AddTimer(seconds, () =>
         {
-            var p = Utilities.GetPlayerFromSlot(slot);
+            var p = Core.PlayerAt(slot);
             if (p == null || !p.IsValid || p.IsBot || !IsAlive(p))
                 return;
             if (Math.Abs(_until[slot] - until) > 0.01f)
@@ -75,7 +75,7 @@ public class SpawnProtection : VipModule
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (victim == null)
             return HookResult.Continue;
 

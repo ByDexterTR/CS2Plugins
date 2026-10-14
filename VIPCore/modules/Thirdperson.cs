@@ -74,7 +74,7 @@ public class Thirdperson : VipModule
 
     private void Enable(CCSPlayerController player)
     {
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid || pawn.CameraServices == null)
             return;
 
@@ -104,7 +104,7 @@ public class Thirdperson : VipModule
             camera.DispatchSpawn();
 
             pawn.CameraServices.ViewEntity.Raw = camera.EntityHandle.Raw;
-            Utilities.SetStateChanged(pawn, "CBasePlayerPawn", "m_pCameraServices");
+            NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
         });
     }
 
@@ -114,11 +114,11 @@ public class Thirdperson : VipModule
         _cameras[slot] = null;
 
         var player = Utilities.GetPlayerFromSlot(slot);
-        var pawn = player?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn != null && pawn.IsValid && pawn.CameraServices != null)
         {
             pawn.CameraServices.ViewEntity.Raw = _original[slot];
-            Utilities.SetStateChanged(pawn, "CBasePlayerPawn", "m_pCameraServices");
+            NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
         }
 
         if (camera != null && camera.IsValid)
@@ -134,7 +134,7 @@ public class Thirdperson : VipModule
                 continue;
 
             var player = Utilities.GetPlayerFromSlot(slot);
-            var pawn = player?.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
             {
                 Disable(slot);

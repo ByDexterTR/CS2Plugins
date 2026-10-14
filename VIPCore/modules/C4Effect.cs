@@ -11,7 +11,7 @@ public class C4Effect : VipModule
     {
         public string Name { get; set; } = "";
         public string Particle { get; set; } = "";
-        public float Time { get; set; }
+        public float Lifetime { get; set; }
         public bool Defuse { get; set; }
         public string Required { get; set; } = "";
     }
@@ -91,8 +91,8 @@ public class C4Effect : VipModule
             var particle = ParticleUtil.Spawn(entry.Particle, c4.AbsOrigin, c4, EffectHide.C4Effect, planterSlot);
             _plantParticle = particle;
 
-            if (particle != null && entry.Time > 0)
-                Core.AddTimer(entry.Time, () =>
+            if (particle != null && entry.Lifetime > 0)
+                Core.AddTimer(entry.Lifetime, () =>
                 {
                     if (ReferenceEquals(_plantParticle, particle))
                         RemovePlantParticle();
@@ -127,7 +127,7 @@ public class C4Effect : VipModule
 
         if (bombPos == null)
         {
-            var origin = player!.PlayerPawn.Value?.AbsOrigin;
+            var origin = PlayerCache.Pawn(player)?.AbsOrigin;
             if (origin == null)
                 return HookResult.Continue;
 
@@ -135,7 +135,7 @@ public class C4Effect : VipModule
         }
 
         var pos = new Vector(bombPos.X, bombPos.Y, bombPos.Z + 10f);
-        ParticleUtil.Burst(Core, entry.Particle, pos, entry.Time > 0 ? entry.Time : 3.0f, EffectHide.C4Effect, player!.Slot);
+        ParticleUtil.Burst(Core, entry.Particle, pos, entry.Lifetime > 0 ? entry.Lifetime : 3.0f, EffectHide.C4Effect, player!.Slot);
         return HookResult.Continue;
     }
 

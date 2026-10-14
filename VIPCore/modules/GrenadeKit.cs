@@ -128,14 +128,14 @@ public class GrenadeKit : VipModule
 
     private void UpdateCount(CCSPlayerController player, string[] designerNames, int count)
     {
-        var weapon = player.PlayerPawn.Value?.WeaponServices?.MyWeapons
+        var weapon = PlayerCache.Pawn(player)?.WeaponServices?.MyWeapons
             .Select(h => h.Value)
             .FirstOrDefault(w => w != null && w.IsValid && designerNames.Contains(w.DesignerName));
         if (weapon == null)
             return;
 
         weapon.Clip1 = count;
-        Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+        NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
 
         Core.AddTimer(0.1f, () =>
         {

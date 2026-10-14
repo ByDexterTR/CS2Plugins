@@ -21,10 +21,10 @@
 
   <ItemGroup>
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
-    <Compile Include="..\.Shared\Transmit.cs" Link=".Shared\Transmit.cs" />
     <Compile Include="..\.Shared\NativeTrace.cs" Link=".Shared\NativeTrace.cs" />
     <Compile Include="..\.Shared\ScreenFade.cs" Link=".Shared\ScreenFade.cs" />
     <Compile Include="..\.Shared\SoundUtil.cs" Link=".Shared\SoundUtil.cs" />
+    <Compile Include="..\.Shared\Health.cs" Link=".Shared\Health.cs" />
     <Using Include="ByDexter.Shared" />
   </ItemGroup>
 

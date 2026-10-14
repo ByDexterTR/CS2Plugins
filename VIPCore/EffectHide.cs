@@ -14,12 +14,13 @@ public static class EffectHide
     public const int SaySound = 6;
     public const int PlayerParticle = 7;
     public const int Pet = 8;
-    public const int ModuleCount = 9;
+    public const int SpawnEffect = 9;
+    public const int ModuleCount = 10;
 
     public static readonly string[] Names =
     {
         "BulletTrail", "C4Effect", "KillEffect", "PlayerTrail", "PlayerGlow", "GrenadeTrail", "SaySound",
-        "PlayerParticle", "Pet"
+        "PlayerParticle", "Pet", "SpawnEffect"
     };
 
     public const byte ModeAll = 0;
@@ -35,16 +36,8 @@ public static class EffectHide
     private static readonly bool[] _locked = new bool[ModuleCount];
     private static int _transmitNonDefault;
     private static readonly Dictionary<uint, (int Module, int OwnerSlot)> _entities = new();
-    private static readonly List<uint>[] _hidden = CreateBuckets();
-    private static readonly byte[] _ownerMode = new byte[64];
-
-    private static List<uint>[] CreateBuckets()
-    {
-        var buckets = new List<uint>[64];
-        for (int i = 0; i < 64; i++)
-            buckets[i] = new List<uint>();
-        return buckets;
-    }
+    private static readonly HashSet<uint>?[] _buckets = new HashSet<uint>?[64 * ModuleCount];
+    private static readonly int[] _pending = new int[64 * ModuleCount];
 
     public static bool Locked(int module) => _locked[module];
 
@@ -54,7 +47,7 @@ public static class EffectHide
             return;
 
         _owner = core;
-        _entities.Clear();
+        ClearEntities();
         Array.Clear(_mode);
         Array.Clear(_team);
         _transmitNonDefault = 0;
@@ -65,9 +58,10 @@ public static class EffectHide
         core.HookTransmit(OnCheckTransmit);
         core.HookEntityDeleted(entity =>
         {
-            if (_entities.Count > 0)
-                _entities.Remove(entity.Index);
+            if (_entities.Count > 0 && _entities.Remove(entity.Index, out var old))
+                _buckets[old.OwnerSlot * ModuleCount + old.Module]?.Remove(entity.Index);
         });
+        core.HookMapStart(_ => ClearEntities());
         core.RegisterEventHandler<EventPlayerConnectFull>((ev, _) => { LoadPrefs(ev.Userid); return HookResult.Continue; });
         core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) =>
         {
@@ -111,11 +105,24 @@ public static class EffectHide
 
     public static void Track(int module, uint entityIndex, int ownerSlot)
     {
-        if (module is PlayerTrail or PlayerGlow or PlayerParticle or Pet)
+        if (module is PlayerTrail or PlayerGlow or PlayerParticle or Pet or SpawnEffect)
             InvisPool.Attach(ownerSlot, entityIndex);
 
-        if (_owner != null)
-            _entities[entityIndex] = (module, ownerSlot);
+        if (_owner == null || ownerSlot < 0 || ownerSlot >= 64)
+            return;
+
+        if (_entities.TryGetValue(entityIndex, out var old))
+            _buckets[old.OwnerSlot * ModuleCount + old.Module]?.Remove(entityIndex);
+
+        _entities[entityIndex] = (module, ownerSlot);
+        (_buckets[ownerSlot * ModuleCount + module] ??= new HashSet<uint>()).Add(entityIndex);
+    }
+
+    private static void ClearEntities()
+    {
+        _entities.Clear();
+        foreach (var bucket in _buckets)
+            bucket?.Clear();
     }
 
     public static void LoadPrefs(CCSPlayerController? player)
@@ -185,10 +192,27 @@ public static class EffectHide
             _transmitNonDefault += isNonDefault ? 1 : -1;
     }
 
-    private static void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private static void OnCheckTransmit(ReadOnlySpan<TransmitView> views)
     {
         var core = _owner;
         if (core == null || _transmitNonDefault == 0 || _entities.Count == 0)
+            return;
+
+        int pending = 0;
+        for (int ownerSlot = 0; ownerSlot < 64; ownerSlot++)
+        {
+            for (int module = 0; module < ModuleCount; module++)
+            {
+                if (_mode[ownerSlot, module] == ModeAll)
+                    continue;
+
+                int key = ownerSlot * ModuleCount + module;
+                if (_buckets[key] is { Count: > 0 })
+                    _pending[pending++] = key;
+            }
+        }
+
+        if (pending == 0)
             return;
 
         Array.Clear(_team);
@@ -196,49 +220,24 @@ public static class EffectHide
             if (p != null && p.IsValid && p.Slot < 64)
                 _team[p.Slot] = p.TeamNum;
 
-        for (int slot = 0; slot < 64; slot++)
+        foreach (var view in views)
         {
-            _hidden[slot].Clear();
-            _ownerMode[slot] = ModeAll;
-        }
-
-        bool any = false;
-        foreach (var (index, entry) in _entities)
-        {
-            int ownerSlot = entry.OwnerSlot;
-            if (ownerSlot < 0 || ownerSlot >= 64)
+            var viewer = view.Viewer;
+            if (viewer == null || !viewer.IsValid)
                 continue;
 
-            byte mode = _mode[ownerSlot, entry.Module];
-            if (mode == ModeAll)
-                continue;
-
-            _ownerMode[ownerSlot] = mode;
-            _hidden[ownerSlot].Add(index);
-            any = true;
-        }
-
-        if (!any)
-            return;
-
-        foreach (var (info, viewer) in infoList)
-        {
-            if (viewer == null || !viewer.IsValid || viewer.Slot >= 64)
-                continue;
-
-            int viewerSlot = viewer.Slot;
+            int viewerSlot = view.Slot;
             int viewerTeam = _team[viewerSlot];
 
-            for (int ownerSlot = 0; ownerSlot < 64; ownerSlot++)
+            for (int k = 0; k < pending; k++)
             {
-                var bucket = _hidden[ownerSlot];
-                if (bucket.Count == 0)
-                    continue;
-                if (CanSee(_ownerMode[ownerSlot], ownerSlot, _team[ownerSlot], viewerSlot, viewerTeam))
+                int key = _pending[k];
+                int ownerSlot = key / ModuleCount;
+                if (CanSee(_mode[ownerSlot, key % ModuleCount], ownerSlot, _team[ownerSlot], viewerSlot, viewerTeam))
                     continue;
 
-                foreach (uint index in bucket)
-                    Transmit.Hide(info, index);
+                foreach (uint index in _buckets[key]!)
+                    view.Hide(index);
             }
         }
     }

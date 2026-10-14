@@ -47,7 +47,7 @@ public class Pyro : VipModule
         if (isEnemy && cfg.IgnoreEnemy)
             return HookResult.Continue;
 
-        var pawn = victim.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(victim);
         if (pawn == null || !pawn.IsValid || pawn.Health <= 0)
             return HookResult.Continue;
 
@@ -62,8 +62,7 @@ public class Pyro : VipModule
             if (LimitReached(attacker.Slot, cfg.Limit))
                 return HookResult.Continue;
 
-            pawn.Health = newHp;
-            Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+            Health.Set(pawn, newHp);
             LimitUse(attacker.Slot);
         }
 

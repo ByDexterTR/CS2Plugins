@@ -32,16 +32,16 @@ public static class ActivityFilter
     public static bool Shooting(int slot) =>
         slot >= 0 && slot < 64 && _lastShot[slot] > 0f && Server.CurrentTime - _lastShot[slot] <= ShotWindow;
 
-    public static bool Moving(CCSPlayerPawn? pawn)
+    public static bool Moving(nint pawn)
     {
-        var velocity = pawn?.AbsVelocity;
-        if (velocity == null)
+        if (pawn == 0)
             return false;
 
-        return MathF.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y) >= MoveSpeed;
+        var velocity = PlayerCache.Velocity(pawn);
+        return velocity.X * velocity.X + velocity.Y * velocity.Y >= MoveSpeed * MoveSpeed;
     }
 
-    public static bool Matches(int mode, CCSPlayerController target, CCSPlayerPawn? pawn)
+    public static bool Matches(int mode, int slot, nint pawn)
     {
         if (mode <= 0)
             return true;
@@ -61,6 +61,9 @@ public static class ActivityFilter
         if (!shooting && !moving)
             return true;
 
-        return (shooting && Shooting(target.Slot)) || (moving && Moving(pawn));
+        return (shooting && Shooting(slot)) || (moving && Moving(pawn));
     }
+
+    public static bool Matches(int mode, CCSPlayerController target, CCSPlayerPawn? pawn) =>
+        Matches(mode, target.Slot, pawn == null || !pawn.IsValid ? 0 : pawn.Handle);
 }

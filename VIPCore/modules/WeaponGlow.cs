@@ -85,7 +85,7 @@ public class WeaponGlow : VipModule
             if (player == null || !player.IsValid)
                 continue;
 
-            var pawn = player.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             var weapons = pawn != null && pawn.IsValid ? pawn.WeaponServices?.MyWeapons : null;
             if (weapons == null)
                 continue;
@@ -192,7 +192,7 @@ public class WeaponGlow : VipModule
         if (target != null)
         {
             target.MeshGroupMask = state!.MeshGroupMask;
-            Utilities.SetStateChanged(glow, "CBaseEntity", "m_CBodyComponent");
+            NetState.Changed(glow, "CBaseEntity", "m_CBodyComponent");
         }
 
         glow.AcceptInput("SetAnimation", null, null, DroppedAnim);
@@ -241,7 +241,7 @@ public class WeaponGlow : VipModule
         node.Rotation.Y = 0f;
         node.Rotation.Z = 0f;
 
-        Utilities.SetStateChanged(entity, "CBaseEntity", "m_CBodyComponent");
+        NetState.Changed(entity, "CBaseEntity", "m_CBodyComponent");
     }
 
     private static void MakeNonSolid(CBaseEntity entity)
@@ -280,18 +280,19 @@ public class WeaponGlow : VipModule
         _failed.Clear();
     }
 
-    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit(ReadOnlySpan<TransmitView> views)
     {
         if (_glows.Count == 0)
             return;
 
-        foreach (var (info, viewer) in infoList)
+        foreach (var view in views)
         {
+            var viewer = view.Viewer;
             if (viewer == null || !viewer.IsValid || Active(viewer))
                 continue;
 
             foreach (uint glowIndex in _glows.Values)
-                Transmit.Hide(info, glowIndex);
+                view.Hide(glowIndex);
         }
     }
 }

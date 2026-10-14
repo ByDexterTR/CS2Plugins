@@ -46,7 +46,7 @@ public class ReflectDamage : VipModule
             return HookResult.Continue;
         }
 
-        var pawn = attacker.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(attacker);
         if (pawn == null || !pawn.IsValid || pawn.Health <= 0)
             return HookResult.Continue;
 
@@ -61,8 +61,7 @@ public class ReflectDamage : VipModule
         if (LimitReached(victim.Slot, cfg.Limit))
             return HookResult.Continue;
 
-        pawn.Health = Math.Max(pawn.Health - dmg, 1);
-        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+        Health.Set(pawn, Math.Max(pawn.Health - dmg, 1));
         LimitUse(victim.Slot);
         return HookResult.Continue;
     }

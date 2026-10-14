@@ -12,6 +12,9 @@ public static class TrailBeam
 
     private const float RainbowDegreesPerSecond = 60f;
 
+    public static readonly QAngle ZeroAngle = new();
+    public static readonly Vector ZeroVector = new();
+
     public static Color Resolve(string color)
     {
         if (string.IsNullOrWhiteSpace(color) || color.Equals("rainbow", StringComparison.OrdinalIgnoreCase))
@@ -71,12 +74,12 @@ public static class TrailBeam
         beam.Width = width;
         beam.Render = color;
         beam.SetModel(Sprite);
-        beam.Teleport(from, new QAngle(), new Vector());
+        beam.Teleport(from, ZeroAngle, ZeroVector);
 
         beam.EndPos.X = to.X;
         beam.EndPos.Y = to.Y;
         beam.EndPos.Z = to.Z;
-        Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+        NetState.Changed(beam, "CBeam", "m_vecEndPos");
 
         plugin.AddTimer(lifetime, () =>
         {

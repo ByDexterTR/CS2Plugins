@@ -36,29 +36,35 @@ public class WallHack : VipModule
             return;
 
         GlowPool.Build();
+        float now = Server.CurrentTime;
+        var living = PlayerCache.AlivePlayers(Core.Players);
 
         foreach (var player in users)
         {
+            nint pawn = PlayerCache.Pointer(player);
+            if (pawn == 0)
+                continue;
+
             var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
             if (cfg.DurationOff > 0f)
             {
                 float on = Math.Max(cfg.DurationOn, 0.1f);
-                if (Server.CurrentTime % (on + cfg.DurationOff) >= on)
+                if (now % (on + cfg.DurationOff) >= on)
                     continue;
             }
 
             var color = TrailBeam.Resolve(cfg.Color);
+            int slot = player.Slot;
+            byte team = PlayerCache.Team(pawn);
 
-            foreach (var target in Core.Players)
+            foreach (ref readonly var target in living)
             {
-                if (target == null || !target.IsValid || target.Slot == player.Slot || !IsAlive(target))
+                if (target.Slot == slot || (!cfg.SeeTeammates && target.Team == team))
                     continue;
-                if (!cfg.SeeTeammates && target.Team == player.Team)
-                    continue;
-                if (!ActivityFilter.Matches(cfg.OnlyMode, target, target.PlayerPawn.Value))
+                if (!ActivityFilter.Matches(cfg.OnlyMode, target.Slot, target.Pawn))
                     continue;
 
-                GlowPool.Show(player.Slot, target.Slot, color);
+                GlowPool.Show(slot, target.Slot, color);
             }
         }
     }

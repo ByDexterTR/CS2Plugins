@@ -9,7 +9,7 @@ public class BulletEffect : VipModule
     private class PoisonCfg
     {
         public int Damage { get; set; } = 2;
-        public float Tick { get; set; } = 0.5f;
+        public float Interval { get; set; } = 0.5f;
         public float Duration { get; set; } = 3f;
         public float SoundVolume { get; set; } = 0.3f;
         public bool IgnoreTeammates { get; set; } = true;
@@ -135,7 +135,7 @@ public class BulletEffect : VipModule
             case "poison" when cfg.Poison != null:
                 if (Ignored(cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, cfg.Poison.IgnoreEnemy, isSelf, isTeammate, isEnemy))
                     return HookResult.Continue;
-                float interval = Math.Max(cfg.Poison.Tick, 0.1f);
+                float interval = Math.Max(cfg.Poison.Interval, 0.1f);
                 float pDur = Math.Max(cfg.Poison.Duration, interval);
                 var pe = _active[slot];
                 if (pe != null && pe.Mode == "poison" && now < pe.ExpireAt)
@@ -208,7 +208,7 @@ public class BulletEffect : VipModule
             return;
         }
 
-        var pawn = victim.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(victim);
         if (pawn == null || !pawn.IsValid)
             return;
 
@@ -239,14 +239,14 @@ public class BulletEffect : VipModule
                 continue;
             }
 
-            var player = Utilities.GetPlayerFromSlot(slot);
+            var player = Core.PlayerAt(slot);
             if (!IsAlive(player))
             {
                 _active[slot] = null;
                 continue;
             }
 
-            var pawn = player!.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid)
                 continue;
 
@@ -258,8 +258,7 @@ public class BulletEffect : VipModule
                     e.NextTick = now + e.Interval;
                     if (pawn.Health > 1)
                     {
-                        pawn.Health = Math.Max(pawn.Health - e.Damage, 1);
-                        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+                        Health.Set(pawn, Math.Max(pawn.Health - e.Damage, 1));
                         SoundUtil.EmitToPlayer(player, "Player.DamageBody.Victim", e.SoundVolume);
                     }
                     break;
@@ -276,7 +275,7 @@ public class BulletEffect : VipModule
         _active[slot] = null;
         SpeedPool.Clear(slot, SpeedPool.BulletSlow);
 
-        var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(Utilities.GetPlayerFromSlot(slot));
         if (pawn == null || !pawn.IsValid)
             return;
 

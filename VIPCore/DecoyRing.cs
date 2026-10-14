@@ -97,7 +97,7 @@ public static class DecoyRing
         disc.Teleport(new Vector(center.X, center.Y, center.Z + 1f), new QAngle(), new Vector());
 
         disc.Render = Color.FromArgb(DiscAlpha, 255, 255, 255);
-        Utilities.SetStateChanged(disc, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(disc, "CBaseModelEntity", "m_clrRender");
 
         float scale = radius / DiscBaseRadius;
         var skeleton = disc.CBodyComponent?.SceneNode?.GetSkeletonInstance();
@@ -145,7 +145,7 @@ public static class DecoyRing
             beam.EndPos.X = points[i].To.X;
             beam.EndPos.Y = points[i].To.Y;
             beam.EndPos.Z = points[i].To.Z;
-            Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+            NetState.Changed(beam, "CBeam", "m_vecEndPos");
 
             ring.Beams.Add(beam.Index);
         }

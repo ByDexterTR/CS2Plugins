@@ -136,31 +136,40 @@ public class JsonStorage : IVipStorage
         }
     }
 
-    public bool TestUsed(ulong steamId)
+    public VipTestRecord? LoadTest(ulong steamId)
     {
         lock (_ioLock)
-            return LoadTestUnlocked().Contains(steamId.ToString());
+            return LoadTestUnlocked().TryGetValue(steamId.ToString(), out var record) ? record : null;
     }
 
-    public void MarkTestUsed(ulong steamId)
+    public void SaveTest(ulong steamId, VipTestRecord record)
     {
         lock (_ioLock)
         {
             var all = LoadTestUnlocked();
-            if (!all.Add(steamId.ToString()))
-                return;
-
-            WriteAtomic(_testPath, JsonSerializer.Serialize(all.ToList(), Opts));
+            all[steamId.ToString()] = record;
+            WriteAtomic(_testPath, JsonSerializer.Serialize(all, Opts));
         }
     }
 
-    private HashSet<string> LoadTestUnlocked()
+    private Dictionary<string, VipTestRecord> LoadTestUnlocked()
     {
         if (!File.Exists(_testPath))
             return new();
 
-        try { return new HashSet<string>(JsonSerializer.Deserialize<List<string>>(File.ReadAllText(_testPath), ReadOpts) ?? new()); }
-        catch { return new(); }
+        using var doc = JsonDocument.Parse(File.ReadAllText(_testPath),
+            new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+
+        if (doc.RootElement.ValueKind == JsonValueKind.Array)
+        {
+            var legacy = new Dictionary<string, VipTestRecord>();
+            foreach (var item in doc.RootElement.EnumerateArray())
+                if (item.GetString() is string id && id.Length > 0)
+                    legacy[id] = new VipTestRecord();
+            return legacy;
+        }
+
+        return doc.RootElement.Deserialize<Dictionary<string, VipTestRecord>>(ReadOpts) ?? new();
     }
 
     private Dictionary<string, VipEntry> LoadVipsUnlocked()

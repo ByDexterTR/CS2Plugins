@@ -42,14 +42,17 @@ public class BulletTrail : VipModule
         });
     }
 
+    private readonly Vector _eye = new();
+    private readonly Vector _impact = new();
+
     private HookResult OnImpact(EventBulletImpact ev, GameEventInfo info)
     {
         var player = ev.Userid;
         if (!Active(player))
             return HookResult.Continue;
 
-        var pawn = player!.PlayerPawn.Value;
-        if (pawn == null || pawn.AbsOrigin == null)
+        var pawn = PlayerCache.Pawn(player);
+        if (pawn == null || !PlayerCache.Origin(PlayerCache.Pointer(player), out var origin))
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
@@ -57,9 +60,14 @@ public class BulletTrail : VipModule
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(player)))
             return HookResult.Continue;
 
-        var origin = pawn.AbsOrigin;
-        var eye = new Vector(origin.X, origin.Y, origin.Z + pawn.ViewOffset.Z);
-        var impact = new Vector(ev.X, ev.Y, ev.Z);
+        _eye.X = origin.X;
+        _eye.Y = origin.Y;
+        _eye.Z = origin.Z + pawn.ViewOffset.Z;
+        _impact.X = ev.X;
+        _impact.Y = ev.Y;
+        _impact.Z = ev.Z;
+        var eye = _eye;
+        var impact = _impact;
 
         string setting = Setting(player);
 

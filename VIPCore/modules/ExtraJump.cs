@@ -15,6 +15,7 @@ public class ExtraJump : VipModule
 
     private const string JumpSound = "Default.WalkJump";
 
+    private static readonly Cfg DefaultCfg = new();
     private readonly int[] _airJumps = new int[64];
     private readonly int[] _usedThisLife = new int[64];
     private readonly PlayerButtons[] _lastButtons = new PlayerButtons[64];
@@ -46,15 +47,16 @@ public class ExtraJump : VipModule
     {
         foreach (var player in ActivePlayers())
         {
-            var pawn = player.PlayerPawn.Value;
-            if (pawn == null || !pawn.IsValid)
+            nint pawn = PlayerCache.Pointer(player);
+            if (pawn == 0)
                 continue;
 
             int slot = player.Slot;
-            if (!TryGetButtons(player, out var buttons))
+            if (!PlayerCache.Buttons(pawn, out ulong raw, out _))
                 continue;
 
-            var flags = (PlayerFlags)pawn.Flags;
+            var buttons = (PlayerButtons)raw;
+            var flags = (PlayerFlags)PlayerCache.Flags(pawn);
 
             bool onGround = (flags & PlayerFlags.FL_ONGROUND) != 0;
             bool wasOnGround = (_lastFlags[slot] & PlayerFlags.FL_ONGROUND) != 0;
@@ -73,7 +75,7 @@ public class ExtraJump : VipModule
             }
             else if (jumpPressed && !Dash.DashedThisTick(slot))
             {
-                var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+                var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
                 int total = cfg.Limit > 0 ? cfg.Count * cfg.Limit : 0;
                 bool budgetOk = total <= 0 || _usedThisLife[slot] < total;
 
@@ -81,10 +83,10 @@ public class ExtraJump : VipModule
                 {
                     _airJumps[slot]++;
                     _usedThisLife[slot]++;
-                    pawn.AbsVelocity.Z = 300f;
+                    PlayerCache.Velocity(pawn).Z = 300f;
 
                     if (cfg.SoundVolume > 0f)
-                        pawn.EmitSound(JumpSound, volume: cfg.SoundVolume);
+                        PlayerCache.Pawn(player)?.EmitSound(JumpSound, volume: cfg.SoundVolume);
                 }
             }
 

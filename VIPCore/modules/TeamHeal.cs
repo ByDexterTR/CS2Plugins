@@ -8,7 +8,6 @@ public class TeamHeal : VipModule
 {
     private class Cfg
     {
-        [JsonPropertyName("minhp")]
         public int MinHp { get; set; } = 1;
         public int Percent { get; set; } = 50;
         public float SoundVolume { get; set; } = 0.5f;
@@ -27,14 +26,11 @@ public class TeamHeal : VipModule
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        if (info.Attacker?.Value == null)
-            return HookResult.Continue;
-
-        var attacker = PawnController(info.Attacker.Value);
+        var attacker = DamageAttacker(info);
         if (!Active(attacker))
             return HookResult.Continue;
 
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (victim == null || victim.Slot == attacker!.Slot || victim.Team != attacker.Team)
             return HookResult.Continue;
 
@@ -43,7 +39,7 @@ public class TeamHeal : VipModule
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker)))
             return HookResult.Continue;
 
-        var victimPawn = victim.PlayerPawn.Value;
+        var victimPawn = PlayerCache.Pawn(victim);
         if (victimPawn == null || !victimPawn.IsValid || victimPawn.Health <= 0)
             return HookResult.Continue;
 
@@ -55,8 +51,7 @@ public class TeamHeal : VipModule
 
         if (newHp > victimPawn.Health)
         {
-            victimPawn.Health = newHp;
-            Utilities.SetStateChanged(victimPawn, "CBaseEntity", "m_iHealth");
+            Health.Set(victimPawn, newHp);
             SoundUtil.EmitToPlayer(victim, "Healthshot.Success", cfg.SoundVolume);
         }
 

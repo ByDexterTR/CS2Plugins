@@ -41,7 +41,7 @@ public class Vampire : VipModule
         if (allow.Count > 0 && !WeaponUtil.MatchesAny(allow, ActiveWeaponName(attacker!)))
             return HookResult.Continue;
 
-        var pawn = attacker.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(attacker);
         if (pawn == null || !pawn.IsValid)
             return HookResult.Continue;
 
@@ -52,8 +52,7 @@ public class Vampire : VipModule
         int newHp = Math.Min(pawn.Health + heal, cfg.MaxOverheal);
         if (newHp > pawn.Health)
         {
-            pawn.Health = newHp;
-            Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+            Health.Set(pawn, newHp);
         }
 
         return HookResult.Continue;

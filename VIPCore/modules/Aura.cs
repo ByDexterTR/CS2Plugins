@@ -11,9 +11,8 @@ public class Aura : VipModule
     private class HealCfg
     {
         public int Heal { get; set; } = 2;
-        public float Tick { get; set; } = 0.5f;
+        public float Interval { get; set; } = 0.5f;
         public float Radius { get; set; } = 180f;
-        [JsonPropertyName("beamcolor")]
         public string BeamColor { get; set; } = "0 255 0";
         public float DurationOn { get; set; } = 1f;
         public float DurationOff { get; set; } = 0f;
@@ -25,9 +24,8 @@ public class Aura : VipModule
     private class PoisonCfg
     {
         public int Damage { get; set; } = 2;
-        public float Tick { get; set; } = 0.5f;
+        public float Interval { get; set; } = 0.5f;
         public float Radius { get; set; } = 180f;
-        [JsonPropertyName("beamcolor")]
         public string BeamColor { get; set; } = "255 0 255";
         public float DurationOn { get; set; } = 1f;
         public float DurationOff { get; set; } = 0f;
@@ -39,10 +37,8 @@ public class Aura : VipModule
     private class SlowCfg
     {
         public int Percent { get; set; } = 30;
-        [JsonPropertyName("minspeed")]
         public float MinSpeed { get; set; } = 100f;
         public float Radius { get; set; } = 180f;
-        [JsonPropertyName("beamcolor")]
         public string BeamColor { get; set; } = "0 0 255";
         public float DurationOn { get; set; } = 1f;
         public float DurationOff { get; set; } = 0f;
@@ -54,10 +50,8 @@ public class Aura : VipModule
     private class SpeedCfg
     {
         public int Percent { get; set; } = 30;
-        [JsonPropertyName("maxspeed")]
         public float MaxSpeed { get; set; } = 400f;
         public float Radius { get; set; } = 180f;
-        [JsonPropertyName("beamcolor")]
         public string BeamColor { get; set; } = "255 255 0";
         public float DurationOn { get; set; } = 1f;
         public float DurationOff { get; set; } = 0f;
@@ -176,7 +170,7 @@ public class Aura : VipModule
                 ringVisible = Server.CurrentTime % (on + durationOff) < on;
             }
 
-            var pawn = player.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                 continue;
 
@@ -198,25 +192,23 @@ public class Aura : VipModule
             switch (mode)
             {
                 case "heal" when cfg.Heal != null:
-                    _nextEffectTick[slot] = Server.CurrentTime + Math.Max(cfg.Heal.Tick, 0.05f);
+                    _nextEffectTick[slot] = Server.CurrentTime + Math.Max(cfg.Heal.Interval, 0.05f);
                     Apply(player, pawn.AbsOrigin, radius, cfg.Heal.IgnoreTeammates, cfg.Heal.IgnoreSelf, cfg.Heal.IgnoreEnemy, target =>
                     {
                         int maxHp = target.MaxHealth > 0 ? target.MaxHealth : 100;
                         if (target.Health >= maxHp)
                             return;
-                        target.Health = Math.Min(target.Health + cfg.Heal.Heal, maxHp);
-                        Utilities.SetStateChanged(target, "CBaseEntity", "m_iHealth");
+                        Health.Set(target, Math.Min(target.Health + cfg.Heal.Heal, maxHp));
                     });
                     break;
 
                 case "poison" when cfg.Poison != null:
-                    _nextEffectTick[slot] = Server.CurrentTime + Math.Max(cfg.Poison.Tick, 0.05f);
+                    _nextEffectTick[slot] = Server.CurrentTime + Math.Max(cfg.Poison.Interval, 0.05f);
                     Apply(player, pawn.AbsOrigin, radius, cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, cfg.Poison.IgnoreEnemy, target =>
                     {
                         if (target.Health <= 1)
                             return;
-                        target.Health = Math.Max(target.Health - cfg.Poison.Damage, 1);
-                        Utilities.SetStateChanged(target, "CBaseEntity", "m_iHealth");
+                        Health.Set(target, Math.Max(target.Health - cfg.Poison.Damage, 1));
                     });
                     break;
 
@@ -252,7 +244,7 @@ public class Aura : VipModule
         _ => VisibleAll
     };
 
-    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit(ReadOnlySpan<TransmitView> views)
     {
         if (_rings.Count == 0)
             return;
@@ -275,8 +267,9 @@ public class Aura : VipModule
             if (player != null && player.IsValid && player.Slot < 64)
                 _team[player.Slot] = player.TeamNum;
 
-        foreach (var (info, viewer) in infoList)
+        foreach (var view in views)
         {
+            var viewer = view.Viewer;
             if (viewer == null || !viewer.IsValid || viewer.Slot >= 64)
                 continue;
 
@@ -291,7 +284,7 @@ public class Aura : VipModule
 
                 foreach (var beam in beams)
                     if (beam != null && beam.IsValid)
-                        Transmit.Hide(info, beam.Index);
+                        view.Hide(beam.Index);
             }
         }
     }
@@ -327,7 +320,7 @@ public class Aura : VipModule
             if (isTeammate && ignoreTeammates) continue;
             if (isEnemy && ignoreEnemy) continue;
 
-            var pawn = target.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(target);
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                 continue;
 
@@ -390,7 +383,7 @@ public class Aura : VipModule
             if (beam.Render != color)
             {
                 beam.Render = color;
-                Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+                NetState.Changed(beam, "CBaseModelEntity", "m_clrRender");
             }
 
             beam.Teleport(start, new QAngle(), new Vector());
@@ -398,7 +391,7 @@ public class Aura : VipModule
             beam.EndPos.X = center.X + radius * (float)Math.Cos(a2);
             beam.EndPos.Y = center.Y + radius * (float)Math.Sin(a2);
             beam.EndPos.Z = z;
-            Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+            NetState.Changed(beam, "CBeam", "m_vecEndPos");
         }
     }
 

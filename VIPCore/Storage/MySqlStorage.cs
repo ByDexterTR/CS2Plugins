@@ -50,7 +50,14 @@ public class MySqlStorage : IVipStorage
 
         Exec(conn, $@"CREATE TABLE IF NOT EXISTS `{_test}` (
             `steamid` BIGINT UNSIGNED NOT NULL,
+            `vip_group` VARCHAR(64) NOT NULL DEFAULT '',
+            `used_at` BIGINT NOT NULL DEFAULT 0,
             PRIMARY KEY (`steamid`));");
+
+        if (!HasColumn(conn, _test, "used_at"))
+            Exec(conn, $@"ALTER TABLE `{_test}`
+                ADD COLUMN `vip_group` VARCHAR(64) NOT NULL DEFAULT '',
+                ADD COLUMN `used_at` BIGINT NOT NULL DEFAULT 0;");
     }
 
     private const string SettingsSchema = @"(
@@ -281,23 +288,27 @@ public class MySqlStorage : IVipStorage
         catch { }
     }
 
-    public bool TestUsed(ulong steamId)
+    public VipTestRecord? LoadTest(ulong steamId)
     {
         using var conn = new MySqlConnection(_connString);
         conn.Open();
 
-        using var cmd = new MySqlCommand($"SELECT 1 FROM `{_test}` WHERE steamid = @s;", conn);
+        using var cmd = new MySqlCommand($"SELECT vip_group, used_at FROM `{_test}` WHERE steamid = @s;", conn);
         cmd.Parameters.AddWithValue("@s", steamId);
-        return cmd.ExecuteScalar() != null;
+        using var reader = cmd.ExecuteReader();
+        return reader.Read() ? new VipTestRecord { Group = reader.GetString(0), UsedAt = reader.GetInt64(1) } : null;
     }
 
-    public void MarkTestUsed(ulong steamId)
+    public void SaveTest(ulong steamId, VipTestRecord record)
     {
         using var conn = new MySqlConnection(_connString);
         conn.Open();
 
-        using var cmd = new MySqlCommand($"INSERT IGNORE INTO `{_test}` (steamid) VALUES (@s);", conn);
+        using var cmd = new MySqlCommand($@"INSERT INTO `{_test}` (steamid, vip_group, used_at) VALUES (@s, @g, @t)
+            ON DUPLICATE KEY UPDATE vip_group = VALUES(vip_group), used_at = VALUES(used_at);", conn);
         cmd.Parameters.AddWithValue("@s", steamId);
+        cmd.Parameters.AddWithValue("@g", record.Group);
+        cmd.Parameters.AddWithValue("@t", record.UsedAt);
         cmd.ExecuteNonQuery();
     }
 

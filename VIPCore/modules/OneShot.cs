@@ -24,16 +24,13 @@ public class OneShot : VipModule
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        if (info.Attacker?.Value == null)
-            return HookResult.Continue;
-
-        var attacker = PawnController(info.Attacker.Value);
+        var attacker = DamageAttacker(info);
         if (!Active(attacker))
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(attacker!) ?? DefaultCfg;
 
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (victim != null)
         {
             if (cfg.IgnoreSelf && victim.Slot == attacker!.Slot)

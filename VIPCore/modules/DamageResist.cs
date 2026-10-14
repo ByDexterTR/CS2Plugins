@@ -25,7 +25,7 @@ public class DamageResist : VipModule
 
     private HookResult OnDamage(CEntityInstance entity, CTakeDamageInfo info)
     {
-        var victim = PawnController(entity);
+        var victim = DamageVictim(entity);
         if (!Active(victim))
             return HookResult.Continue;
 
@@ -33,7 +33,7 @@ public class DamageResist : VipModule
         if (cfg.Percent == 0)
             return HookResult.Continue;
 
-        var attacker = PawnController(info.Attacker?.Value);
+        var attacker = DamageAttacker(info);
         if (attacker != null)
         {
             if (cfg.IgnoreSelf && attacker.Slot == victim!.Slot)

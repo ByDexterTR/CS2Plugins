@@ -9,13 +9,11 @@ public class SmokeEffect : VipModule
 {
     private class PoisonCfg
     {
-        [JsonPropertyName("minhp")]
         public int MinHp { get; set; } = 1;
         public int Damage { get; set; } = 2;
-        public float Time { get; set; } = 20f;
-        public float Tick { get; set; } = 0.5f;
+        public float Duration { get; set; } = 20f;
+        public float Interval { get; set; } = 0.5f;
         public float SoundVolume { get; set; } = 0.3f;
-        [JsonPropertyName("smokecolor")]
         public List<int> SmokeColor { get; set; } = new() { 255, 0, 255 };
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
@@ -26,10 +24,9 @@ public class SmokeEffect : VipModule
     private class HealCfg
     {
         public int Heal { get; set; } = 2;
-        public float Time { get; set; } = 20f;
-        public float Tick { get; set; } = 0.5f;
+        public float Duration { get; set; } = 20f;
+        public float Interval { get; set; } = 0.5f;
         public float SoundVolume { get; set; } = 0.5f;
-        [JsonPropertyName("smokecolor")]
         public List<int> SmokeColor { get; set; } = new() { 0, 255, 0 };
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = false;
@@ -41,10 +38,8 @@ public class SmokeEffect : VipModule
     private class SlowCfg
     {
         public int Percent { get; set; } = 30;
-        public float Time { get; set; } = 20f;
-        [JsonPropertyName("minspeed")]
+        public float Duration { get; set; } = 20f;
         public float MinSpeed { get; set; } = 100f;
-        [JsonPropertyName("smokecolor")]
         public List<int> SmokeColor { get; set; } = new() { 0, 0, 255 };
         public float Radius { get; set; } = 180f;
         public bool IgnoreTeammates { get; set; } = true;
@@ -55,9 +50,8 @@ public class SmokeEffect : VipModule
 
     private class WallhackCfg
     {
-        public float Time { get; set; } = 20f;
-        public float Tick { get; set; } = 0.25f;
-        [JsonPropertyName("smokecolor")]
+        public float Duration { get; set; } = 20f;
+        public float Interval { get; set; } = 0.25f;
         public List<int> SmokeColor { get; set; } = new() { 97, 45, 83 };
         public string Color { get; set; } = GlowPool.DefaultColor;
         public float Radius { get; set; } = 180f;
@@ -213,10 +207,10 @@ public class SmokeEffect : VipModule
         var cfg = GroupValue<Cfg>(player) ?? new Cfg();
         float time = mode switch
         {
-            "poison" when cfg.Poison != null => cfg.Poison.Time,
-            "heal" when cfg.Heal != null => cfg.Heal.Time,
-            "slow" when cfg.Slow != null => cfg.Slow.Time,
-            "wallhack" when cfg.Wallhack != null => cfg.Wallhack.Time,
+            "poison" when cfg.Poison != null => cfg.Poison.Duration,
+            "heal" when cfg.Heal != null => cfg.Heal.Duration,
+            "slow" when cfg.Slow != null => cfg.Slow.Duration,
+            "wallhack" when cfg.Wallhack != null => cfg.Wallhack.Duration,
             _ => 0f
         };
 
@@ -271,26 +265,24 @@ public class SmokeEffect : VipModule
             switch (smoke.Mode)
             {
                 case "poison" when cfg.Poison != null:
-                    smoke.NextTick = now + Math.Max(cfg.Poison.Tick, 0.05f);
+                    smoke.NextTick = now + Math.Max(cfg.Poison.Interval, 0.05f);
                     Apply(smoke, owner!, cfg.Poison.Radius, cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, false, pawn =>
                     {
                         if (pawn.Health <= cfg.Poison.MinHp)
                             return;
-                        pawn.Health = Math.Max(pawn.Health - cfg.Poison.Damage, cfg.Poison.MinHp);
-                        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+                        Health.Set(pawn, Math.Max(pawn.Health - cfg.Poison.Damage, cfg.Poison.MinHp));
                         SoundUtil.EmitToPawn(pawn, "Player.DamageBody.Victim", cfg.Poison.SoundVolume);
                     });
                     break;
 
                 case "heal" when cfg.Heal != null:
-                    smoke.NextTick = now + Math.Max(cfg.Heal.Tick, 0.05f);
+                    smoke.NextTick = now + Math.Max(cfg.Heal.Interval, 0.05f);
                     Apply(smoke, owner!, cfg.Heal.Radius, cfg.Heal.IgnoreTeammates, cfg.Heal.IgnoreSelf, cfg.Heal.IgnoreEnemy, pawn =>
                     {
                         int maxHp = pawn.MaxHealth > 0 ? pawn.MaxHealth : 100;
                         if (pawn.Health >= maxHp)
                             return;
-                        pawn.Health = Math.Min(pawn.Health + cfg.Heal.Heal, maxHp);
-                        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+                        Health.Set(pawn, Math.Min(pawn.Health + cfg.Heal.Heal, maxHp));
                         SoundUtil.EmitToPawn(pawn, "Healthshot.Success", cfg.Heal.SoundVolume);
                     });
                     break;
@@ -324,7 +316,7 @@ public class SmokeEffect : VipModule
 
         if (smoke.NextTick <= now)
         {
-            smoke.NextTick = now + Math.Max(cfg.Tick, 0.05f);
+            smoke.NextTick = now + Math.Max(cfg.Interval, 0.05f);
             smoke.Seen = 0;
 
             float radius = cfg.Radius > 0 ? cfg.Radius : 180f;
@@ -335,7 +327,7 @@ public class SmokeEffect : VipModule
                 if (!cfg.SeeTeammates && target.Team == owner!.Team)
                     continue;
 
-                var pawn = target.PlayerPawn.Value;
+                var pawn = PlayerCache.Pawn(target);
                 if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                     continue;
 
@@ -379,7 +371,7 @@ public class SmokeEffect : VipModule
             if (isEnemy && ignoreEnemy)
                 continue;
 
-            var pawn = target.PlayerPawn.Value;
+            var pawn = PlayerCache.Pawn(target);
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                 continue;
 

@@ -43,7 +43,7 @@ public class FastReload : VipModule
         if (!IsAlive(player) || !Active(player))
             return HookResult.Continue;
 
-        var weapon = player!.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
+        var weapon = PlayerCache.ActiveWeapon(player);
         if (weapon == null || !weapon.IsValid || WeaponAmmo.Manages(weapon.Index))
             return HookResult.Continue;
 
@@ -78,8 +78,8 @@ public class FastReload : VipModule
             weapon.ReserveAmmo[0] = reserve - take;
         }
 
-        Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
-        Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+        NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
+        NetState.Changed(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
         return HookResult.Continue;
     }
 }

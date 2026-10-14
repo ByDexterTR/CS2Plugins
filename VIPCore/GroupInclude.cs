@@ -16,25 +16,25 @@ internal static class GroupInclude
 
     private static readonly HashSet<string> LowerWinsPaths = new(StringComparer.OrdinalIgnoreCase)
     {
-        "FallDamage.percent",
-        "Respawn.time",
-        "FastDefuse.time",
-        "FastPlant.time",
+        "AntiHS.damage_percent",
+        "FallDamage.damage_percent",
+        "Respawn.delay",
+        "FastDefuse.defuse_time",
+        "FastPlant.plant_time",
         "Soul.respawn_time"
     };
 
     private static readonly HashSet<string> LowerWinsKeys = new(StringComparer.OrdinalIgnoreCase)
     {
-        "tick",
         "interval",
         "cooldown",
         "duration_off",
         "only_stance",
-        "delay_after_dmg",
-        "dmg_after_invis",
-        "recoilpercent",
-        "minspeed",
-        "minhp"
+        "delay_after_damage",
+        "reveal_time",
+        "recoil_percent",
+        "min_speed",
+        "min_hp"
     };
 
     private static readonly string[] IdentityKeys = { "name", "weapon_name", "weapon", "sound", "file", "model" };

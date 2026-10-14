@@ -108,7 +108,7 @@ public class Postprocessing : VipModule
         if (entry == null || entry.File.Length == 0)
             return;
 
-        var pawn = player.PlayerPawn.Value;
+        var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
             return;
 
@@ -150,7 +150,7 @@ public class Postprocessing : VipModule
         }
     }
 
-    private void OnCheckTransmit(CCheckTransmitInfoList infoList)
+    private void OnCheckTransmit(ReadOnlySpan<TransmitView> views)
     {
         int active = 0;
         for (int slot = 0; slot < 64; slot++)
@@ -160,8 +160,9 @@ public class Postprocessing : VipModule
         if (active == 0)
             return;
 
-        foreach (var (info, viewer) in infoList)
+        foreach (var view in views)
         {
+            var viewer = view.Viewer;
             if (viewer == null || !viewer.IsValid || viewer.Slot >= 64)
                 continue;
 
@@ -180,7 +181,7 @@ public class Postprocessing : VipModule
 
                 var volume = _volumes[slot];
                 if (volume != null && volume.IsValid)
-                    Transmit.Hide(info, volume);
+                    view.Hide(volume);
             }
 
             if (_volumes[shown] == null)
@@ -188,7 +189,7 @@ public class Postprocessing : VipModule
 
             foreach (var mapVolume in _mapVolumes)
                 if (mapVolume.IsValid)
-                    Transmit.Hide(info, mapVolume);
+                    view.Hide(mapVolume);
         }
     }
 }

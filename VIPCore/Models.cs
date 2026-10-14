@@ -18,6 +18,12 @@ public class VipEntry
     public long Expires { get; set; }
 }
 
+public class VipTestRecord
+{
+    public string Group { get; set; } = "";
+    public long UsedAt { get; set; }
+}
+
 public class PeriodConfig
 {
     public string Start { get; set; } = "";
