@@ -162,6 +162,17 @@ public class MapBlock : BasePlugin, IPluginConfig<MapBlockConfig>
       SweepFences();
       Evaluate();
     }
+    else
+    {
+      Server.NextWorldUpdate(() =>
+      {
+        if (string.IsNullOrEmpty(Server.MapName))
+          return;
+
+        SweepFences();
+        Evaluate();
+      });
+    }
   }
 
   public override void Unload(bool hotReload)

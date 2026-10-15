@@ -72,8 +72,14 @@ public partial class CommandMaker
   {
     (c => c.SetHealth, ctx =>
     {
-      if (ctx.Pawn is not { } pawn || !ctx.Int(out int health))
+      if (ctx.CsPawn is not { } pawn || !ctx.Int(out int health))
         return;
+
+      if (health <= 0)
+      {
+        pawn.CommitSuicide(true, true);
+        return;
+      }
 
       pawn.Health = health;
       Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
@@ -154,6 +160,10 @@ public partial class CommandMaker
       if (ctx.ActiveWeapon is not { } weapon || !ctx.Int(out int ammo))
         return;
 
+      var vdata = weapon.As<CCSWeaponBase>().VData;
+      if (vdata != null && vdata.ReserveAmmoAsClips && vdata.MaxClip1 > 0)
+        ammo = (ammo + vdata.MaxClip1 - 1) / vdata.MaxClip1;
+
       weapon.ReserveAmmo[0] = ammo;
       Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
     }),
@@ -193,14 +203,18 @@ public partial class CommandMaker
 
     (c => c.AddHealth, ctx =>
     {
-      if (ctx.Pawn is not { } pawn || !ctx.Int(out int delta))
+      if (ctx.CsPawn is not { } pawn || !ctx.Int(out int delta))
         return;
 
-      pawn.Health = Math.Max(0, pawn.Health + delta);
-      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
-
-      if (pawn.Health <= 0)
+      int health = pawn.Health + delta;
+      if (health <= 0)
+      {
         pawn.CommitSuicide(true, true);
+        return;
+      }
+
+      pawn.Health = health;
+      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
     }),
 
     (c => c.AddArmor, ctx =>
@@ -406,11 +420,15 @@ public partial class CommandMaker
     if (damage <= 0)
       return;
 
-    pawn.Health -= damage;
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
-
-    if (pawn.Health <= 0)
+    int health = pawn.Health - damage;
+    if (health <= 0)
+    {
       pawn.CommitSuicide(true, true);
+      return;
+    }
+
+    pawn.Health = health;
+    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
   }
 
   private static void SetMoney(CCSPlayerController? controller, int money)

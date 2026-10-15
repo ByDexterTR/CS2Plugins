@@ -62,7 +62,8 @@ public class Pyro : VipModule
             if (LimitReached(attacker.Slot, cfg.Limit))
                 return HookResult.Continue;
 
-            Health.Set(pawn, newHp);
+            pawn.Health = newHp;
+            NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
             LimitUse(attacker.Slot);
         }
 

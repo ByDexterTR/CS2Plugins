@@ -131,7 +131,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       if (weaponName.Contains("knife") || weaponName.Contains("bayonet"))
         continue;
 
-      weaponOpt.Value.Remove();
+      weaponOpt.Value.AddEntityIOEvent("Kill", weaponOpt.Value, null, "", 0.1f);
     }
 
     if (!string.IsNullOrEmpty(primaryWeapon))

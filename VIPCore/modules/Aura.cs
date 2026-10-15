@@ -198,7 +198,8 @@ public class Aura : VipModule
                         int maxHp = target.MaxHealth > 0 ? target.MaxHealth : 100;
                         if (target.Health >= maxHp)
                             return;
-                        Health.Set(target, Math.Min(target.Health + cfg.Heal.Heal, maxHp));
+                        target.Health = Math.Min(target.Health + cfg.Heal.Heal, maxHp);
+                        NetState.Changed(target, "CBaseEntity", "m_iHealth");
                     });
                     break;
 
@@ -208,7 +209,8 @@ public class Aura : VipModule
                     {
                         if (target.Health <= 1)
                             return;
-                        Health.Set(target, Math.Max(target.Health - cfg.Poison.Damage, 1));
+                        target.Health = Math.Max(target.Health - cfg.Poison.Damage, 1);
+                        NetState.Changed(target, "CBaseEntity", "m_iHealth");
                     });
                     break;
 

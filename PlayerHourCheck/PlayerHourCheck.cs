@@ -5,6 +5,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Timers;
+using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using System.Collections.Concurrent;
@@ -150,12 +151,9 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
       }
     });
 
-    if (hotReload)
+    foreach (var player in Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot && !p.IsHLTV))
     {
-      foreach (var player in Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot && !p.IsHLTV))
-      {
-        CheckExistingPlayer(player);
-      }
+      CheckExistingPlayer(player);
     }
 
     AddCommand("css_phc_reload", "Konfigi yeniden yukler ve tum oyunculari yeniden kontrol eder", (player, info) =>
@@ -370,11 +368,29 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
     var player = @event.Userid;
     if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return HookResult.Continue;
 
-    if (IsIgnored(player)) return HookResult.Continue;
-
-    BeginConnectCheck(player);
+    CheckExistingPlayer(player);
 
     return HookResult.Continue;
+  }
+
+  private void WhenAuthorized(CCSPlayerController player, Action<CCSPlayerController> next, int attempts = 120)
+  {
+    if (Util.SteamId(player) != 0UL)
+    {
+      next(player);
+      return;
+    }
+
+    if (attempts <= 0)
+      return;
+
+    uint handle = player.EntityHandle.Raw;
+    AddTimer(1.0f, () =>
+    {
+      var current = new CHandle<CCSPlayerController>(handle).Value;
+      if (current != null && current.IsValid && current.Connected == PlayerConnectedState.Connected)
+        WhenAuthorized(current, next, attempts - 1);
+    });
   }
 
   private void BeginConnectCheck(CCSPlayerController player)
@@ -444,12 +460,11 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
   {
     if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return;
 
-    if (IsIgnored(player))
+    WhenAuthorized(player, p =>
     {
-      return;
-    }
-
-    BeginConnectCheck(player);
+      if (!IsIgnored(p))
+        BeginConnectCheck(p);
+    });
   }
 
   private async void CheckPlayerAsync(CCSPlayerController player)

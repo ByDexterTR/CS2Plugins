@@ -549,9 +549,9 @@ public partial class VIPCore : BasePlugin
         if (player == null || !player.IsValid || player.IsBot || player.UserId != userId)
             return;
 
-        ulong steamId = player.AuthorizedSteamID?.SteamId64 ?? player.SteamID;
+        ulong steamId = player.AuthorizedSteamID?.SteamId64 ?? 0UL;
 
-        if (steamId >= MinValidSteamId)
+        if (steamId > MinValidSteamId && (steamId & 0xFFFFFFFFUL) != 0xFFFFFFFFUL)
         {
             RefreshFromStorage(steamId);
             return;

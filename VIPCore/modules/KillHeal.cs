@@ -81,7 +81,8 @@ public class KillHeal : VipModule
             return HookResult.Continue;
 
         int healed = Math.Min(pawn.Health + total, maxHp) - pawn.Health;
-        Health.Set(pawn, pawn.Health + healed);
+        pawn.Health = pawn.Health + healed;
+        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
 
         attacker.PrintToChat($" {CC.Orchid}{Core.ChatPrefix}{CC.Default} {Core.Localizer["vip.killheal", healed, string.Join(", ", reasons)]}");
         return HookResult.Continue;

@@ -171,6 +171,11 @@ public class CTBan : BasePlugin
             info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
             return;
         }
+        if (Util.SteamId(target) == 0UL)
+        {
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.target_unverified"]}");
+            return;
+        }
         var steamid = Util.SteamId(target).ToString();
 
         var durationStr = info.GetArg(2);
@@ -182,7 +187,7 @@ public class CTBan : BasePlugin
         }
 
         var reason = info.ArgCount > 3 ? string.Join(" ", Enumerable.Range(3, info.ArgCount - 3).Select(i => info.GetArg(i))) : Localizer["ctban.no_reason"].ToString();
-        var adminSteamId = Util.SteamId(player).ToString() ?? "unknown";
+        var adminSteamId = Util.SteamId(player) is var adminId and > 0UL ? adminId.ToString() : "unknown";
         BanList.BannedPlayers[steamid] = new CTBanEntry
         {
             Nickname = target.PlayerName,
@@ -219,6 +224,11 @@ public class CTBan : BasePlugin
         if (target == null)
         {
             info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.target_not_found"]}");
+            return;
+        }
+        if (Util.SteamId(target) == 0UL)
+        {
+            info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.target_unverified"]}");
             return;
         }
         var steamid = Util.SteamId(target).ToString();
@@ -263,7 +273,7 @@ public class CTBan : BasePlugin
         }
 
         var reason = info.ArgCount > 3 ? string.Join(" ", Enumerable.Range(3, info.ArgCount - 3).Select(i => info.GetArg(i))) : Localizer["ctban.no_reason"].ToString();
-        var adminSteamId = Util.SteamId(player).ToString() ?? "unknown";
+        var adminSteamId = Util.SteamId(player) is var adminId and > 0UL ? adminId.ToString() : "unknown";
         BanList.BannedPlayers[steamid] = new CTBanEntry
         {
             Nickname = steamid,

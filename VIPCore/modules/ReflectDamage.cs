@@ -61,7 +61,8 @@ public class ReflectDamage : VipModule
         if (LimitReached(victim.Slot, cfg.Limit))
             return HookResult.Continue;
 
-        Health.Set(pawn, Math.Max(pawn.Health - dmg, 1));
+        pawn.Health = Math.Max(pawn.Health - dmg, 1);
+        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
         LimitUse(victim.Slot);
         return HookResult.Continue;
     }

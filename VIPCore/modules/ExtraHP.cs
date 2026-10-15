@@ -31,7 +31,8 @@ public class ExtraHP : VipModule
 
             pawn.MaxHealth = hp;
             NetState.Changed(pawn, "CBaseEntity", "m_iMaxHealth");
-            Health.Set(pawn, hp);
+            pawn.Health = hp;
+            NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
         });
 
         return HookResult.Continue;

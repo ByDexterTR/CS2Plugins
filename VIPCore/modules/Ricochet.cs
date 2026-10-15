@@ -232,7 +232,8 @@ public class Ricochet : VipModule
         int health = pawn.Health - final;
         if (health > 0)
         {
-            Health.Set(pawn, health);
+            pawn.Health = health;
+            NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
             return;
         }
 

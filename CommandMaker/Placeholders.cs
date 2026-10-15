@@ -294,7 +294,15 @@ public partial class CommandMaker
     if (weapon == null)
       return "0";
 
-    return (reserve ? weapon.ReserveAmmo[0] : weapon.Clip1).ToString(CultureInfo.InvariantCulture);
+    if (!reserve)
+      return weapon.Clip1.ToString(CultureInfo.InvariantCulture);
+
+    int ammo = weapon.ReserveAmmo[0];
+    var vdata = weapon.As<CCSWeaponBase>().VData;
+    if (vdata != null && vdata.ReserveAmmoAsClips)
+      ammo *= vdata.MaxClip1;
+
+    return ammo.ToString(CultureInfo.InvariantCulture);
   }
 
   private static string DistanceBetween(CCSPlayerController? from, CCSPlayerController? to)

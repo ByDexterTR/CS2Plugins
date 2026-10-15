@@ -81,6 +81,7 @@ public class HealthRegen : VipModule
         if (pawn.Health >= maxHp)
             return;
 
-        Health.Set(pawn, Math.Min(pawn.Health + cfg.HpPerTick, maxHp));
+        pawn.Health = Math.Min(pawn.Health + cfg.HpPerTick, maxHp);
+        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
     }
 }

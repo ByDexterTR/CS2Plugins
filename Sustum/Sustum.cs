@@ -175,7 +175,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
             var activeWeapon = player.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Get();
             if (activeWeapon != null && activeWeapon.DesignerName == "weapon_deagle")
             {
-                activeWeapon.Remove();
+                activeWeapon.AddEntityIOEvent("Kill", activeWeapon, null, "", 0.1f);
                 DSustumWin[Util.UserId(player)] = false;
                 var playerPawn = player!.PlayerPawn.Value;
                 if (playerPawn != null)

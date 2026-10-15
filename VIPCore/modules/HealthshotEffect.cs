@@ -444,7 +444,8 @@ public class HealthshotEffect : VipModule
                 {
                     if (target.Health <= cfg.Poison.MinHp)
                         return;
-                    Health.Set(target, Math.Max(target.Health - cfg.Poison.Damage, cfg.Poison.MinHp));
+                    target.Health = Math.Max(target.Health - cfg.Poison.Damage, cfg.Poison.MinHp);
+                    NetState.Changed(target, "CBaseEntity", "m_iHealth");
                     SoundUtil.EmitToPawn(target, "Player.DamageBody.Victim", cfg.Poison.SoundVolume);
                 });
                 break;
@@ -456,7 +457,8 @@ public class HealthshotEffect : VipModule
                     int maxHp = target.MaxHealth > 0 ? target.MaxHealth : 100;
                     if (target.Health >= maxHp)
                         return;
-                    Health.Set(target, Math.Min(target.Health + cfg.Heal.Heal, maxHp));
+                    target.Health = Math.Min(target.Health + cfg.Heal.Heal, maxHp);
+                    NetState.Changed(target, "CBaseEntity", "m_iHealth");
                     SoundUtil.EmitToPawn(target, "Healthshot.Success", cfg.Heal.SoundVolume);
                 });
                 break;

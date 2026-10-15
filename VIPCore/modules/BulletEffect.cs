@@ -258,7 +258,8 @@ public class BulletEffect : VipModule
                     e.NextTick = now + e.Interval;
                     if (pawn.Health > 1)
                     {
-                        Health.Set(pawn, Math.Max(pawn.Health - e.Damage, 1));
+                        pawn.Health = Math.Max(pawn.Health - e.Damage, 1);
+                        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
                         SoundUtil.EmitToPlayer(player, "Player.DamageBody.Victim", e.SoundVolume);
                     }
                     break;

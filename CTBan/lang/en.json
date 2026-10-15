@@ -2,6 +2,7 @@
   "chat_prefix": "[ByDexter]",
   "ctban.usage_ban": "Usage: css_ctban <target> <duration> [reason]",
   "ctban.target_not_found": "Target not found",
+  "ctban.target_unverified": "Target's Steam ID is not verified yet, try again in a moment",
   "ctban.invalid_duration": "Please enter a valid duration. (Example: 30m, 2h, 1d)",
   "ctban.banned": "{0} was CT banned by {1} for {2}! Reason: {3}",
   "ctban.usage_unban": "Usage: css_ctunban <target>",

@@ -86,7 +86,7 @@ public partial class Ads
       case "date": return DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
 
       case "player": return viewer?.PlayerName ?? "";
-      case "steamid": return viewer != null ? Util.SteamId(viewer).ToString(CultureInfo.InvariantCulture) : "";
+      case "steamid": return Util.SteamId(viewer) is var sid and > 0UL ? sid.ToString(CultureInfo.InvariantCulture) : "";
       case "team": return ViewerTeam(viewer);
       case "kills": return Stat(viewer, 0);
       case "deaths": return Stat(viewer, 1);

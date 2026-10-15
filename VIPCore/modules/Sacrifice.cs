@@ -50,7 +50,8 @@ public class Sacrifice : VipModule
                 int maxHp = pawn.MaxHealth > 0 ? pawn.MaxHealth : 100;
                 if (pawn.Health < maxHp)
                 {
-                    Health.Set(pawn, Math.Min(pawn.Health + cfg.Hp, maxHp));
+                    pawn.Health = Math.Min(pawn.Health + cfg.Hp, maxHp);
+                    NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
                 }
             }
 

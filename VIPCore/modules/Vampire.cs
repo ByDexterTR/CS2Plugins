@@ -52,7 +52,8 @@ public class Vampire : VipModule
         int newHp = Math.Min(pawn.Health + heal, cfg.MaxOverheal);
         if (newHp > pawn.Health)
         {
-            Health.Set(pawn, newHp);
+            pawn.Health = newHp;
+            NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
         }
 
         return HookResult.Continue;

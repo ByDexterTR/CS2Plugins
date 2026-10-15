@@ -82,14 +82,12 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
       HookUserMessage(452, OnWeaponEvent, HookMode.Pre);
     }
 
-    if (hotReload)
+    foreach (var player in Utilities.GetPlayers())
     {
-      foreach (var player in Utilities.GetPlayers())
-      {
-        if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0)
-          continue;
-        _hidden[player.Slot] = _saved.Contains(Util.SteamId(player));
-      }
+      ulong steamId = Util.SteamId(player);
+      if (player.IsBot || steamId == 0UL)
+        continue;
+      _hidden[player.Slot] = _saved.Contains(steamId);
     }
   }
 
@@ -117,12 +115,16 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
     int slot = player.Slot;
     _hidden[slot] = !_hidden[slot];
 
-    if (_hidden[slot])
-      _saved.Add(Util.SteamId(player));
-    else
-      _saved.Remove(Util.SteamId(player));
+    ulong steamId = Util.SteamId(player);
+    if (steamId != 0UL)
+    {
+      if (_hidden[slot])
+        _saved.Add(steamId);
+      else
+        _saved.Remove(steamId);
 
-    SavePrefs();
+      SavePrefs();
+    }
 
     string key = _hidden[slot] ? "hide.enabled" : "hide.disabled";
     player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer[key, ModeLabel()]}");

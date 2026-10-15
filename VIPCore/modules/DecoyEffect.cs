@@ -275,7 +275,8 @@ public class DecoyEffect : VipModule
                     {
                         if (pawn.Health <= cfg.Poison.MinHp)
                             return;
-                        Health.Set(pawn, Math.Max(pawn.Health - cfg.Poison.Damage, cfg.Poison.MinHp));
+                        pawn.Health = Math.Max(pawn.Health - cfg.Poison.Damage, cfg.Poison.MinHp);
+                        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
                         SoundUtil.EmitToPawn(pawn, "Player.DamageBody.Victim", cfg.Poison.SoundVolume);
                     });
                     break;
@@ -287,7 +288,8 @@ public class DecoyEffect : VipModule
                         int maxHp = pawn.MaxHealth > 0 ? pawn.MaxHealth : 100;
                         if (pawn.Health >= maxHp)
                             return;
-                        Health.Set(pawn, Math.Min(pawn.Health + cfg.Heal.Heal, maxHp));
+                        pawn.Health = Math.Min(pawn.Health + cfg.Heal.Heal, maxHp);
+                        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
                         SoundUtil.EmitToPawn(pawn, "Healthshot.Success", cfg.Heal.SoundVolume);
                     });
                     break;

@@ -15,8 +15,14 @@ public static class Util
   public static int UserId(CCSPlayerController? player) =>
     player != null && player.IsValid ? player.UserId ?? -1 : -1;
 
-  public static ulong SteamId(CCSPlayerController? player) =>
-    player == null || !player.IsValid ? 0UL : player.AuthorizedSteamID?.SteamId64 ?? player.SteamID;
+  public static ulong SteamId(CCSPlayerController? player)
+  {
+    if (player == null || !player.IsValid)
+      return 0UL;
+
+    ulong id = player.AuthorizedSteamID?.SteamId64 ?? 0UL;
+    return id > 76561197960265728UL && (id & 0xFFFFFFFFUL) != 0xFFFFFFFFUL ? id : 0UL;
+  }
 
   public static CCSPlayerController? FromUserId(int userId)
   {

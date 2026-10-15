@@ -2,6 +2,7 @@
   "chat_prefix": "[ByDexter]",
   "ctban.usage_ban": "Kullanım: css_ctban <Hedef> <Süre> [Sebep]",
   "ctban.target_not_found": "Hedef bulunamadı",
+  "ctban.target_unverified": "Hedefin Steam kimliği henüz doğrulanmadı, birazdan tekrar dene",
   "ctban.invalid_duration": "Geçerli bir süre gir. (Örnek: 30m, 2h, 1d)",
   "ctban.banned": "{0}, {1} tarafından {2} CT'den banlandı! Sebep: {3}",
   "ctban.usage_unban": "Kullanım: css_ctunban <Hedef>",

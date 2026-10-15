@@ -51,7 +51,8 @@ public class TeamHeal : VipModule
 
         if (newHp > victimPawn.Health)
         {
-            Health.Set(victimPawn, newHp);
+            victimPawn.Health = newHp;
+            NetState.Changed(victimPawn, "CBaseEntity", "m_iHealth");
             SoundUtil.EmitToPlayer(victim, "Healthshot.Success", cfg.SoundVolume);
         }
 
