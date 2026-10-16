@@ -2,6 +2,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Entities;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
@@ -54,14 +56,20 @@ public class GoBhopConfig : BasePluginConfig
 public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
 {
   public override string ModuleName => "GoBhop";
-  public override string ModuleVersion => "1.0.3";
+  public override string ModuleVersion => "1.0.4";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
   private const int MaxSlots = 64;
   private const int MaxEntities = 16384;
+  private const int MaxWeapons = 64;
+  private const int SideHookTicks = 64;
   private const int TextMsgMessage = 124;
+  private const int ParticleMessage = 145;
   private const int SoundEventMessage = 208;
+  private const int WeaponSoundMessage = 369;
+  private const int EffectMessage = 400;
+  private const int FireBulletsMessage = 452;
 
   private string ChatPrefix => Localizer["chat_prefix"];
 
@@ -75,23 +83,43 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
   private bool _roundClosed;
 
   private readonly CCSPlayerController?[] _players = new CCSPlayerController?[MaxSlots];
+  private readonly nint[] _controllers = new nint[MaxSlots];
   private readonly bool[] _member = new bool[MaxSlots];
-  private readonly bool[] _side = new bool[MaxSlots];
   private readonly int[] _pawns = new int[MaxSlots];
+  private readonly uint[] _pawnHandles = new uint[MaxSlots];
   private readonly int[] _weaponTick = new int[MaxSlots];
-  private readonly List<int>[] _weapons = new List<int>[MaxSlots];
-  private int _slotOffset;
+  private readonly int[] _weaponCount = new int[MaxSlots];
+  private readonly int[] _weapons = new int[MaxSlots * MaxWeapons];
+  private ulong _memberMask;
+  private ulong _sideMask;
+  private ulong _viewerMask;
   private bool _hooked;
+  private bool _sideHooked;
+  private int _sideSeen;
+
+  private int _slotOffset;
+  private int _pawnHandleOffset;
+  private int _pawnIsAliveOffset;
+  private int _observerPawnOffset;
+  private int _lifeStateOffset;
+  private int _observerServicesOffset;
+  private int _observerTargetOffset;
+  private int _weaponServicesOffset;
+  private int _myWeaponsOffset;
 
   private WasdMenuManager _menus = null!;
   private OnTick _onTick = null!;
   private CheckTransmit _onCheckTransmit = null!;
   private UserMessage.UserMessageHandler _onSoundEvent = null!;
+  private UserMessage.UserMessageHandler _onWeaponSound = null!;
+  private UserMessage.UserMessageHandler _onFireBullets = null!;
+  private UserMessage.UserMessageHandler _onParticle = null!;
+  private UserMessage.UserMessageHandler _onEffect = null!;
   private UserMessage.UserMessageHandler _onTextMsg = null!;
 
   private bool InBhop(CCSPlayerController player) => _bhop.TryGetValue(Util.UserId(player), out var pendingDeath) && !pendingDeath;
 
-  private int ActiveCount => _bhop.Count(kv => !kv.Value);
+  private int ActiveCount => System.Numerics.BitOperations.PopCount(_memberMask);
 
   public void OnConfigParsed(GoBhopConfig config)
   {
@@ -102,13 +130,23 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
 
   public override void Load(bool hotReload)
   {
-    for (int i = 0; i < MaxSlots; i++)
-      _weapons[i] = new List<int>();
-
     _slotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
+    _pawnHandleOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
+    _pawnIsAliveOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_bPawnIsAlive");
+    _observerPawnOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hObserverPawn");
+    _lifeStateOffset = Schema.GetSchemaOffset("CBaseEntity", "m_lifeState");
+    _observerServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pObserverServices");
+    _observerTargetOffset = Schema.GetSchemaOffset("CPlayer_ObserverServices", "m_hObserverTarget");
+    _weaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
+    _myWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
+
     _onTick = OnTick;
     _onCheckTransmit = OnCheckTransmit;
-    _onSoundEvent = OnSoundEvent;
+    _onSoundEvent = um => FilterBySource(um, "source_entity_index", handle: false, fromMembers: true);
+    _onWeaponSound = um => FilterBySource(um, "entidx", handle: false, fromMembers: false);
+    _onFireBullets = um => FilterBySource(um, "player", handle: true, fromMembers: false);
+    _onParticle = um => FilterByHandles(um, "entity_handle: ");
+    _onEffect = um => FilterByHandles(um, "entity: ");
     _onTextMsg = OnTextMsg;
 
     _menus = new WasdMenuManager(this,
@@ -164,7 +202,7 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     Server.NextWorldUpdate(() =>
     {
       foreach (var player in Utilities.GetPlayers())
-        _players[player.Slot] = player;
+        Track(player);
     });
   }
 
@@ -177,8 +215,9 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
 
   private void OnClientPutInServer(int slot)
   {
-    if ((uint)slot < MaxSlots)
-      _players[slot] = Utilities.GetPlayerFromSlot(slot);
+    var player = Utilities.GetPlayerFromSlot(slot);
+    if (player != null)
+      Track(player);
   }
 
   private void OnClientDisconnect(int slot)
@@ -187,8 +226,23 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
       return;
 
     _players[slot] = null;
+    _controllers[slot] = 0;
+    _pawns[slot] = 0;
     _member[slot] = false;
-    _side[slot] = false;
+    ulong keep = ~(1UL << slot);
+    _memberMask &= keep;
+    _sideMask &= keep;
+    _viewerMask &= keep;
+  }
+
+  private void Track(CCSPlayerController player)
+  {
+    int slot = player.Slot;
+    if ((uint)slot >= MaxSlots || !player.IsValid)
+      return;
+
+    _players[slot] = player;
+    _controllers[slot] = player.Handle;
   }
 
   private void OnGoBhopCommand(CCSPlayerController? player, CommandInfo info)
@@ -475,21 +529,89 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     return HookResult.Handled;
   }
 
-  private HookResult OnSoundEvent(UserMessage um)
+  private HookResult FilterBySource(UserMessage um, string field, bool handle, bool fromMembers)
   {
-    int source = um.ReadInt("source_entity_index");
-    if (!IsMemberPawn(source))
+    ulong mask = um.Recipients.GetRecipientMask();
+    ulong humans = mask & _viewerMask;
+    if (humans == 0 || (!fromMembers && (humans & _sideMask) == 0))
       return HookResult.Continue;
 
-    for (int i = um.Recipients.Count - 1; i >= 0; i--)
+    int index = handle ? (int)(um.ReadUInt(field) & 0x3FFF) : um.ReadInt(field);
+    if ((humans & _sideMask) == 0)
+      return IsMemberPawn(index) ? Send(um, mask, mask & ~humans) : HookResult.Continue;
+
+    int owner = OwnerSlot(index);
+    if (owner < 0)
+      return HookResult.Continue;
+
+    ulong rest = _member[owner] ? mask & ~(humans & ~_sideMask) : mask & ~_sideMask;
+    return Send(um, mask, rest);
+  }
+
+  private HookResult FilterByHandles(UserMessage um, string key)
+  {
+    ulong mask = um.Recipients.GetRecipientMask();
+    if ((mask & _sideMask) == 0)
+      return HookResult.Continue;
+
+    string debug = um.DebugString;
+    int at = 0;
+    while ((at = debug.IndexOf(key, at, StringComparison.Ordinal)) >= 0)
     {
-      var listener = um.Recipients[i];
-      int slot = listener?.Slot ?? -1;
-      if ((uint)slot >= MaxSlots || !(_member[slot] || _side[slot]))
-        um.Recipients.RemoveAt(i);
+      uint raw = 0;
+      for (at += key.Length; at < debug.Length && char.IsAsciiDigit(debug[at]); at++)
+        raw = raw * 10 + (uint)(debug[at] - '0');
+
+      if (raw == 0 || raw == uint.MaxValue)
+        continue;
+
+      int owner = OwnerSlot((int)(raw & 0x3FFF));
+      if (owner >= 0 && !_member[owner])
+        return Send(um, mask, mask & ~_sideMask);
     }
 
-    return um.Recipients.Count == 0 ? HookResult.Stop : HookResult.Continue;
+    return HookResult.Continue;
+  }
+
+  private static HookResult Send(UserMessage um, ulong mask, ulong rest)
+  {
+    if (rest == mask)
+      return HookResult.Continue;
+
+    if (rest == 0)
+      return HookResult.Stop;
+
+    um.Recipients = new RecipientFilter(rest);
+    return HookResult.Continue;
+  }
+
+  private int OwnerSlot(int index)
+  {
+    if (index <= 0 || index >= MaxEntities)
+      return -1;
+
+    for (int slot = 0; slot < MaxSlots; slot++)
+    {
+      if (_pawns[slot] == index)
+        return slot;
+    }
+
+    int tick = Server.TickCount;
+    for (int slot = 0; slot < MaxSlots; slot++)
+    {
+      if (_pawns[slot] == 0)
+        continue;
+
+      int count = Weapons(slot, tick);
+      int start = slot * MaxWeapons;
+      for (int w = 0; w < count; w++)
+      {
+        if (_weapons[start + w] == index)
+          return slot;
+      }
+    }
+
+    return -1;
   }
 
   private static HookResult OnTextMsg(UserMessage um)
@@ -505,9 +627,12 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     if (index <= 0)
       return false;
 
-    for (int slot = 0; slot < MaxSlots; slot++)
+    ulong pending = _memberMask;
+    while (pending != 0)
     {
-      if (_member[slot] && _pawns[slot] == index)
+      int slot = System.Numerics.BitOperations.TrailingZeroCount(pending);
+      pending &= pending - 1;
+      if (_pawns[slot] == index)
         return true;
     }
     return false;
@@ -608,22 +733,23 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     return HookResult.Continue;
   }
 
-  private void OnTick()
+  private unsafe void OnTick()
   {
     for (int slot = 0; slot < MaxSlots; slot++)
     {
-      var player = _players[slot];
-      if (player == null)
+      nint controller = _controllers[slot];
+      if (controller == 0)
       {
         _pawns[slot] = 0;
         continue;
       }
 
-      uint raw = player.PlayerPawn.Raw;
+      uint raw = *(uint*)(controller + _pawnHandleOffset);
+      _pawnHandles[slot] = raw;
       _pawns[slot] = raw == uint.MaxValue ? 0 : (int)(raw & 0x3FFF);
 
-      if (_member[slot] && player.PawnIsAlive)
-        SetScoreboardDead(player, dead: true);
+      if (_member[slot] && *(bool*)(controller + _pawnIsAliveOffset))
+        SetScoreboardDead(_players[slot]!, dead: true);
     }
   }
 
@@ -633,6 +759,8 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     nint* list = (nint*)infoList.Handle;
     nint* entries = (nint*)list[0];
     int count = (int)list[1];
+    ulong sideMask = 0;
+    ulong viewerMask = 0;
 
     for (int k = 0; k < count; k++)
     {
@@ -641,8 +769,10 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
       if ((uint)viewer >= MaxSlots)
         continue;
 
+      viewerMask |= 1UL << viewer;
       bool side = _member[viewer] || IsMemberPawn(ObservedPawn(viewer));
-      _side[viewer] = side;
+      if (side)
+        sideMask |= 1UL << viewer;
 
       uint* dont = *(uint**)(entry + 8);
       if (dont == null)
@@ -659,47 +789,69 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
           continue;
 
         Clear(bits, dont, pawn);
-        foreach (int weapon in Weapons(t, tick))
-          Clear(bits, dont, weapon);
+
+        int weapons = Weapons(t, tick);
+        int start = t * MaxWeapons;
+        for (int w = 0; w < weapons; w++)
+          Clear(bits, dont, _weapons[start + w]);
       }
     }
+
+    _sideMask = sideMask;
+    if (sideMask != 0)
+      _sideSeen = tick;
+    SetSideHooks(sideMask != 0 || tick - _sideSeen < SideHookTicks);
+    _viewerMask = viewerMask;
   }
 
-  private int ObservedPawn(int slot)
+  private unsafe int ObservedPawn(int slot)
   {
-    var player = _players[slot];
-    if (player == null || player.PawnIsAlive)
+    nint controller = _controllers[slot];
+    nint pawn = Entity(_pawnHandles[slot]);
+    if (controller == 0 || pawn == 0 || *(byte*)(pawn + _lifeStateOffset) == (byte)LifeState_t.LIFE_ALIVE)
       return 0;
 
-    var target = player.ObserverPawn.Value?.ObserverServices?.ObserverTarget;
-    if (target == null)
+    nint observer = Entity(*(uint*)(controller + _observerPawnOffset));
+    nint services = observer == 0 ? 0 : *(nint*)(observer + _observerServicesOffset);
+    if (services == 0)
       return 0;
 
-    uint raw = target.Raw;
+    uint raw = *(uint*)(services + _observerTargetOffset);
     return raw == uint.MaxValue ? 0 : (int)(raw & 0x3FFF);
   }
 
-  private List<int> Weapons(int slot, int tick)
+  private unsafe int Weapons(int slot, int tick)
   {
-    var list = _weapons[slot];
     if (_weaponTick[slot] == tick)
-      return list;
+      return _weaponCount[slot];
 
     _weaponTick[slot] = tick;
-    list.Clear();
+    _weaponCount[slot] = 0;
 
-    var services = _players[slot]?.PlayerPawn.Value?.WeaponServices;
-    if (services == null)
-      return list;
+    nint pawn = Entity(_pawnHandles[slot]);
+    nint services = pawn == 0 ? 0 : *(nint*)(pawn + _weaponServicesOffset);
+    if (services == 0)
+      return 0;
 
-    foreach (var weapon in services.MyWeapons)
+    int count = *(int*)(services + _myWeaponsOffset);
+    uint* handles = *(uint**)(services + _myWeaponsOffset + 8);
+    if (count <= 0 || handles == null)
+      return 0;
+
+    int start = slot * MaxWeapons;
+    int found = 0;
+    for (int i = 0; i < count && found < MaxWeapons; i++)
     {
-      uint raw = weapon.Raw;
+      uint raw = handles[i];
       if (raw != uint.MaxValue)
-        list.Add((int)(raw & 0x3FFF));
+        _weapons[start + found++] = (int)(raw & 0x3FFF);
     }
-    return list;
+
+    _weaponCount[slot] = found;
+    return found;
   }
+
+  private static nint Entity(uint raw) => raw == uint.MaxValue ? 0 : EntitySystem.GetEntityByHandle(raw) ?? 0;
 
   private static unsafe void Clear(uint* bits, uint* dont, int index)
   {
@@ -718,6 +870,7 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
   private void UpdateMembers()
   {
     Array.Clear(_member);
+    _memberMask = 0;
     foreach (var (userId, pendingDeath) in _bhop)
     {
       if (pendingDeath)
@@ -727,11 +880,13 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
       if (player != null && (uint)player.Slot < MaxSlots)
       {
         _member[player.Slot] = true;
-        _players[player.Slot] = player;
+        _memberMask |= 1UL << player.Slot;
+        Track(player);
       }
     }
 
-    SetHooks(ActiveCount > 0);
+    _sideMask = _memberMask & _viewerMask;
+    SetHooks(_memberMask != 0);
   }
 
   private void SetHooks(bool on)
@@ -753,7 +908,32 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
       RemoveListener(_onTick);
       RemoveListener(_onCheckTransmit);
       UnhookUserMessage(SoundEventMessage, _onSoundEvent, HookMode.Pre);
-      Array.Clear(_side);
+      SetSideHooks(false);
+      _sideMask = 0;
+      _viewerMask = 0;
+    }
+  }
+
+  private void SetSideHooks(bool on)
+  {
+    if (on == _sideHooked)
+      return;
+
+    _sideHooked = on;
+
+    if (on)
+    {
+      HookUserMessage(WeaponSoundMessage, _onWeaponSound, HookMode.Pre);
+      HookUserMessage(FireBulletsMessage, _onFireBullets, HookMode.Pre);
+      HookUserMessage(ParticleMessage, _onParticle, HookMode.Pre);
+      HookUserMessage(EffectMessage, _onEffect, HookMode.Pre);
+    }
+    else
+    {
+      UnhookUserMessage(WeaponSoundMessage, _onWeaponSound, HookMode.Pre);
+      UnhookUserMessage(FireBulletsMessage, _onFireBullets, HookMode.Pre);
+      UnhookUserMessage(ParticleMessage, _onParticle, HookMode.Pre);
+      UnhookUserMessage(EffectMessage, _onEffect, HookMode.Pre);
     }
   }
 
@@ -831,19 +1011,19 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
         continue;
 
       services.Account = account;
-      Utilities.SetStateChanged(p, "CCSPlayerController", "m_pInGameMoneyServices");
+      NetState.Changed(p, "CCSPlayerController", "m_pInGameMoneyServices");
     }
 
     if (stats != null && stats.Deaths != deaths)
     {
       stats.Deaths = deaths;
-      Utilities.SetStateChanged(player, "CCSPlayerController", "m_pActionTrackingServices");
+      NetState.Changed(player, "CCSPlayerController", "m_pActionTrackingServices");
     }
 
     if (player.Score != score)
     {
       player.Score = score;
-      Utilities.SetStateChanged(player, "CCSPlayerController", "m_iScore");
+      NetState.Changed(player, "CCSPlayerController", "m_iScore");
     }
   }
 
@@ -899,7 +1079,7 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
   private static void SetScoreboardDead(CCSPlayerController player, bool dead)
   {
     player.PawnIsAlive = !dead;
-    Utilities.SetStateChanged(player, "CCSPlayerController", "m_bPawnIsAlive");
+    NetState.Changed(player, "CCSPlayerController", "m_bPawnIsAlive");
   }
 
   private static bool IsAlive(CCSPlayerController player)
