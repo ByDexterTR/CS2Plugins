@@ -7,7 +7,7 @@ namespace ShowPlayerClips.Source2;
 public sealed class ClipMap
 {
   private const uint CacheMagic = 0x43435053;
-  private const int CacheVersion = 3;
+  private const int CacheVersion = 4;
 
   public Dictionary<string, List<ClipSegment>> Categories { get; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -79,7 +79,36 @@ public sealed class ClipMap
       map.Add(category, ClipGeometry.FromMesh(mesh));
     }
 
+    map.ClipToGround(document, attributeScanner.Attributes);
+
     return map;
+  }
+
+  private void ClipToGround(Kv3Binary document, IReadOnlyList<ClipAttribute> attributes)
+  {
+    if (Categories.Count == 0)
+      return;
+
+    WorldBvh world;
+
+    try
+    {
+      world = WorldBvh.From(document, attributes, GroundClip.IsGround, true);
+    }
+    catch
+    {
+      return;
+    }
+
+    var ground = new GroundClip(world);
+
+    foreach (var (category, segments) in Categories.ToList())
+    {
+      ground.Apply(segments);
+
+      if (segments.Count == 0)
+        Categories.Remove(category);
+    }
   }
 
   private void Add(string category, List<ClipSegment> segments)

@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Timers;
 using static CounterStrikeSharp.API.Core.Listeners;
 using ByDexter.Shared;
@@ -70,7 +71,7 @@ public class ShowPlayerClipsConfig : BasePluginConfig
 public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 {
   public override string ModuleName => "ShowPlayerClips";
-  public override string ModuleVersion => "1.1.2";
+  public override string ModuleVersion => "1.1.3";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -79,6 +80,8 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
   public ShowPlayerClipsConfig Config { get; set; } = new();
 
   private const int MaxSlots = 64;
+  private const int MaskWords = 16384 / 32;
+  private const int CreateBudget = 64;
   private const string BeamSprite = "materials/sprites/laserbeam.vmat";
   private const string BeamMarker = "showplayerclips_beam";
   private const float BoundsSize = 16384f;
@@ -106,26 +109,52 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
   private readonly List<int> _staleViewers = [];
   private readonly Vector3[] _viewerPositions = new Vector3[MaxSlots];
   private int _viewerCount;
+  private ulong _viewerMask;
 
   private readonly List<CEnvBeam> _beams = [];
+  private readonly List<nint> _beamPointer = [];
+  private readonly List<int> _beamIndex = [];
+  private readonly List<bool> _beamAlive = [];
   private readonly List<int> _beamSegment = [];
   private readonly List<int> _beamCategory = [];
   private readonly List<bool> _beamFlipped = [];
+  private readonly Dictionary<nint, int> _beamSlot = [];
   private readonly List<int> _freeSlots = [];
-  private readonly List<uint> _transmitIndices = [];
+  private readonly List<int> _dropSlots = [];
+  private int _lostBeams;
+  private bool _pendingCreate;
+
+  private readonly uint[] _hideMask = new uint[MaskWords];
+  private readonly List<int> _hideWords = [];
+  private bool _hideDirty;
+
+  private int _slotOffset;
+  private int _endPosOffset;
+  private int _beamChain;
+  private int _modelChain;
+  private int _renderOffset;
+  private int _widthOffset;
 
   private List<ClipSegment> _triggerSegments = [];
   private List<ClipSegment> _pendingTriggers = [];
   private int _triggerCount;
   private ClipMap? _mapClips;
   private ClipSegment[] _segments = [];
+  private float[] _startX = [];
+  private float[] _startY = [];
+  private float[] _startZ = [];
+  private float[] _deltaX = [];
+  private float[] _deltaY = [];
+  private float[] _deltaZ = [];
+  private float[] _inverseLength = [];
+  private float[] _bestDistance = [];
   private int[] _segmentCategory = [];
   private string[] _categoryNames = [];
   private Color[] _categoryColors = [];
 
   private int[] _candidates = [];
   private float[] _candidateDistance = [];
-  private int[] _candidateViewer = [];
+  private int[] _nearestViewer = [];
   private int[] _wantedStamp = [];
   private int[] _keptStamp = [];
   private int _candidateCount;
@@ -165,8 +194,16 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
     RegisterListener<OnMapStart>(OnMapStart);
     RegisterListener<OnMapEnd>(OnMapEnd);
+    _slotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
+    _endPosOffset = Schema.GetSchemaOffset("CBeam", "m_vecEndPos");
+    _beamChain = Schema.GetSchemaOffset("CBeam", "__m_pChainEntity");
+    _modelChain = Schema.GetSchemaOffset("CBaseModelEntity", "__m_pChainEntity");
+    _renderOffset = Schema.GetSchemaOffset("CBaseModelEntity", "m_clrRender");
+    _widthOffset = Schema.GetSchemaOffset("CBeam", "m_fWidth");
+
     RegisterListener<OnTick>(OnTick);
     RegisterListener<CheckTransmit>(OnCheckTransmit);
+    RegisterListener<OnEntityDeleted>(OnEntityDeleted);
 
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
@@ -207,6 +244,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     if (userId >= 0 && _viewers.Remove(userId))
     {
       _lastViewerOrigin.Remove(userId);
+      UpdateViewerMask();
       _forceRefresh = true;
     }
 
@@ -221,6 +259,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     _mapClips = null;
     _triggerSegments.Clear();
     _segments = [];
+    ClearSegmentLanes();
     _segmentCategory = [];
     _categoryNames = [];
     _categoryColors = [];
@@ -230,6 +269,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
     _viewers.Clear();
     _lastViewerOrigin.Clear();
+    UpdateViewerMask();
     RemoveAllBeams();
 
     AddTimer(3f, () =>
@@ -261,6 +301,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     RemoveAllBeams();
     RemoveOrphanBeams();
     _segments = [];
+    ClearSegmentLanes();
     _segmentCategory = [];
   }
 
@@ -324,10 +365,10 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     _categoryNames = [.. names];
     _categoryColors = [.. colors];
     _segments = [.. segments];
+    BuildSegmentLanes(count);
     _segmentCategory = [.. categories];
     _candidates = new int[count];
     _candidateDistance = new float[count];
-    _candidateViewer = new int[count];
     _wantedStamp = new int[count];
     _keptStamp = new int[count];
     _candidateCount = 0;
@@ -544,6 +585,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       _viewers.Remove(userId);
 
     _lastViewerOrigin.Remove(userId);
+    UpdateViewerMask();
     _forceRefresh = true;
 
     if (enabled)
@@ -552,13 +594,22 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["showclips.disabled"]}");
   }
 
+  private void UpdateViewerMask()
+  {
+    ulong mask = 0;
+    foreach (int userId in _viewers)
+      mask |= 1UL << (userId & 0x3F);
+
+    _viewerMask = mask;
+  }
+
   private void OnTick()
   {
-    if (_segments.Length == 0)
+    if (_segments.Length == 0 || (_viewers.Count == 0 && _beams.Count == 0))
       return;
 
     float now = Server.CurrentTime;
-    if (now < _nextRefresh)
+    if (now < _nextRefresh && !_pendingCreate)
       return;
 
     _nextRefresh = now + Config.Refresh;
@@ -608,6 +659,9 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       changed = true;
     }
 
+    if (_staleViewers.Count > 0)
+      UpdateViewerMask();
+
     _forceRefresh = false;
     _viewerCount = viewerCount;
 
@@ -619,32 +673,20 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       return;
     }
 
-    if (!changed && !BeamsLost())
+    if (!changed && _lostBeams == 0)
       return;
 
     int count = 0;
     float radiusSquared = Config.Radius * Config.Radius;
 
+    MeasureSegments(viewerCount);
+
     for (int i = 0; i < _segments.Length; i++)
     {
-      var middle = _segments[i].Middle;
-      float best = float.MaxValue;
-      int nearest = 0;
-
-      for (int v = 0; v < viewerCount; v++)
-      {
-        float distance = Vector3.DistanceSquared(middle, _viewerPositions[v]);
-        if (distance < best)
-        {
-          best = distance;
-          nearest = v;
-        }
-      }
-
+      float best = _bestDistance[i];
       if (best > radiusSquared)
         continue;
 
-      _candidateViewer[i] = nearest;
       _candidateDistance[count] = best;
       _candidates[count++] = i;
     }
@@ -658,6 +700,101 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     _candidateCount = count;
 
     Apply();
+  }
+
+  private void ClearSegmentLanes()
+  {
+    _startX = [];
+    _startY = [];
+    _startZ = [];
+    _deltaX = [];
+    _deltaY = [];
+    _deltaZ = [];
+    _inverseLength = [];
+    _bestDistance = [];
+    _nearestViewer = [];
+  }
+
+  private void BuildSegmentLanes(int count)
+  {
+    int width = Vector<float>.Count;
+    int padded = (count + width - 1) / width * width;
+
+    _startX = new float[padded];
+    _startY = new float[padded];
+    _startZ = new float[padded];
+    _deltaX = new float[padded];
+    _deltaY = new float[padded];
+    _deltaZ = new float[padded];
+    _inverseLength = new float[padded];
+    _bestDistance = new float[padded];
+    _nearestViewer = new int[padded];
+
+    for (int i = 0; i < padded; i++)
+    {
+      if (i >= count)
+      {
+        _startX[i] = _startY[i] = _startZ[i] = 1e9f;
+        continue;
+      }
+
+      var start = _segments[i].Start;
+      var delta = _segments[i].End - start;
+      float lengthSquared = delta.LengthSquared();
+
+      _startX[i] = start.X;
+      _startY[i] = start.Y;
+      _startZ[i] = start.Z;
+      _deltaX[i] = delta.X;
+      _deltaY[i] = delta.Y;
+      _deltaZ[i] = delta.Z;
+      _inverseLength[i] = lengthSquared > 0f ? 1f / lengthSquared : 0f;
+    }
+  }
+
+  private void MeasureSegments(int viewerCount)
+  {
+    int width = Vector<float>.Count;
+    int padded = _startX.Length;
+
+    for (int v = 0; v < viewerCount; v++)
+    {
+      var viewer = _viewerPositions[v];
+      var viewerX = new Vector<float>(viewer.X);
+      var viewerY = new Vector<float>(viewer.Y);
+      var viewerZ = new Vector<float>(viewer.Z);
+      var viewerIndex = new Vector<int>(v);
+
+      for (int i = 0; i < padded; i += width)
+      {
+        var offsetX = viewerX - new Vector<float>(_startX, i);
+        var offsetY = viewerY - new Vector<float>(_startY, i);
+        var offsetZ = viewerZ - new Vector<float>(_startZ, i);
+        var deltaX = new Vector<float>(_deltaX, i);
+        var deltaY = new Vector<float>(_deltaY, i);
+        var deltaZ = new Vector<float>(_deltaZ, i);
+
+        var along = (offsetX * deltaX + offsetY * deltaY + offsetZ * deltaZ) * new Vector<float>(_inverseLength, i);
+        var t = Vector.Min(Vector.Max(along, Vector<float>.Zero), Vector<float>.One);
+
+        var restX = offsetX - deltaX * t;
+        var restY = offsetY - deltaY * t;
+        var restZ = offsetZ - deltaZ * t;
+        var distance = restX * restX + restY * restY + restZ * restZ;
+
+        if (v == 0)
+        {
+          distance.CopyTo(_bestDistance, i);
+          viewerIndex.CopyTo(_nearestViewer, i);
+          continue;
+        }
+
+        var best = new Vector<float>(_bestDistance, i);
+        var closer = Vector.LessThan(distance, best);
+        Vector.ConditionalSelect(closer, distance, best).CopyTo(_bestDistance, i);
+        Vector.ConditionalSelect(closer, viewerIndex, new Vector<int>(_nearestViewer, i)).CopyTo(_nearestViewer, i);
+      }
+    }
   }
 
   private static void SelectNearest(float[] keys, int[] items, int count, int keep)
@@ -696,17 +833,6 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     }
   }
 
-  private bool BeamsLost()
-  {
-    foreach (var beam in _beams)
-    {
-      if (!beam.IsValid)
-        return true;
-    }
-
-    return false;
-  }
-
   private void Apply()
   {
     int stamp = ++_stamp;
@@ -715,12 +841,19 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       _wantedStamp[_candidates[i]] = stamp;
 
     _freeSlots.Clear();
+    _dropSlots.Clear();
 
     for (int slot = 0; slot < _beams.Count; slot++)
     {
       int segment = _beamSegment[slot];
 
-      if (segment >= 0 && _wantedStamp[segment] == stamp && _beams[slot].IsValid)
+      if (!_beamAlive[slot])
+      {
+        _dropSlots.Add(slot);
+        continue;
+      }
+
+      if (segment >= 0 && _wantedStamp[segment] == stamp)
       {
         _keptStamp[segment] = stamp;
 
@@ -736,6 +869,8 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     }
 
     int nextFree = 0;
+    int created = 0;
+    _pendingCreate = false;
 
     for (int i = 0; i < _candidateCount; i++)
     {
@@ -751,18 +886,81 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
         continue;
       }
 
+      if (created >= CreateBudget)
+      {
+        _pendingCreate = true;
+        _forceRefresh = true;
+        break;
+      }
+
       var beam = CreateBeam(index, flipped);
       if (beam == null)
         break;
 
+      created++;
+
       _beams.Add(beam);
+      _beamPointer.Add(0);
+      _beamIndex.Add(0);
+      _beamAlive.Add(false);
       _beamSegment.Add(index);
       _beamCategory.Add(_segmentCategory[index]);
       _beamFlipped.Add(flipped);
+      Track(_beams.Count - 1, beam);
     }
 
-    for (int i = _freeSlots.Count - 1; i >= nextFree; i--)
-      RemoveSlot(_freeSlots[i]);
+    for (int i = nextFree; i < _freeSlots.Count; i++)
+      _dropSlots.Add(_freeSlots[i]);
+
+    _dropSlots.Sort();
+
+    for (int i = _dropSlots.Count - 1; i >= 0; i--)
+      RemoveSlot(_dropSlots[i]);
+
+    _lostBeams = 0;
+  }
+
+  private void Track(int slot, CEnvBeam beam)
+  {
+    nint pointer = beam.Handle;
+    int index = (int)beam.Index;
+
+    _beams[slot] = beam;
+    _beamPointer[slot] = pointer;
+    _beamIndex[slot] = index;
+    _beamAlive[slot] = true;
+    _beamSlot[pointer] = slot;
+
+    if ((uint)index < MaskWords * 32)
+    {
+      _hideMask[index >> 5] |= 1u << (index & 31);
+      _hideDirty = true;
+    }
+  }
+
+  private void Untrack(int slot)
+  {
+    if (!_beamAlive[slot])
+      return;
+
+    _beamAlive[slot] = false;
+    _beamSlot.Remove(_beamPointer[slot]);
+
+    int index = _beamIndex[slot];
+    if ((uint)index < MaskWords * 32)
+    {
+      _hideMask[index >> 5] &= ~(1u << (index & 31));
+      _hideDirty = true;
+    }
+  }
+
+  private void OnEntityDeleted(CEntityInstance entity)
+  {
+    if (_beamSlot.Count == 0 || !_beamSlot.TryGetValue(entity.Handle, out int slot))
+      return;
+
+    Untrack(slot);
+    _lostBeams++;
   }
 
   private void ApplySegment(int slot, int index, bool flipped)
@@ -770,23 +968,10 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     var beam = _beams[slot];
     int category = _segmentCategory[index];
 
-    if (!beam.IsValid)
-    {
-      var created = CreateBeam(index, flipped);
-      if (created == null)
-        return;
-
-      _beams[slot] = created;
-      _beamSegment[slot] = index;
-      _beamCategory[slot] = category;
-      _beamFlipped[slot] = flipped;
-      return;
-    }
-
     if (_beamCategory[slot] != category)
     {
       beam.Render = _categoryColors[category];
-      Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+      StateChanged(beam, beam.Handle, _modelChain, _renderOffset);
       _beamCategory[slot] = category;
     }
 
@@ -822,7 +1007,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
       return false;
 
     var middle = segment.Middle;
-    return Vector3.Dot(segment.Normal, _viewerPositions[_candidateViewer[index]] - middle) < 0f;
+    return Vector3.Dot(segment.Normal, _viewerPositions[_nearestViewer[index]] - middle) < 0f;
   }
 
   private (Vector3 Start, Vector3 End) Endpoints(int index, bool flipped)
@@ -832,13 +1017,26 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     return (segment.Start + offset, segment.End + offset);
   }
 
-  private static void MoveBeam(CEnvBeam beam, Vector3 start, Vector3 end)
+  private unsafe void MoveBeam(CEnvBeam beam, Vector3 start, Vector3 end)
   {
     beam.Teleport(start);
-    beam.EndPos.X = end.X;
-    beam.EndPos.Y = end.Y;
-    beam.EndPos.Z = end.Z;
-    Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+
+    nint handle = beam.Handle;
+    *(Vector3*)(handle + _endPosOffset) = end;
+    StateChanged(beam, handle, _beamChain, _endPosOffset);
+  }
+
+  private static void StateChanged(CBaseEntity entity, nint handle, int chain, int offset)
+  {
+    if (chain != 0)
+    {
+      NativeAPI.SchemaNetworkStateChanged(handle + chain, (uint)offset, uint.MaxValue, uint.MaxValue);
+      return;
+    }
+
+    NativeAPI.SchemaSetStateChanged(handle, (uint)offset, uint.MaxValue, uint.MaxValue);
+    entity.LastNetworkChange = Server.CurrentTime;
+    entity.IsSteadyState.Clear();
   }
 
   private CEnvBeam? CreateBeam(int index, bool flipped)
@@ -858,9 +1056,9 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     beam.SetModel(BeamSprite);
     ExpandBounds(beam);
     beam.Width = Config.Width;
-    Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
+    StateChanged(beam, beam.Handle, _beamChain, _widthOffset);
     beam.Render = _categoryColors[_segmentCategory[index]];
-    Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+    StateChanged(beam, beam.Handle, _modelChain, _renderOffset);
     MoveBeam(beam, start, end);
 
     return beam;
@@ -868,14 +1066,36 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
   private void RemoveSlot(int slot)
   {
-    var beam = _beams[slot];
-    if (beam.IsValid)
+    if (_beamAlive[slot])
+    {
+      var beam = _beams[slot];
+      Untrack(slot);
       beam.Remove();
+    }
 
-    _beams.RemoveAt(slot);
-    _beamSegment.RemoveAt(slot);
-    _beamCategory.RemoveAt(slot);
-    _beamFlipped.RemoveAt(slot);
+    int last = _beams.Count - 1;
+
+    if (slot != last)
+    {
+      _beams[slot] = _beams[last];
+      _beamPointer[slot] = _beamPointer[last];
+      _beamIndex[slot] = _beamIndex[last];
+      _beamAlive[slot] = _beamAlive[last];
+      _beamSegment[slot] = _beamSegment[last];
+      _beamCategory[slot] = _beamCategory[last];
+      _beamFlipped[slot] = _beamFlipped[last];
+
+      if (_beamAlive[slot])
+        _beamSlot[_beamPointer[slot]] = slot;
+    }
+
+    _beams.RemoveAt(last);
+    _beamPointer.RemoveAt(last);
+    _beamIndex.RemoveAt(last);
+    _beamAlive.RemoveAt(last);
+    _beamSegment.RemoveAt(last);
+    _beamCategory.RemoveAt(last);
+    _beamFlipped.RemoveAt(last);
   }
 
   private static void ExpandBounds(CEnvBeam beam)
@@ -935,12 +1155,14 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
 
   private void RemoveAllBeams()
   {
-    foreach (var beam in _beams)
+    for (int slot = 0; slot < _beams.Count; slot++)
     {
+      if (!_beamAlive[slot])
+        continue;
+
       try
       {
-        if (beam.IsValid)
-          beam.Remove();
+        _beams[slot].Remove();
       }
       catch
       {
@@ -948,37 +1170,62 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     }
 
     _beams.Clear();
+    _beamPointer.Clear();
+    _beamIndex.Clear();
+    _beamAlive.Clear();
     _beamSegment.Clear();
     _beamCategory.Clear();
     _beamFlipped.Clear();
+    _beamSlot.Clear();
+    _lostBeams = 0;
+    _pendingCreate = false;
+
+    Array.Clear(_hideMask);
+    _hideWords.Clear();
+    _hideDirty = false;
   }
 
-  private void OnCheckTransmit(CCheckTransmitInfoList infoList)
+  private unsafe void OnCheckTransmit(CCheckTransmitInfoList infoList)
   {
-    if (_beams.Count == 0)
+    if (_beamSlot.Count == 0)
       return;
 
-    bool collected = false;
-
-    foreach ((CCheckTransmitInfo info, CCSPlayerController? viewer) in infoList)
+    if (_hideDirty)
     {
-      if (viewer != null && viewer.IsValid && !viewer.IsHLTV && _viewers.Contains(Util.UserId(viewer)))
-        continue;
-
-      if (!collected)
+      _hideWords.Clear();
+      for (int word = 0; word < MaskWords; word++)
       {
-        _transmitIndices.Clear();
-        foreach (var beam in _beams)
-        {
-          if (beam.IsValid)
-            _transmitIndices.Add(beam.Index);
-        }
-
-        collected = true;
+        if (_hideMask[word] != 0)
+          _hideWords.Add(word);
       }
 
-      for (int i = 0; i < _transmitIndices.Count; i++)
-        Transmit.Hide(info, _transmitIndices[i]);
+      _hideDirty = false;
+    }
+
+    nint* list = (nint*)infoList.Handle;
+    nint* entries = (nint*)list[0];
+    int count = (int)list[1];
+
+    for (int k = 0; k < count; k++)
+    {
+      nint entry = entries[k];
+      int slot = *(int*)(entry + _slotOffset);
+      if ((uint)slot < MaxSlots && (_viewerMask & (1UL << slot)) != 0)
+        continue;
+
+      uint* bits = *(uint**)entry;
+      uint* dont = *(uint**)(entry + 8);
+
+      foreach (int word in _hideWords)
+      {
+        uint hide = bits[word] & _hideMask[word];
+        if (hide == 0)
+          continue;
+
+        bits[word] &= ~hide;
+        if (dont != null)
+          dont[word] |= hide;
+      }
     }
   }
 }

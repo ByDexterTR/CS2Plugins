@@ -41,6 +41,9 @@ public sealed class WorldBvh
 
   public static WorldBvh Solid(byte[] physics) => Build(Extract(physics, attribute => attribute.InteractAs.Count == 0, false));
 
+  public static WorldBvh From(Kv3Binary document, IReadOnlyList<ClipAttribute> attributes, Func<ClipAttribute, bool> filter, bool twoSided) =>
+    Build(Extract(document, attributes, filter, twoSided));
+
   public static WorldBvh PlayerSolid(byte[] physics) => Build(Extract(physics, attribute =>
     !Has(attribute.InteractExclude, "player") && (attribute.InteractAs.Count == 0 || PlayerBlockers.Any(tag => Has(attribute.InteractAs, tag))), true));
 
@@ -90,10 +93,15 @@ public sealed class WorldBvh
     var attributes = new AttributeScanner();
     document.Walk(attributes);
 
+    return Extract(document, attributes.Attributes, filter, twoSided);
+  }
+
+  private static List<Triangle> Extract(Kv3Binary document, IReadOnlyList<ClipAttribute> attributes, Func<ClipAttribute, bool> filter, bool twoSided)
+  {
     var wanted = new HashSet<int>();
-    for (int i = 0; i < attributes.Attributes.Count; i++)
+    for (int i = 0; i < attributes.Count; i++)
     {
-      if (filter(attributes.Attributes[i]))
+      if (filter(attributes[i]))
         wanted.Add(i);
     }
 

@@ -11,6 +11,7 @@ Shows the map's invisible tool brushes as colored lines: clip, player clip, ladd
 - Which types are drawn is chosen from the config
 - Only players who turned it on see the lines; other players and GOTV never see them
 - Lines are drawn slightly off the surface so they stay readable on walls and floors
+- Lines that run under the map stop at the ground; edges buried under the map are not drawn
 - Trigger volumes (teleport, push, hurt, buy zone, bomb site) are drawn as a box
 - Works on workshop maps as well, including workshop maps that share a name with another map
 - Command access can be restricted with a flag

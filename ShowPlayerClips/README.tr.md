@@ -11,6 +11,7 @@ Haritadaki görünmez tool fırçalarını renkli çizgilerle gösterir: clip, p
 - Hangi türlerin çizileceği configten seçilir
 - Çizgileri sadece açan oyuncular görür; diğer oyuncular ve GOTV göremez
 - Çizgiler yüzeyin bir tık dışına çizilir, duvarda ve zeminde okunur kalır
+- Harita altına inen çizgiler zemine çarpıp durur; harita altında kalan kenarlar çizilmez
 - Trigger hacimleri (ışınlanma, itme, hasar, satın alma alanı, bomba noktası) kutu olarak çizilir
 - Atölye (workshop) haritalarında da çalışır, başka bir haritayla aynı ismi taşıyan atölye haritaları dahil
 - Komut erişimi flag ile sınırlanabilir
