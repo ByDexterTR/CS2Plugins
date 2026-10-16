@@ -27,7 +27,9 @@ public class SpawnEffect : VipModule
     public override VipFeatureType MenuType => VipFeatureType.Select;
 
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player) =>
-        Entries(player).Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
+        (GroupValue<List<Entry>>(player) ?? new())
+        .Where(e => e.Name.Length > 0 && e.Particle.Length > 0 && HasFlags(player, e.Required))
+        .Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
 
     private List<Entry> Entries(CCSPlayerController player) =>
         (GroupValue<List<Entry>>(player) ?? new())

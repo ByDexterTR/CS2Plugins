@@ -44,6 +44,7 @@ public class Pet : VipModule
         public float Yaw;
         public bool Running;
         public float LastTime;
+        public bool Dying;
     }
 
     private const float RunThreshold = 40f;
@@ -55,6 +56,7 @@ public class Pet : VipModule
 
     private readonly Dictionary<int, Companion> _pets = new();
     private readonly List<int> _gone = new();
+    private readonly List<int> _lost = new();
     private readonly Vector _draw = new();
     private readonly QAngle _angle = new();
 
@@ -65,7 +67,7 @@ public class Pet : VipModule
     public override List<VipFeatureOption> SelectOptions(CCSPlayerController player)
     {
         var entries = GroupValue<List<Entry>>(player) ?? new();
-        return entries.Where(e => e.Name.Length > 0 && e.Model.Length > 0 && Allowed(player, e.Required, e.Team))
+        return entries.Where(e => e.Name.Length > 0 && e.Model.Length > 0 && HasFlags(player, e.Required))
             .Select(e => new VipFeatureOption(e.Name, e.Name)).ToList();
     }
 
@@ -79,7 +81,13 @@ public class Pet : VipModule
             Server.NextFrame(() => Spawn(player));
             return HookResult.Continue;
         });
-        Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Kill(ev.Userid); return HookResult.Continue; });
+        Core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
+        {
+            int userId = ev.Userid?.UserId ?? -1;
+            if (_pets.TryGetValue(userId, out var pet))
+                Die(userId, pet);
+            return HookResult.Continue;
+        });
         Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { Remove(ev.Userid?.UserId ?? -1); return HookResult.Continue; });
         Core.HookMapStart(_ => _pets.Clear());
         Core.HookTick(OnTick);
@@ -117,35 +125,78 @@ public class Pet : VipModule
             pet.Prop.Remove();
     }
 
-    private void Kill(CCSPlayerController? player)
+    private void Die(int userId, Companion pet)
     {
-        int userId = player?.UserId ?? -1;
-        if (userId < 0 || !_pets.TryGetValue(userId, out var pet))
+        if (pet.Dying)
             return;
 
+        pet.Dying = true;
+        pet.Running = false;
         if (pet.Def.Animations.Death.Length > 0 && pet.Prop.IsValid)
             pet.Prop.AcceptInput("SetAnimation", value: pet.Def.Animations.Death);
 
         Core.AddTimer(1.2f, () =>
         {
-            if (_pets.TryGetValue(userId, out var current) && ReferenceEquals(current, pet))
+            if (_pets.TryGetValue(userId, out var current) && ReferenceEquals(current, pet) && pet.Dying)
                 Remove(userId);
         });
     }
 
+    private static string PetName(CCSPlayerController player) => $"pet_{player.SteamID}";
+
+    private static void RemoveNamed(string name, CDynamicProp? keep)
+    {
+        foreach (var prop in Utilities.FindAllEntitiesByDesignerName<CDynamicProp>("prop_dynamic"))
+            if (prop.IsValid && prop.Entity?.Name == name && (keep == null || prop.Handle != keep.Handle))
+                prop.Remove();
+    }
+
+    private bool Revive(CCSPlayerController player, Companion pet, Entry def, string name)
+    {
+        if (pet.Def.Name != def.Name || pet.Def.Model != def.Model || !pet.Prop.IsValid || pet.Prop.Entity?.Name != name)
+            return false;
+
+        var pawn = PlayerCache.Pointer(player);
+        if (pawn == 0 || !PlayerCache.Origin(pawn, out var origin))
+            return false;
+
+        pet.Def = def;
+        pet.Slot = player.Slot;
+        pet.Owner = origin;
+        pet.Position = Chase(pet.Position, origin, def);
+        pet.LastTime = Server.CurrentTime;
+        pet.Running = false;
+
+        if (pet.Dying)
+        {
+            pet.Dying = false;
+            if (def.Animations.Idle.Length > 0)
+                pet.Prop.AcceptInput("SetAnimation", value: def.Animations.Idle);
+        }
+
+        RemoveNamed(name, pet.Prop);
+        return true;
+    }
+
     private void Spawn(CCSPlayerController? player, bool instant = false)
     {
-        if (player == null || !player.IsValid || !IsAlive(player) || !Active(player))
+        if (player == null || !player.IsValid || player.IsBot || !IsAlive(player) || !Active(player))
             return;
 
         int userId = player.UserId ?? -1;
         if (userId < 0)
             return;
 
-        Remove(userId);
-
         var entries = GroupValue<List<Entry>>(player) ?? new();
         var def = entries.FirstOrDefault(e => e.Name == Setting(player) && Allowed(player, e.Required, e.Team));
+        string name = PetName(player);
+
+        if (def != null && !instant && _pets.TryGetValue(userId, out var existing) && Revive(player, existing, def, name))
+            return;
+
+        Remove(userId);
+        RemoveNamed(name, null);
+
         if (def == null || def.Model.Length == 0)
             return;
 
@@ -167,6 +218,7 @@ public class Pet : VipModule
 
         var keys = new CEntityKeyValues();
         keys.SetString("model", def.Model);
+        keys.SetString("targetname", name);
         keys.SetInt("spawnflags", 256);
         keys.SetVector("origin", start);
         prop.DispatchSpawn(keys);
@@ -231,6 +283,7 @@ public class Pet : VipModule
         if (_pets.Count == 0)
             return;
 
+        _lost.Clear();
         float now = Server.CurrentTime;
         _gone.Clear();
 
@@ -239,16 +292,36 @@ public class Pet : VipModule
             if (!pet.Prop.IsValid)
             {
                 _gone.Add(userId);
+                if (!pet.Dying)
+                    _lost.Add(pet.Slot);
                 continue;
             }
 
+            if (pet.Dying)
+                continue;
+
             var owner = Core.PlayerAt(pet.Slot);
-            nint pawn = owner?.UserId == userId ? PlayerCache.Pointer(owner) : 0;
-            if (pawn == 0 || !IsAlive(owner) || !PlayerCache.Origin(pawn, out var origin))
+            if (owner == null || owner.UserId != userId)
+                continue;
+
+            nint pawn = PlayerCache.Pointer(owner);
+            if (pawn == 0)
+                continue;
+
+            if (!IsAlive(owner))
+            {
+                Die(userId, pet);
+                continue;
+            }
+
+            if (!TeamMatches(owner, pet.Def.Team))
             {
                 _gone.Add(userId);
                 continue;
             }
+
+            if (!PlayerCache.Origin(pawn, out var origin))
+                continue;
 
             float dt = Math.Clamp(now - pet.LastTime, 0f, 0.2f);
             pet.LastTime = now;
@@ -270,6 +343,17 @@ public class Pet : VipModule
 
         foreach (int userId in _gone)
             Remove(userId);
+
+        if (_lost.Count == 0)
+            return;
+
+        foreach (int slot in _lost)
+        {
+            var player = Core.PlayerAt(slot);
+            if (player != null && IsAlive(player))
+                Server.NextFrame(() => Spawn(player, true));
+        }
+        _lost.Clear();
     }
 
     private static Vector3 Chase(Vector3 here, Vector3 origin, Entry def)
