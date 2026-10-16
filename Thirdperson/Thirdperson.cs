@@ -159,7 +159,7 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
       camera.DispatchSpawn();
 
       pawn.CameraServices.ViewEntity.Raw = camera.EntityHandle.Raw;
-      Utilities.SetStateChanged(pawn, "CBasePlayerPawn", "m_pCameraServices");
+      NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
     });
   }
 
@@ -173,7 +173,7 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
     if (pawn != null && pawn.IsValid && pawn.CameraServices != null)
     {
       pawn.CameraServices.ViewEntity.Raw = _originalView[slot];
-      Utilities.SetStateChanged(pawn, "CBasePlayerPawn", "m_pCameraServices");
+      NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
     }
 
     if (camera != null && camera.IsValid)

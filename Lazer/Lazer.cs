@@ -195,7 +195,7 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
       beam.EndPos.X = end.X;
       beam.EndPos.Y = end.Y;
       beam.EndPos.Z = end.Z;
-      Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+      NetState.Changed(beam, "CBeam", "m_vecEndPos");
 
       _lastStart[slot] = eye;
       _lastEnd[slot] = end;
@@ -232,14 +232,14 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
 
     beam.SetModel(BeamSprite);
     beam.Width = Config.Width;
-    Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
+    NetState.Changed(beam, "CBeam", "m_fWidth");
     beam.Render = color;
-    Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(beam, "CBaseModelEntity", "m_clrRender");
     beam.Teleport(new Vector(start.X, start.Y, start.Z), new QAngle(), new Vector());
     beam.EndPos.X = end.X;
     beam.EndPos.Y = end.Y;
     beam.EndPos.Z = end.Z;
-    Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+    NetState.Changed(beam, "CBeam", "m_vecEndPos");
     return beam;
   }
 

@@ -89,7 +89,7 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
     if (pawn != null)
     {
       pawn.Render = Color.FromArgb(200, 254, 190, 0);
-      Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+      NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
 
     if (_timers.TryGetValue(userId, out var t))
@@ -117,7 +117,7 @@ public class CTSpawnKill : BasePlugin, IPluginConfig<CTSpawnKillConfig>
     if (pawn != null)
     {
       pawn.Render = Color.FromArgb(255, 255, 255, 255);
-      Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+      NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
     player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctspawnkill.protection_ended"]}");
   }

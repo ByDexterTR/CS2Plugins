@@ -254,9 +254,9 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
         ramboPawn.Health = Config.RamboHp;
         ramboPawn.MaxHealth = Config.RamboHp;
         ramboPawn.ArmorValue = Config.RamboArmor;
-        Utilities.SetStateChanged(ramboPawn, "CBaseEntity", "m_iHealth");
-        Utilities.SetStateChanged(ramboPawn, "CBaseEntity", "m_iMaxHealth");
-        Utilities.SetStateChanged(ramboPawn, "CCSPlayerPawn", "m_ArmorValue");
+        NetState.Changed(ramboPawn, "CBaseEntity", "m_iHealth");
+        NetState.Changed(ramboPawn, "CBaseEntity", "m_iMaxHealth");
+        NetState.Changed(ramboPawn, "CCSPlayerPawn", "m_ArmorValue");
         if (Config.RamboHelmet)
           player.GiveNamedItem("item_assaultsuit");
 

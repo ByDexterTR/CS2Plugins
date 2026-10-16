@@ -218,7 +218,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     if (pawn != null && pawn.IsValid)
     {
       pawn.Render = TeamRenderColor(teamIndex);
-      Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+      NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
   }
 
@@ -231,7 +231,7 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     if (pawn != null && pawn.IsValid)
     {
       pawn.Render = Color.FromArgb(255, 255, 255, 255);
-      Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+      NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
   }
 

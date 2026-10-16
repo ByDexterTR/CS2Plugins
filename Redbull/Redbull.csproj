@@ -22,4 +22,8 @@
     <Using Include="ByDexter.Shared" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\.Shared\NetState.cs" Link=".Shared\NetState.cs" />
+  </ItemGroup>
+
 </Project>

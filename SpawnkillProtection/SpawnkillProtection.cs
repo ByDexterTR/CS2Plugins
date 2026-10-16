@@ -242,7 +242,7 @@ public class SpawnkillProtection : BasePlugin, IPluginConfig<SpawnkillProtection
       return;
 
     pawn.Render = color;
-    Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
   }
 
   private HookResult HandleEntityDamage(CEntityInstance victimEnt, CTakeDamageInfo info)

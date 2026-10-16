@@ -1389,7 +1389,7 @@ public class FPS : BasePlugin
       return;
 
     pawn.Render = Color.FromArgb(hide ? 254 : 255, color.R, color.G, color.B);
-    Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
   }
 
   private HookResult OnPlayerDeathPre(EventPlayerDeath @event, GameEventInfo info)

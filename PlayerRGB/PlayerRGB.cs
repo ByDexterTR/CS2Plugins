@@ -45,7 +45,7 @@ public class PlayerRGB : BasePlugin
         continue;
 
       pawn.Render = Color.FromArgb(255, 255, 255, 255);
-      Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+      NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
     rgbEnabled.Clear();
   }
@@ -141,7 +141,7 @@ public class PlayerRGB : BasePlugin
       if (pawn != null)
       {
         pawn.Render = Color.FromArgb(255, 255, 255, 255);
-        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
       }
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["playerrgb.disabled"]}");
     }
@@ -167,7 +167,7 @@ public class PlayerRGB : BasePlugin
       if (pawn != null)
       {
         pawn.Render = color;
-        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
       }
     }
   }

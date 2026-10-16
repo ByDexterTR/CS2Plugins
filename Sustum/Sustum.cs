@@ -149,7 +149,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
                 if (playerPawn != null)
                 {
                     playerPawn.Render = Color.FromArgb(255, 255, 165, 0);
-                    Utilities.SetStateChanged(playerPawn, "CBaseModelEntity", "m_clrRender");
+                    NetState.Changed(playerPawn, "CBaseModelEntity", "m_clrRender");
                 }
             }
         }
@@ -181,7 +181,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
                 if (playerPawn != null)
                 {
                     playerPawn.Render = Color.FromArgb(255, 255, 255, 255);
-                    Utilities.SetStateChanged(playerPawn, "CBaseModelEntity", "m_clrRender");
+                    NetState.Changed(playerPawn, "CBaseModelEntity", "m_clrRender");
                 }
             }
         }
@@ -192,9 +192,9 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
     {
         if (_showHud && Util.IsHudFrame())
         {
-            foreach (var player in Utilities.GetPlayers())
+            foreach (var player in Util.Players())
             {
-                if (!HudGuard.Blocked(player))
+                if (player.IsValid && !HudGuard.Blocked(player))
                     player.PrintToCenterHtml(_hudHtml);
             }
         }

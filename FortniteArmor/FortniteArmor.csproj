@@ -16,4 +16,8 @@
     <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
     <Using Include="ByDexter.Shared" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\.Shared\NetState.cs" Link=".Shared\NetState.cs" />
+  </ItemGroup>
+
 </Project>

@@ -42,6 +42,7 @@ public class WasdMenuManager
   private readonly string _tag;
 
   private readonly Dictionary<int, Session> _sessions = new();
+  private readonly List<Session> _tickBuffer = new(64);
   private readonly Dictionary<int, Dictionary<string, int>> _memory = new();
   private bool _tickHooked;
 
@@ -158,7 +159,10 @@ public class WasdMenuManager
     if (_sessions.Count == 0)
       return;
 
-    foreach (var session in _sessions.Values.ToList())
+    _tickBuffer.Clear();
+    _tickBuffer.AddRange(_sessions.Values);
+
+    foreach (var session in _tickBuffer)
     {
       var player = session.Player;
 

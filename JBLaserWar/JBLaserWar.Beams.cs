@@ -230,7 +230,7 @@ public partial class JBLaserWar
     beam.EndPos.X = head.X;
     beam.EndPos.Y = head.Y;
     beam.EndPos.Z = head.Z;
-    Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+    NetState.Changed(beam, "CBeam", "m_vecEndPos");
   }
 
   private CEnvBeam? Acquire(Flight flight)
@@ -273,11 +273,11 @@ public partial class JBLaserWar
   {
     beam.Width = Config.Beam.Width;
     beam.EndWidth = Config.Beam.Width;
-    Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
-    Utilities.SetStateChanged(beam, "CBeam", "m_fEndWidth");
+    NetState.Changed(beam, "CBeam", "m_fWidth");
+    NetState.Changed(beam, "CBeam", "m_fEndWidth");
 
     beam.Render = color;
-    Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(beam, "CBaseModelEntity", "m_clrRender");
   }
 
   private void Release(Flight flight)
@@ -296,11 +296,11 @@ public partial class JBLaserWar
   {
     beam.Width = 0f;
     beam.EndWidth = 0f;
-    Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
-    Utilities.SetStateChanged(beam, "CBeam", "m_fEndWidth");
+    NetState.Changed(beam, "CBeam", "m_fWidth");
+    NetState.Changed(beam, "CBeam", "m_fEndWidth");
 
     beam.Render = Color.FromArgb(0, 0, 0, 0);
-    Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(beam, "CBaseModelEntity", "m_clrRender");
 
     if (beam.AbsOrigin == null)
       return;
@@ -308,7 +308,7 @@ public partial class JBLaserWar
     beam.EndPos.X = beam.AbsOrigin.X;
     beam.EndPos.Y = beam.AbsOrigin.Y;
     beam.EndPos.Z = beam.AbsOrigin.Z;
-    Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+    NetState.Changed(beam, "CBeam", "m_vecEndPos");
   }
 
   private void ClearBeams()

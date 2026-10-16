@@ -535,7 +535,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
     if (stats != null)
     {
       stats.Kills++;
-      Utilities.SetStateChanged(attacker, "CCSPlayerController", "m_pActionTrackingServices");
+      NetState.Changed(attacker, "CCSPlayerController", "m_pActionTrackingServices");
     }
 
     return HookResult.Continue;
@@ -692,8 +692,8 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
     pawn.MaxHealth = Math.Max(1, max);
     pawn.Health = Math.Clamp(current, 1, pawn.MaxHealth);
 
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iMaxHealth");
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+    NetState.Changed(pawn, "CBaseEntity", "m_iMaxHealth");
+    NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
   }
 
   private void ReEquipAll()
@@ -816,7 +816,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
       return;
 
     pawn.Render = TeamColor(team);
-    Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
 
     ApplyModel(player, pawn, Config.Teams[Math.Clamp(team, 0, Config.Teams.Count - 1)].Model);
   }
@@ -890,7 +890,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
       return;
 
     pawn.Render = System.Drawing.Color.FromArgb(255, 255, 255, 255);
-    Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
 
     if (!alive || string.IsNullOrEmpty(model))
       return;
@@ -1076,7 +1076,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
       _hits[id] = hits;
 
       pawn.Health = Math.Max(1, GameHealth / 2);
-      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+      NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
 
       Flash(victim);
       return;
@@ -1087,7 +1087,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
     _credit[id] = new Credit(attackerId, Server.TickCount + 64);
 
     pawn.Health = 0;
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+    NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
 
     Server.NextFrame(() =>
     {

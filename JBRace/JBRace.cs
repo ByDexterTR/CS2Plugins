@@ -49,6 +49,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
   private CounterStrikeSharp.API.Modules.Timers.Timer? _countdownTimer = null;
 
   private readonly HashSet<ulong> _winners = new();
+  private readonly List<CCSPlayerController> _racers = new(64);
   private DateTime? _raceStartTime = null;
   private bool _showHud = false;
   private string _hudHtml = "";
@@ -290,7 +291,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
           {
             Unfreeze(pawn);
             pawn.Render = Color.FromArgb(255, 255, 0, 0);
-            Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+            NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
           }
         }
 
@@ -307,20 +308,24 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
   {
     if (_showHud && Util.IsHudFrame())
     {
-      foreach (var p in Utilities.GetPlayers())
+      foreach (var p in Util.Players())
       {
-        if (p != null && p.IsValid && !HudGuard.Blocked(p))
+        if (p.IsValid && !HudGuard.Blocked(p))
           p.PrintToCenterHtml(_hudHtml);
       }
     }
 
     if (!_raceActive || _finishPos == null) return;
 
-    var alivePlayers = Utilities.GetPlayers()
-      .Where(p => p != null && p.IsValid && p.PawnIsAlive && p.Team == CsTeam.Terrorist)
-      .ToList();
+    _racers.Clear();
 
-    foreach (var pl in alivePlayers)
+    foreach (var candidate in Util.Players())
+    {
+      if (candidate.IsValid && candidate.PawnIsAlive && candidate.Team == CsTeam.Terrorist)
+        _racers.Add(candidate);
+    }
+
+    foreach (var pl in _racers)
     {
       if (_winners.Contains(pl.SteamID)) continue;
 
@@ -337,14 +342,14 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
         if (pawn != null)
         {
           pawn.Render = Color.FromArgb(255, 0, 255, 0);
-          Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+          NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
         }
       }
     }
 
     if (_winners.Count >= _winnerTarget)
     {
-      foreach (var pl in alivePlayers)
+      foreach (var pl in _racers)
       {
         if (!_winners.Contains(pl.SteamID))
           pl.PlayerPawn.Value?.CommitSuicide(false, true);
@@ -435,7 +440,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
         var pawn = p.PlayerPawn.Value;
         Unfreeze(pawn);
         pawn.Render = Color.FromArgb(255, 255, 255, 255);
-        Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
       }
     }
 
@@ -446,13 +451,13 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
   {
     pawn.MoveType = MoveType_t.MOVETYPE_INVALID;
     Schema.SetSchemaValue(pawn.Handle, "CBaseEntity", "m_nActualMoveType", 11);
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_MoveType");
+    NetState.Changed(pawn, "CBaseEntity", "m_MoveType");
   }
 
   private static void Unfreeze(CBasePlayerPawn pawn)
   {
     pawn.MoveType = MoveType_t.MOVETYPE_WALK;
     Schema.SetSchemaValue(pawn.Handle, "CBaseEntity", "m_nActualMoveType", 2);
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_MoveType");
+    NetState.Changed(pawn, "CBaseEntity", "m_MoveType");
   }
 }

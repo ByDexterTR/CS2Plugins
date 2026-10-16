@@ -170,7 +170,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
     if (pawn.Render != _playerColor)
     {
       pawn.Render = _playerColor;
-      Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+      NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
   }
 
@@ -181,7 +181,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 
     pawn.VelocityModifier = 1.0f;
     pawn.Render = Color.FromArgb(255, 255, 255, 255);
-    Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
   }
 
   private static bool IsAlive(CCSPlayerController? player)

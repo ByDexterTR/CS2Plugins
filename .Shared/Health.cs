@@ -1,4 +1,3 @@
-using System.Globalization;
 using CounterStrikeSharp.API.Core;
 
 namespace ByDexter.Shared;
@@ -10,14 +9,17 @@ public static class Health
     if (pawn == null || !pawn.IsValid)
       return;
 
-    int max = pawn.MaxHealth;
-    if (hp > max)
-      pawn.MaxHealth = hp;
+    pawn.Health = hp;
+    NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
+  }
 
-    pawn.AcceptInput("SetHealth", pawn, pawn, hp.ToString(CultureInfo.InvariantCulture));
+  public static void SetMax(CCSPlayerPawn pawn, int max)
+  {
+    if (pawn == null || !pawn.IsValid)
+      return;
 
-    if (hp > max)
-      pawn.MaxHealth = max;
+    pawn.MaxHealth = max;
+    NetState.Changed(pawn, "CBaseEntity", "m_iMaxHealth");
   }
 
   public static int Heal(CCSPlayerPawn pawn, int amount, int max)
@@ -25,12 +27,15 @@ public static class Health
     if (pawn == null || !pawn.IsValid || amount <= 0)
       return 0;
 
-    int target = Math.Min(pawn.Health + amount, max);
-    int healed = target - pawn.Health;
+    int current = pawn.Health;
+    int target = Math.Min(current + amount, max);
+    int healed = target - current;
+
     if (healed <= 0)
       return 0;
 
-    Set(pawn, target);
+    pawn.Health = target;
+    NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
     return healed;
   }
 }

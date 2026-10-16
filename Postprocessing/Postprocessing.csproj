@@ -23,4 +23,9 @@
   <ItemGroup>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\.Shared\NetState.cs" Link=".Shared\NetState.cs" />
+    <Using Include="ByDexter.Shared" />
+  </ItemGroup>
+
 </Project>

@@ -107,7 +107,7 @@ public static class MarkerRing
       beam.EndPos.X += delta.X;
       beam.EndPos.Y += delta.Y;
       beam.EndPos.Z += delta.Z;
-      Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+      NetState.Changed(beam, "CBeam", "m_vecEndPos");
     }
 
     var propOrigin = new Vector(center.X, center.Y, center.Z + 1f);
@@ -169,7 +169,7 @@ public static class MarkerRing
     disc.Teleport(new Vector(center.X, center.Y, center.Z + 1f), new QAngle(), new Vector());
 
     disc.Render = Color.FromArgb(Math.Clamp(alpha, 1, 255), 255, 255, 255);
-    Utilities.SetStateChanged(disc, "CBaseModelEntity", "m_clrRender");
+    NetState.Changed(disc, "CBaseModelEntity", "m_clrRender");
 
     Scale(disc, radius);
     return disc;
@@ -245,15 +245,15 @@ public static class MarkerRing
 
         beam.SetModel(BeamSprite);
         beam.Width = width;
-        Utilities.SetStateChanged(beam, "CBeam", "m_fWidth");
+        NetState.Changed(beam, "CBeam", "m_fWidth");
         beam.Render = color;
-        Utilities.SetStateChanged(beam, "CBaseModelEntity", "m_clrRender");
+        NetState.Changed(beam, "CBaseModelEntity", "m_clrRender");
         beam.Teleport(previous, new QAngle(), new Vector());
 
         beam.EndPos.X = next.X;
         beam.EndPos.Y = next.Y;
         beam.EndPos.Z = next.Z;
-        Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+        NetState.Changed(beam, "CBeam", "m_vecEndPos");
 
         marker.Beams.Add(beam.EntityHandle.Raw);
       }

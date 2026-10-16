@@ -81,8 +81,7 @@ public partial class CommandMaker
         return;
       }
 
-      pawn.Health = health;
-      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+      Health.Set(pawn, health);
     }),
 
     (c => c.SetFreeze, ctx =>
@@ -125,7 +124,7 @@ public partial class CommandMaker
         return;
 
       ctx.Target.PlayerName = name;
-      Utilities.SetStateChanged(ctx.Target, "CBasePlayerController", "m_iszPlayerName");
+      NetState.Changed(ctx.Target, "CBasePlayerController", "m_iszPlayerName");
     }),
 
     (c => c.SetArmor, ctx =>
@@ -134,7 +133,7 @@ public partial class CommandMaker
         return;
 
       pawn.ArmorValue = armor;
-      Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+      NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
     }),
 
     (c => c.SetMaxHealth, ctx =>
@@ -143,7 +142,7 @@ public partial class CommandMaker
         return;
 
       pawn.MaxHealth = maxHealth;
-      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iMaxHealth");
+      NetState.Changed(pawn, "CBaseEntity", "m_iMaxHealth");
     }),
 
     (c => c.SetClip, ctx =>
@@ -152,7 +151,7 @@ public partial class CommandMaker
         return;
 
       weapon.Clip1 = clip;
-      Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+      NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
     }),
 
     (c => c.SetAmmo, ctx =>
@@ -165,7 +164,7 @@ public partial class CommandMaker
         ammo = (ammo + vdata.MaxClip1 - 1) / vdata.MaxClip1;
 
       weapon.ReserveAmmo[0] = ammo;
-      Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+      NetState.Changed(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
     }),
 
     (c => c.Teleport, ctx =>
@@ -186,12 +185,12 @@ public partial class CommandMaker
         return;
 
       pawn.Render = System.Drawing.Color.FromArgb(255, r, g, b);
-      Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
+      NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }),
 
     (c => c.SlapDamage, ctx =>
     {
-      if (ctx.Pawn is { } pawn && ctx.Int(out int damage))
+      if (ctx.CsPawn is { } pawn && ctx.Int(out int damage))
         PerformSlap(pawn, damage);
     }),
 
@@ -213,8 +212,7 @@ public partial class CommandMaker
         return;
       }
 
-      pawn.Health = health;
-      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+      Health.Set(pawn, health);
     }),
 
     (c => c.AddArmor, ctx =>
@@ -223,7 +221,7 @@ public partial class CommandMaker
         return;
 
       pawn.ArmorValue = Math.Max(0, pawn.ArmorValue + delta);
-      Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+      NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
     }),
 
     (c => c.AddMoney, ctx =>
@@ -244,7 +242,7 @@ public partial class CommandMaker
     (c => c.SetClanTag, ctx =>
     {
       ctx.Target.Clan = SanitizePlayerName(ctx.Value);
-      Utilities.SetStateChanged(ctx.Target, "CCSPlayerController", "m_szClan");
+      NetState.Changed(ctx.Target, "CCSPlayerController", "m_szClan");
       new EventNextlevelChanged(false).FireEvent(false);
     }),
 
@@ -287,7 +285,7 @@ public partial class CommandMaker
         return;
 
       Schema.SetSchemaValue(itemServices.Handle, "CCSPlayer_ItemServices", "m_bHasHelmet", false);
-      Utilities.SetStateChanged(ctx.CsPawn!, "CCSPlayerPawn", "m_pItemServices");
+      NetState.Changed(ctx.CsPawn!, "CCSPlayerPawn", "m_pItemServices");
     }),
 
     (c => c.SetGodmode, ctx =>
@@ -402,7 +400,7 @@ public partial class CommandMaker
     }
   }
 
-  private static void PerformSlap(CBasePlayerPawn pawn, int damage = 0)
+  private static void PerformSlap(CCSPlayerPawn pawn, int damage = 0)
   {
     if (pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
       return;
@@ -427,8 +425,7 @@ public partial class CommandMaker
       return;
     }
 
-    pawn.Health = health;
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+    Health.Set(pawn, health);
   }
 
   private static void SetMoney(CCSPlayerController? controller, int money)
@@ -438,13 +435,13 @@ public partial class CommandMaker
       return;
 
     moneyServices.Account = money;
-    Utilities.SetStateChanged(controller, "CCSPlayerController", "m_pInGameMoneyServices");
+    NetState.Changed(controller, "CCSPlayerController", "m_pInGameMoneyServices");
   }
 
   private static void SetMoveTypeHelper(CBasePlayerPawn pawn, MoveType_t moveType)
   {
     pawn.MoveType = moveType;
-    Utilities.SetStateChanged(pawn, "CBaseEntity", "m_MoveType");
+    NetState.Changed(pawn, "CBaseEntity", "m_MoveType");
     Schema.GetRef<MoveType_t>(pawn.Handle, "CBaseEntity", "m_nActualMoveType") = moveType;
   }
 }

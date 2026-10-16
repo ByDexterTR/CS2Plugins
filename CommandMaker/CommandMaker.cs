@@ -3,6 +3,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 using static CounterStrikeSharp.API.Core.Listeners;
@@ -12,7 +13,7 @@ namespace CommandMaker;
 public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig>
 {
   public override string ModuleName => "CommandMaker";
-  public override string ModuleVersion => "1.0.8";
+  public override string ModuleVersion => "1.0.9";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -40,6 +41,7 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
   internal sealed class PlayerState
   {
     public CCSPlayerController? Controller;
+    public nint PawnPtr;
     public float Speed = 1f;
     public float Gravity = 1f;
     public bool HasSpeed;
@@ -55,6 +57,20 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
     public bool IsEmpty => !NeedsTick && !Godmode
       && (Cooldowns == null || Cooldowns.Count == 0)
       && (RoundUses == null || RoundUses.Count == 0);
+  }
+
+  private const int EnforceTickRate = 8;
+
+  private static int _offVelocity = -1;
+  private static int _offGravity;
+
+  private static void ResolveOffsets()
+  {
+    if (_offVelocity >= 0)
+      return;
+
+    _offVelocity = Schema.GetSchemaOffset("CCSPlayerPawn", "m_flVelocityModifier");
+    _offGravity = Schema.GetSchemaOffset("CBaseEntity", "m_flActualGravityScale");
   }
 
   internal PlayerState State(int userId)
@@ -104,6 +120,7 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
     RegisterListener<OnEntityTakeDamagePre>(OnEntityDamage);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
+    RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     RegisterListener<OnMapStart>(OnMapStart);
 
     foreach (var name in Util.Split(Config.ReloadCommands))
@@ -148,12 +165,22 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
         continue;
 
       pawn.VelocityModifier = 1.0f;
-      Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
+      NetState.Changed(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
       pawn.ActualGravityScale = 1.0f;
+      state.PawnPtr = 0;
     }
 
     _states.Clear();
     _godmodeCount = 0;
+  }
+
+  private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
+  {
+    int userId = Util.UserId(@event.Userid);
+    if (userId >= 0 && _states.TryGetValue(userId, out var state))
+      state.PawnPtr = 0;
+
+    return HookResult.Continue;
   }
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
@@ -901,8 +928,16 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
     if (_states.Count == 0)
       return;
 
-    float currentTime = Server.CurrentTime;
     bool hudFrame = Util.IsHudFrame();
+    bool enforceFrame = Server.TickCount % EnforceTickRate == 0;
+
+    if (!hudFrame && !enforceFrame)
+      return;
+
+    float currentTime = Server.CurrentTime;
+
+    if (enforceFrame)
+      ResolveOffsets();
 
     foreach (var (userId, state) in _states)
     {
@@ -918,28 +953,17 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
       if (!state.NeedsTick)
         continue;
 
-      var player = state.Controller;
-      if (player == null || !player.IsValid || player.UserId != userId)
+      if (enforceFrame && (state.HasSpeed || state.HasGravity))
+        Enforce(userId, state);
+
+      if (state.Center != null && hudFrame)
       {
-        player = Util.FromUserId(userId);
-        state.Controller = player;
+        var viewer = state.Controller ?? Util.FromUserId(userId);
+        state.Controller = viewer;
+
+        if (viewer != null && viewer.IsValid && !HudGuard.Blocked(viewer))
+          viewer.PrintToCenterHtml(state.Center);
       }
-
-      var pawn = player?.PlayerPawn.Value;
-      if (player == null || pawn == null || !pawn.IsValid)
-        continue;
-
-      if (state.HasSpeed && MathF.Abs(pawn.VelocityModifier - state.Speed) > 0.001f)
-      {
-        pawn.VelocityModifier = state.Speed;
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-      }
-
-      if (state.HasGravity && MathF.Abs(pawn.ActualGravityScale - state.Gravity) > 0.001f)
-        pawn.ActualGravityScale = state.Gravity;
-
-      if (state.Center != null && hudFrame && !HudGuard.Blocked(player))
-        player.PrintToCenterHtml(state.Center);
     }
 
     if (_expired.Count > 0)
@@ -949,6 +973,40 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
 
       _expired.Clear();
     }
+  }
+
+  private unsafe void Enforce(int userId, PlayerState state)
+  {
+    var player = state.Controller;
+    if (player == null || !player.IsValid || player.UserId != userId)
+    {
+      player = Util.FromUserId(userId);
+      state.Controller = player;
+      state.PawnPtr = 0;
+
+      if (player == null)
+        return;
+    }
+
+    if (state.PawnPtr == 0)
+    {
+      var pawn = player.PlayerPawn.Value;
+      if (pawn == null || !pawn.IsValid)
+        return;
+
+      state.PawnPtr = pawn.Handle;
+    }
+
+    nint handle = state.PawnPtr;
+
+    if (state.HasSpeed && MathF.Abs(*(float*)(handle + _offVelocity) - state.Speed) > 0.001f)
+    {
+      *(float*)(handle + _offVelocity) = state.Speed;
+      NativeAPI.SchemaSetStateChanged(handle, (uint)_offVelocity, uint.MaxValue, uint.MaxValue);
+    }
+
+    if (state.HasGravity && MathF.Abs(*(float*)(handle + _offGravity) - state.Gravity) > 0.001f)
+      *(float*)(handle + _offGravity) = state.Gravity;
   }
 
   private HookResult OnEntityDamage(CEntityInstance victimEnt, CTakeDamageInfo info)

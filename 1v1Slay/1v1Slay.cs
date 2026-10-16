@@ -108,7 +108,7 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
 
     if (_showHud && Config.EnableHudAnnounce && _hudHtml.Length > 0)
     {
-      foreach (var player in Utilities.GetPlayers())
+      foreach (var player in Util.Players())
       {
         if (player.IsValid && !player.IsBot && !HudGuard.Blocked(player))
         {

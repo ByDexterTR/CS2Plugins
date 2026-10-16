@@ -522,7 +522,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
       return;
 
     player.DesiredFOV = (uint)fov;
-    Utilities.SetStateChanged(player, "CBasePlayerController", "m_iDesiredFOV");
+    NetState.Changed(player, "CBasePlayerController", "m_iDesiredFOV");
   }
 
   private void RefreshMapVolumes()

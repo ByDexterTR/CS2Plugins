@@ -64,7 +64,7 @@ public class FortniteArmor : BasePlugin, IPluginConfig<FortniteArmorConfig>
 
       int absorbed = Math.Min(damage, armor);
       pawn.ArmorValue = armor - absorbed;
-      Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+      NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
       info.Damage = damage - absorbed;
 
       return HookResult.Continue;

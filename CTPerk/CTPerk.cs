@@ -159,12 +159,12 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
       {
         pawn.Health = 100;
         pawn.MaxHealth = 100;
-        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
       }
       if (pawn.ArmorValue > 0)
       {
         pawn.ArmorValue = 0;
-        Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+        NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
       }
     }
     return HookResult.Continue;
@@ -314,7 +314,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
       {
         pawn.Health = 100;
         pawn.MaxHealth = 100;
-        Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+        NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
       }
     });
 
@@ -332,16 +332,16 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     {
       pawn.Health = hp;
       pawn.MaxHealth = hp;
-      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+      NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
     }
     else
     {
       pawn.MaxHealth = hp;
-      Utilities.SetStateChanged(pawn, "CBaseEntity", "m_iHealth");
+      NetState.Changed(pawn, "CBaseEntity", "m_iHealth");
     }
 
     pawn.ArmorValue = armor;
-    Utilities.SetStateChanged(pawn, "CCSPlayerPawn", "m_ArmorValue");
+    NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
     player.GiveNamedItem("item_assaultsuit");
   }
 
@@ -355,7 +355,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
     if (weapon.Clip1 <= maxClip / 2)
     {
       weapon.Clip1 = maxClip;
-      Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+      NetState.Changed(weapon, "CBasePlayerWeapon", "m_iClip1");
     }
   }
 
@@ -397,7 +397,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
           if (healAmount > 0)
           {
             attackerPawn.Health = Math.Min(attackerPawn.Health + healAmount, attackerPawn.MaxHealth);
-            Utilities.SetStateChanged(attackerPawn, "CBaseEntity", "m_iHealth");
+            NetState.Changed(attackerPawn, "CBaseEntity", "m_iHealth");
           }
         }
       }
@@ -415,7 +415,7 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
           if (healBack > 0)
           {
             victimPawn.Health = Math.Min(victimPawn.Health + healBack, victimPawn.MaxHealth);
-            Utilities.SetStateChanged(victimPawn, "CBaseEntity", "m_iHealth");
+            NetState.Changed(victimPawn, "CBaseEntity", "m_iHealth");
           }
         }
       }

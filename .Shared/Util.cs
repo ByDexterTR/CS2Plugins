@@ -12,6 +12,32 @@ public static class Util
 
   public static bool IsHudFrame() => Server.TickCount % HudTickRate == 0;
 
+  private const int PlayerCacheTicks = 32;
+
+  private static readonly List<CCSPlayerController> CachedPlayers = new(64);
+  private static int _playerStamp = int.MinValue;
+
+  public static List<CCSPlayerController> Players()
+  {
+    int tick = Server.TickCount;
+
+    if (tick - _playerStamp < PlayerCacheTicks && tick >= _playerStamp)
+      return CachedPlayers;
+
+    _playerStamp = tick;
+    CachedPlayers.Clear();
+
+    foreach (var player in Utilities.GetPlayers())
+    {
+      if (player != null && player.IsValid)
+        CachedPlayers.Add(player);
+    }
+
+    return CachedPlayers;
+  }
+
+  public static void InvalidatePlayers() => _playerStamp = int.MinValue;
+
   public static int UserId(CCSPlayerController? player) =>
     player != null && player.IsValid ? player.UserId ?? -1 : -1;
 
