@@ -123,10 +123,19 @@ public class ColoredModel : VipModule
                 continue;
             }
 
-            pawn.Render = target;
-            NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
+            Paint(pawn, target);
             _lastArgb[slot] = target.ToArgb();
         }
+    }
+
+    private static void Paint(CCSPlayerPawn pawn, System.Drawing.Color target)
+    {
+        pawn.AcceptInput("Color", pawn, pawn, $"{target.R} {target.G} {target.B}");
+        if (pawn.Render.ToArgb() == target.ToArgb())
+            return;
+
+        pawn.Render = target;
+        NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
     }
 
     private static void Reset(int slot)
@@ -135,7 +144,6 @@ public class ColoredModel : VipModule
         if (pawn == null || !pawn.IsValid)
             return;
 
-        pawn.Render = System.Drawing.Color.FromArgb(InvisPool.Alpha(slot), 255, 255, 255);
-        NetState.Changed(pawn, "CBaseModelEntity", "m_clrRender");
+        Paint(pawn, System.Drawing.Color.FromArgb(InvisPool.Alpha(slot), 255, 255, 255));
     }
 }
