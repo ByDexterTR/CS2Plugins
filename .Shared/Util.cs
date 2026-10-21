@@ -21,7 +21,7 @@ public static class Util
   {
     int tick = Server.TickCount;
 
-    if (tick - _playerStamp < PlayerCacheTicks && tick >= _playerStamp)
+    if (_playerStamp != int.MinValue && tick >= _playerStamp && tick - _playerStamp < PlayerCacheTicks)
       return CachedPlayers;
 
     _playerStamp = tick;
