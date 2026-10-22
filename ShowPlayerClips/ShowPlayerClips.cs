@@ -129,11 +129,14 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
   private bool _hideDirty;
 
   private int _slotOffset;
-  private int _endPosOffset;
-  private int _beamChain;
-  private int _modelChain;
-  private int _renderOffset;
-  private int _widthOffset;
+  private static class Offsets
+  {
+    internal static readonly int EndPosOffset = Schema.GetSchemaOffset("CBeam", "m_vecEndPos");
+    internal static readonly int BeamChain = Schema.GetSchemaOffset("CBeam", "__m_pChainEntity");
+    internal static readonly int ModelChain = Schema.GetSchemaOffset("CBaseModelEntity", "__m_pChainEntity");
+    internal static readonly int RenderOffset = Schema.GetSchemaOffset("CBaseModelEntity", "m_clrRender");
+    internal static readonly int WidthOffset = Schema.GetSchemaOffset("CBeam", "m_fWidth");
+  }
 
   private List<ClipSegment> _triggerSegments = [];
   private List<ClipSegment> _pendingTriggers = [];
@@ -195,11 +198,6 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     RegisterListener<OnMapStart>(OnMapStart);
     RegisterListener<OnMapEnd>(OnMapEnd);
     _slotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
-    _endPosOffset = Schema.GetSchemaOffset("CBeam", "m_vecEndPos");
-    _beamChain = Schema.GetSchemaOffset("CBeam", "__m_pChainEntity");
-    _modelChain = Schema.GetSchemaOffset("CBaseModelEntity", "__m_pChainEntity");
-    _renderOffset = Schema.GetSchemaOffset("CBaseModelEntity", "m_clrRender");
-    _widthOffset = Schema.GetSchemaOffset("CBeam", "m_fWidth");
 
     RegisterListener<OnTick>(OnTick);
     RegisterListener<CheckTransmit>(OnCheckTransmit);
@@ -971,7 +969,7 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     if (_beamCategory[slot] != category)
     {
       beam.Render = _categoryColors[category];
-      StateChanged(beam, beam.Handle, _modelChain, _renderOffset);
+      StateChanged(beam, beam.Handle, Offsets.ModelChain, Offsets.RenderOffset);
       _beamCategory[slot] = category;
     }
 
@@ -1022,8 +1020,8 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     beam.Teleport(start);
 
     nint handle = beam.Handle;
-    *(Vector3*)(handle + _endPosOffset) = end;
-    StateChanged(beam, handle, _beamChain, _endPosOffset);
+    *(Vector3*)(handle + Offsets.EndPosOffset) = end;
+    StateChanged(beam, handle, Offsets.BeamChain, Offsets.EndPosOffset);
   }
 
   private static void StateChanged(CBaseEntity entity, nint handle, int chain, int offset)
@@ -1056,9 +1054,9 @@ public class ShowPlayerClips : BasePlugin, IPluginConfig<ShowPlayerClipsConfig>
     beam.SetModel(BeamSprite);
     ExpandBounds(beam);
     beam.Width = Config.Width;
-    StateChanged(beam, beam.Handle, _beamChain, _widthOffset);
+    StateChanged(beam, beam.Handle, Offsets.BeamChain, Offsets.WidthOffset);
     beam.Render = _categoryColors[_segmentCategory[index]];
-    StateChanged(beam, beam.Handle, _modelChain, _renderOffset);
+    StateChanged(beam, beam.Handle, Offsets.ModelChain, Offsets.RenderOffset);
     MoveBeam(beam, start, end);
 
     return beam;

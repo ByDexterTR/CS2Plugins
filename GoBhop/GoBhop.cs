@@ -98,14 +98,17 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
   private int _sideSeen;
 
   private int _slotOffset;
-  private int _pawnHandleOffset;
-  private int _pawnIsAliveOffset;
-  private int _observerPawnOffset;
-  private int _lifeStateOffset;
-  private int _observerServicesOffset;
-  private int _observerTargetOffset;
-  private int _weaponServicesOffset;
-  private int _myWeaponsOffset;
+  private static class Offsets
+  {
+    internal static readonly int PawnHandleOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
+    internal static readonly int PawnIsAliveOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_bPawnIsAlive");
+    internal static readonly int ObserverPawnOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hObserverPawn");
+    internal static readonly int LifeStateOffset = Schema.GetSchemaOffset("CBaseEntity", "m_lifeState");
+    internal static readonly int ObserverServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pObserverServices");
+    internal static readonly int ObserverTargetOffset = Schema.GetSchemaOffset("CPlayer_ObserverServices", "m_hObserverTarget");
+    internal static readonly int WeaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
+    internal static readonly int MyWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
+  }
 
   private WasdMenuManager _menus = null!;
   private OnTick _onTick = null!;
@@ -131,14 +134,6 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
   public override void Load(bool hotReload)
   {
     _slotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
-    _pawnHandleOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
-    _pawnIsAliveOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_bPawnIsAlive");
-    _observerPawnOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hObserverPawn");
-    _lifeStateOffset = Schema.GetSchemaOffset("CBaseEntity", "m_lifeState");
-    _observerServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pObserverServices");
-    _observerTargetOffset = Schema.GetSchemaOffset("CPlayer_ObserverServices", "m_hObserverTarget");
-    _weaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
-    _myWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
 
     _onTick = OnTick;
     _onCheckTransmit = OnCheckTransmit;
@@ -744,11 +739,11 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
         continue;
       }
 
-      uint raw = *(uint*)(controller + _pawnHandleOffset);
+      uint raw = *(uint*)(controller + Offsets.PawnHandleOffset);
       _pawnHandles[slot] = raw;
       _pawns[slot] = raw == uint.MaxValue ? 0 : (int)(raw & 0x3FFF);
 
-      if (_member[slot] && *(bool*)(controller + _pawnIsAliveOffset))
+      if (_member[slot] && *(bool*)(controller + Offsets.PawnIsAliveOffset))
         SetScoreboardDead(_players[slot]!, dead: true);
     }
   }
@@ -808,15 +803,15 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
   {
     nint controller = _controllers[slot];
     nint pawn = Entity(_pawnHandles[slot]);
-    if (controller == 0 || pawn == 0 || *(byte*)(pawn + _lifeStateOffset) == (byte)LifeState_t.LIFE_ALIVE)
+    if (controller == 0 || pawn == 0 || *(byte*)(pawn + Offsets.LifeStateOffset) == (byte)LifeState_t.LIFE_ALIVE)
       return 0;
 
-    nint observer = Entity(*(uint*)(controller + _observerPawnOffset));
-    nint services = observer == 0 ? 0 : *(nint*)(observer + _observerServicesOffset);
+    nint observer = Entity(*(uint*)(controller + Offsets.ObserverPawnOffset));
+    nint services = observer == 0 ? 0 : *(nint*)(observer + Offsets.ObserverServicesOffset);
     if (services == 0)
       return 0;
 
-    uint raw = *(uint*)(services + _observerTargetOffset);
+    uint raw = *(uint*)(services + Offsets.ObserverTargetOffset);
     return raw == uint.MaxValue ? 0 : (int)(raw & 0x3FFF);
   }
 
@@ -829,12 +824,12 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     _weaponCount[slot] = 0;
 
     nint pawn = Entity(_pawnHandles[slot]);
-    nint services = pawn == 0 ? 0 : *(nint*)(pawn + _weaponServicesOffset);
+    nint services = pawn == 0 ? 0 : *(nint*)(pawn + Offsets.WeaponServicesOffset);
     if (services == 0)
       return 0;
 
-    int count = *(int*)(services + _myWeaponsOffset);
-    uint* handles = *(uint**)(services + _myWeaponsOffset + 8);
+    int count = *(int*)(services + Offsets.MyWeaponsOffset);
+    uint* handles = *(uint**)(services + Offsets.MyWeaponsOffset + 8);
     if (count <= 0 || handles == null)
       return 0;
 

@@ -7,34 +7,36 @@ namespace VIPCore;
 
 public static unsafe class PlayerCache
 {
-    private static readonly int PawnHandle = Schema.GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
-    private static readonly int LifeStateOffset = Schema.GetSchemaOffset("CBaseEntity", "m_lifeState");
-    private static readonly int HealthOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iHealth");
-    private static readonly int TeamOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iTeamNum");
-    private static readonly int FlagsOffset = Schema.GetSchemaOffset("CBaseEntity", "m_fFlags");
-    private static readonly int VelocityOffset = Schema.GetSchemaOffset("CBaseEntity", "m_vecAbsVelocity");
-    private static readonly int RenderOffset = Schema.GetSchemaOffset("CBaseModelEntity", "m_clrRender");
-    private static readonly int MoveTypeOffset = Schema.GetSchemaOffset("CBaseEntity", "m_MoveType");
-    private static readonly int GroundOffset = Schema.GetSchemaOffset("CBaseEntity", "m_hGroundEntity");
-    private static readonly int BodyOffset = Schema.GetSchemaOffset("CBaseEntity", "m_CBodyComponent");
-    private static readonly int SceneNodeOffset = Schema.GetSchemaOffset("CBodyComponent", "m_pSceneNode");
-    private static readonly int OriginOffset = Schema.GetSchemaOffset("CGameSceneNode", "m_vecAbsOrigin");
-    private static readonly int EyeAnglesOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_angEyeAngles");
-    private static readonly int MovementOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
-    private static readonly int ButtonsOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_nButtons");
-    private static readonly int ButtonStatesOffset = Schema.GetSchemaOffset("CInButtonState", "m_pButtonStates");
-    private static readonly int DuckAmountOffset = Schema.GetSchemaOffset("CCSPlayer_MovementServices", "m_flDuckAmount");
-    private static readonly int DuckSpeedOffset = Schema.GetSchemaOffset("CCSPlayer_MovementServices", "m_flDuckSpeed");
-    private static readonly int LastDuckTimeOffset = Schema.GetSchemaOffset("CCSPlayer_MovementServices", "m_flLastDuckTime");
-    private static readonly int QueuedMaskOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_nQueuedButtonChangeMask");
-    private static readonly int SpottedOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_entitySpottedState");
-    private static readonly int SpottedMaskOffset = Schema.GetSchemaOffset("EntitySpottedState_t", "m_bSpottedByMask");
-
-    private static readonly int WeaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
-    private static readonly int ActiveWeaponOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hActiveWeapon");
-    private static readonly int ItemDefinitionOffset = Schema.GetSchemaOffset("CEconEntity", "m_AttributeManager")
-        + Schema.GetSchemaOffset("CAttributeContainer", "m_Item")
-        + Schema.GetSchemaOffset("CEconItemView", "m_iItemDefinitionIndex");
+    private static class Offsets
+    {
+        internal static readonly int PawnHandle = Schema.GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
+        internal static readonly int LifeStateOffset = Schema.GetSchemaOffset("CBaseEntity", "m_lifeState");
+        internal static readonly int HealthOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iHealth");
+        internal static readonly int TeamOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iTeamNum");
+        internal static readonly int FlagsOffset = Schema.GetSchemaOffset("CBaseEntity", "m_fFlags");
+        internal static readonly int VelocityOffset = Schema.GetSchemaOffset("CBaseEntity", "m_vecAbsVelocity");
+        internal static readonly int RenderOffset = Schema.GetSchemaOffset("CBaseModelEntity", "m_clrRender");
+        internal static readonly int MoveTypeOffset = Schema.GetSchemaOffset("CBaseEntity", "m_MoveType");
+        internal static readonly int GroundOffset = Schema.GetSchemaOffset("CBaseEntity", "m_hGroundEntity");
+        internal static readonly int BodyOffset = Schema.GetSchemaOffset("CBaseEntity", "m_CBodyComponent");
+        internal static readonly int SceneNodeOffset = Schema.GetSchemaOffset("CBodyComponent", "m_pSceneNode");
+        internal static readonly int OriginOffset = Schema.GetSchemaOffset("CGameSceneNode", "m_vecAbsOrigin");
+        internal static readonly int EyeAnglesOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_angEyeAngles");
+        internal static readonly int MovementOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
+        internal static readonly int ButtonsOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_nButtons");
+        internal static readonly int ButtonStatesOffset = Schema.GetSchemaOffset("CInButtonState", "m_pButtonStates");
+        internal static readonly int DuckAmountOffset = Schema.GetSchemaOffset("CCSPlayer_MovementServices", "m_flDuckAmount");
+        internal static readonly int DuckSpeedOffset = Schema.GetSchemaOffset("CCSPlayer_MovementServices", "m_flDuckSpeed");
+        internal static readonly int LastDuckTimeOffset = Schema.GetSchemaOffset("CCSPlayer_MovementServices", "m_flLastDuckTime");
+        internal static readonly int QueuedMaskOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_nQueuedButtonChangeMask");
+        internal static readonly int SpottedOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_entitySpottedState");
+        internal static readonly int SpottedMaskOffset = Schema.GetSchemaOffset("EntitySpottedState_t", "m_bSpottedByMask");
+        internal static readonly int WeaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
+        internal static readonly int ActiveWeaponOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hActiveWeapon");
+        internal static readonly int ItemDefinitionOffset = Schema.GetSchemaOffset("CEconEntity", "m_AttributeManager")
+            + Schema.GetSchemaOffset("CAttributeContainer", "m_Item")
+            + Schema.GetSchemaOffset("CEconItemView", "m_iItemDefinitionIndex");
+    }
 
     private const int Slots = 64;
 
@@ -102,7 +104,7 @@ public static unsafe class PlayerCache
         if (!player.IsValid)
             return null;
 
-        uint raw = *(uint*)(player.Handle + PawnHandle);
+        uint raw = *(uint*)(player.Handle + Offsets.PawnHandle);
         nint pointer = EntitySystem.GetEntityByHandle(raw) ?? 0;
         nint previous = Pointers[slot];
         Stamps[slot] = _generation;
@@ -137,8 +139,8 @@ public static unsafe class PlayerCache
         if ((uint)slot >= Slots)
             return Pawn(player)?.WeaponServices?.ActiveWeapon.Value;
 
-        nint services = *(nint*)(pawn + WeaponServicesOffset);
-        uint raw = services == 0 ? uint.MaxValue : *(uint*)(services + ActiveWeaponOffset);
+        nint services = *(nint*)(pawn + Offsets.WeaponServicesOffset);
+        uint raw = services == 0 ? uint.MaxValue : *(uint*)(services + Offsets.ActiveWeaponOffset);
         if (WeaponStamps[slot] == _generation && WeaponHandles[slot] == raw)
             return Weapons[slot];
 
@@ -187,7 +189,7 @@ public static unsafe class PlayerCache
             return cached;
 
         nint pointer = (uint)slot < Slots ? WeaponPointers[slot] : ActiveWeapon(player)!.Handle;
-        int itemDef = *(ushort*)(pointer + ItemDefinitionOffset);
+        int itemDef = *(ushort*)(pointer + Offsets.ItemDefinitionOffset);
         string name = WeaponUtil.NormalizeWeaponName(designer, itemDef);
         if ((uint)slot < Slots)
             WeaponNames[slot] = name;
@@ -199,29 +201,29 @@ public static unsafe class PlayerCache
         if (player == null || (uint)player.Slot >= Slots)
             return player?.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
 
-        return Pawn(player) != null && *(byte*)(Pointers[player.Slot] + LifeStateOffset) == (byte)LifeState_t.LIFE_ALIVE;
+        return Pawn(player) != null && *(byte*)(Pointers[player.Slot] + Offsets.LifeStateOffset) == (byte)LifeState_t.LIFE_ALIVE;
     }
 
-    public static byte LifeState(nint pawn) => *(byte*)(pawn + LifeStateOffset);
-    public static int Health(nint pawn) => *(int*)(pawn + HealthOffset);
-    public static byte Team(nint entity) => *(byte*)(entity + TeamOffset);
-    public static uint Flags(nint entity) => *(uint*)(entity + FlagsOffset);
-    public static ref Vector3 Velocity(nint entity) => ref *(Vector3*)(entity + VelocityOffset);
-    public static byte RenderAlpha(nint entity) => *(byte*)(entity + RenderOffset + 3);
-    public static byte MoveType(nint entity) => *(byte*)(entity + MoveTypeOffset);
-    public static bool OnGroundEntity(nint entity) => *(uint*)(entity + GroundOffset) != uint.MaxValue;
-    public static ref Vector3 EyeAngles(nint pawn) => ref *(Vector3*)(pawn + EyeAnglesOffset);
+    public static byte LifeState(nint pawn) => *(byte*)(pawn + Offsets.LifeStateOffset);
+    public static int Health(nint pawn) => *(int*)(pawn + Offsets.HealthOffset);
+    public static byte Team(nint entity) => *(byte*)(entity + Offsets.TeamOffset);
+    public static uint Flags(nint entity) => *(uint*)(entity + Offsets.FlagsOffset);
+    public static ref Vector3 Velocity(nint entity) => ref *(Vector3*)(entity + Offsets.VelocityOffset);
+    public static byte RenderAlpha(nint entity) => *(byte*)(entity + Offsets.RenderOffset + 3);
+    public static byte MoveType(nint entity) => *(byte*)(entity + Offsets.MoveTypeOffset);
+    public static bool OnGroundEntity(nint entity) => *(uint*)(entity + Offsets.GroundOffset) != uint.MaxValue;
+    public static ref Vector3 EyeAngles(nint pawn) => ref *(Vector3*)(pawn + Offsets.EyeAnglesOffset);
 
     public static bool Origin(nint entity, out Vector3 origin)
     {
         origin = default;
-        nint body = *(nint*)(entity + BodyOffset);
+        nint body = *(nint*)(entity + Offsets.BodyOffset);
         if (body == 0)
             return false;
-        nint node = *(nint*)(body + SceneNodeOffset);
+        nint node = *(nint*)(body + Offsets.SceneNodeOffset);
         if (node == 0)
             return false;
-        origin = *(Vector3*)(node + OriginOffset);
+        origin = *(Vector3*)(node + Offsets.OriginOffset);
         return true;
     }
 
@@ -229,18 +231,18 @@ public static unsafe class PlayerCache
     {
         buttons = 0;
         queued = 0;
-        nint movement = *(nint*)(pawn + MovementOffset);
+        nint movement = *(nint*)(pawn + Offsets.MovementOffset);
         if (movement == 0)
             return false;
-        buttons = *(ulong*)(movement + ButtonsOffset + ButtonStatesOffset);
-        queued = *(ulong*)(movement + QueuedMaskOffset);
+        buttons = *(ulong*)(movement + Offsets.ButtonsOffset + Offsets.ButtonStatesOffset);
+        queued = *(ulong*)(movement + Offsets.QueuedMaskOffset);
         return true;
     }
 
     public static float DuckAmount(nint pawn)
     {
-        nint movement = *(nint*)(pawn + MovementOffset);
-        return movement == 0 ? 0f : *(float*)(movement + DuckAmountOffset);
+        nint movement = *(nint*)(pawn + Offsets.MovementOffset);
+        return movement == 0 ? 0f : *(float*)(movement + Offsets.DuckAmountOffset);
     }
 
     public static void KeepDuckFresh(nint pawn, float minSpeed)
@@ -248,18 +250,18 @@ public static unsafe class PlayerCache
         if (pawn == 0)
             return;
 
-        nint movement = *(nint*)(pawn + MovementOffset);
+        nint movement = *(nint*)(pawn + Offsets.MovementOffset);
         if (movement == 0)
             return;
 
-        float* speed = (float*)(movement + DuckSpeedOffset);
+        float* speed = (float*)(movement + Offsets.DuckSpeedOffset);
         if (*speed < minSpeed)
             *speed = minSpeed;
 
-        float* last = (float*)(movement + LastDuckTimeOffset);
+        float* last = (float*)(movement + Offsets.LastDuckTimeOffset);
         if (*last != 0f)
             *last = 0f;
     }
 
-    public static uint* SpottedByMask(nint pawn) => (uint*)(pawn + SpottedOffset + SpottedMaskOffset);
+    public static uint* SpottedByMask(nint pawn) => (uint*)(pawn + Offsets.SpottedOffset + Offsets.SpottedMaskOffset);
 }

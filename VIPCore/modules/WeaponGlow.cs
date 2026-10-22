@@ -77,8 +77,11 @@ public class WeaponGlow : VipModule
                 _weapons.Add(entity.Index);
     }
 
-    private static readonly int WeaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
-    private static readonly int MyWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
+    private static class GlowOffsets
+    {
+        internal static readonly int WeaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
+        internal static readonly int MyWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
+    }
 
     private unsafe void CollectCarried()
     {
@@ -90,12 +93,12 @@ public class WeaponGlow : VipModule
             if (pawn == 0)
                 continue;
 
-            nint services = *(nint*)(pawn + WeaponServicesOffset);
+            nint services = *(nint*)(pawn + GlowOffsets.WeaponServicesOffset);
             if (services == 0)
                 continue;
 
-            int count = *(int*)(services + MyWeaponsOffset);
-            uint* handles = *(uint**)(services + MyWeaponsOffset + 8);
+            int count = *(int*)(services + GlowOffsets.MyWeaponsOffset);
+            uint* handles = *(uint**)(services + GlowOffsets.MyWeaponsOffset + 8);
             if (handles == null)
                 continue;
 

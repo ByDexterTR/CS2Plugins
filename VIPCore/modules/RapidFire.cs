@@ -20,8 +20,11 @@ public class RapidFire : VipModule
 
     private static readonly Cfg DefaultCfg = new();
 
-    private static readonly int PrimaryOffset = Schema.GetSchemaOffset("CBasePlayerWeapon", "m_nNextPrimaryAttackTick");
-    private static readonly int SecondaryOffset = Schema.GetSchemaOffset("CBasePlayerWeapon", "m_nNextSecondaryAttackTick");
+    private static class FireOffsets
+    {
+        internal static readonly int PrimaryOffset = Schema.GetSchemaOffset("CBasePlayerWeapon", "m_nNextPrimaryAttackTick");
+        internal static readonly int SecondaryOffset = Schema.GetSchemaOffset("CBasePlayerWeapon", "m_nNextSecondaryAttackTick");
+    }
 
     private readonly nint[] _rateWeapon = new nint[64];
     private readonly int[] _ratePrimary = new int[64];
@@ -83,14 +86,14 @@ public class RapidFire : VipModule
             _rateSecondary[slot] = 0;
         }
 
-        int* primary = (int*)(pointer + PrimaryOffset);
+        int* primary = (int*)(pointer + FireOffsets.PrimaryOffset);
         if (*primary > now && *primary != _ratePrimary[slot])
         {
             *primary = Scale(now, *primary, factor);
             _ratePrimary[slot] = *primary;
         }
 
-        int* secondary = (int*)(pointer + SecondaryOffset);
+        int* secondary = (int*)(pointer + FireOffsets.SecondaryOffset);
         if (*secondary > now && *secondary != _rateSecondary[slot])
         {
             *secondary = Scale(now, *secondary, factor);

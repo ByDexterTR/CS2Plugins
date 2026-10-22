@@ -291,24 +291,27 @@ public class FPS : BasePlugin
   private readonly WorldBvh.Face[] _reachHints = new WorldBvh.Face[MaxSlots * Eyes];
   private WorldBvh.Face _spareHint;
   private int _recheck = RecheckTicks;
-  private int _servicesOffset;
-  private int _forwardOffset;
-  private int _leftOffset;
-  private int _anglesOffset;
-  private int _flagsOffset;
-  private int _pawnHandleOffset;
-  private int _pingOffset;
-  private int _teamOffset;
-  private int _lifeOffset;
-  private int _healthOffset;
-  private int _velocityOffset;
-  private int _bodyOffset;
-  private int _sceneOffset;
-  private int _originOffset;
-  private int _eyeZOffset;
-  private int _radarOffset;
-  private int _weaponServicesOffset;
-  private int _myWeaponsOffset;
+  private static class Offsets
+  {
+    internal static readonly int ServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
+    internal static readonly int ForwardOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_flForwardMove");
+    internal static readonly int LeftOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_flLeftMove");
+    internal static readonly int AnglesOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_angEyeAngles");
+    internal static readonly int FlagsOffset = Schema.GetSchemaOffset("CBaseEntity", "m_fFlags");
+    internal static readonly int PawnHandleOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
+    internal static readonly int PingOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_iPing");
+    internal static readonly int TeamOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iTeamNum");
+    internal static readonly int LifeOffset = Schema.GetSchemaOffset("CBaseEntity", "m_lifeState");
+    internal static readonly int HealthOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iHealth");
+    internal static readonly int VelocityOffset = Schema.GetSchemaOffset("CBaseEntity", "m_vecAbsVelocity");
+    internal static readonly int BodyOffset = Schema.GetSchemaOffset("CBaseEntity", "m_CBodyComponent");
+    internal static readonly int SceneOffset = Schema.GetSchemaOffset("CBodyComponent", "m_pSceneNode");
+    internal static readonly int OriginOffset = Schema.GetSchemaOffset("CGameSceneNode", "m_vecAbsOrigin");
+    internal static readonly int EyeZOffset = Schema.GetSchemaOffset("CBaseModelEntity", "m_vecViewOffset") + Schema.GetSchemaOffset("CNetworkViewOffsetVector", "m_vecZ");
+    internal static readonly int RadarOffset = Schema.GetSchemaOffset("CCSPlayerPawnBase", "m_fNextRadarUpdateTime");
+    internal static readonly int WeaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
+    internal static readonly int MyWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
+  }
   private readonly nint[] _pawnPtr = new nint[MaxSlots];
   private readonly uint[] _pawnRaw = new uint[MaxSlots];
   private float _tickInterval = 1f / 64f;
@@ -343,24 +346,6 @@ public class FPS : BasePlugin
     LoadPlayers(from);
 
     _slotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
-    _servicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
-    _forwardOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_flForwardMove");
-    _leftOffset = Schema.GetSchemaOffset("CPlayer_MovementServices", "m_flLeftMove");
-    _anglesOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_angEyeAngles");
-    _flagsOffset = Schema.GetSchemaOffset("CBaseEntity", "m_fFlags");
-    _pawnHandleOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
-    _pingOffset = Schema.GetSchemaOffset("CCSPlayerController", "m_iPing");
-    _teamOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iTeamNum");
-    _lifeOffset = Schema.GetSchemaOffset("CBaseEntity", "m_lifeState");
-    _healthOffset = Schema.GetSchemaOffset("CBaseEntity", "m_iHealth");
-    _velocityOffset = Schema.GetSchemaOffset("CBaseEntity", "m_vecAbsVelocity");
-    _bodyOffset = Schema.GetSchemaOffset("CBaseEntity", "m_CBodyComponent");
-    _sceneOffset = Schema.GetSchemaOffset("CBodyComponent", "m_pSceneNode");
-    _originOffset = Schema.GetSchemaOffset("CGameSceneNode", "m_vecAbsOrigin");
-    _eyeZOffset = Schema.GetSchemaOffset("CBaseModelEntity", "m_vecViewOffset") + Schema.GetSchemaOffset("CNetworkViewOffsetVector", "m_vecZ");
-    _radarOffset = Schema.GetSchemaOffset("CCSPlayerPawnBase", "m_fNextRadarUpdateTime");
-    _weaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
-    _myWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
     _teammatesAreEnemies = ConVar.Find("mp_teammates_are_enemies");
     _ffa = _teammatesAreEnemies?.GetPrimitiveValue<bool>() == true;
     _onCheckTransmit = OnCheckTransmit;
@@ -1627,7 +1612,7 @@ public class FPS : BasePlugin
         continue;
 
       nint controller = player.Handle;
-      uint raw = *(uint*)(controller + _pawnHandleOffset);
+      uint raw = *(uint*)(controller + Offsets.PawnHandleOffset);
       nint ptr = raw == uint.MaxValue ? 0 : EntitySystem.GetEntityByHandle(raw) ?? 0;
       if (ptr == 0)
       {
@@ -1645,8 +1630,8 @@ public class FPS : BasePlugin
 
       s.Pawn = (int)(raw & 0x3FFF);
       s.Raw = raw;
-      s.Team = *(byte*)(controller + _teamOffset);
-      s.Alive = *(byte*)(ptr + _lifeOffset) == (byte)LifeState_t.LIFE_ALIVE && *(int*)(ptr + _healthOffset) > 0 && (uint)(tick - _dyingTick[slot]) > DyingTicks;
+      s.Team = *(byte*)(controller + Offsets.TeamOffset);
+      s.Alive = *(byte*)(ptr + Offsets.LifeOffset) == (byte)LifeState_t.LIFE_ALIVE && *(int*)(ptr + Offsets.HealthOffset) > 0 && (uint)(tick - _dyingTick[slot]) > DyingTicks;
       s.Corpse = !s.Alive && now - _deathTime[slot] >= delay;
     }
   }
@@ -1662,22 +1647,22 @@ public class FPS : BasePlugin
     if (s.Pawn == 0 || handle == 0 || player == null)
       return false;
 
-    nint body = *(nint*)(handle + _bodyOffset);
-    nint node = body == 0 ? 0 : *(nint*)(body + _sceneOffset);
+    nint body = *(nint*)(handle + Offsets.BodyOffset);
+    nint node = body == 0 ? 0 : *(nint*)(body + Offsets.SceneOffset);
     if (node == 0)
       return false;
 
-    s.Origin = *(Vector3*)(node + _originOffset);
-    s.Velocity = *(Vector3*)(handle + _velocityOffset);
-    s.EyeZ = *(float*)(handle + _eyeZOffset);
-    s.Ping = (int)*(uint*)(player.Handle + _pingOffset);
+    s.Origin = *(Vector3*)(node + Offsets.OriginOffset);
+    s.Velocity = *(Vector3*)(handle + Offsets.VelocityOffset);
+    s.EyeZ = *(float*)(handle + Offsets.EyeZOffset);
+    s.Ping = (int)*(uint*)(player.Handle + Offsets.PingOffset);
     s.PosTick = tick;
 
-    nint services = *(nint*)(handle + _servicesOffset);
-    float forward = services != 0 ? *(float*)(services + _forwardOffset) : 0f;
-    float left = services != 0 ? *(float*)(services + _leftOffset) : 0f;
-    s.Yaw = *(float*)(handle + _anglesOffset + 4) * (MathF.PI / 180f);
-    s.Ground = (*(uint*)(handle + _flagsOffset) & 1) != 0;
+    nint services = *(nint*)(handle + Offsets.ServicesOffset);
+    float forward = services != 0 ? *(float*)(services + Offsets.ForwardOffset) : 0f;
+    float left = services != 0 ? *(float*)(services + Offsets.LeftOffset) : 0f;
+    s.Yaw = *(float*)(handle + Offsets.AnglesOffset + 4) * (MathF.PI / 180f);
+    s.Ground = (*(uint*)(handle + Offsets.FlagsOffset) & 1) != 0;
     var wish = new Vector2(MathF.Cos(s.Yaw), MathF.Sin(s.Yaw)) * forward + new Vector2(-MathF.Sin(s.Yaw), MathF.Cos(s.Yaw)) * left;
     float cap = MathF.Max(MathF.Abs(forward), MathF.Abs(left));
     float length = wish.Length();
@@ -1836,7 +1821,7 @@ public class FPS : BasePlugin
       if (tick - _radarAt[v] >= RadarTicks)
       {
         _radarAt[v] = tick;
-        *(float*)(viewerPawn + _radarOffset) = 0f;
+        *(float*)(viewerPawn + Offsets.RadarOffset) = 0f;
       }
     }
 
@@ -1892,12 +1877,12 @@ public class FPS : BasePlugin
     s.WeaponCount = 0;
 
     nint pawn = _pawnPtr[slot];
-    nint services = pawn == 0 ? 0 : *(nint*)(pawn + _weaponServicesOffset);
+    nint services = pawn == 0 ? 0 : *(nint*)(pawn + Offsets.WeaponServicesOffset);
     if (services == 0)
       return 0;
 
-    int count = *(int*)(services + _myWeaponsOffset);
-    uint* handles = *(uint**)(services + _myWeaponsOffset + 8);
+    int count = *(int*)(services + Offsets.MyWeaponsOffset);
+    uint* handles = *(uint**)(services + Offsets.MyWeaponsOffset + 8);
     if (count <= 0 || handles == null)
       return 0;
 

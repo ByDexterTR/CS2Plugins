@@ -80,7 +80,10 @@ public static class SpeedPool
             _until[slot, source] = 0;
     }
 
-    private static readonly int VelocityModifierOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_flVelocityModifier");
+    private static class SpeedOffsets
+    {
+        internal static readonly int VelocityModifierOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_flVelocityModifier");
+    }
 
     private static unsafe void OnTick()
     {
@@ -120,7 +123,7 @@ public static class SpeedPool
             }
 
             var pawn = PlayerCache.Pawn(player)!;
-            float* modifier = (float*)(PlayerCache.Pointer(player) + VelocityModifierOffset);
+            float* modifier = (float*)(PlayerCache.Pointer(player) + SpeedOffsets.VelocityModifierOffset);
 
             if (!any)
             {

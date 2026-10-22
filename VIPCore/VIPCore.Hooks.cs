@@ -111,7 +111,6 @@ public partial class VIPCore
         if (_postThinkListener != null)
             return;
 
-        _pawnControllerOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_hController");
         _postThinkListener = DispatchPostThink;
         VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Hook(_postThinkListener, HookMode.Post);
     }
@@ -132,6 +131,9 @@ public partial class VIPCore
         nint pointer = hook.GetParam<nint>(0);
         if (hooks.Length == 0 || pointer == 0)
             return HookResult.Continue;
+
+        if (_pawnControllerOffset < 0)
+            _pawnControllerOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_hController");
 
         int slot = (int)(*(uint*)(pointer + _pawnControllerOffset) & 0x7FFF) - 1;
         var player = PlayerAt(slot);
