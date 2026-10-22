@@ -74,7 +74,7 @@ public static class TrailBeam
         beam.Width = width;
         beam.Render = color;
         beam.SetModel(Sprite);
-        beam.Teleport(from, ZeroAngle, ZeroVector);
+        Teleporter.Teleport(beam, from, ZeroAngle, ZeroVector);
 
         beam.EndPos.X = to.X;
         beam.EndPos.Y = to.Y;

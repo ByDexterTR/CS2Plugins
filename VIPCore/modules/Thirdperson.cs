@@ -162,7 +162,7 @@ public class Thirdperson : VipModule
                 origin.Y - fy * distance,
                 origin.Z + pawn.ViewOffset.Z - fz * distance);
 
-            camera.Teleport(pos, pawn.V_angle);
+            Teleporter.Teleport(camera, pos, pawn.V_angle);
         }
     }
 }

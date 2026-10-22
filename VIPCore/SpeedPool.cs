@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
 
 namespace VIPCore;
 
@@ -79,7 +80,9 @@ public static class SpeedPool
             _until[slot, source] = 0;
     }
 
-    private static void OnTick()
+    private static readonly int VelocityModifierOffset = Schema.GetSchemaOffset("CCSPlayerPawn", "m_flVelocityModifier");
+
+    private static unsafe void OnTick()
     {
         int now = Server.TickCount;
 
@@ -110,20 +113,22 @@ public static class SpeedPool
                 continue;
 
             var player = _owner?.PlayerAt(slot);
-            var pawn = PlayerCache.Pawn(player);
-            if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+            if (!PlayerCache.Alive(player))
             {
                 _managed[slot] = false;
                 continue;
             }
 
+            var pawn = PlayerCache.Pawn(player)!;
+            float* modifier = (float*)(PlayerCache.Pointer(player) + VelocityModifierOffset);
+
             if (!any)
             {
                 _managed[slot] = false;
-                if (Math.Abs(pawn.VelocityModifier - _written[slot]) > 0.001f || Math.Abs(pawn.VelocityModifier - 1f) <= 0.001f)
+                if (Math.Abs(*modifier - _written[slot]) > 0.001f || Math.Abs(*modifier - 1f) <= 0.001f)
                     continue;
 
-                pawn.VelocityModifier = 1f;
+                *modifier = 1f;
                 NetState.Changed(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
                 continue;
             }
@@ -134,10 +139,10 @@ public static class SpeedPool
             _managed[slot] = true;
             _written[slot] = target;
 
-            if (Math.Abs(pawn.VelocityModifier - target) <= 0.001f)
+            if (Math.Abs(*modifier - target) <= 0.001f)
                 continue;
 
-            pawn.VelocityModifier = target;
+            *modifier = target;
             NetState.Changed(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
         }
     }

@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.2.7";
+    public override string ModuleVersion => "1.2.8";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -29,7 +29,7 @@ public partial class VIPCore : BasePlugin
     private readonly Dictionary<string, VipModule> _moduleByName = new();
     private readonly System.Collections.Concurrent.ConcurrentDictionary<(string Group, string Feature, Type Type), object?> _groupValueCache = new();
     internal int GroupVersion;
-    private readonly Dictionary<string, (int Tick, List<CCSPlayerController> Players)> _activeCache = new();
+    private readonly Dictionary<string, FeatureState> _features = new();
     private Dictionary<string, HashSet<string>> _pistolDisable = new();
     private Dictionary<string, HashSet<string>> _forced = new();
     private Dictionary<string, PeriodWindow> _periods = new();
@@ -37,26 +37,96 @@ public partial class VIPCore : BasePlugin
     private bool _isPistolRound;
     private int _roundNumber;
     public int RoundNumber => _roundNumber;
-    private List<CCSPlayerController> _tickPlayers = new();
-    private int _tickPlayersAt = -1;
+    private List<CCSPlayerController> _players = new();
+    private List<CCSPlayerController> _humans = new();
+    private int _playersAt;
+    private bool _playersDirty = true;
     private readonly object _lock = new();
+
+    private const int PlayersRefreshTicks = 64;
 
     public IReadOnlyList<CCSPlayerController> Players
     {
         get
         {
             int tick = Server.TickCount;
-            if (_tickPlayersAt != tick)
-            {
-                _tickPlayersAt = tick;
-                _tickPlayers = Utilities.GetPlayers();
-                Array.Clear(_bySlot);
-                foreach (var player in _tickPlayers)
-                    if ((uint)player.Slot < 64)
-                        _bySlot[player.Slot] = player;
-            }
-            return _tickPlayers;
+            if (_playersDirty || tick < _playersAt || tick - _playersAt >= PlayersRefreshTicks)
+                RefreshPlayers(tick);
+            return _players;
         }
+    }
+
+    public IReadOnlyList<CCSPlayerController> Humans
+    {
+        get
+        {
+            _ = Players;
+            return _humans;
+        }
+    }
+
+    private void RefreshPlayers(int tick)
+    {
+        _playersDirty = false;
+        _playersAt = tick;
+
+        var players = Utilities.GetPlayers();
+        var humans = new List<CCSPlayerController>(players.Count);
+        Array.Clear(_bySlot);
+        foreach (var player in players)
+        {
+            int slot = player.Slot;
+            if ((uint)slot < 64)
+            {
+                _bySlot[slot] = player;
+                if (Identify(player, slot).Bot)
+                    continue;
+            }
+            else if (player.IsBot)
+                continue;
+
+            humans.Add(player);
+        }
+
+        _players = players;
+        _humans = humans;
+    }
+
+    private void PlayersChanged(int slot)
+    {
+        _playersDirty = true;
+        if ((uint)slot < 64)
+            _identity[slot] = default;
+    }
+
+    private struct Identity
+    {
+        public nint Handle;
+        public bool Valid;
+        public bool Bot;
+        public ulong SteamId;
+    }
+
+    private readonly Identity[] _identity = new Identity[64];
+
+    private ref Identity Identify(CCSPlayerController player, int slot)
+    {
+        ref var id = ref _identity[slot];
+        nint handle = player.Handle;
+        if (id.Handle == handle && handle != 0)
+            return ref id;
+
+        id.Handle = handle;
+        id.Valid = player.IsValid;
+        id.Bot = id.Valid && player.IsBot;
+        id.SteamId = id.Valid && !id.Bot ? player.SteamID : 0;
+        return ref id;
+    }
+
+    public bool IsBotSlot(CCSPlayerController player)
+    {
+        int slot = player.Slot;
+        return (uint)slot < 64 ? Identify(player, slot).Bot : player.IsBot;
     }
 
     private readonly CCSPlayerController?[] _bySlot = new CCSPlayerController?[64];
@@ -166,6 +236,7 @@ public partial class VIPCore : BasePlugin
         {
             _isPistolRound = IsPistolRound();
             _roundNumber++;
+            VipsChanged();
             RollRoundColors();
             return HookResult.Continue;
         });
@@ -231,31 +302,77 @@ public partial class VIPCore : BasePlugin
         _modules.Sort((a, b) => b.Priority.CompareTo(a.Priority));
     }
 
+    private struct ActiveSlot
+    {
+        public int Version;
+        public ulong SteamId;
+        public string? Group;
+        public bool Value;
+    }
+
+    private sealed class FeatureState
+    {
+        public int Tick = -1;
+        public readonly List<CCSPlayerController> Players = new();
+        public readonly ActiveSlot[] Slots = new ActiveSlot[64];
+    }
+
+    private FeatureState Feature(string feature)
+    {
+        if (!_features.TryGetValue(feature, out var state))
+        {
+            state = new FeatureState();
+            _features[feature] = state;
+        }
+        return state;
+    }
+
+    private readonly List<CCSPlayerController> _aliveVips = new();
+    private int _aliveVipsAt = -1;
+    private int _aliveVipsVersion;
+
+    private List<CCSPlayerController> AliveVips(int tick)
+    {
+        int version = Volatile.Read(ref _vipVersion);
+        if (_aliveVipsAt == tick && _aliveVipsVersion == version)
+            return _aliveVips;
+
+        _aliveVipsAt = tick;
+        _aliveVipsVersion = version;
+        _aliveVips.Clear();
+
+        if (_vips.Count == 0 && BenchBotGroup == null)
+            return _aliveVips;
+
+        foreach (var player in Players)
+        {
+            if (player == null || !Resolve(player).Vip || !PlayerCache.Alive(player))
+                continue;
+
+            _aliveVips.Add(player);
+        }
+
+        return _aliveVips;
+    }
+
     public IReadOnlyList<CCSPlayerController> ActivePlayers(string feature)
     {
         int tick = Server.TickCount;
-        if (_activeCache.TryGetValue(feature, out var cached) && cached.Tick == tick)
-            return cached.Players;
+        var state = Feature(feature);
+        if (state.Tick == tick)
+            return state.Players;
 
-        var list = cached.Players ?? new List<CCSPlayerController>();
+        state.Tick = tick;
+        var list = state.Players;
         list.Clear();
 
-        if (_vips.Count > 0 || BenchBotGroup != null)
-        {
-            foreach (var player in Players)
-            {
-                if (player == null || !player.IsValid || (player.IsBot && BenchBotGroup == null))
-                    continue;
-                if (!PlayerCache.Alive(player))
-                    continue;
-                if (!IsActive(player, feature))
-                    continue;
+        if (!_enabled.Contains(feature))
+            return list;
 
+        foreach (var player in AliveVips(tick))
+            if (IsActive(player, feature, state))
                 list.Add(player);
-            }
-        }
 
-        _activeCache[feature] = (tick, list);
         return list;
     }
 
@@ -473,6 +590,8 @@ public partial class VIPCore : BasePlugin
                     _enabled.Add(feature);
         }
 
+        VipsChanged();
+
         foreach (var issue in ConfigCheck.Settings(Config, _moduleByName))
             Logger.LogWarning("VIPCore: settings.json {0}", issue);
 
@@ -518,6 +637,8 @@ public partial class VIPCore : BasePlugin
     private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
     {
         var player = @event.Userid;
+        if (player != null)
+            PlayersChanged(player.Slot);
         if (player == null || !player.IsValid || player.IsBot)
             return HookResult.Continue;
 
@@ -714,9 +835,25 @@ public partial class VIPCore : BasePlugin
         }
 
         var state = new ClientState { Tick = tick, Version = version };
-        if (player.IsValid && !player.IsBot)
+        bool valid, bot;
+        ulong steamId;
+        if (cacheable)
         {
-            state.SteamId = player.SteamID;
+            ref var id = ref Identify(player, slot);
+            valid = id.Valid;
+            bot = id.Bot;
+            steamId = id.SteamId;
+        }
+        else
+        {
+            valid = player.IsValid;
+            bot = valid && player.IsBot;
+            steamId = valid && !bot ? player.SteamID : 0;
+        }
+
+        if (valid && !bot)
+        {
+            state.SteamId = steamId;
             var now = DateTimeOffset.UtcNow;
             lock (_lock)
             {
@@ -732,7 +869,7 @@ public partial class VIPCore : BasePlugin
                 && _periods.TryGetValue(state.Group, out var window) && !window.IsOpen(now))
                 state.Group = null;
         }
-        else if (BenchBotGroup != null && player.IsValid)
+        else if (BenchBotGroup != null && valid)
         {
             state.SteamId = 76561190000000000UL + (ulong)slot;
             state.Vip = true;
@@ -839,8 +976,31 @@ public partial class VIPCore : BasePlugin
         if (player == null || !_enabled.Contains(feature))
             return false;
 
+        return IsActive(player, feature, Feature(feature));
+    }
+
+    private bool IsActive(CCSPlayerController player, string feature, FeatureState cache)
+    {
         var state = Resolve(player);
-        if (!state.Vip || !GroupHas(state.Group, feature))
+        if (!state.Vip)
+            return false;
+
+        int slot = player.Slot;
+        if ((uint)slot >= 64)
+            return ComputeActive(state, feature);
+
+        ref var cached = ref cache.Slots[slot];
+        if (cached.Version == state.Version && cached.SteamId == state.SteamId && string.Equals(cached.Group, state.Group))
+            return cached.Value;
+
+        bool value = ComputeActive(state, feature);
+        cached = new ActiveSlot { Version = state.Version, SteamId = state.SteamId, Group = state.Group, Value = value };
+        return value;
+    }
+
+    private bool ComputeActive(ClientState state, string feature)
+    {
+        if (!GroupHas(state.Group, feature))
             return false;
 
         string group = state.Group!;
@@ -927,6 +1087,7 @@ public partial class VIPCore : BasePlugin
                 if (_settings.TryGetValue(steamId, out var dict) && dict.Remove(key) && dict.Count == 0)
                     _settings.Remove(steamId);
             }
+            VipsChanged();
         }
     }
 
@@ -946,6 +1107,7 @@ public partial class VIPCore : BasePlugin
                 }
                 PendingOp(steamId, feature, null);
             }
+            VipsChanged();
             return;
         }
 
@@ -960,6 +1122,7 @@ public partial class VIPCore : BasePlugin
             dict[feature] = stored;
             PendingOp(steamId, feature, stored);
         }
+        VipsChanged();
     }
 
     private void PendingOp(ulong steamId, string feature, string? value)

@@ -1,6 +1,7 @@
 using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Utils;
 
 namespace VIPCore;
@@ -76,23 +77,31 @@ public class WeaponGlow : VipModule
                 _weapons.Add(entity.Index);
     }
 
-    private void CollectCarried()
+    private static readonly int WeaponServicesOffset = Schema.GetSchemaOffset("CBasePlayerPawn", "m_pWeaponServices");
+    private static readonly int MyWeaponsOffset = Schema.GetSchemaOffset("CPlayer_WeaponServices", "m_hMyWeapons");
+
+    private unsafe void CollectCarried()
     {
         _carried.Clear();
 
         foreach (var player in Core.Players)
         {
-            if (player == null || !player.IsValid)
+            nint pawn = PlayerCache.Pointer(player);
+            if (pawn == 0)
                 continue;
 
-            var pawn = PlayerCache.Pawn(player);
-            var weapons = pawn != null && pawn.IsValid ? pawn.WeaponServices?.MyWeapons : null;
-            if (weapons == null)
+            nint services = *(nint*)(pawn + WeaponServicesOffset);
+            if (services == 0)
                 continue;
 
-            foreach (var handle in weapons)
-                if (handle.Value is { IsValid: true } weapon)
-                    _carried.Add(weapon.Index);
+            int count = *(int*)(services + MyWeaponsOffset);
+            uint* handles = *(uint**)(services + MyWeaponsOffset + 8);
+            if (handles == null)
+                continue;
+
+            for (int i = 0; i < count; i++)
+                if (handles[i] != uint.MaxValue)
+                    _carried.Add(handles[i] & 0x7FFF);
         }
     }
 
@@ -122,16 +131,7 @@ public class WeaponGlow : VipModule
 
         foreach (uint index in _weapons)
         {
-            var weapon = Utilities.GetEntityFromIndex<CCSWeaponBase>((int)index);
-            if (weapon == null || !weapon.IsValid)
-            {
-                _stale.Add(index);
-                _failed.Remove(index);
-                Destroy(index);
-                continue;
-            }
-
-            if (_carried.Contains(index) || cfg.Ignore.Contains(weapon.DesignerName))
+            if (_carried.Contains(index))
             {
                 _failed.Remove(index);
                 Destroy(index);
@@ -139,8 +139,22 @@ public class WeaponGlow : VipModule
             }
 
             if (_glows.TryGetValue(index, out uint glowIndex))
+            {
                 Verify(index, glowIndex);
-            else if (!_failed.Contains(index))
+                continue;
+            }
+
+            if (_failed.Contains(index))
+                continue;
+
+            var weapon = Utilities.GetEntityFromIndex<CCSWeaponBase>((int)index);
+            if (weapon == null || !weapon.IsValid)
+            {
+                _stale.Add(index);
+                continue;
+            }
+
+            if (!cfg.Ignore.Contains(weapon.DesignerName))
                 Create(index, weapon, cfg);
         }
 

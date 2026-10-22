@@ -50,9 +50,9 @@ public class Invisibility : VipModule
 
     private void OnTick()
     {
-        foreach (var player in Core.Players)
+        foreach (var player in Core.Humans)
         {
-            if (player == null || !player.IsValid || player.IsBot || player.Slot >= 64)
+            if (player == null || !player.IsValid || player.Slot >= 64)
                 continue;
 
             InvisPool.Set(player.Slot, InvisPool.Module, ShouldBeInvisible(player, player.Slot));

@@ -28,6 +28,7 @@ public class GrenadeTrail : VipModule
     }
 
     private readonly List<Tracked> _tracked = new();
+    private readonly Vector _move = new();
 
     public override string Name => "GrenadeTrail";
     public override string DisplayName => Core.Localizer["vip.module.grenadetrail"];
@@ -130,7 +131,10 @@ public class GrenadeTrail : VipModule
                     continue;
                 }
 
-                t.Particle.Teleport(new Vector(origin.X, origin.Y, origin.Z + t.Offset), new QAngle(), new Vector());
+                _move.X = origin.X;
+                _move.Y = origin.Y;
+                _move.Z = origin.Z + t.Offset;
+                Teleporter.Teleport(t.Particle, _move, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
                 continue;
             }
 

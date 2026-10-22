@@ -370,6 +370,7 @@ public class Ricochet : VipModule
     }
 
     private readonly Vector _tail = new();
+    private static readonly int EndPosOffset = CounterStrikeSharp.API.Modules.Memory.Schema.GetSchemaOffset("CBeam", "m_vecEndPos");
 
     private void Draw(Flight flight, Vector3 tail, Vector3 head)
     {
@@ -387,12 +388,9 @@ public class Ricochet : VipModule
         _tail.X = tail.X;
         _tail.Y = tail.Y;
         _tail.Z = tail.Z;
-        beam.Teleport(_tail, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
+        Teleporter.Teleport(beam, _tail, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
 
-        var endPos = beam.EndPos;
-        endPos.X = head.X;
-        endPos.Y = head.Y;
-        endPos.Z = head.Z;
+        unsafe { *(Vector3*)(beam.Handle + EndPosOffset) = head; }
         NetState.Changed(beam, "CBeam", "m_vecEndPos");
     }
 

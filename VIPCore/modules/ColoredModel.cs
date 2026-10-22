@@ -79,9 +79,9 @@ public class ColoredModel : VipModule
 
     private void OnTick()
     {
-        foreach (var player in Core.Players)
+        foreach (var player in Core.Humans)
         {
-            if (player == null || !player.IsValid || player.IsBot)
+            if (player == null || !player.IsValid)
                 continue;
 
             int slot = player.Slot;

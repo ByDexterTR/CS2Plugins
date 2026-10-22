@@ -227,9 +227,9 @@ public class Soul : VipModule
         CCSPlayerController? best = null;
         float bestDistance = float.MaxValue;
 
-        foreach (var player in Core.Players)
+        foreach (var player in Core.Humans)
         {
-            if (player == null || !player.IsValid || player.IsBot || !IsAlive(player))
+            if (player == null || !player.IsValid || !IsAlive(player))
                 continue;
 
             if (player.UserId == soul.UserId)

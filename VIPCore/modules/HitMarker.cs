@@ -198,7 +198,7 @@ public class HitMarker : VipModule
             if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null)
                 continue;
 
-            live.Particle.Teleport(Aim(pawn, live.Def), Look(pawn), new Vector());
+            Teleporter.Teleport(live.Particle, Aim(pawn, live.Def), Look(pawn), TrailBeam.ZeroVector);
         }
     }
 

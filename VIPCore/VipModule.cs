@@ -172,9 +172,9 @@ public abstract class VipModule
 
     protected void AddSpectators(CCSPlayerController target, List<CCSPlayerController> listeners)
     {
-        foreach (var viewer in Core.Players)
+        foreach (var viewer in Core.Humans)
         {
-            if (viewer == null || !viewer.IsValid || viewer.IsBot || viewer.Slot == target.Slot || IsAlive(viewer))
+            if (viewer == null || !viewer.IsValid || viewer.Slot == target.Slot || IsAlive(viewer))
                 continue;
 
             var observed = PawnController(viewer.Pawn.Value?.ObserverServices?.ObserverTarget.Value);

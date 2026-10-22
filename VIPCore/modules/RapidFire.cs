@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
 
 namespace VIPCore;
 
@@ -19,7 +20,10 @@ public class RapidFire : VipModule
 
     private static readonly Cfg DefaultCfg = new();
 
-    private readonly uint[] _rateWeapon = new uint[64];
+    private static readonly int PrimaryOffset = Schema.GetSchemaOffset("CBasePlayerWeapon", "m_nNextPrimaryAttackTick");
+    private static readonly int SecondaryOffset = Schema.GetSchemaOffset("CBasePlayerWeapon", "m_nNextSecondaryAttackTick");
+
+    private readonly nint[] _rateWeapon = new nint[64];
     private readonly int[] _ratePrimary = new int[64];
     private readonly int[] _rateSecondary = new int[64];
 
@@ -63,35 +67,34 @@ public class RapidFire : VipModule
         }
     }
 
-    private void ApplyFireRate(int slot, CBasePlayerWeapon weapon, float fire)
+    private unsafe void ApplyFireRate(int slot, CBasePlayerWeapon weapon, float fire)
     {
         if (MathF.Abs(fire - 1f) < 0.001f)
             return;
 
         float factor = 2f - fire;
         int now = Server.TickCount;
+        nint pointer = weapon.Handle;
 
-        if (_rateWeapon[slot] != weapon.Index)
+        if (_rateWeapon[slot] != pointer)
         {
-            _rateWeapon[slot] = weapon.Index;
+            _rateWeapon[slot] = pointer;
             _ratePrimary[slot] = 0;
             _rateSecondary[slot] = 0;
         }
 
-        int next = weapon.NextPrimaryAttackTick;
-        if (next > now && next != _ratePrimary[slot])
+        int* primary = (int*)(pointer + PrimaryOffset);
+        if (*primary > now && *primary != _ratePrimary[slot])
         {
-            int target = Scale(now, next, factor);
-            weapon.NextPrimaryAttackTick = target;
-            _ratePrimary[slot] = target;
+            *primary = Scale(now, *primary, factor);
+            _ratePrimary[slot] = *primary;
         }
 
-        next = weapon.NextSecondaryAttackTick;
-        if (next > now && next != _rateSecondary[slot])
+        int* secondary = (int*)(pointer + SecondaryOffset);
+        if (*secondary > now && *secondary != _rateSecondary[slot])
         {
-            int target = Scale(now, next, factor);
-            weapon.NextSecondaryAttackTick = target;
-            _rateSecondary[slot] = target;
+            *secondary = Scale(now, *secondary, factor);
+            _rateSecondary[slot] = *secondary;
         }
     }
 

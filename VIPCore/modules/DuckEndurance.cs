@@ -13,7 +13,7 @@ public class DuckEndurance : VipModule
 
     private void OnPostThink(CCSPlayerController player, CCSPlayerPawn pawn)
     {
-        if (!Active(player) || player.IsBot)
+        if (!Active(player) || Core.IsBotSlot(player))
             return;
 
         PlayerCache.KeepDuckFresh(PlayerCache.Pointer(player), IdealDuckSpeed);

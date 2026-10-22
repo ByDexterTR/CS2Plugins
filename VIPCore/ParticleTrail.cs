@@ -171,7 +171,7 @@ public static class ParticleTrail
 
         particle.EffectName = entry.File;
         particle.StartActive = true;
-        particle.Teleport(start, angles, TrailBeam.ZeroVector);
+        Teleporter.Teleport(particle, start, angles, TrailBeam.ZeroVector);
 
         if (entry.Tint.Length > 0)
         {

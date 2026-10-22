@@ -24,7 +24,7 @@ public class DuckSpeed : VipModule
 
     private void OnPostThink(CCSPlayerController player, CCSPlayerPawn pawn)
     {
-        if (player.Slot >= 64 || PlayerCache.DuckAmount(PlayerCache.Pointer(player)) <= 0.01f || !Active(player) || player.IsBot)
+        if (player.Slot >= 64 || PlayerCache.DuckAmount(PlayerCache.Pointer(player)) <= 0.01f || !Active(player) || Core.IsBotSlot(player))
             return;
 
         float percent = Math.Clamp((GroupValue<Cfg>(player) ?? DefaultCfg).Percent, VanillaDuckPercent, 100f);

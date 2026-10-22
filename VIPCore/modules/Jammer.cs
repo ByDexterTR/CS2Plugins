@@ -15,7 +15,8 @@ public class Jammer : VipModule
 
     private readonly bool[] _jammed = new bool[64];
     private readonly bool[] _state = new bool[64];
-    private readonly List<(int Slot, CsTeam Team, Vector Pos, Cfg Cfg)> _jammers = new();
+    private static readonly Cfg DefaultCfg = new();
+    private readonly List<(int Slot, byte Team, System.Numerics.Vector3 Pos, Cfg Cfg)> _jammers = new();
 
     public override string Name => "Jammer";
     public override string DisplayName => Core.Localizer["vip.module.jammer"];
@@ -47,28 +48,24 @@ public class Jammer : VipModule
         _jammers.Clear();
         foreach (var player in ActivePlayers())
         {
-            var origin = PlayerCache.Pawn(player)?.AbsOrigin;
-            if (origin == null)
+            nint pawn = PlayerCache.Pointer(player);
+            if (pawn == 0 || !PlayerCache.Origin(pawn, out var origin))
                 continue;
 
-            var cfg = GroupValue<Cfg>(player) ?? new Cfg();
+            var cfg = GroupValue<Cfg>(player) ?? DefaultCfg;
             if (cfg.Radius <= 0)
                 continue;
 
-            _jammers.Add((player.Slot, player.Team, origin, cfg));
+            _jammers.Add((player.Slot, PlayerCache.Team(pawn), origin, cfg));
         }
 
         Array.Clear(_state);
 
-        foreach (var target in Core.Players)
-        {
-            if (target == null || !target.IsValid || target.Slot >= 64 || !IsAlive(target))
-                continue;
+        if (_jammers.Count > 0)
+            foreach (ref readonly var target in PlayerCache.AlivePlayers(Core.Players))
+                _state[target.Slot] = InJammerRange(target);
 
-            _state[target.Slot] = _jammers.Count > 0 && InJammerRange(target);
-        }
-
-        foreach (var target in Core.Players)
+        foreach (var target in Core.Humans)
         {
             if (target == null || !target.IsValid || target.Slot >= 64)
                 continue;
@@ -80,8 +77,7 @@ public class Jammer : VipModule
                 continue;
 
             _jammed[slot] = jam;
-            if (!target.IsBot)
-                target.ReplicateConVar("sv_disable_radar", jam ? "1" : "0");
+            target.ReplicateConVar("sv_disable_radar", jam ? "1" : "0");
         }
     }
 
@@ -95,10 +91,9 @@ public class Jammer : VipModule
         return slot >= 0 && slot < 64 && _state[slot];
     }
 
-    private bool InJammerRange(CCSPlayerController target)
+    private bool InJammerRange(in PlayerCache.Living target)
     {
-        var targetOrigin = PlayerCache.Pawn(target)?.AbsOrigin;
-        if (targetOrigin == null)
+        if (!PlayerCache.Origin(target.Pawn, out var origin))
             return false;
 
         foreach (var (slot, team, pos, cfg) in _jammers)
@@ -112,7 +107,7 @@ public class Jammer : VipModule
             if (!isTeammate && cfg.IgnoreEnemy)
                 continue;
 
-            if (TrailBeam.Distance(pos, targetOrigin) <= cfg.Radius)
+            if (System.Numerics.Vector3.DistanceSquared(pos, origin) <= cfg.Radius * cfg.Radius)
                 return true;
         }
 

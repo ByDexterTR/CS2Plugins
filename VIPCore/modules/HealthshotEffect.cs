@@ -274,9 +274,9 @@ public class HealthshotEffect : VipModule
         float now = Server.CurrentTime;
         bool anyGlow = false;
 
-        foreach (var player in Core.Players)
+        foreach (var player in Core.Humans)
         {
-            if (player == null || !player.IsValid || player.IsBot || player.Slot >= 64)
+            if (player == null || !player.IsValid || player.Slot >= 64)
                 continue;
 
             var pawn = PlayerCache.Pawn(player);

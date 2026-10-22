@@ -21,6 +21,7 @@ public class PlayerTrail : VipModule
     private readonly Vector _to = new();
     private readonly CParticleSystem?[] _active = new CParticleSystem?[64];
     private readonly float[] _carried = new float[64];
+    private readonly System.Numerics.Vector3[] _carriedAt = new System.Numerics.Vector3[64];
 
     public override string Name => "PlayerTrail";
     public override string DisplayName => Core.Localizer["vip.module.playertrail"];
@@ -105,6 +106,7 @@ public class PlayerTrail : VipModule
         Remove(player.Slot);
         _active[player.Slot] = ParticleTrail.Carry(pawn, entry, entry.Offset, EffectHide.PlayerTrail, player.Slot);
         _carried[player.Slot] = entry.Offset;
+        _carriedAt[player.Slot] = default;
     }
 
     private void OnTick()
@@ -124,10 +126,14 @@ public class PlayerTrail : VipModule
                     continue;
                 }
 
+                if (_carriedAt[slot] == origin)
+                    continue;
+
+                _carriedAt[slot] = origin;
                 _from.X = origin.X;
                 _from.Y = origin.Y;
                 _from.Z = origin.Z + _carried[slot];
-                carried.Teleport(_from, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
+                Teleporter.Teleport(carried, _from, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
                 continue;
             }
 

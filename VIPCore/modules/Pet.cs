@@ -398,7 +398,7 @@ public class Pet : VipModule
         _draw.Z = pet.Position.Z + bob;
         _angle.Y = pet.Yaw + pet.Def.Yaw;
 
-        pet.Prop.Teleport(_draw, _angle, TrailBeam.ZeroVector);
+        Teleporter.Teleport(pet.Prop, _draw, _angle, TrailBeam.ZeroVector);
 
         if (running == pet.Running)
             return;

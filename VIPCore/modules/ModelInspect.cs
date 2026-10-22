@@ -359,7 +359,7 @@ public class ModelInspect : VipModule
             }
 
             float progress = (now - preview.StartTime) / (preview.EndTime - preview.StartTime);
-            preview.Prop.Teleport(null, new QAngle(0, preview.StartAngle + preview.Spin * progress, 0), null);
+            Teleporter.Teleport(preview.Prop, null, new QAngle(0, preview.StartAngle + preview.Spin * progress, 0));
         }
     }
 

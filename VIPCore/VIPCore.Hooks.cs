@@ -38,6 +38,10 @@ public partial class VIPCore
         RegisterListener<OnEntitySpawned>(DispatchSpawn);
         RegisterListener<OnEntityDeleted>(DispatchDelete);
         RegisterListener<OnMapStart>(DispatchMapStart);
+        RegisterListener<OnClientPutInServer>(PlayersChanged);
+        RegisterListener<OnClientDisconnect>(PlayersChanged);
+        RegisterListener<OnClientDisconnectPost>(PlayersChanged);
+        RegisterListener<OnClientAuthorized>((slot, _) => PlayersChanged(slot));
         RegisterListener<OnMapEnd>(DispatchMapEnd);
         RegisterListener<OnServerPrecacheResources>(manifest =>
         {
@@ -319,6 +323,8 @@ public partial class VIPCore
     private void DispatchMapStart(string mapName)
     {
         PlayerCache.Invalidate();
+        _playersDirty = true;
+        Array.Clear(_identity);
         var hooks = _mapStartHooks;
         for (int i = 0; i < hooks.Length; i++)
         {
