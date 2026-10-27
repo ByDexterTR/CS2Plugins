@@ -1,6 +1,7 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
+using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,8 @@ public partial class VIPCore
     private OnEntityDeleted[] _deleteHooks = Array.Empty<OnEntityDeleted>();
     private OnMapStart[] _mapStartHooks = Array.Empty<OnMapStart>();
     private OnMapEnd[] _mapEndHooks = Array.Empty<OnMapEnd>();
+    private OnMapEnd[] _mapChangeHooks = Array.Empty<OnMapEnd>();
+    private static readonly string[] MapChangeCommands = ["changelevel", "map", "ds_workshop_changelevel", "host_workshop_map"];
     private OnServerPrecacheResources[] _precacheHooks = Array.Empty<OnServerPrecacheResources>();
 
     private readonly HashSet<string> _hookFaults = new();
@@ -43,6 +46,10 @@ public partial class VIPCore
         RegisterListener<OnClientDisconnectPost>(PlayersChanged);
         RegisterListener<OnClientAuthorized>((slot, _) => PlayersChanged(slot));
         RegisterListener<OnMapEnd>(DispatchMapEnd);
+        foreach (string command in MapChangeCommands)
+            AddCommandListener(command, OnMapChangeCommand, HookMode.Pre);
+        RegisterEventHandler<EventCsIntermission>((_, _) => DispatchMapChange());
+        RegisterEventHandler<EventCsWinPanelMatch>((_, _) => DispatchMapChange());
         RegisterListener<OnServerPrecacheResources>(manifest =>
         {
             var hooks = _precacheHooks;
@@ -159,6 +166,7 @@ public partial class VIPCore
     public void HookEntityDeleted(OnEntityDeleted handler) => Add(ref _deleteHooks, handler);
     public void HookMapStart(OnMapStart handler) => Add(ref _mapStartHooks, handler);
     public void HookMapEnd(OnMapEnd handler) => Add(ref _mapEndHooks, handler);
+    public void HookMapChange(OnMapEnd handler) => Add(ref _mapChangeHooks, handler);
     public void HookPrecache(OnServerPrecacheResources handler) => Add(ref _precacheHooks, handler);
 
     private void HookFault(Delegate handler, Exception ex)
@@ -336,6 +344,23 @@ public partial class VIPCore
             catch (Exception ex) { HookFault(hooks[i], ex); }
             PerfLog.Sample(perf, alloc, "MapStart", hooks[i]);
         }
+    }
+
+    private HookResult OnMapChangeCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        return player != null ? HookResult.Continue : DispatchMapChange();
+    }
+
+    private HookResult DispatchMapChange()
+    {
+        var hooks = _mapChangeHooks;
+        for (int i = 0; i < hooks.Length; i++)
+        {
+            try { hooks[i](); }
+            catch (Exception ex) { HookFault(hooks[i], ex); }
+        }
+
+        return HookResult.Continue;
     }
 
     private void DispatchMapEnd()

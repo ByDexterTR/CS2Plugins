@@ -70,6 +70,8 @@ public class CustomWeaponModel : VipModule
         Core.RegisterEventHandler<EventPlayerSpawn>((ev, _) => { Schedule(ev.Userid); return HookResult.Continue; });
         Core.RegisterEventHandler<EventItemPickup>((ev, _) => { Schedule(ev.Userid); return HookResult.Continue; });
         Core.HookEntityDeleted(entity => _applied.Remove(entity.Index));
+        Core.HookMapStart(_ => _applied.Clear());
+        Core.HookMapChange(RevertAll);
         Core.HookEntitySpawned(OnProjectileSpawned);
         Core.HookPrecache(manifest =>
         {
@@ -80,9 +82,11 @@ public class CustomWeaponModel : VipModule
         });
     }
 
-    public override void OnUnload()
+    public override void OnUnload() => RevertAll();
+
+    private void RevertAll()
     {
-        foreach (var (index, applied) in _applied)
+        foreach (var (index, applied) in _applied.ToList())
         {
             var weapon = Utilities.GetEntityFromIndex<CBasePlayerWeapon>((int)index);
             if (weapon != null && weapon.IsValid)
@@ -196,10 +200,27 @@ public class CustomWeaponModel : VipModule
             _applied[weapon.Index] = applied;
         }
 
+        if (Already(weapon, model, isSubclass))
+            return;
+
         if (isSubclass)
             weapon.AcceptInput("ChangeSubclass", weapon, weapon, model);
         else
             weapon.SetModel(model);
+    }
+
+    private static bool Already(CBasePlayerWeapon weapon, string model, bool isSubclass)
+    {
+        try
+        {
+            return isSubclass
+                ? weapon.AttributeManager.Item.ItemDefinitionIndex.ToString() == model
+                : weapon.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.ModelState.ModelName == model;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void Revert(CBasePlayerWeapon weapon, Applied applied)

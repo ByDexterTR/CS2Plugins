@@ -23,8 +23,12 @@ public class PlayerModel : VipModule
         public float DeathDelay { get; set; } = DeathClock.SafeDelay;
     }
 
+    private const string CtDefault = "characters/models/ctm_sas/ctm_sas.vmdl";
+    private const string TDefault = "characters/models/tm_phoenix/tm_phoenix.vmdl";
+
     private static PlayerModel? _instance;
     private readonly bool[] _legHidden = new bool[64];
+    private readonly bool[] _changed = new bool[64];
 
     public static bool LegsHidden(int slot) =>
         slot >= 0 && slot < 64 && _instance?._legHidden[slot] == true;
@@ -56,6 +60,8 @@ public class PlayerModel : VipModule
     {
         _instance = this;
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
+        Core.HookMapStart(_ => Array.Clear(_changed));
+        Core.HookMapChange(RevertAll);
         DeathClock.Ensure(Core);
         Core.HookPrecache(manifest =>
         {
@@ -82,6 +88,27 @@ public class PlayerModel : VipModule
 
         Server.NextFrame(() => Apply(player));
         return HookResult.Continue;
+    }
+
+    private void RevertAll()
+    {
+        for (int slot = 0; slot < 64; slot++)
+        {
+            if (!_changed[slot])
+                continue;
+
+            _changed[slot] = false;
+            var player = Utilities.GetPlayerFromSlot(slot);
+            if (player == null || !player.IsValid || !IsAlive(player))
+                continue;
+
+            var pawn = PlayerCache.Pawn(player);
+            if (pawn == null || !pawn.IsValid)
+                continue;
+
+            string model = player.Team == CsTeam.CounterTerrorist ? CtDefault : TDefault;
+            pawn.SetModel(model);
+        }
     }
 
     private void Apply(CCSPlayerController? player)
@@ -123,7 +150,10 @@ public class PlayerModel : VipModule
             return;
 
         if (pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.ModelState.ModelName != def.Model)
+        {
             pawn.SetModel(def.Model);
+            _changed[player.Slot] = true;
+        }
 
         if (_legHidden[player.Slot] == def.Leg)
         {
