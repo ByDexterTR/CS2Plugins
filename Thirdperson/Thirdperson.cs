@@ -1,11 +1,8 @@
-using System.Drawing;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Utils;
-using static CounterStrikeSharp.API.Core.Listeners;
 using ByDexter.Shared;
 
 namespace Thirdperson;
@@ -28,7 +25,7 @@ public class ThirdpersonConfig : BasePluginConfig
 public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
 {
   public override string ModuleName => "Thirdperson";
-  public override string ModuleVersion => "1.0.1";
+  public override string ModuleVersion => "1.0.2";
   public override string ModuleAuthor => "ByDexter";
   public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -37,10 +34,9 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
   public ThirdpersonConfig Config { get; set; } = new();
 
   private const int MaxSlots = 64;
-  private const float WallPadding = 16f;
-  private const string CameraModel = "models/sprays/spray_plane.vmdl";
 
-  private readonly CDynamicProp?[] _cameras = new CDynamicProp?[MaxSlots];
+  private readonly CCSCustomPlayerCamera?[] _cameras = new CCSCustomPlayerCamera?[MaxSlots];
+  private readonly uint[] _cameraHandles = new uint[MaxSlots];
   private readonly uint[] _originalView = new uint[MaxSlots];
 
   public void OnConfigParsed(ThirdpersonConfig config)
@@ -55,22 +51,21 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
     foreach (var name in Config.Commands.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
       AddCommand(name, "Thirdperson toggle", OnToggleCommand);
 
-    RegisterListener<OnServerPrecacheResources>(manifest => manifest.AddResource(CameraModel));
-    RegisterListener<OnTick>(OnTick);
-
     RegisterEventHandler<EventPlayerDeath>((ev, _) =>
     {
-      int slot = ev.Userid?.Slot ?? -1;
-      if (slot >= 0 && slot < MaxSlots)
-        Disable(slot);
+      Disable(ev.Userid?.Slot ?? -1);
       return HookResult.Continue;
     });
 
     RegisterEventHandler<EventPlayerDisconnect>((ev, _) =>
     {
-      int slot = ev.Userid?.Slot ?? -1;
-      if (slot >= 0 && slot < MaxSlots)
-        Disable(slot);
+      Disable(ev.Userid?.Slot ?? -1);
+      return HookResult.Continue;
+    });
+
+    RegisterEventHandler<EventPlayerSpawn>((ev, _) =>
+    {
+      Disable(ev.Userid?.Slot ?? -1);
       return HookResult.Continue;
     });
 
@@ -117,117 +112,74 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
       return;
     }
 
-    if (!IsAlive(player))
+    var pawn = player.PlayerPawn.Value;
+    if (pawn == null || !pawn.IsValid || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
     {
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["thirdperson.alive_only"]}");
       return;
     }
 
-    Enable(player);
-    player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["thirdperson.enabled"]}");
+    if (Enable(player.Slot, pawn))
+      player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["thirdperson.enabled"]}");
   }
 
-  private void Enable(CCSPlayerController player)
+  private bool Enable(int slot, CCSPlayerPawn pawn)
   {
-    var pawn = player.PlayerPawn.Value;
-    if (pawn == null || !pawn.IsValid || pawn.CameraServices == null)
-      return;
+    var services = pawn.CameraServices;
+    if (services == null || (uint)slot >= MaxSlots)
+      return false;
 
-    var camera = Utilities.CreateEntityByName<CDynamicProp>("prop_dynamic");
+    var camera = Utilities.CreateEntityByName<CCSCustomPlayerCamera>("custom_player_camera");
     if (camera == null || !camera.IsValid)
-      return;
+      return false;
 
-    int slot = player.Slot;
+    uint pawnHandle = pawn.EntityHandle.Raw;
+    camera.Pawn.Raw = pawnHandle;
+    camera.DispatchSpawn();
+
+    camera.Pawn.Raw = pawnHandle;
+    camera.CameraMode = CustomCameraMode_t.CUSTOM_CAMERA_MODE_FOLLOW_POSITION;
+    camera.FollowEntity.Raw = pawnHandle;
+    camera.CameraOffset.X = -Config.Distance;
+    camera.CameraOffset.Y = 0f;
+    camera.CameraOffset.Z = 0f;
+    camera.FollowEyes = true;
+    camera.ClipCameraOffset = Config.BlockWall;
+    NetState.Changed(camera, "CCSCustomPlayerCamera", "m_hPawn");
+    NetState.Changed(camera, "CCSCustomPlayerCamera", "m_nCameraMode");
+    NetState.Changed(camera, "CCSCustomPlayerCamera", "m_hFollowEntity");
+    NetState.Changed(camera, "CCSCustomPlayerCamera", "m_vecCameraOffset");
+    NetState.Changed(camera, "CCSCustomPlayerCamera", "m_bFollowEyes");
+    NetState.Changed(camera, "CCSCustomPlayerCamera", "m_bClipCameraOffset");
+
     _cameras[slot] = camera;
-    _originalView[slot] = pawn.CameraServices.ViewEntity.Raw;
-
-    Server.NextFrame(() =>
-    {
-      if (camera == null || !camera.IsValid || !pawn.IsValid || pawn.CameraServices == null)
-        return;
-
-      try
-      {
-        camera.CBodyComponent!.SceneNode!.Owner!.Entity!.Flags =
-            (uint)(camera.CBodyComponent!.SceneNode!.Owner!.Entity!.Flags & ~(1 << 2));
-      }
-      catch { }
-
-      camera.SetModel(CameraModel);
-      camera.Render = Color.FromArgb(0, 255, 255, 255);
-      camera.Teleport(pawn.AbsOrigin, pawn.EyeAngles, new Vector());
-      camera.DispatchSpawn();
-
-      pawn.CameraServices.ViewEntity.Raw = camera.EntityHandle.Raw;
-      NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
-    });
+    _cameraHandles[slot] = camera.EntityHandle.Raw;
+    _originalView[slot] = services.ViewEntity.Raw;
+    services.ViewEntity.Raw = camera.EntityHandle.Raw;
+    NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
+    return true;
   }
 
   private void Disable(int slot)
   {
+    if ((uint)slot >= MaxSlots)
+      return;
+
     var camera = _cameras[slot];
+    if (camera == null)
+      return;
+
     _cameras[slot] = null;
 
-    var player = Utilities.GetPlayerFromSlot(slot);
-    var pawn = player?.PlayerPawn.Value;
-    if (pawn != null && pawn.IsValid && pawn.CameraServices != null)
+    var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
+    var services = pawn != null && pawn.IsValid ? pawn.CameraServices : null;
+    if (services != null && services.ViewEntity.Raw == _cameraHandles[slot])
     {
-      pawn.CameraServices.ViewEntity.Raw = _originalView[slot];
-      NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
+      services.ViewEntity.Raw = _originalView[slot];
+      NetState.Changed(pawn!, "CBasePlayerPawn", "m_pCameraServices");
     }
 
-    if (camera != null && camera.IsValid)
+    if (camera.IsValid)
       camera.Remove();
-  }
-
-  private void OnTick()
-  {
-    for (int slot = 0; slot < MaxSlots; slot++)
-    {
-      var camera = _cameras[slot];
-      if (camera == null || !camera.IsValid)
-        continue;
-
-      var player = Utilities.GetPlayerFromSlot(slot);
-      var pawn = player?.PlayerPawn.Value;
-      if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
-      {
-        Disable(slot);
-        continue;
-      }
-
-      var angles = pawn.EyeAngles;
-      float ry = angles.Y * MathF.PI / 180f;
-      float rp = angles.X * MathF.PI / 180f;
-
-      float fx = MathF.Cos(rp) * MathF.Cos(ry);
-      float fy = MathF.Cos(rp) * MathF.Sin(ry);
-      float fz = -MathF.Sin(rp);
-
-      var origin = pawn.AbsOrigin;
-      var eye = new System.Numerics.Vector3(origin.X, origin.Y, origin.Z + pawn.ViewOffset.Z);
-      var back = new System.Numerics.Vector3(-fx, -fy, -fz);
-      var target = eye + back * Config.Distance;
-
-      if (Config.BlockWall)
-      {
-        var traceEnd = eye + back * (Config.Distance + WallPadding);
-        var hit = NativeTrace.TraceLine(pawn, eye, traceEnd);
-        if (hit != null)
-        {
-          float hitDistance = System.Numerics.Vector3.Distance(eye, hit.Value);
-          target = hitDistance > WallPadding
-              ? eye + back * Math.Min(hitDistance - WallPadding, Config.Distance)
-              : eye;
-        }
-      }
-
-      camera.Teleport(new Vector(target.X, target.Y, target.Z), pawn.V_angle);
-    }
-  }
-
-  private static bool IsAlive(CCSPlayerController? player)
-  {
-    return player?.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
   }
 }

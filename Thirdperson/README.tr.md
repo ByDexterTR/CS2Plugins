@@ -9,8 +9,8 @@ Oyuncunun kamerasını üçüncü şahıs (omuz arkası) görünüme alan bağı
 - Komutla aç/kapat; komut adları config'ten değiştirilebilir
 - Yetki (flag) kontrolü — boş bırakılırsa herkes kullanabilir
 - Ayarlanabilir kamera mesafesi
-- **Duvar engelleme (`thirdperson_blockwall`)** — açıkken kamera duvarların arkasına geçemez; native ray-trace ile duvara çarptığı noktada oyuncuya yaklaştırılır (duvar arkasını görme/wallhack istismarını engeller)
-- Kamera oyuncunun bakışını gecikmesiz takip eder
+- **Duvar engelleme (`thirdperson_blockwall`)** — açıkken kamera duvarların arkasına geçemez; duvara değdiği yerde oyuncuya yaklaştırılır (duvar arkasını görme/wallhack istismarını engeller)
+- Oyunun kendi oyuncu kamerasını kullanır: kamera bakışı oyuncunun kendi oyununda gecikmesiz takip eder, sunucu her tick iş yapmaz
 - **Raunt başında ve raunt sonunda** tüm üçüncü şahıs kameralar zorla kapatılır
 - Ölüm, ayrılma ve eklenti kapanışında (unload) kamera güvenle eski hâline döner
 - Türkçe / İngilizce dil desteği (`lang/`)
@@ -60,7 +60,5 @@ csgo/addons/counterstrikesharp/configs/plugins/Thirdperson/Thirdperson.json
 
 ## Notlar
 
-- Bir CS2 güncellemesinden sonra kamera duvarların arkasına geçmeye başlarsa, eklentinin güncellenmesi gerekiyor demektir; eklenti bu durumda da çalışmaya devam eder.
-- Duvar engelleme açıkken kamera, göz ile hedef nokta arasındaki ilk engelde (16 birim pay bırakarak) durur; engel çok yakınsa kamera göz hizasına çekilir.
 - Komut adı değişikliği (`thirdperson_cmd`) sunucu/eklenti yeniden başlatıldığında etkinleşir.
 - VIP üyelerinize grup bazlı üçüncü şahıs özelliği vermek istiyorsanız [VIPCore](../VIPCore)'daki `Thirdperson` modülünü kullanın; iki sistemi aynı oyuncuda aynı anda kullanmayın.
