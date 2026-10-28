@@ -1,8 +1,6 @@
-using System.Drawing;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Utils;
 
 namespace VIPCore;
 
@@ -13,12 +11,17 @@ public class Thirdperson : VipModule
         public float Distance { get; set; } = 110f;
     }
 
+    private static readonly Cfg DefaultCfg = new();
+    private const int CheckInterval = 32;
+
     public override string Name => "Thirdperson";
     public override string DisplayName => Core.Localizer["vip.module.thirdperson"];
     public override bool ShowInMenu => false;
 
-    private readonly CDynamicProp?[] _cameras = new CDynamicProp?[64];
+    private readonly CCSCustomPlayerCamera?[] _cameras = new CCSCustomPlayerCamera?[64];
+    private readonly uint[] _cameraHandles = new uint[64];
     private readonly uint[] _original = new uint[64];
+    private int _active;
 
     public override void OnLoad()
     {
@@ -26,9 +29,17 @@ public class Thirdperson : VipModule
         Core.HookTick(OnTick);
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
         {
-            int slot = ev.Userid?.Slot ?? -1;
-            if (slot >= 0 && slot < 64)
-                Disable(slot);
+            Disable(ev.Userid?.Slot ?? -1);
+            return HookResult.Continue;
+        });
+        Core.RegisterEventHandler<EventPlayerSpawn>((ev, _) =>
+        {
+            Disable(ev.Userid?.Slot ?? -1);
+            return HookResult.Continue;
+        });
+        Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) =>
+        {
+            Disable(ev.Userid?.Slot ?? -1);
             return HookResult.Continue;
         });
         Core.RegisterEventHandler<EventRoundStart>((_, _) =>
@@ -50,14 +61,16 @@ public class Thirdperson : VipModule
 
     private void DisableAll()
     {
+        if (_active == 0)
+            return;
+
         for (int slot = 0; slot < 64; slot++)
-            if (_cameras[slot] != null)
-                Disable(slot);
+            Disable(slot);
     }
 
     private void OnToggle(CCSPlayerController? player, CommandInfo info)
     {
-        if (player == null || !player.IsValid)
+        if (player == null || !player.IsValid || (uint)player.Slot >= 64)
             return;
 
         if (!Granted(player))
@@ -75,94 +88,80 @@ public class Thirdperson : VipModule
     private void Enable(CCSPlayerController player)
     {
         var pawn = PlayerCache.Pawn(player);
-        if (pawn == null || !pawn.IsValid || pawn.CameraServices == null)
+        var services = pawn?.CameraServices;
+        if (pawn == null || services == null)
             return;
 
-        var camera = Utilities.CreateEntityByName<CDynamicProp>("prop_dynamic");
+        var camera = Utilities.CreateEntityByName<CCSCustomPlayerCamera>("custom_player_camera");
         if (camera == null || !camera.IsValid)
             return;
 
+        uint pawnHandle = pawn.EntityHandle.Raw;
+        camera.Pawn.Raw = pawnHandle;
+        camera.DispatchSpawn();
+
+        camera.Pawn.Raw = pawnHandle;
+        camera.CameraMode = CustomCameraMode_t.CUSTOM_CAMERA_MODE_FOLLOW_POSITION;
+        camera.FollowEntity.Raw = pawnHandle;
+        camera.CameraOffset.X = -(GroupValue<Cfg>(player) ?? DefaultCfg).Distance;
+        camera.CameraOffset.Y = 0f;
+        camera.CameraOffset.Z = 0f;
+        camera.FollowEyes = true;
+        camera.ClipCameraOffset = true;
+        NetState.Changed(camera, "CCSCustomPlayerCamera", "m_hPawn");
+        NetState.Changed(camera, "CCSCustomPlayerCamera", "m_nCameraMode");
+        NetState.Changed(camera, "CCSCustomPlayerCamera", "m_hFollowEntity");
+        NetState.Changed(camera, "CCSCustomPlayerCamera", "m_vecCameraOffset");
+        NetState.Changed(camera, "CCSCustomPlayerCamera", "m_bFollowEyes");
+        NetState.Changed(camera, "CCSCustomPlayerCamera", "m_bClipCameraOffset");
+
         int slot = player.Slot;
         _cameras[slot] = camera;
-        _original[slot] = pawn.CameraServices.ViewEntity.Raw;
+        _cameraHandles[slot] = camera.EntityHandle.Raw;
+        _original[slot] = services.ViewEntity.Raw;
+        _active++;
 
-        Server.NextFrame(() =>
-        {
-            if (camera == null || !camera.IsValid || !pawn.IsValid || pawn.CameraServices == null)
-                return;
-
-            try
-            {
-                camera.CBodyComponent!.SceneNode!.Owner!.Entity!.Flags =
-                    (uint)(camera.CBodyComponent!.SceneNode!.Owner!.Entity!.Flags & ~(1 << 2));
-            }
-            catch { }
-
-            camera.SetModel("models/sprays/spray_plane.vmdl");
-            camera.Render = Color.FromArgb(0, 255, 255, 255);
-            camera.Teleport(pawn.AbsOrigin, pawn.EyeAngles, new Vector());
-            camera.DispatchSpawn();
-
-            pawn.CameraServices.ViewEntity.Raw = camera.EntityHandle.Raw;
-            NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
-        });
+        services.ViewEntity.Raw = _cameraHandles[slot];
+        NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
     }
 
     private void Disable(int slot)
     {
-        var camera = _cameras[slot];
-        _cameras[slot] = null;
+        if ((uint)slot >= 64)
+            return;
 
-        var player = Utilities.GetPlayerFromSlot(slot);
-        var pawn = PlayerCache.Pawn(player);
-        if (pawn != null && pawn.IsValid && pawn.CameraServices != null)
+        var camera = _cameras[slot];
+        if (camera == null)
+            return;
+
+        _cameras[slot] = null;
+        _active--;
+
+        var pawn = PlayerCache.Pawn(Core.PlayerAt(slot));
+        var services = pawn?.CameraServices;
+        if (pawn != null && services != null && services.ViewEntity.Raw == _cameraHandles[slot])
         {
-            pawn.CameraServices.ViewEntity.Raw = _original[slot];
+            services.ViewEntity.Raw = _original[slot];
             NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
         }
 
-        if (camera != null && camera.IsValid)
+        if (camera.IsValid)
             camera.Remove();
     }
 
     private void OnTick()
     {
+        if (_active == 0 || Server.TickCount % CheckInterval != 0)
+            return;
+
         for (int slot = 0; slot < 64; slot++)
         {
-            var camera = _cameras[slot];
-            if (camera == null || !camera.IsValid)
+            if (_cameras[slot] == null)
                 continue;
 
-            var player = Utilities.GetPlayerFromSlot(slot);
-            var pawn = PlayerCache.Pawn(player);
-            if (pawn == null || !pawn.IsValid || pawn.AbsOrigin == null || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
-            {
+            var player = Core.PlayerAt(slot);
+            if (!IsAlive(player) || !Granted(player))
                 Disable(slot);
-                continue;
-            }
-
-            if (!Granted(player))
-            {
-                Disable(slot);
-                continue;
-            }
-
-            float distance = (GroupValue<Cfg>(player!) ?? new Cfg()).Distance;
-            var angles = pawn.EyeAngles;
-            float ry = angles.Y * MathF.PI / 180f;
-            float rp = angles.X * MathF.PI / 180f;
-
-            float fx = MathF.Cos(rp) * MathF.Cos(ry);
-            float fy = MathF.Cos(rp) * MathF.Sin(ry);
-            float fz = -MathF.Sin(rp);
-
-            var origin = pawn.AbsOrigin;
-            var pos = new Vector(
-                origin.X - fx * distance,
-                origin.Y - fy * distance,
-                origin.Z + pawn.ViewOffset.Z - fz * distance);
-
-            Teleporter.Teleport(camera, pos, pawn.V_angle);
         }
     }
 }

@@ -290,7 +290,7 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Spy` | Wears the model of a random enemy. Right after a death it waits until 5 seconds have passed, for the same crash reason as `PlayerModel` `death_delay` | `true` |
 | `Tag` | Chat tag/colors + scoreboard (TAB) tag (if `tab` is empty TAB is left alone) | `{ "tag": "{Gold}[{Orchid}PLUS{Gold}]", "name_color": "gold", "chat_color": "default", "tab": "[PLUS]" }` |
 | `TeamHeal` | Healing instead of damage when shooting a teammate | `{ "min_hp": 5, "percent": 50, "sound_volume": 0.5, "only_with_weapon": "" }` |
-| `Thirdperson` | Third person camera | `{ "distance": 120 }` |
+| `Thirdperson` | Third person camera; walls stop the camera, so it cannot be used to look through them | `{ "distance": 120 }` |
 | `WallHack` | Shows enemies glowing through walls. Blinks with `duration_on`/`duration_off` (`duration_off: 0` = always on), `see_teammates` also shows teammates, `color` is the glow colour, `only_mode` picks who is shown: `0` everyone, `1` only those shooting, `2` only those moving, `12` both | `{ "duration_on": 1, "duration_off": 3, "color": "#612D53", "see_teammates": false, "only_mode": 0 }` |
 | `Vampire` | Steals health equal to the damage dealt | `{ "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120, "ignore_teammates": true }` |
 | `VIPChat` | Private chat channel for VIPs | `true` |

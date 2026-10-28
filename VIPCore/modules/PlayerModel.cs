@@ -23,12 +23,14 @@ public class PlayerModel : VipModule
         public float DeathDelay { get; set; } = DeathClock.SafeDelay;
     }
 
-    private const string CtDefault = "characters/models/ctm_sas/ctm_sas.vmdl";
-    private const string TDefault = "characters/models/tm_phoenix/tm_phoenix.vmdl";
+    private const string CtDefault = "agents/models/ctm_sas/ctm_sas.vmdl";
+    private const string TDefault = "agents/models/tm_phoenix/tm_phoenix.vmdl";
 
     private static PlayerModel? _instance;
     private readonly bool[] _legHidden = new bool[64];
     private readonly bool[] _changed = new bool[64];
+    private readonly string?[] _original = new string?[64];
+    private readonly int[] _owner = new int[64];
 
     public static bool LegsHidden(int slot) =>
         slot >= 0 && slot < 64 && _instance?._legHidden[slot] == true;
@@ -102,13 +104,25 @@ public class PlayerModel : VipModule
             if (player == null || !player.IsValid || !IsAlive(player))
                 continue;
 
+            if (player.UserId != _owner[slot])
+                continue;
+
             var pawn = PlayerCache.Pawn(player);
             if (pawn == null || !pawn.IsValid)
                 continue;
 
-            string model = player.Team == CsTeam.CounterTerrorist ? CtDefault : TDefault;
+            string model = _original[slot] ?? (player.Team == CsTeam.CounterTerrorist ? CtDefault : TDefault);
             pawn.SetModel(model);
         }
+    }
+
+    private bool IsCustom(string model)
+    {
+        foreach (var cfg in Core.GetAllGroupValues<Cfg>(Name))
+            foreach (var def in cfg.Ct.Concat(cfg.T))
+                if (def.Model == model)
+                    return true;
+        return false;
     }
 
     private void Apply(CCSPlayerController? player)
@@ -149,8 +163,14 @@ public class PlayerModel : VipModule
         if (Spy.Disguised(player.Slot))
             return;
 
-        if (pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.ModelState.ModelName != def.Model)
+        string current = pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.ModelState.ModelName ?? "";
+        if (current != def.Model)
         {
+            if (current.Length > 0 && !IsCustom(current))
+                _original[player.Slot] = current;
+            else if (_owner[player.Slot] != player.UserId)
+                _original[player.Slot] = null;
+            _owner[player.Slot] = player.UserId ?? -1;
             pawn.SetModel(def.Model);
             _changed[player.Slot] = true;
         }

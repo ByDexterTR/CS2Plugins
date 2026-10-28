@@ -290,7 +290,7 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `Spy` | Rastgele bir düşmanın modelini giyer. Ölümden hemen sonra, `PlayerModel` `death_delay` ile aynı çökme sebebiyle ölümün üzerinden 5 saniye geçmesini bekler | `true` |
 | `Tag` | Sohbet etiketi/renkleri + skorbord (TAB) etiketi (`tab` boşsa TAB'a dokunulmaz) | `{ "tag": "{Gold}[{Orchid}PLUS{Gold}]", "name_color": "gold", "chat_color": "default", "tab": "[PLUS]" }` |
 | `TeamHeal` | Takım arkadaşına ateş edince hasar yerine iyileştirme | `{ "min_hp": 5, "percent": 50, "sound_volume": 0.5, "only_with_weapon": "" }` |
-| `Thirdperson` | Üçüncü şahıs kamera | `{ "distance": 120 }` |
+| `Thirdperson` | Üçüncü şahıs kamera; duvarlar kamerayı durdurur, duvar arkası görülemez | `{ "distance": 120 }` |
 | `WallHack` | Rakipleri duvar arkasından parlayarak gösterir. `duration_on`/`duration_off` ile yanıp söner (`duration_off: 0` = sürekli açık), `see_teammates` takım arkadaşlarını da gösterir, `color` parlama rengi, `only_mode` kimin görüneceğini seçer: `0` herkes, `1` sadece ateş edenler, `2` sadece hareket edenler, `12` ikisi | `{ "duration_on": 1, "duration_off": 3, "color": "#612D53", "see_teammates": false, "only_mode": 0 }` |
 | `Vampire` | Verilen hasar kadar can çalma | `{ "heal_percent": 75, "only_with_weapon": "", "max_overheal": 120, "ignore_teammates": true }` |
 | `VIPChat` | VIP'lere özel sohbet kanalı | `true` |
