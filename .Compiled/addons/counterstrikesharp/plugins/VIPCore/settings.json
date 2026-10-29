@@ -1,6 +1,6 @@
 {
   "storage": "json",
-  "menu_type": "wasd",
+  "menu_type": "hud",
   "admin_flag": "@css/root",
   "perf_log": false,
   "commands": {
@@ -55,8 +55,10 @@
     "GrenadeTrail": "all",
     "SaySound": "all",
     "PlayerParticle": "all",
-    "Pet": "all"
+    "Pet": "all",
+    "SpawnEffect": "all"
   },
+  "precache": [],
   "model_inspect": {
     "enabled": true,
     "duration": 5,
@@ -66,8 +68,14 @@
     "spin": 360
   },
   "viptest": {
-    "group": "",
-    "duration": 1800,
+    "enabled": false,
+    "groups": [
+      {
+        "group": "#Lite",
+        "time": 1800,
+        "interval": 604800
+      }
+    ],
     "cmd": "css_viptest"
   },
   "mysql": {

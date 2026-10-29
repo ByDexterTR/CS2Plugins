@@ -272,10 +272,34 @@ public partial class VIPCore
       "decoy": 0
     },
     "GrenadeResist": {
-      "percent": 50,
-      "only_with_grenade": "he,molotov,inferno",
+      "he_damage_percent": 50,
+      "molotov_damage_percent": 50,
       "ignore_teammates": true,
       "ignore_self": true,
+      "limit": 0
+    },
+    "GrenadeSpeed": {
+      "hegrenade": [
+        0.5,
+        1.5,
+        2.0
+      ],
+      "flashbang": [
+        0.5,
+        1.5,
+        2.0
+      ],
+      "smokegrenade": [
+        0.5,
+        1.5,
+        2.0
+      ],
+      "molotov": [
+        0.5,
+        1.5,
+        2.0
+      ],
+      "decoy": [],
       "limit": 0
     },
     "GrenadeTimer": {
@@ -655,8 +679,9 @@ public partial class VIPCore
       100
     ],
     "GrenadeDamage": {
-      "damage_multiplier": 2.0,
-      "range_multiplier": 2.0,
+      "he_damage_multiplier": 2.0,
+      "he_damage_range": 2.0,
+      "molotov_damage_multiplier": 1.5,
       "limit": 0
     },
     "GrenadeTrail": {

@@ -67,6 +67,7 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
 | `buy_commands` | nesne | — | BuyTeamWeapon komut adları; silah anahtarı → virgülle komutlar (örn. `"ak47": "css_ak47,css_ak"`) |
 | `module_commands` | nesne | — | Modüle doğrudan komut bağlar (bind edilebilir). Toggle modüller komutla anında açılıp kapanır, seçmeli/kategorili modüllerin menüsü açılır. İstemediğin satırı sil, yenisini `"ModulAdi": "css_komut,css_takma"` biçiminde ekle; boş bırakılırsa hiç komut eklenmez |
 | `hide` | nesne | — | Efekt görünürlüğü varsayılanları — oyuncunun kendi efektini kimin göreceği: `all` herkes, `team` takım, `enemy` rakipler, `self` sadece kendisi, `hidden` hiç kimse, `off` kilitli (menüde çıkmaz). Oyuncunun kendi tercihi varsayılanı ezer |
+| `precache` | liste | `[]` | Sunucunun her haritada yüklediği ek dosyalar, örn. `"soundevents/soundevents_runaway_assets.vsndevts"`. Atölye paketinin soundevents dosyası buraya yazılmalı, yoksa o paketin sesleri çalmaz; her haritada gerekir |
 | `model_inspect` | nesne | — | `css_vipinspect` ayarları, tüm VIP grupları için aynı: `enabled` açık/kapalı, `duration` modelin kalma süresi, `cooldown` iki inceleme arasındaki bekleme (0 = yok), `distance`/`height` nerede duracağı, `spin` kaç derece döneceği |
 | `viptest` | nesne | — | VIP denemesi: `enabled` açar/kapatır, `cmd` komut adı. `groups` içindeki her kayıt bir denemedir: `group` verilecek VIP grubu, `time` kaç saniye süreceği, `interval` oyuncunun kaç saniye sonra tekrar deneme kullanabileceği (`0` = bir daha asla). Birden fazla kayıt varsa oyuncu menüden birini seçer; bir deneme kullanıldıktan sonra o denemenin `interval` süresi dolana kadar başka deneme de başlatılamaz. Zaten VIP olan başlatamaz. Son kullanım `viptest.json` içinde, MySQL kullanılıyorsa `vip_test` tablosunda tutulur |
 | `mysql` | nesne | — | MySQL bağlantı ayarları (`host`, `port`, `database`, `user`, `password`, `table_prefix`) |
@@ -111,6 +112,7 @@ Yukarıdaki tablodaki her komut adı `settings.json` üzerinden değiştirilebil
     "Pet": "all",
     "SpawnEffect": "all"
   },
+  "precache": [],
   "model_inspect": {
     "enabled": true,
     "duration": 5,
@@ -239,9 +241,10 @@ Modül adları `vipgroups.json` içinde anahtar olarak kullanılır (büyük/kü
 | `Glaz` | Sis içini görme | `true` |
 | `GlueGrenade` | Atılan bombalar ilk temasta yapışır (decoy eklersen DecoyTeleport ile duvar içine ışınlanma riski) | `{ "only_grenades": "flashbang,hegrenade", "limit": 0 }` |
 | `Gravity` | Yerçekimi seçenekleri | `[1.0, 0.8, 0.5]` |
-| `GrenadeDamage` | HE grenade'lerinin hasarını ve patlama yarıçapını çarpar | `{ "damage_multiplier": 2.0, "range_multiplier": 2.0, "limit": 0 }` |
+| `GrenadeDamage` | `he_damage_multiplier` HE grenade'lerinin hasarını, `he_damage_range` patlama yarıçapını, `molotov_damage_multiplier` molotov/incendiary ateşinin hasarını çarpar (0 = kapalı) | `{ "he_damage_multiplier": 2.0, "he_damage_range": 2.0, "molotov_damage_multiplier": 1.5, "limit": 0 }` |
 | `GrenadeKit` | Spawn'da bomba seti; zaten varsa vermez, 2+ ise atınca yeniden verir (InfiniteAmmo açıkken yeniden vermez) | `{ "flash": 2, "smoke": 1, "he": 3, "molotov": 1, "decoy": 0 }` |
-| `GrenadeResist` | Bomba (HE/molotov/inferno) hasarını azaltır; **negatif `percent` = debuff** (`-50` bomba hasarını %50 artırır) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `GrenadeResist` | Grenade'lerden alınan hasarı azaltır: HE için `he_damage_percent`, molotov/incendiary ateşi için `molotov_damage_percent` (0 = azaltma yok); **negatif değer = debuff** (`-50` o hasarı %50 artırır) | `{ "he_damage_percent": 50, "molotov_damage_percent": 50, "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `GrenadeSpeed` | Oyuncu menüden her grenade türü için ne kadar hızlı gideceğini seçer; değer çarpandır (`2` = iki kat hızlı, `0.5` = yarı hız), menüdeki değerler configten gelir (0.1 - 5) | `{ "hegrenade": [0.5, 1.5, 2.0], "flashbang": [0.5, 1.5, 2.0], "smokegrenade": [0.5, 1.5, 2.0], "molotov": [0.5, 1.5, 2.0], "decoy": [], "limit": 0 }` |
 | `GrenadeTimer` | Oyuncu menüden her grenade türü için kaç saniye geç patlayacağını seçer; menüdeki değerler configten gelir (0.1 - 20) | `{ "hegrenade": [0.5, 1.0, 2.0], "flashbang": [0.5, 1.0, 2.0], "molotov": [1.0, 2.0, 3.0], "decoy": [], "limit": 0 }` |
 | `GrenadeTrail` | Bomba izi efekti. `colors` beam çizer, `particles` bombaya uçuşu boyunca tek partikül bağlar (beam'den ucuzdur) | `{ "width": 1.5, "lifetime": 2.5, "colors": [...], "particles": [{ "name": "Duman", "file": "particles/ui/hud/ui_map_def_utility_trail.vpcf" }] }` |
 | `GrenadeTrajectory` | Oyunun kendi bomba önizleme kamerasını (`sv_grenade_trajectory_prac_pipreview`) yalnız o oyuncu için açar. Bomba elde tutulurken köşede küçük bir pencere çıkar ve bombanın nereye düşeceğini gösterir. Hangi bombalarda çalışacağı seçilir; `molotov` CT tarafındaki incendiary'yi de kapsar | `{ "molotov": true, "smokegrenade": true, "flashbang": true, "hegrenade": true, "decoy": true }` |

@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.3.0";
+    public override string ModuleVersion => "1.3.1";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -260,8 +260,9 @@ public partial class VIPCore : BasePlugin
             if (IsModuleEnabled("PlayerTrail") || IsModuleEnabled("GrenadeTrail") || IsModuleEnabled("BulletTrail"))
                 m.AddResource(TrailBeam.Sprite);
 
-            if (IsModuleEnabled("Thirdperson"))
-                m.AddResource("models/sprays/spray_plane.vmdl");
+            foreach (var resource in Config.Precache)
+                if (!string.IsNullOrWhiteSpace(resource))
+                    m.AddResource(resource.Trim());
         });
         RegisterCommands();
     }

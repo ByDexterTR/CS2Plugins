@@ -71,6 +71,9 @@ public class VipConfig
         ["SpawnEffect"] = "all"
     };
 
+    [JsonPropertyName("precache")]
+    public List<string> Precache { get; set; } = new();
+
     [JsonPropertyName("model_inspect")]
     public ModelInspectSettings ModelInspect { get; set; } = new();
 

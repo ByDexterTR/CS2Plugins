@@ -67,6 +67,7 @@ Every command name in the table above can be renamed from `settings.json`; the k
 | `buy_commands` | object | — | BuyTeamWeapon command names; weapon key → comma separated commands (e.g. `"ak47": "css_ak47,css_ak"`) |
 | `module_commands` | object | — | Binds a command directly to a module (can be bound). Toggle modules are turned on/off instantly by the command, selection/category modules open their menu. Delete a line you do not want, add a new one as `"ModuleName": "css_command,css_alias"`; if left empty no command is added |
 | `hide` | object | — | Effect visibility defaults — who sees that player's own effect: `all` everyone, `team` teammates, `enemy` enemies, `self` only themselves, `hidden` nobody, `off` locked (does not appear in the menu). The player's own preference overrides the default |
+| `precache` | list | `[]` | Extra files the server loads on every map, e.g. `"soundevents/soundevents_runaway_assets.vsndevts"`. A workshop pack's soundevents file must be listed here, otherwise its sound events do not play; it is needed on every map |
 | `model_inspect` | object | — | `css_vipinspect` settings, the same for every VIP group: `enabled` on/off, `duration` how long the model stays, `cooldown` the wait between two inspections (0 = none), `distance`/`height` where it appears, `spin` how far it turns |
 | `viptest` | object | — | VIP trial: `enabled` turns it on or off, `cmd` is the command name. Each `groups` entry is one trial: `group` the VIP group given, `time` how many seconds it lasts, `interval` how many seconds later the player can use a trial again (`0` = never again). With more than one entry the player picks one from a menu; once a trial is used, no other trial can be started until that trial's `interval` has passed. A player who already has VIP cannot start it. The last use is kept in `viptest.json`, or in the `vip_test` table on MySQL |
 | `mysql` | object | — | MySQL connection settings (`host`, `port`, `database`, `user`, `password`, `table_prefix`) |
@@ -111,6 +112,7 @@ Every command name in the table above can be renamed from `settings.json`; the k
     "Pet": "all",
     "SpawnEffect": "all"
   },
+  "precache": [],
   "model_inspect": {
     "enabled": true,
     "duration": 5,
@@ -239,9 +241,10 @@ Module names are used as keys in `vipgroups.json` (case sensitive).
 | `Glaz` | See through smoke | `true` |
 | `GlueGrenade` | Thrown grenades stick on first contact (if you add decoy, there is a risk of teleporting inside a wall with DecoyTeleport) | `{ "only_grenades": "flashbang,hegrenade", "limit": 0 }` |
 | `Gravity` | Gravity options | `[1.0, 0.8, 0.5]` |
-| `GrenadeDamage` | Multiplies the damage and blast radius of your HE grenades | `{ "damage_multiplier": 2.0, "range_multiplier": 2.0, "limit": 0 }` |
+| `GrenadeDamage` | `he_damage_multiplier` multiplies the damage of your HE grenades, `he_damage_range` their blast radius, `molotov_damage_multiplier` the damage of your molotov/incendiary fire (0 = off) | `{ "he_damage_multiplier": 2.0, "he_damage_range": 2.0, "molotov_damage_multiplier": 1.5, "limit": 0 }` |
 | `GrenadeKit` | Grenade set on spawn; not given if already held, with 2+ it is given again after throwing (not re-given while InfiniteAmmo is on) | `{ "flash": 2, "smoke": 1, "he": 3, "molotov": 1, "decoy": 0 }` |
-| `GrenadeResist` | Reduces grenade (HE/molotov/inferno) damage; **negative `percent` = debuff** (`-50` increases grenade damage by 50%) | `{ "percent": 50, "only_with_grenade": "he,molotov,inferno", "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `GrenadeResist` | Reduces the damage you take from grenades: `he_damage_percent` for HE, `molotov_damage_percent` for molotov/incendiary fire (0 = no reduction); **a negative value = debuff** (`-50` increases that damage by 50%) | `{ "he_damage_percent": 50, "molotov_damage_percent": 50, "ignore_teammates": true, "ignore_self": true, "limit": 0 }` |
+| `GrenadeSpeed` | The player picks per grenade type from the menu how fast it flies; the value is a multiplier (`2` = twice as fast, `0.5` = half speed) and the values offered come from the config (0.1 - 5) | `{ "hegrenade": [0.5, 1.5, 2.0], "flashbang": [0.5, 1.5, 2.0], "smokegrenade": [0.5, 1.5, 2.0], "molotov": [0.5, 1.5, 2.0], "decoy": [], "limit": 0 }` |
 | `GrenadeTimer` | The player picks per grenade type from the menu how many extra seconds it stays in the air before going off; the values offered come from the config (0.1 - 20) | `{ "hegrenade": [0.5, 1.0, 2.0], "flashbang": [0.5, 1.0, 2.0], "molotov": [1.0, 2.0, 3.0], "decoy": [], "limit": 0 }` |
 | `GrenadeTrail` | Grenade trail effect. `colors` draws a beam, `particles` attaches a particle to the grenade for its whole flight (cheaper than the beam) | `{ "width": 1.5, "lifetime": 2.5, "colors": [...], "particles": [{ "name": "Smoke", "file": "particles/ui/hud/ui_map_def_utility_trail.vpcf" }] }` |
 | `GrenadeTrajectory` | Turns on the game's own grenade preview camera (`sv_grenade_trajectory_prac_pipreview`) for that player only. The small picture-in-picture window appears while the grenade is held and shows where it will land. Pick which grenades it works with; `molotov` also covers the CT incendiary | `{ "molotov": true, "smokegrenade": true, "flashbang": true, "hegrenade": true, "decoy": true }` |

@@ -51,7 +51,9 @@ internal static class ConfigMigrate
         ("Berserk", "maxdpk", "max_damage_bonus"),
         ("HealthRegen", "delay_after_dmg", "delay_after_damage"),
         ("ArmorRegen", "delay_after_dmg", "delay_after_damage"),
-        ("Invisibility", "dmg_after_invis", "reveal_time")
+        ("Invisibility", "dmg_after_invis", "reveal_time"),
+        ("GrenadeDamage", "damage_multiplier", "he_damage_multiplier"),
+        ("GrenadeDamage", "range_multiplier", "he_damage_range")
     };
 
     public static string? RenamedKey(string path)
@@ -164,6 +166,7 @@ internal static class ConfigMigrate
             }
 
             MoveRecoil(groupName, group, log);
+            SplitGrenadeResist(groupName, group, log);
         }
 
         return log;
@@ -209,6 +212,37 @@ internal static class ConfigMigrate
 
         InsertAfter(group, "RapidFire", "NoRecoil", noRecoil);
         log.Add($"\"{groupName}\" -> RapidFire icindeki sekme ayari yeni NoRecoil modulune tasindi.");
+    }
+
+    private static void SplitGrenadeResist(string groupName, JsonObject group, List<string> log)
+    {
+        if (FindKey(group, "GrenadeResist") is not string module)
+            return;
+
+        foreach (var obj in Objects(group[module]))
+        {
+            string? percentKey = FindKey(obj, "percent");
+            if (percentKey == null)
+                continue;
+
+            string? onlyKey = FindKey(obj, "only_with_grenade");
+            string only = onlyKey != null && obj[onlyKey] is JsonValue o && o.TryGetValue(out string? csv) ? csv ?? "" : "";
+            var types = only.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(t => t.ToLowerInvariant()).ToList();
+            bool he = types.Count == 0 || types.Contains("he");
+            bool fire = types.Count == 0 || types.Any(t => t is "molotov" or "inferno" or "fire" or "incendiary");
+            int percent = obj[percentKey] is JsonValue p && p.TryGetValue(out double value) ? (int)Math.Round(value) : 0;
+
+            var pairs = obj.ToList();
+            obj.Clear();
+            obj["he_damage_percent"] = he ? percent : 0;
+            obj["molotov_damage_percent"] = fire ? percent : 0;
+            foreach (var (key, node) in pairs)
+                if (key != percentKey && key != onlyKey)
+                    obj[key] = node;
+
+            log.Add($"\"{groupName}\" -> GrenadeResist percent/only_with_grenade \"he_damage_percent\" ve \"molotov_damage_percent\" olarak ayrildi.");
+        }
     }
 
     public static List<string> Settings(JsonObject root)
