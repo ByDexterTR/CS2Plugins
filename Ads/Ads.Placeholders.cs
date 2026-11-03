@@ -61,9 +61,9 @@ public partial class Ads
     switch (key)
     {
       case "map": return Server.MapName;
-      case "hostname": return (_hostname ??= ConVar.Find("hostname"))?.StringValue ?? "";
-      case "ip": return (_ip ??= ConVar.Find("ip"))?.StringValue ?? "";
-      case "port": return (_port ??= ConVar.Find("hostport"))?.GetPrimitiveValue<int>().ToString(CultureInfo.InvariantCulture) ?? "27015";
+      case "hostname": return (_hostname ??= ConVar<string>.Find("hostname"))?.Value ?? "";
+      case "ip": return (_ip ??= ConVar<string>.Find("ip"))?.Value ?? "";
+      case "port": return (_port ??= ConVar<int>.Find("hostport"))?.Value.ToString(CultureInfo.InvariantCulture) ?? "27015";
       case "maxplayers": return Server.MaxPlayers.ToString(CultureInfo.InvariantCulture);
 
       case "players": EnsureCounts(); return _cPlayers.ToString(CultureInfo.InvariantCulture);
@@ -142,9 +142,9 @@ public partial class Ads
     }
   }
 
-  private ConVar? _hostname;
-  private ConVar? _ip;
-  private ConVar? _port;
+  private ConVar<string>? _hostname;
+  private ConVar<string>? _ip;
+  private ConVar<int>? _port;
   private CCSGameRulesProxy? _rulesProxy;
   private CTeam? _teamT;
   private CTeam? _teamCt;

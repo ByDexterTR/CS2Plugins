@@ -14,6 +14,7 @@ public partial class Ads
     public string Flag = "";
     public string IgnoreFlag = "";
     public int Index;
+    public readonly bool[] Hidden = new bool[MaxSlots];
   }
 
   private readonly List<PlacedAd> _entities = new();
@@ -44,6 +45,8 @@ public partial class Ads
       if (placed.Flag.Length > 0 || placed.IgnoreFlag.Length > 0)
         _hiddenEntities.Add(placed);
     }
+
+    Array.Clear(_visAt);
 
     SyncListeners();
   }

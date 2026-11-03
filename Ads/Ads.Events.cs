@@ -144,6 +144,7 @@ public partial class Ads
     _selected[slot] = null;
     _awaiting[slot] = PendingInput.None;
     _axis[slot] = 0;
+    ResetVisibility(slot);
 
     for (int i = 0; i < _eventCooldown.GetLength(0); i++)
       _eventCooldown[i, slot] = 0f;

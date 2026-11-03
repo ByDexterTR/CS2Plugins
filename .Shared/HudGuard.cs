@@ -16,26 +16,42 @@ public static class HudGuard
   private static readonly Regex MenuTag = new(@"^<[A-Za-z0-9]+/>", RegexOptions.Compiled);
   private static readonly int[] BlockedUntil = new int[MaxSlots];
 
-  private static bool _installed;
+  private static bool _sending;
 
   public static void Install(BasePlugin plugin)
   {
-    if (_installed)
-      return;
-
+    Array.Clear(BlockedUntil);
     plugin.HookUserMessage(LegacyEventMessageId, OnCenterHtml);
-    _installed = true;
   }
 
-  public static bool Blocked(int slot) =>
-    slot >= 0 && slot < MaxSlots && Server.TickCount < BlockedUntil[slot];
+  public static void Send(CCSPlayerController player, string html)
+  {
+    _sending = true;
+    try
+    {
+      player.PrintToCenterHtml(html);
+    }
+    finally
+    {
+      _sending = false;
+    }
+  }
+
+  public static bool Blocked(int slot)
+  {
+    if (slot < 0 || slot >= MaxSlots)
+      return false;
+
+    int left = BlockedUntil[slot] - Server.TickCount;
+    return left > 0 && left <= BlockTicks;
+  }
 
   public static bool Blocked(CCSPlayerController? player) =>
     player != null && player.IsValid && Blocked(player.Slot);
 
   private static HookResult OnCenterHtml(UserMessage message)
   {
-    if (message.ReadUInt("eventid") != ShowCenterHtmlEventId)
+    if (_sending || message.ReadUInt("eventid") != ShowCenterHtmlEventId)
       return HookResult.Continue;
 
     var match = HtmlValue.Match(message.DebugString);

@@ -51,7 +51,7 @@ public class AdsConfig
   public string ExportSqlCommands { get; set; } = "css_adsexportsql";
 
   [JsonPropertyName("ads_hud_tick")]
-  public int HudTick { get; set; } = 4;
+  public int HudTick { get; set; } = 8;
 
   [JsonPropertyName("ads_font")]
   public string Font { get; set; } = "Arial Bold";
@@ -142,13 +142,17 @@ public partial class Ads : BasePlugin
 
     RegisterEventAds();
 
-    Action? spawn = hotReload
-      ? () =>
-      {
-        _mapName = Server.MapName;
+    Action spawn = () => Server.NextWorldUpdate(() =>
+    {
+      if (_unloaded)
+        return;
+
+      if (_mapName.Length == 0)
+        _mapName = Server.MapName ?? "";
+
+      if (_mapName.Length > 0)
         SpawnWorldAds();
-      }
-      : null;
+    });
 
     if (Config.Storage.Equals("mysql", StringComparison.OrdinalIgnoreCase))
       StartMySql(spawn);
@@ -259,6 +263,9 @@ public partial class Ads : BasePlugin
     if (result.Maps != null)
       _mapsData = result.Maps;
 
+    if (result.Ads != null || result.Props != null || result.Maps != null)
+      _loaded = true;
+
     _data.Props = _mapsData.Props;
 
     ClearScreenTexts();
@@ -267,6 +274,7 @@ public partial class Ads : BasePlugin
     SyncListeners();
   }
 
+  private bool _loaded;
   private bool _tickHooked;
   private bool _transmitHooked;
 
@@ -321,7 +329,10 @@ public partial class Ads : BasePlugin
 
   private void OnServerPrecacheResources(ResourceManifest manifest)
   {
-    LoadData(true);
+    if (_loaded && IsRemote(_storage))
+      LoadData(false);
+    else
+      LoadData(true);
 
     var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -347,6 +358,7 @@ public partial class Ads : BasePlugin
     Array.Clear(_selected);
     Array.Clear(_awaiting);
     Array.Clear(_axis);
+    Array.Clear(_visAt);
   }
 
   private void OnMapEndHandler()
@@ -366,6 +378,8 @@ public partial class Ads : BasePlugin
         continue;
 
       int viewerSlot = viewer.Slot;
+      if ((uint)viewerSlot >= MaxSlots)
+        continue;
 
       if (_screenTextCount > 0)
       {
@@ -380,15 +394,62 @@ public partial class Ads : BasePlugin
         }
       }
 
+      if (_hiddenEntities.Count == 0)
+        continue;
+
+      int tick = Server.TickCount;
+      int at = _visAt[viewerSlot];
+      bool refresh = at == 0 || tick < at || tick - at >= VisRefreshTicks;
+      if (refresh)
+        _visAt[viewerSlot] = tick == 0 ? 1 : tick;
+
       foreach (var placed in _hiddenEntities)
       {
-        if (placed.Entity == null || !placed.Entity.IsValid)
+        if (refresh)
+          placed.Hidden[viewerSlot] = !CanSee(viewer, placed.Flag, placed.IgnoreFlag);
+
+        if (!placed.Hidden[viewerSlot] || placed.Entity == null || !placed.Entity.IsValid)
           continue;
 
-        if (!CanSee(viewer, placed.Flag, placed.IgnoreFlag))
-          Transmit.Hide(info, placed.Entity);
+        Transmit.Hide(info, placed.Entity);
       }
     }
+  }
+
+  private const int VisRefreshTicks = 64;
+  private readonly int[] _visAt = new int[MaxSlots];
+
+  private struct VisCache
+  {
+    public object? Key;
+    public int At;
+    public bool Value;
+  }
+
+  private readonly VisCache[] _textVis = new VisCache[MaxSlots];
+  private readonly VisCache[] _hudVis = new VisCache[MaxSlots];
+
+  private static bool CanSeeCached(ref VisCache cache, object key, CCSPlayerController player, string? flag, string? ignoreFlag)
+  {
+    if (string.IsNullOrWhiteSpace(flag) && string.IsNullOrWhiteSpace(ignoreFlag))
+      return true;
+
+    int tick = Server.TickCount;
+    if (!ReferenceEquals(cache.Key, key) || cache.At == 0 || tick < cache.At || tick - cache.At >= VisRefreshTicks)
+    {
+      cache.Key = key;
+      cache.At = tick == 0 ? 1 : tick;
+      cache.Value = CanSee(player, flag, ignoreFlag);
+    }
+
+    return cache.Value;
+  }
+
+  private void ResetVisibility(int slot)
+  {
+    _visAt[slot] = 0;
+    _textVis[slot] = default;
+    _hudVis[slot] = default;
   }
 
   private static bool CanSee(CCSPlayerController player, string? flag, string? ignoreFlag)

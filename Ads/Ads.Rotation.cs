@@ -202,6 +202,7 @@ public partial class Ads
         RemoveScreenText(slot);
         _screenTextSource[slot] = null;
         _hudShown[slot] = false;
+        ResetVisibility(slot);
         continue;
       }
 
@@ -221,7 +222,7 @@ public partial class Ads
   private void RenderScreenText(int slot, CCSPlayerController player)
   {
     var ad = _overrideText[slot];
-    if (ad == null && _activeScreenText != null && CanSee(player, _activeScreenText.Flag, _activeScreenText.IgnoreFlag))
+    if (ad == null && _activeScreenText != null && CanSeeCached(ref _textVis[slot], _activeScreenText, player, _activeScreenText.Flag, _activeScreenText.IgnoreFlag))
       ad = _activeScreenText;
 
     if (!ReferenceEquals(ad, _screenTextSource[slot]))
@@ -256,19 +257,19 @@ public partial class Ads
       return;
 
     string? html = _overrideHud[slot];
-    if (html == null && _activeHudAd != null && CanSee(player, _activeHudAd.Flag, _activeHudAd.IgnoreFlag))
+    if (html == null && _activeHudAd != null && CanSeeCached(ref _hudVis[slot], _activeHudAd, player, _activeHudAd.Flag, _activeHudAd.IgnoreFlag))
       html = _activeHudAd.Text;
 
     if (html != null)
     {
-      player.PrintToCenterHtml(Fill(html, player));
+      HudGuard.Send(player, Fill(html, player));
       _hudShown[slot] = true;
       return;
     }
 
     if (_hudShown[slot])
     {
-      player.PrintToCenterHtml(" ");
+      HudGuard.Send(player, " ");
       _hudShown[slot] = false;
     }
   }

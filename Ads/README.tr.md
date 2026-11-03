@@ -276,7 +276,7 @@ Ayarlar sunucuya özeldir; `css_adsimportsql` / `css_adsexportsql` bu dosyaya do
 | `ads_reload_cmd` | string | `"css_adsreload"` | Virgülle ayrılmış komut adları |
 | `ads_importsql_cmd` | string | `"css_adsimportsql"` | Virgülle ayrılmış komut adları |
 | `ads_exportsql_cmd` | string | `"css_adsexportsql"` | Virgülle ayrılmış komut adları |
-| `ads_hud_tick` | int | `4` | HudSay kaç tick'te bir yenilenir (4 = saniyede 16) |
+| `ads_hud_tick` | int | `8` | HudSay kaç tick'te bir yenilenir (8 = saniyede 8) |
 | `ads_font` | string | `"Arial Bold"` | ScreenText yazı tipi |
 | `ads_forward` | float | `7` | ScreenText'in göze uzaklığı (minimum 1) |
 | `ads_units_per_px` | float | `0.012` | ScreenText piksel ölçeği |
@@ -301,7 +301,7 @@ Ayarlar sunucuya özeldir; `css_adsimportsql` / `css_adsexportsql` bu dosyaya do
   "ads_reload_cmd": "css_adsreload",
   "ads_importsql_cmd": "css_adsimportsql",
   "ads_exportsql_cmd": "css_adsexportsql",
-  "ads_hud_tick": 4,
+  "ads_hud_tick": 8,
   "ads_font": "Arial Bold",
   "ads_forward": 7,
   "ads_units_per_px": 0.012,

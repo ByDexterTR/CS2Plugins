@@ -276,7 +276,7 @@ Settings are per server: `css_adsimportsql` / `css_adsexportsql` never touch thi
 | `ads_reload_cmd` | string | `"css_adsreload"` | Comma separated command names |
 | `ads_importsql_cmd` | string | `"css_adsimportsql"` | Comma separated command names |
 | `ads_exportsql_cmd` | string | `"css_adsexportsql"` | Comma separated command names |
-| `ads_hud_tick` | int | `4` | How many ticks between HudSay refreshes (4 = 16 per second) |
+| `ads_hud_tick` | int | `8` | How many ticks between HudSay refreshes (8 = 8 per second) |
 | `ads_font` | string | `"Arial Bold"` | ScreenText font |
 | `ads_forward` | float | `7` | ScreenText distance from the eye (minimum 1) |
 | `ads_units_per_px` | float | `0.012` | ScreenText pixel scale |
@@ -301,7 +301,7 @@ Settings are per server: `css_adsimportsql` / `css_adsexportsql` never touch thi
   "ads_reload_cmd": "css_adsreload",
   "ads_importsql_cmd": "css_adsimportsql",
   "ads_exportsql_cmd": "css_adsexportsql",
-  "ads_hud_tick": 4,
+  "ads_hud_tick": 8,
   "ads_font": "Arial Bold",
   "ads_forward": 7,
   "ads_units_per_px": 0.012,
