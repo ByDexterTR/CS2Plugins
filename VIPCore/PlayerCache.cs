@@ -239,6 +239,13 @@ public static unsafe class PlayerCache
         return true;
     }
 
+    public static void ReleaseButton(nint pawn, ulong mask)
+    {
+        nint movement = *(nint*)(pawn + Offsets.MovementOffset);
+        if (movement != 0)
+            *(ulong*)(movement + Offsets.ButtonsOffset + Offsets.ButtonStatesOffset) &= ~mask;
+    }
+
     public static float DuckAmount(nint pawn)
     {
         nint movement = *(nint*)(pawn + Offsets.MovementOffset);

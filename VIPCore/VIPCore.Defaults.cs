@@ -22,7 +22,7 @@ public partial class VIPCore
       "autostrafe": false,
       "max_speed": 350,
       "jump_boost": 1.05,
-      "jump_velocity": 300
+      "delay": 0
     },
     "ColoredModel": [
       "Rainbow rainbow",
@@ -149,7 +149,7 @@ public partial class VIPCore
       "autostrafe": true,
       "max_speed": 400,
       "jump_boost": 1.05,
-      "jump_velocity": 300
+      "delay": 0
     },
     "BulletTrail": {
       "colors": [
@@ -564,7 +564,7 @@ public partial class VIPCore
       "autostrafe": true,
       "max_speed": 450,
       "jump_boost": 1.1,
-      "jump_velocity": 300
+      "delay": 0
     },
     "BulletEffect": {
       "poison": {
@@ -1127,7 +1127,7 @@ public partial class VIPCore
       "autostrafe": true,
       "max_speed": 500,
       "jump_boost": 1.1,
-      "jump_velocity": 300
+      "delay": 0
     },
     "BombsiteAnnouncer": {
       "img_a": "https://raw.githubusercontent.com/itsAudioo/CS2BombsiteAnnouncer/refs/heads/main/img/Site-A.png",

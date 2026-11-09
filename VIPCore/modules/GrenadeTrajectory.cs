@@ -86,7 +86,7 @@ public class GrenadeTrajectory : VipModule
             return;
 
         _on[id] = on;
-        player.ReplicateConVar(Preview, on ? "1" : "0");
+        player.ReplicateConVar(Preview, on ? "1" : ServerConVar.Value(Preview));
     }
 
     private void Forget(CCSPlayerController? player)

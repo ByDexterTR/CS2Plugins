@@ -95,7 +95,8 @@ internal static class ConfigMigrate
         ("HealthRegen", "", "max_hp"),
         ("TeamHeal", "", "maxhp"),
         ("SmokeEffect", "heal", "maxhp"),
-        ("WeaponGlow", "", "visible")
+        ("WeaponGlow", "", "visible"),
+        ("Bhop", "", "jump_velocity")
     };
 
     private static readonly string[] ModuleLists = { "PistolRoundDisable", "Force" };

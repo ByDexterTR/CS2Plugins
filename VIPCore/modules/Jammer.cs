@@ -16,6 +16,7 @@ public class Jammer : VipModule
     private readonly bool[] _jammed = new bool[64];
     private readonly bool[] _state = new bool[64];
     private static readonly Cfg DefaultCfg = new();
+    private const string Radar = "sv_disable_radar";
     private readonly List<(int Slot, byte Team, System.Numerics.Vector3 Pos, Cfg Cfg)> _jammers = new();
 
     public override string Name => "Jammer";
@@ -39,7 +40,7 @@ public class Jammer : VipModule
             _jammed[slot] = false;
             var p = Core.PlayerAt(slot);
             if (p != null && p.IsValid && !p.IsBot)
-                p.ReplicateConVar("sv_disable_radar", "0");
+                p.ReplicateConVar(Radar, ServerConVar.Value(Radar));
         }
     }
 
@@ -77,7 +78,7 @@ public class Jammer : VipModule
                 continue;
 
             _jammed[slot] = jam;
-            target.ReplicateConVar("sv_disable_radar", jam ? "1" : "0");
+            target.ReplicateConVar(Radar, jam ? "1" : ServerConVar.Value(Radar));
         }
     }
 

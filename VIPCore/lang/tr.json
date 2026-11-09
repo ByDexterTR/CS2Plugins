@@ -5,6 +5,8 @@
 	"vip.aura.poison": "Zehirli",
 	"vip.aura.slow": "Yavaşlatan",
 	"vip.aura.speed": "Hızlandıran",
+	"vip.bhop.ready": "Bunny hop açıldı",
+	"vip.bhop.wait": "Bunny hop {0} saniye sonra açılacak",
 	"vip.bombsite.planted": "Bomba {0} bölgesine kuruldu!",
 	"vip.bullet.lower": "Küçültme",
 	"vip.bullet.poison": "Zehir",

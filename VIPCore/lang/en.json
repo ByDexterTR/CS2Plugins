@@ -5,6 +5,8 @@
 	"vip.aura.poison": "Poison",
 	"vip.aura.slow": "Slowing",
 	"vip.aura.speed": "Speed",
+	"vip.bhop.ready": "Bunny hop is on",
+	"vip.bhop.wait": "Bunny hop turns on in {0} seconds",
 	"vip.bombsite.planted": "Bomb planted at site {0}!",
 	"vip.bullet.lower": "Shrink",
 	"vip.bullet.poison": "Poison",

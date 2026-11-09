@@ -34,7 +34,8 @@ internal static class ConfigCheck
         "HealthRegen.max_hp",
         "TeamHeal.maxhp",
         "SmokeEffect.heal.maxhp",
-        "WeaponGlow.visible"
+        "WeaponGlow.visible",
+        "Bhop.jump_velocity"
     };
 
     private static readonly Dictionary<string, string> KeyMoves = new(StringComparer.OrdinalIgnoreCase)

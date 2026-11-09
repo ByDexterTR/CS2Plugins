@@ -187,6 +187,7 @@ public class SmokeEffect : VipModule
             smoke.SmokeColor.X = color[0];
             smoke.SmokeColor.Y = color[1];
             smoke.SmokeColor.Z = color[2];
+            NetState.Changed(smoke, "CSmokeGrenadeProjectile", "m_vSmokeColor");
         });
     }
 
