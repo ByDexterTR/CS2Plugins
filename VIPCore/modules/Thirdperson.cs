@@ -145,7 +145,8 @@ public class Thirdperson : VipModule
             NetState.Changed(pawn, "CBasePlayerPawn", "m_pCameraServices");
         }
 
-        if (camera.IsValid)
+        camera = new CounterStrikeSharp.API.Modules.Utils.CHandle<CCSCustomPlayerCamera>(_cameraHandles[slot]).Value;
+        if (camera != null && camera.IsValid)
             camera.Remove();
     }
 

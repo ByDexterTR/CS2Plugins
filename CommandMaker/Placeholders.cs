@@ -512,7 +512,7 @@ public partial class CommandMaker
         case "PLAYERMONEY":
           return (player?.InGameMoneyServices?.Account ?? 0).ToString();
         case "PLAYERSTEAMID":
-          return (player?.SteamID ?? 0).ToString();
+          return Util.SteamId(player).ToString();
         case "PLAYERTEAM":
           return player == null ? "NONE" : TeamName(player.Team);
         case "PLAYERWEAPON":
@@ -533,7 +533,7 @@ public partial class CommandMaker
         case "TARGETMONEY":
           return (target?.InGameMoneyServices?.Account ?? 0).ToString();
         case "TARGETSTEAMID":
-          return (target?.SteamID ?? 0).ToString();
+          return Util.SteamId(target).ToString();
         case "TARGETTEAM":
           return target == null ? "NONE" : TeamName(target.Team);
         case "TARGETWEAPON":

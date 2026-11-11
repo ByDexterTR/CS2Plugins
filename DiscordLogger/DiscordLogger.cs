@@ -84,12 +84,17 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
   public DiscordLoggerConfig Config { get; set; } = new DiscordLoggerConfig();
 
   private readonly Dictionary<string, StringBuilder> _messageBuffers = new();
+  private readonly Dictionary<string, Queue<string>> _pendingChunks = new();
+  private readonly Dictionary<string, string> _templates = new();
   private readonly object _bufferLock = new();
   private readonly List<string> _fileLines = new();
   private readonly object _fileLock = new();
   private readonly HttpClient _httpClient = new();
   private readonly Dictionary<ulong, DateTime> _playerConnectTime = new();
   private const int MaxDiscordMessageLength = 2000;
+  private const int MaxPendingChunks = 50;
+  private const int SendSpacingMs = 500;
+  private const int MaxSendAttempts = 3;
   private bool _isSending = false;
   private DateTime _roundStartTime;
   private string _lastMapName = "";
@@ -100,12 +105,13 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
   public override void Load(bool hotReload)
   {
     _httpClient.Timeout = TimeSpan.FromSeconds(10);
+    _templates.Clear();
 
     RegisterHandlers();
 
     AddTimer(3.0f, ProcessBuffers, TimerFlags.REPEAT);
 
-    _lastMapName = Server.MapName;
+    _lastMapName = Server.MapName ?? "";
     AddTimer(1.0f, InitializePlayerTimes);
   }
 
@@ -211,7 +217,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
   {
     foreach (var player in Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot))
     {
-      _playerConnectTime.TryAdd(player.SteamID, DateTime.UtcNow);
+      _playerConnectTime.TryAdd(player.EntityHandle.Raw, DateTime.UtcNow);
     }
   }
 
@@ -226,7 +232,11 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     if (player.IsBot)
       return $"**{player.PlayerName} (BOT)**";
 
-    return $"[**{player.PlayerName}**](<https://steamcommunity.com/profiles/{player.SteamID}>)";
+    ulong steamId = player.AuthorizedSteamID?.SteamId64 ?? 0UL;
+    if (steamId == 0UL)
+      return $"**{player.PlayerName}**";
+
+    return $"[**{player.PlayerName}**](<https://steamcommunity.com/profiles/{steamId}>)";
   }
 
   private static string CleanWeapon(string? weapon)
@@ -239,18 +249,28 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
   private static string Coord(float x, float y, float z) =>
     string.Create(CultureInfo.InvariantCulture, $"({x:F0}, {y:F0}, {z:F0})");
 
+  private string T(string key)
+  {
+    if (!_templates.TryGetValue(key, out var template))
+      _templates[key] = template = Localizer[key].Value;
+
+    return template;
+  }
+
+  private string T(string key, params object[] args) => string.Format(T(key), args);
+
   private string HitgroupName(int hitgroup) => hitgroup switch
   {
-    1 => Localizer["discord.hitgroup_head"],
-    2 => Localizer["discord.hitgroup_chest"],
-    3 => Localizer["discord.hitgroup_stomach"],
-    4 => Localizer["discord.hitgroup_leftarm"],
-    5 => Localizer["discord.hitgroup_rightarm"],
-    6 => Localizer["discord.hitgroup_leftleg"],
-    7 => Localizer["discord.hitgroup_rightleg"],
-    8 => Localizer["discord.hitgroup_neck"],
-    10 => Localizer["discord.hitgroup_gear"],
-    _ => Localizer["discord.hitgroup_generic"]
+    1 => T("discord.hitgroup_head"),
+    2 => T("discord.hitgroup_chest"),
+    3 => T("discord.hitgroup_stomach"),
+    4 => T("discord.hitgroup_leftarm"),
+    5 => T("discord.hitgroup_rightarm"),
+    6 => T("discord.hitgroup_leftleg"),
+    7 => T("discord.hitgroup_rightleg"),
+    8 => T("discord.hitgroup_neck"),
+    10 => T("discord.hitgroup_gear"),
+    _ => T("discord.hitgroup_generic")
   };
 
   private string RoundEndReason(int reason, string message)
@@ -287,7 +307,7 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     if (!IsRealPlayer(player))
       return HookResult.Continue;
 
-    _playerConnectTime[player!.SteamID] = DateTime.UtcNow;
+    _playerConnectTime[player!.EntityHandle.Raw] = DateTime.UtcNow;
     Send(LogCategory.Connect, Localizer["discord.connected", PlayerRef(player)]);
 
     return HookResult.Continue;
@@ -303,12 +323,12 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
       return HookResult.Continue;
 
     string? playTimeSuffix = null;
-    if (_playerConnectTime.TryGetValue(player!.SteamID, out var connectTime))
+    if (_playerConnectTime.TryGetValue(player!.EntityHandle.Raw, out var connectTime))
     {
       var totalSeconds = (int)(DateTime.UtcNow - connectTime).TotalSeconds;
       if (totalSeconds > 0)
         playTimeSuffix = Localizer["discord.played_for", FormatPlayTime(totalSeconds)];
-      _playerConnectTime.Remove(player.SteamID);
+      _playerConnectTime.Remove(player.EntityHandle.Raw);
     }
 
     Send(LogCategory.Connect, Localizer["discord.disconnected", PlayerRef(player)], playTimeSuffix);
@@ -401,39 +421,39 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
     if (attacker == null || !attacker.IsValid || attacker.Slot == victim.Slot)
     {
-      Send(LogCategory.Kill, Localizer["discord.suicide", PlayerRef(victim)]);
+      Send(LogCategory.Kill, T("discord.suicide", PlayerRef(victim)));
       return HookResult.Continue;
     }
 
     var sb = new StringBuilder();
-    sb.Append(Localizer["discord.kill", PlayerRef(victim), PlayerRef(attacker), CleanWeapon(@event.Weapon)].Value);
+    sb.Append(T("discord.kill", PlayerRef(victim), PlayerRef(attacker), CleanWeapon(@event.Weapon)));
 
-    sb.Append(Localizer["discord.kill_hitgroup", HitgroupName(@event.Hitgroup)].Value);
-    sb.Append(Localizer["discord.kill_damage", @event.DmgHealth, @event.DmgArmor].Value);
-    sb.Append(Localizer["discord.kill_distance", @event.Distance.ToString("F1", CultureInfo.InvariantCulture)].Value);
+    sb.Append(T("discord.kill_hitgroup", HitgroupName(@event.Hitgroup)));
+    sb.Append(T("discord.kill_damage", @event.DmgHealth, @event.DmgArmor));
+    sb.Append(T("discord.kill_distance", @event.Distance.ToString("F1", CultureInfo.InvariantCulture)));
 
     var tags = new List<string>();
     if (@event.Headshot)
-      tags.Add(Localizer["discord.tag_headshot"]);
+      tags.Add(T("discord.tag_headshot"));
     if (@event.Noscope)
-      tags.Add(Localizer["discord.tag_noscope"]);
+      tags.Add(T("discord.tag_noscope"));
     if (@event.Thrusmoke)
-      tags.Add(Localizer["discord.tag_thrusmoke"]);
+      tags.Add(T("discord.tag_thrusmoke"));
     if (@event.Attackerblind)
-      tags.Add(Localizer["discord.tag_attackerblind"]);
+      tags.Add(T("discord.tag_attackerblind"));
     if (@event.Attackerinair)
-      tags.Add(Localizer["discord.tag_attackerinair"]);
+      tags.Add(T("discord.tag_attackerinair"));
     if (@event.Penetrated > 0)
-      tags.Add(Localizer["discord.tag_penetrated", @event.Penetrated]);
+      tags.Add(T("discord.tag_penetrated", @event.Penetrated));
 
     if (tags.Count > 0)
-      sb.Append(Localizer["discord.kill_tags", string.Join(", ", tags)].Value);
+      sb.Append(T("discord.kill_tags", string.Join(", ", tags)));
 
     var assister = @event.Assister;
     if (assister != null && assister.IsValid)
     {
-      var flashSuffix = @event.Assistedflash ? Localizer["discord.kill_assist_flash"].Value : "";
-      sb.Append(Localizer["discord.kill_assist", PlayerRef(assister), flashSuffix].Value);
+      var flashSuffix = @event.Assistedflash ? T("discord.kill_assist_flash") : "";
+      sb.Append(T("discord.kill_assist", PlayerRef(assister), flashSuffix));
     }
 
     Send(LogCategory.Kill, sb.ToString());
@@ -455,9 +475,9 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
     if (attacker == null || !attacker.IsValid || attacker.Slot == victim.Slot)
       return HookResult.Continue;
 
-    Send(LogCategory.Damage, Localizer["discord.hurt",
+    Send(LogCategory.Damage, T("discord.hurt",
       PlayerRef(victim), PlayerRef(attacker), CleanWeapon(@event.Weapon), HitgroupName(@event.Hitgroup),
-      @event.DmgHealth, @event.DmgArmor, @event.Health, @event.Armor]);
+      @event.DmgHealth, @event.DmgArmor, @event.Health, @event.Armor));
 
     return HookResult.Continue;
   }
@@ -689,7 +709,6 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
       return;
 
     var newContent = content + "\n";
-    string? messagesToSend = null;
 
     lock (_bufferLock)
     {
@@ -701,15 +720,23 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
 
       if (buffer.Length > 0 && buffer.Length + newContent.Length > MaxDiscordMessageLength)
       {
-        messagesToSend = buffer.ToString().TrimEnd('\n');
+        Enqueue(webhook, buffer.ToString().TrimEnd('\n'));
         buffer.Clear();
       }
 
       buffer.Append(newContent);
     }
+  }
 
-    if (messagesToSend != null)
-      Task.Run(() => SendToDiscordAsync(webhook, messagesToSend));
+  private void Enqueue(string webhook, string chunk)
+  {
+    if (!_pendingChunks.TryGetValue(webhook, out var queue))
+      _pendingChunks[webhook] = queue = new Queue<string>();
+
+    if (queue.Count >= MaxPendingChunks)
+      queue.Dequeue();
+
+    queue.Enqueue(chunk);
   }
 
   private void ProcessBuffers()
@@ -733,15 +760,22 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
           {
             if (kvp.Value.Length > 0)
             {
-              pending.Add((kvp.Key, kvp.Value.ToString().TrimEnd('\n')));
+              Enqueue(kvp.Key, kvp.Value.ToString().TrimEnd('\n'));
               kvp.Value.Clear();
             }
+          }
+
+          foreach (var kvp in _pendingChunks)
+          {
+            while (kvp.Value.Count > 0)
+              pending.Add((kvp.Key, kvp.Value.Dequeue()));
           }
         }
 
         foreach (var (webhook, messages) in pending)
         {
           await SendToDiscordAsync(webhook, messages);
+          await Task.Delay(SendSpacingMs);
         }
       }
       finally
@@ -789,12 +823,24 @@ public class DiscordLogger : BasePlugin, IPluginConfig<DiscordLoggerConfig>
       };
 
       var json = JsonSerializer.Serialize(payload);
-      var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
-
-      var response = await _httpClient.PostAsync(webhook, httpContent);
-      if (!response.IsSuccessStatusCode)
+      for (int attempt = 1; attempt <= MaxSendAttempts; attempt++)
       {
-        Console.WriteLine($"[DiscordLogger] Webhook gönderimi başarısız: {response.StatusCode}");
+        using var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+        using var response = await _httpClient.PostAsync(webhook, httpContent);
+        if (response.IsSuccessStatusCode)
+          return;
+
+        if ((int)response.StatusCode != 429 || attempt == MaxSendAttempts)
+        {
+          Console.WriteLine($"[DiscordLogger] Webhook gönderimi başarısız: {response.StatusCode}");
+          return;
+        }
+
+        var wait = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(1);
+        if (wait > TimeSpan.FromSeconds(10))
+          wait = TimeSpan.FromSeconds(10);
+
+        await Task.Delay(wait);
       }
     }
     catch (Exception ex)

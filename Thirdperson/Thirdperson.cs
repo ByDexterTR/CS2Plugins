@@ -3,6 +3,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Utils;
 using ByDexter.Shared;
 
 namespace Thirdperson;
@@ -35,7 +36,6 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
 
   private const int MaxSlots = 64;
 
-  private readonly CCSCustomPlayerCamera?[] _cameras = new CCSCustomPlayerCamera?[MaxSlots];
   private readonly uint[] _cameraHandles = new uint[MaxSlots];
   private readonly uint[] _originalView = new uint[MaxSlots];
 
@@ -90,7 +90,7 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
   private void DisableAll()
   {
     for (int slot = 0; slot < MaxSlots; slot++)
-      if (_cameras[slot] != null)
+      if (_cameraHandles[slot] != 0)
         Disable(slot);
   }
 
@@ -105,7 +105,7 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
       return;
     }
 
-    if (_cameras[player.Slot] != null)
+    if (_cameraHandles[player.Slot] != 0)
     {
       Disable(player.Slot);
       player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["thirdperson.disabled"]}");
@@ -152,7 +152,6 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
     NetState.Changed(camera, "CCSCustomPlayerCamera", "m_bFollowEyes");
     NetState.Changed(camera, "CCSCustomPlayerCamera", "m_bClipCameraOffset");
 
-    _cameras[slot] = camera;
     _cameraHandles[slot] = camera.EntityHandle.Raw;
     _originalView[slot] = services.ViewEntity.Raw;
     services.ViewEntity.Raw = camera.EntityHandle.Raw;
@@ -165,21 +164,22 @@ public class Thirdperson : BasePlugin, IPluginConfig<ThirdpersonConfig>
     if ((uint)slot >= MaxSlots)
       return;
 
-    var camera = _cameras[slot];
-    if (camera == null)
+    uint handle = _cameraHandles[slot];
+    if (handle == 0)
       return;
 
-    _cameras[slot] = null;
+    _cameraHandles[slot] = 0;
 
     var pawn = Utilities.GetPlayerFromSlot(slot)?.PlayerPawn.Value;
     var services = pawn != null && pawn.IsValid ? pawn.CameraServices : null;
-    if (services != null && services.ViewEntity.Raw == _cameraHandles[slot])
+    if (services != null && services.ViewEntity.Raw == handle)
     {
       services.ViewEntity.Raw = _originalView[slot];
       NetState.Changed(pawn!, "CBasePlayerPawn", "m_pCameraServices");
     }
 
-    if (camera.IsValid)
+    var camera = new CHandle<CCSCustomPlayerCamera>(handle).Value;
+    if (camera != null && camera.IsValid)
       camera.Remove();
   }
 }

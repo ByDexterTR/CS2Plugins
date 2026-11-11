@@ -45,6 +45,7 @@ public class Speedometer : BasePlugin
         HudGuard.Install(this);
         RegisterListener<OnTick>(OnTick);
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
+        RegisterListener<OnClientAuthorized>(OnClientAuthorized);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
     }
     private void InitExistingPlayers()
@@ -126,6 +127,15 @@ public class Speedometer : BasePlugin
         return HookResult.Continue;
     }
 
+    private void OnClientAuthorized(int slot, CounterStrikeSharp.API.Modules.Entities.SteamID steamId)
+    {
+        if ((uint)slot >= MaxSlots || !_enabled[slot] || IsHudEnabledFor(steamId.SteamId64))
+            return;
+
+        _enabled[slot] = false;
+        _enabledCount--;
+    }
+
     private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
     {
         int slot = @event.Userid?.Slot ?? -1;
@@ -151,14 +161,18 @@ public class Speedometer : BasePlugin
         _enabled[slot] = !_enabled[slot];
         _enabledCount += _enabled[slot] ? 1 : -1;
 
-        lock (_saveLock)
+        ulong steamId = Util.SteamId(player);
+        if (steamId != 0UL)
         {
-            if (_enabled[slot])
-                _savedDisabled.Remove(Util.SteamId(player));
-            else
-                _savedDisabled.Add(Util.SteamId(player));
+            lock (_saveLock)
+            {
+                if (_enabled[slot])
+                    _savedDisabled.Remove(steamId);
+                else
+                    _savedDisabled.Add(steamId);
+            }
+            SaveAsync();
         }
-        SaveAsync();
 
         player.PrintToChat(_enabled[slot]
             ? $" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["speedometer.enabled"]}"
@@ -198,7 +212,7 @@ public class Speedometer : BasePlugin
             var vel = targetPawn.AbsVelocity;
             float speed = MathF.Sqrt(vel.X * vel.X + vel.Y * vel.Y);
 
-            player.PrintToCenterHtml($"<font color='{SpeedColor(speed)}' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speedometer.png'> {(int)speed} u/s</font>");
+            HudGuard.Send(player, $"<font color='{SpeedColor(speed)}' class='fontSize-l'><img src='https://raw.githubusercontent.com/ByDexterTR/CS2Plugins/refs/heads/main/img/speedometer.png'> {(int)speed} u/s</font>");
         }
     }
 

@@ -151,11 +151,14 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
     ApplyConVars();
     AddTimer(AutosaveInterval, SaveAll, CounterStrikeSharp.API.Modules.Timers.TimerFlags.REPEAT);
 
-    foreach (var player in Utilities.GetPlayers())
+    Server.NextWorldUpdate(() =>
     {
-      if (player != null && player.IsValid)
-        LoadStats(player);
-    }
+      foreach (var player in Utilities.GetPlayers())
+      {
+        if (player != null && player.IsValid)
+          LoadStats(player);
+      }
+    });
   }
 
   public override void Unload(bool hotReload) => SaveAll();
@@ -365,7 +368,10 @@ public partial class TeamShuffle : BasePlugin, IPluginConfig<TeamShuffleConfig>
 
     int userId = Util.UserId(player);
     if (userId >= 0)
+    {
       health.Remove(userId);
+      planned.Remove(userId);
+    }
 
     ulong steamId = Util.SteamId(player);
     if (steamId != 0UL)

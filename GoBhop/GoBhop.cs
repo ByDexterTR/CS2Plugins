@@ -119,6 +119,7 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
   private UserMessage.UserMessageHandler _onParticle = null!;
   private UserMessage.UserMessageHandler _onEffect = null!;
   private UserMessage.UserMessageHandler _onTextMsg = null!;
+  private bool _closing;
 
   private bool InBhop(CCSPlayerController player) => _bhop.TryGetValue(Util.UserId(player), out var pendingDeath) && !pendingDeath;
 
@@ -180,6 +181,8 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
       ResetState();
       LoadPoints();
     });
+
+    RegisterListener<OnMapEnd>(ResetState);
 
     RegisterListener<OnClientPutInServer>(OnClientPutInServer);
     RegisterListener<OnClientDisconnect>(OnClientDisconnect);
@@ -1038,7 +1041,7 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
 
   private void CheckLastT()
   {
-    if (CountRealAliveT() > 1)
+    if (_closing || CountRealAliveT() > 1)
       return;
 
     _roundClosed = true;
@@ -1046,7 +1049,16 @@ public class GoBhop : BasePlugin, IPluginConfig<GoBhopConfig>
     if (ActiveCount == 0)
       return;
 
-    RemoveAll(slay: true);
+    _closing = true;
+    try
+    {
+      RemoveAll(slay: true);
+    }
+    finally
+    {
+      _closing = false;
+    }
+
     Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["gobhop.auto_closed"]}");
   }
 

@@ -73,6 +73,11 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
 
     private readonly List<(CPointWorldText Ent, ScreenTextElement El)>[] _texts = new List<(CPointWorldText, ScreenTextElement)>[MaxSlots];
     private readonly bool[] _hidden = new bool[MaxSlots];
+    private readonly Vector _pos = new();
+    private readonly QAngle _angle = new();
+    private int[] _textIndex = new int[MaxSlots];
+    private int[] _textOwner = new int[MaxSlots];
+    private int _textCount;
     private readonly float[] _lastPitch = new float[MaxSlots];
     private readonly float[] _lastYaw = new float[MaxSlots];
     private readonly float[] _lastEyeZ = new float[MaxSlots];
@@ -110,7 +115,9 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
         RegisterEventHandler<EventPlayerTeam>(OnPlayerTeam);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
 
-        if (hotReload)
+        RegisterListener<OnClientAuthorized>(OnClientAuthorized);
+
+        Server.NextWorldUpdate(() =>
         {
             foreach (var player in Utilities.GetPlayers())
             {
@@ -118,9 +125,19 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
                     continue;
 
                 _hidden[player.Slot] = IsHiddenFor(Util.SteamId(player));
-                CreateTexts(player);
+                if (hotReload)
+                    CreateTexts(player);
             }
-        }
+        });
+    }
+
+    private void OnClientAuthorized(int slot, CounterStrikeSharp.API.Modules.Entities.SteamID steamId)
+    {
+        if ((uint)slot >= (uint)_hidden.Length || _hidden[slot] || !IsHiddenFor(steamId.SteamId64))
+            return;
+
+        _hidden[slot] = true;
+        RemoveTexts(slot);
     }
 
     public override void Unload(bool hotReload)
@@ -233,6 +250,7 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
     {
         for (int slot = 0; slot < MaxSlots; slot++)
             _texts[slot].Clear();
+        _textCount = 0;
     }
 
     private void OnToggleCommand(CCSPlayerController? player, CommandInfo info)
@@ -243,14 +261,18 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
         int slot = player.Slot;
         _hidden[slot] = !_hidden[slot];
 
-        lock (_saveLock)
+        ulong steamId = Util.SteamId(player);
+        if (steamId != 0UL)
         {
-            if (_hidden[slot])
-                _savedHidden.Add(Util.SteamId(player));
-            else
-                _savedHidden.Remove(Util.SteamId(player));
+            lock (_saveLock)
+            {
+                if (_hidden[slot])
+                    _savedHidden.Add(steamId);
+                else
+                    _savedHidden.Remove(steamId);
+            }
+            SaveAsync();
         }
-        SaveAsync();
 
         if (_hidden[slot])
             RemoveTexts(slot);
@@ -263,26 +285,45 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
 
     private void OnCheckTransmit(CCheckTransmitInfoList infoList)
     {
+        if (_textCount == 0)
+            return;
+
         foreach ((CCheckTransmitInfo info, CCSPlayerController? viewer) in infoList)
         {
-            if (viewer == null || !viewer.IsValid)
+            if (viewer == null)
                 continue;
 
             int viewerSlot = viewer.Slot;
-            for (int slot = 0; slot < MaxSlots; slot++)
+            for (int i = 0; i < _textCount; i++)
             {
-                if (slot == viewerSlot)
+                if (_textOwner[i] != viewerSlot)
+                    Transmit.Hide(info, _textIndex[i]);
+            }
+        }
+    }
+
+    private void RebuildIndex()
+    {
+        _textCount = 0;
+        for (int slot = 0; slot < MaxSlots; slot++)
+        {
+            var list = _texts[slot];
+            if (list == null)
+                continue;
+
+            foreach (var (ent, _) in list)
+            {
+                if (!ent.IsValid)
                     continue;
 
-                var list = _texts[slot];
-                if (list == null || list.Count == 0)
-                    continue;
-
-                foreach (var (ent, _) in list)
+                if (_textCount == _textIndex.Length)
                 {
-                    if (ent.IsValid)
-                        Transmit.Hide(info, ent);
+                    Array.Resize(ref _textIndex, _textCount * 2);
+                    Array.Resize(ref _textOwner, _textCount * 2);
                 }
+
+                _textIndex[_textCount] = (int)ent.Index;
+                _textOwner[_textCount++] = slot;
             }
         }
     }
@@ -309,6 +350,7 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
             _texts[slot].Add((ent, element));
         }
 
+        RebuildIndex();
         PlaceTexts(slot, pawn, true);
     }
 
@@ -324,6 +366,12 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
             var pawn = player?.PlayerPawn.Value;
             if (player == null || pawn == null || !pawn.IsValid || pawn.AbsOrigin == null
                 || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+            {
+                RemoveTexts(slot);
+                continue;
+            }
+
+            if (!list[0].Ent.IsValid)
             {
                 RemoveTexts(slot);
                 continue;
@@ -359,7 +407,9 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
         float ux = (float)(sp * cy), uy = (float)(sp * sy), uz = (float)cp;
 
         float ex = origin.X, ey = origin.Y, ez = origin.Z + eyeZ;
-        var angle = new QAngle(0f, ea.Y + 270f, 90f - ea.X);
+        _angle.X = 0f;
+        _angle.Y = ea.Y + 270f;
+        _angle.Z = 90f - ea.X;
         float forward = Config.Forward;
 
         foreach (var (ent, element) in _texts[slot])
@@ -367,12 +417,11 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
             if (!ent.IsValid)
                 continue;
 
-            var pos = new Vector(
-                ex + fx * forward + rx * element.X + ux * element.Y,
-                ey + fy * forward + ry * element.X + uy * element.Y,
-                ez + fz * forward + uz * element.Y);
+            _pos.X = ex + fx * forward + rx * element.X + ux * element.Y;
+            _pos.Y = ey + fy * forward + ry * element.X + uy * element.Y;
+            _pos.Z = ez + fz * forward + uz * element.Y;
 
-            ent.Teleport(pos, angle, null);
+            ent.Teleport(_pos, _angle, null);
         }
     }
 
@@ -412,6 +461,7 @@ public class ScreenText : BasePlugin, IPluginConfig<ScreenTextConfig>
                 ent.Remove();
         }
         list.Clear();
+        RebuildIndex();
     }
 
     private static PointWorldTextJustifyHorizontal_t ParseJustify(string value)

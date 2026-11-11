@@ -51,6 +51,7 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
     RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
+    RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
 
     foreach (var name in Util.Split(Config.CtrevCommands))
       AddCommand(name, "CT canlandirma menusu", OnCtrMenu);
@@ -83,6 +84,12 @@ public class CTRev : BasePlugin, IPluginConfig<CTRevConfig>
     int victimUserId = Util.UserId(victim);
     if (victimUserId >= 0)
       _ctDeathEligibleAt[victimUserId] = DateTime.UtcNow.AddSeconds(Config.RespawnCooldownSeconds);
+    return HookResult.Continue;
+  }
+
+  private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+  {
+    _ctDeathEligibleAt.Remove(Util.UserId(@event.Userid));
     return HookResult.Continue;
   }
 

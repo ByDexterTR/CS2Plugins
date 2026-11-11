@@ -120,20 +120,32 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
 
   private HookResult OnEntityDamagePre(CEntityInstance victimEnt, CTakeDamageInfo info)
   {
-    if (!activePerks.Contains(PerkType.DamageBoost))
+    bool boost = activePerks.Contains(PerkType.DamageBoost);
+    bool reduce = activePerks.Contains(PerkType.DamageReduction);
+    if (!boost && !reduce)
       return HookResult.Continue;
 
-    if (victimEnt == null)
+    if (victimEnt == null || victimEnt.DesignerName != "player")
+      return HookResult.Continue;
+
+    var victimController = victimEnt.As<CCSPlayerPawn>().OriginalController.Value;
+    if (victimController == null || !victimController.IsValid)
+      return HookResult.Continue;
+
+    if (victimController.Team == CsTeam.CounterTerrorist)
+    {
+      if (reduce)
+        info.Damage *= 1f - Math.Clamp(Config.PerkDamageReductionRatio, 0f, 1f);
+
+      return HookResult.Continue;
+    }
+
+    if (!boost)
       return HookResult.Continue;
 
     var attackerPawn = info.Attacker.Value as CCSPlayerPawn;
     var attackerController = attackerPawn?.OriginalController.Value;
     if (attackerController == null || !attackerController.IsValid || attackerController.Team != CsTeam.CounterTerrorist)
-      return HookResult.Continue;
-
-    var victimPawn = victimEnt as CCSPlayerPawn ?? new CCSPlayerPawn(victimEnt.Handle);
-    var victimController = victimPawn?.OriginalController.Value;
-    if (victimController == null || !victimController.IsValid || victimController.Team == CsTeam.CounterTerrorist)
       return HookResult.Continue;
 
     float mult = Math.Max(1.0f, Config.PerkDamageBoostRatio);
@@ -403,23 +415,6 @@ public class CTPerk : BasePlugin, IPluginConfig<CTPerkConfig>
       }
     }
 
-    if (activePerks.Contains(PerkType.DamageReduction) && victim.Team == CsTeam.CounterTerrorist)
-    {
-      var victimPawn = victim.PlayerPawn?.Value;
-      if (victimPawn?.IsValid == true && victimPawn.LifeState == (byte)LifeState_t.LIFE_ALIVE)
-      {
-        float reduction = Config.PerkDamageReductionRatio;
-        if (reduction > 0f)
-        {
-          int healBack = (int)(dmgDealt * reduction);
-          if (healBack > 0)
-          {
-            victimPawn.Health = Math.Min(victimPawn.Health + healBack, victimPawn.MaxHealth);
-            NetState.Changed(victimPawn, "CBaseEntity", "m_iHealth");
-          }
-        }
-      }
-    }
     return HookResult.Continue;
   }
 

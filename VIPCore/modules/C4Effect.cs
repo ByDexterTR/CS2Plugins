@@ -50,6 +50,7 @@ public class C4Effect : VipModule
         Core.RegisterEventHandler<EventBombDefused>(OnDefused);
         Core.RegisterEventHandler<EventBombExploded>((_, __) => { RemovePlantParticle(); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundStart>((_, __) => { RemovePlantParticle(); return HookResult.Continue; });
+        Core.HookMapStart(_ => _plantParticle = null);
         Core.HookPrecache(manifest =>
         {
             foreach (var entries in Core.GetAllGroupValues<List<Entry>>(Name))

@@ -25,6 +25,13 @@ public class Tag : VipModule
     {
         Core.HookUserMessage(118, OnChat, HookMode.Pre);
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
+        Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) =>
+        {
+            int slot = ev.Userid?.Slot ?? -1;
+            if (slot >= 0 && slot < 64)
+                _tabApplied[slot] = false;
+            return HookResult.Continue;
+        });
     }
 
     public override void OnUnload()

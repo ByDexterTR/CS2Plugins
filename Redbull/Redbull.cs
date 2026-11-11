@@ -129,7 +129,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
       return;
 
     var now = DateTime.Now;
-    var expiredPlayers = new List<int>();
+    List<int>? expiredPlayers = null;
 
     foreach (var kvp in _redbullActive)
     {
@@ -139,10 +139,12 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 
       if (player == null || !IsAlive(player) || now >= kvp.Value)
       {
-        expiredPlayers.Add(kvp.Key);
+        (expiredPlayers ??= new List<int>()).Add(kvp.Key);
+        if (player != null)
+          ResetPlayer(player);
+
         if (player != null && IsAlive(player))
         {
-          ResetPlayer(player);
           player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["redbull.expired"]}");
           if (Config.Cooldown > 0)
           {
@@ -154,6 +156,9 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 
       SetPlayerEffects(player);
     }
+
+    if (expiredPlayers == null)
+      return;
 
     foreach (var userId in expiredPlayers)
       _redbullActive.Remove(userId);
@@ -192,6 +197,13 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
 
   private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
   {
+    foreach (var userId in _redbullActive.Keys)
+    {
+      var player = Utilities.GetPlayerFromUserid(userId);
+      if (player != null && player.IsValid)
+        ResetPlayer(player);
+    }
+
     _roundUses.Clear();
     _cooldownUntil.Clear();
     _redbullActive.Clear();
@@ -206,6 +218,7 @@ public class Redbull : BasePlugin, IPluginConfig<RedbullConfig>
     {
       _roundUses[userId] = 0;
       _cooldownUntil.Remove(userId);
+      _redbullActive.Remove(userId);
     }
     return HookResult.Continue;
   }

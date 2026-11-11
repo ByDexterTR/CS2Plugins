@@ -16,15 +16,10 @@ public static class VipHudGuard
     private static readonly Regex MenuTag = new(@"^<[A-Za-z0-9]+/>", RegexOptions.Compiled);
     private static readonly int[] BlockedUntil = new int[MaxSlots];
 
-    private static bool _installed;
-
     public static void Install(BasePlugin plugin)
     {
-        if (_installed)
-            return;
-
+        Array.Clear(BlockedUntil);
         plugin.HookUserMessage(LegacyEventMessageId, OnCenterHtml);
-        _installed = true;
     }
 
     public static bool Blocked(CCSPlayerController? player)

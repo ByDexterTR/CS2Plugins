@@ -320,7 +320,8 @@ public class JBTeams : BasePlugin, IPluginConfig<JBTeamsConfig>
     if (player == null || !player.IsValid)
       return HookResult.Continue;
 
-    playerTeams.Remove(Util.UserId(player));
+    if (playerTeams.Remove(Util.UserId(player)))
+      CheckTeamWin();
 
     return HookResult.Continue;
   }

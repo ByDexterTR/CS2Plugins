@@ -30,6 +30,7 @@ public class PlayerRGB : BasePlugin
     LoadSaved();
     RegisterListener<OnTick>(OnTickRGB);
     RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
+    RegisterListener<OnClientAuthorized>(OnClientAuthorized);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
   }
 
@@ -100,6 +101,13 @@ public class PlayerRGB : BasePlugin
     return HookResult.Continue;
   }
 
+  private void OnClientAuthorized(int slot, CounterStrikeSharp.API.Modules.Entities.SteamID steamId)
+  {
+    var player = Utilities.GetPlayerFromSlot(slot);
+    if (player != null && player.IsValid && !player.IsBot && Util.UserId(player) >= 0 && _savedEnabled.Contains(steamId.SteamId64))
+      rgbEnabled[Util.UserId(player)] = true;
+  }
+
   private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
   {
     var player = @event.Userid;
@@ -122,14 +130,18 @@ public class PlayerRGB : BasePlugin
     bool enabled = rgbEnabled.TryGetValue(userId, out var val) ? !val : true;
     rgbEnabled[userId] = enabled;
 
-    lock (_saveLock)
+    ulong steamId = Util.SteamId(player);
+    if (steamId != 0UL)
     {
-      if (enabled)
-        _savedEnabled.Add(Util.SteamId(player));
-      else
-        _savedEnabled.Remove(Util.SteamId(player));
+      lock (_saveLock)
+      {
+        if (enabled)
+          _savedEnabled.Add(steamId);
+        else
+          _savedEnabled.Remove(steamId);
+      }
+      SaveAsync();
     }
-    SaveAsync();
 
     if (enabled)
     {

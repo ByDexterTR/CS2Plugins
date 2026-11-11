@@ -41,6 +41,7 @@ public class CTBan : BasePlugin
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnect);
         RegisterEventHandler<EventPlayerTeam>(OnSwitchTeam);
         AddCommandListener("jointeam", OnJoinTeam);
+        RegisterListener<Listeners.OnClientAuthorized>(OnClientAuthorized);
         LoadBanList();
     }
 
@@ -258,7 +259,7 @@ public class CTBan : BasePlugin
         }
 
         var steamid = info.GetArg(1);
-        if (string.IsNullOrEmpty(steamid))
+        if (!ulong.TryParse(steamid, out var parsedId) || parsedId <= 76561197960265728UL)
         {
             info.ReplyToCommand($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.invalid_steamid"]}");
             return;
@@ -307,6 +308,20 @@ public class CTBan : BasePlugin
             var timeLeft = FormatTimeLeft(banEntry.BanTime - now);
             player.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctban.banlist_entry", banEntry.Nickname, timeLeft, banEntry.Reason]}");
         }
+    }
+
+    private void OnClientAuthorized(int slot, CounterStrikeSharp.API.Modules.Entities.SteamID steamId)
+    {
+        var player = Utilities.GetPlayerFromSlot(slot);
+        if (player == null || !player.IsValid || player.IsBot || player.Team != CsTeam.CounterTerrorist)
+            return;
+
+        var banEntry = GetActiveBan(player);
+        if (banEntry == null)
+            return;
+
+        NotifyBlocked(player, banEntry);
+        player.ChangeTeam(CsTeam.Terrorist);
     }
 
     public HookResult OnSwitchTeam(EventPlayerTeam @event, GameEventInfo info)

@@ -147,6 +147,7 @@ public sealed class Kv3Binary
     public required Cursor Blobs;
     public required Buffers Primary;
     public required Buffers Auxiliary;
+    public int Depth;
   }
 
   private readonly int _version;
@@ -233,7 +234,18 @@ public sealed class Kv3Binary
     ReadValue(state, visitor, name, type);
   }
 
+  private const int MaxDepth = 256;
+
   private static void ReadValue(State state, Kv3Visitor visitor, string name, NodeType type)
+  {
+    if (++state.Depth > MaxDepth)
+      throw new InvalidDataException("KV3 ic ice derinlik siniri asildi.");
+
+    ReadValueCore(state, visitor, name, type);
+    state.Depth--;
+  }
+
+  private static void ReadValueCore(State state, Kv3Visitor visitor, string name, NodeType type)
   {
     var buffer = state.Primary;
 

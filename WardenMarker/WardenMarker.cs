@@ -309,18 +309,20 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
 
   private void OnTick()
   {
-    for (int slot = 0; slot < MaxSlots; slot++)
+    foreach (var player in Util.Players())
     {
-      var player = Utilities.GetPlayerFromSlot(slot);
-      if (player == null || !player.IsValid || player.TeamNum != (byte)CsTeam.CounterTerrorist
-          || player.IsBot || !Util.TryGetButtons(player, out var buttons))
+      if (!player.IsValid)
+        continue;
+
+      int slot = player.Slot;
+      if ((uint)slot >= MaxSlots)
+        continue;
+
+      if (player.TeamNum != (byte)CsTeam.CounterTerrorist || player.IsBot)
       {
         _oldButtons[slot] = 0;
         continue;
       }
-
-      var old = (PlayerButtons)_oldButtons[slot];
-      _oldButtons[slot] = (ulong)buttons;
 
       var wanted = Get(player).Key switch
       {
@@ -328,6 +330,15 @@ public partial class WardenMarker : BasePlugin, IPluginConfig<WardenMarkerConfig
         "inspect" => PlayerButtons.Inspect,
         _ => (PlayerButtons)0
       };
+
+      if (wanted == 0 || !Util.TryGetButtons(player, out var buttons))
+      {
+        _oldButtons[slot] = 0;
+        continue;
+      }
+
+      var old = (PlayerButtons)_oldButtons[slot];
+      _oldButtons[slot] = (ulong)buttons;
 
       if ((buttons & wanted) == 0 || (old & wanted) != 0 || _menus.IsOpen(player))
         continue;

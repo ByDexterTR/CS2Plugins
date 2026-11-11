@@ -23,6 +23,8 @@ public class BhopDoorFix : BasePlugin
 
         if (hotReload)
             FreezeAllDoors();
+        else
+            Server.NextWorldUpdate(FreezeAllDoors);
     }
 
     private void OnEntitySpawned(CEntityInstance entity)

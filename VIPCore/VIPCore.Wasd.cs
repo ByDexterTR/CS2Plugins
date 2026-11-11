@@ -19,6 +19,7 @@ public partial class VIPCore
 
     private readonly Dictionary<int, WasdSession> _wasd = new();
     private readonly Dictionary<int, Dictionary<string, int>> _wasdMemory = new();
+    private readonly List<WasdSession> _wasdActive = new();
     private bool _wasdTickHooked;
 
     private class WasdSession
@@ -99,12 +100,22 @@ public partial class VIPCore
     private static bool TryGetButtons(CCSPlayerController player, out PlayerButtons buttons) =>
         VipModule.TryGetButtons(player, out buttons);
 
+    private void WasdDisconnect(int slot)
+    {
+        _wasd.Remove(slot);
+        _wasdMemory.Remove(slot);
+    }
+
     private void WasdOnTick()
     {
         if (_wasd.Count == 0)
             return;
 
-        foreach (var session in _wasd.Values.ToList())
+        _wasdActive.Clear();
+        foreach (var session in _wasd.Values)
+            _wasdActive.Add(session);
+
+        foreach (var session in _wasdActive)
         {
             var player = session.Player;
 

@@ -320,6 +320,9 @@ public partial class VIPCore
 
     private void CheckTest(ulong steamId, VipTestGroup? chosen)
     {
+        if ((steamId & 0xFFFFFFFFUL) == 0xFFFFFFFFUL)
+            return;
+
         var storage = _storage;
 
         Task.Run(() =>
@@ -408,6 +411,9 @@ public partial class VIPCore
     private void StartTest(CCSPlayerController player, VipTestGroup group)
     {
         ulong steamId = player.SteamID;
+        if ((steamId & 0xFFFFFFFFUL) == 0xFFFFFFFFUL)
+            return;
+
         long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var record = new VipTestRecord { Group = group.Group, UsedAt = now };
         var storage = _storage;

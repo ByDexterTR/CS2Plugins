@@ -10,12 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.376" />
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.379" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\.Shared\NativeTrace.cs" Link=".Shared\NativeTrace.cs" />
     <Compile Include="..\.Shared\CC.cs" Link=".Shared\CC.cs" />
+    <Compile Include="..\.Shared\Util.cs" Link=".Shared\Util.cs" />
     <Compile Include="..\.Shared\Transmit.cs" Link=".Shared\Transmit.cs" />
   </ItemGroup>
 

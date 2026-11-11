@@ -89,7 +89,7 @@ public class Slowmode : BasePlugin, IPluginConfig<SlowmodeConfig>
             return HookResult.Continue;
 
         double now = Server.EngineTime;
-        if (_lastMessage.TryGetValue(player.SteamID, out double last))
+        if (_lastMessage.TryGetValue(player.EntityHandle.Raw, out double last))
         {
             double remaining = _interval - (now - last);
             if (remaining > 0)
@@ -99,7 +99,7 @@ public class Slowmode : BasePlugin, IPluginConfig<SlowmodeConfig>
             }
         }
 
-        _lastMessage[player.SteamID] = now;
+        _lastMessage[player.EntityHandle.Raw] = now;
         return HookResult.Continue;
     }
 }

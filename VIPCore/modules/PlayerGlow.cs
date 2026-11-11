@@ -27,6 +27,13 @@ public class PlayerGlow : VipModule
         EffectHide.Ensure(Core);
         Core.HookTick(OnTick, 4);
         Core.RegisterEventHandler<EventRoundStart>((_, _) => { Array.Clear(_glows); return HookResult.Continue; });
+        Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) =>
+        {
+            int slot = ev.Userid?.Slot ?? -1;
+            if (slot >= 0 && slot < 64)
+                Destroy(slot);
+            return HookResult.Continue;
+        });
     }
 
     private Color ResolveColor(CCSPlayerController player)

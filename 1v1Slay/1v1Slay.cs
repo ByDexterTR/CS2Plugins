@@ -112,7 +112,7 @@ public class OneVOneSlay : BasePlugin, IPluginConfig<OneVOneSlayConfig>
       {
         if (player.IsValid && !player.IsBot && !HudGuard.Blocked(player))
         {
-          player.PrintToCenterHtml(_hudHtml);
+          HudGuard.Send(player, _hudHtml);
         }
       }
     }

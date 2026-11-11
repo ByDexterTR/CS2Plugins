@@ -358,7 +358,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
     RegisterListener<OnServerPrecacheResources>(PrecacheResources);
     RegisterListener<OnTick>(OnTick);
     RegisterListener<OnMapStart>(OnMapStart);
-    RegisterListener<OnMapEnd>(ClearBeams);
+    RegisterListener<OnMapEnd>(OnMapEnd);
     RegisterListener<OnEntityTakeDamagePre>(OnTakeDamagePre);
 
     RegisterEventHandler<EventWeaponFire>(OnWeaponFire);
@@ -367,6 +367,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPost, HookMode.Post);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
     RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+    RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
   }
 
   public override void Unload(bool hotReload)
@@ -385,6 +386,27 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
       if (team.Model.Length > 0)
         manifest.AddResource(team.Model);
     }
+  }
+
+  private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+  {
+    int id = Util.UserId(@event.Userid);
+    _hits.Remove(id);
+    _dying.Remove(id);
+    _team.Remove(id);
+    _credit.Remove(id);
+    _loadout.Remove(id);
+    _savedModel.Remove(id);
+    _savedHealth.Remove(id);
+    return HookResult.Continue;
+  }
+
+  private void OnMapEnd()
+  {
+    ClearBeams();
+    RestoreCvars();
+    _savedCvars.Clear();
+    _active = false;
   }
 
   private void OnMapStart(string map)
@@ -449,7 +471,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
       return HookResult.Continue;
 
     var player = ev.Userid;
-    if (player == null || !player.IsValid)
+    if (player == null || !InGameTeam(player))
       return HookResult.Continue;
 
     var pawn = player.PlayerPawn.Value;
@@ -457,7 +479,7 @@ public partial class JBLaserWar : BasePlugin, IPluginConfig<JBLaserWarConfig>
     if (weapon == null || !weapon.IsValid)
       return HookResult.Continue;
 
-    if (InGameTeam(player) && WeaponName(weapon) != _weapon)
+    if (WeaponName(weapon) != _weapon)
     {
       Punish(player);
       return HookResult.Continue;

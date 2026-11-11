@@ -89,8 +89,8 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     var player = @event.Userid;
     if (player != null)
     {
-      playerPrimaryWeapon.Remove(player.SteamID);
-      playerSecondaryWeapon.Remove(player.SteamID);
+      playerPrimaryWeapon.Remove(player.EntityHandle.Raw);
+      playerSecondaryWeapon.Remove(player.EntityHandle.Raw);
     }
     return HookResult.Continue;
   }
@@ -101,7 +101,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid || player.IsBot || player.Team != CsTeam.CounterTerrorist)
       return HookResult.Continue;
 
-    var steamId = player.SteamID;
+    var steamId = player.EntityHandle.Raw;
 
     var primaryWeapon = playerPrimaryWeapon.TryGetValue(steamId, out var selectedPrimary)
         ? selectedPrimary
@@ -163,7 +163,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
     if (player == null || !player.IsValid)
       return;
 
-    var steamId = player.SteamID;
+    var steamId = player.EntityHandle.Raw;
     var currentPrimary = playerPrimaryWeapon.TryGetValue(steamId, out var primary)
         ? GetWeaponDisplayName(primary, true)
         : Localizer["ctkit.not_selected"].ToString();
@@ -180,7 +180,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
         Text = Localizer["ctkit.menu_reset"],
         OnSelect = p =>
         {
-          var sid = p.SteamID;
+          var sid = p.EntityHandle.Raw;
           playerPrimaryWeapon.Remove(sid);
           playerSecondaryWeapon.Remove(sid);
           p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.kit_reset"]}");
@@ -202,7 +202,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       Text = weapon.DisplayName,
       OnSelect = p =>
       {
-        playerPrimaryWeapon[p.SteamID] = weapon.WeaponName;
+        playerPrimaryWeapon[p.EntityHandle.Raw] = weapon.WeaponName;
         p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.weapon_set", weapon.DisplayName]}");
         ShowMainMenu(p);
       }
@@ -221,7 +221,7 @@ public class CTKit : BasePlugin, IPluginConfig<CTKitConfig>
       Text = weapon.DisplayName,
       OnSelect = p =>
       {
-        playerSecondaryWeapon[p.SteamID] = weapon.WeaponName;
+        playerSecondaryWeapon[p.EntityHandle.Raw] = weapon.WeaponName;
         p.PrintToChat($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["ctkit.pistol_set", weapon.DisplayName]}");
         ShowMainMenu(p);
       }

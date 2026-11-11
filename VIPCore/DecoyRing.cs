@@ -49,15 +49,15 @@ public static class DecoyRing
 
         foreach (uint index in ring.Beams)
         {
-            var beam = Utilities.GetEntityFromIndex<CEnvBeam>((int)index);
-            if (beam != null && beam.IsValid && beam.DesignerName == "env_beam")
+            var beam = new CHandle<CEnvBeam>(index).Value;
+            if (beam != null && beam.IsValid)
                 beam.Remove();
         }
 
         if (ring.Disc != 0)
         {
-            var disc = Utilities.GetEntityFromIndex<CDynamicProp>((int)ring.Disc);
-            if (disc != null && disc.IsValid && disc.DesignerName == "prop_dynamic")
+            var disc = new CHandle<CDynamicProp>(ring.Disc).Value;
+            if (disc != null && disc.IsValid)
                 disc.Remove();
         }
     }
@@ -74,7 +74,7 @@ public static class DecoyRing
         if (disc == null || !disc.IsValid)
             return;
 
-        ring.Disc = disc.Index;
+        ring.Disc = disc.EntityHandle.Raw;
 
         var node = disc.CBodyComponent?.SceneNode?.Owner?.Entity;
         if (node != null)
@@ -147,7 +147,7 @@ public static class DecoyRing
             beam.EndPos.Z = points[i].To.Z;
             NetState.Changed(beam, "CBeam", "m_vecEndPos");
 
-            ring.Beams.Add(beam.Index);
+            ring.Beams.Add(beam.EntityHandle.Raw);
         }
 
         if (end < points.Count)

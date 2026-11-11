@@ -44,12 +44,15 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
   private const int MaxSlots = 64;
   private const string BeamSprite = "materials/sprites/laserbeam.vmat";
 
-  private readonly CEnvBeam?[] _beams = new CEnvBeam?[MaxSlots];
+  private readonly uint[] _beamHandle = new uint[MaxSlots];
+  private readonly int[] _beamIndex = new int[MaxSlots];
   private readonly byte[] _beamTeam = new byte[MaxSlots];
   private readonly System.Numerics.Vector3[] _lastStart = new System.Numerics.Vector3[MaxSlots];
   private readonly System.Numerics.Vector3[] _lastEnd = new System.Numerics.Vector3[MaxSlots];
   private readonly bool[] _jitterFlip = new bool[MaxSlots];
   private readonly bool[] _off = new bool[MaxSlots];
+
+  private readonly Vector _origin = new();
 
   private Color _tColor = Color.Red;
   private Color _ctColor = Color.DeepSkyBlue;
@@ -129,21 +132,26 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
   private void OnTick()
   {
     bool anyViewer = false;
-    for (int slot = 0; slot < MaxSlots; slot++)
+    foreach (var viewer in Util.Players())
     {
-      var viewer = Utilities.GetPlayerFromSlot(slot);
-      if (viewer != null && viewer.IsValid && !viewer.IsHLTV && !_off[slot] && !IsAlive(viewer))
+      if (viewer.IsValid && !viewer.IsHLTV && !_off[viewer.Slot] && !IsAlive(viewer))
       {
         anyViewer = true;
         break;
       }
     }
 
+    if (!anyViewer)
+    {
+      RemoveAllBeams();
+      return;
+    }
+
     for (int slot = 0; slot < MaxSlots; slot++)
     {
       var player = Utilities.GetPlayerFromSlot(slot);
       var pawn = player?.PlayerPawn.Value;
-      if (!anyViewer || player == null || pawn == null || !pawn.IsValid || pawn.AbsOrigin == null
+      if (player == null || pawn == null || !pawn.IsValid || pawn.AbsOrigin == null
           || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE)
       {
         RemoveBeam(slot);
@@ -166,18 +174,19 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
       var end = NativeTrace.TraceLine(pawn, eye, traceEnd) ?? traceEnd;
 
       byte team = player.TeamNum;
-      var beam = _beams[slot];
-      if (beam != null && beam.IsValid && _beamTeam[slot] != team)
+      var beam = Beam(slot);
+      if (beam != null && _beamTeam[slot] != team)
       {
         RemoveBeam(slot);
         beam = null;
       }
 
-      if (beam == null || !beam.IsValid)
+      if (beam == null)
       {
         var color = team == (byte)CsTeam.CounterTerrorist ? _ctColor : _tColor;
         beam = CreateBeam(color, eye, end);
-        _beams[slot] = beam;
+        _beamHandle[slot] = beam?.EntityHandle.Raw ?? 0;
+        _beamIndex[slot] = beam != null ? (int)beam.Index : 0;
         _beamTeam[slot] = team;
         _lastStart[slot] = eye;
         _lastEnd[slot] = end;
@@ -191,7 +200,10 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
       _jitterFlip[slot] = !_jitterFlip[slot];
       float jitter = _jitterFlip[slot] ? 0.008f : -0.008f;
 
-      beam.Teleport(new Vector(eye.X, eye.Y, eye.Z + jitter), new QAngle(), new Vector());
+      _origin.X = eye.X;
+      _origin.Y = eye.Y;
+      _origin.Z = eye.Z + jitter;
+      beam.Teleport(_origin);
       beam.EndPos.X = end.X;
       beam.EndPos.Y = end.Y;
       beam.EndPos.Z = end.Z;
@@ -214,9 +226,8 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
 
       for (int slot = 0; slot < MaxSlots; slot++)
       {
-        var beam = _beams[slot];
-        if (beam != null && beam.IsValid)
-          Transmit.Hide(info, beam);
+        if (_beamHandle[slot] != 0)
+          Transmit.Hide(info, _beamIndex[slot]);
       }
     }
   }
@@ -245,10 +256,23 @@ public class Lazer : BasePlugin, IPluginConfig<LazerConfig>
 
   private void RemoveBeam(int slot)
   {
-    var beam = _beams[slot];
-    _beams[slot] = null;
+    var beam = Beam(slot);
+    _beamHandle[slot] = 0;
+    beam?.Remove();
+  }
+
+  private CEnvBeam? Beam(int slot)
+  {
+    uint handle = _beamHandle[slot];
+    if (handle == 0)
+      return null;
+
+    var beam = new CHandle<CEnvBeam>(handle).Value;
     if (beam != null && beam.IsValid)
-      beam.Remove();
+      return beam;
+
+    _beamHandle[slot] = 0;
+    return null;
   }
 
   private void RemoveAllBeams()

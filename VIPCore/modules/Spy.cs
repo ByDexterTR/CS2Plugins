@@ -24,6 +24,13 @@ public class Spy : VipModule
         _instance = this;
         DeathClock.Ensure(Core);
         Core.RegisterEventHandler<EventPlayerSpawn>(OnSpawn);
+        Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) =>
+        {
+            int slot = ev.Userid?.Slot ?? -1;
+            if (slot >= 0 && slot < 64)
+                _original[slot] = null;
+            return HookResult.Continue;
+        });
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
         {
             int slot = ev.Userid?.Slot ?? -1;

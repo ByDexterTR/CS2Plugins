@@ -372,6 +372,9 @@ public partial class Ads : BasePlugin
 
   private void OnCheckTransmit(CCheckTransmitInfoList infoList)
   {
+    if (_screenTextCount == 0 && _hiddenEntities.Count == 0)
+      return;
+
     foreach ((CCheckTransmitInfo info, CCSPlayerController? viewer) in infoList)
     {
       if (viewer == null || !viewer.IsValid)
@@ -385,12 +388,9 @@ public partial class Ads : BasePlugin
       {
         for (int slot = 0; slot < MaxSlots; slot++)
         {
-          if (slot == viewerSlot)
-            continue;
-
-          var text = _screenTexts[slot];
-          if (text != null && text.IsValid)
-            Transmit.Hide(info, text);
+          int index = _screenTextIndex[slot];
+          if (index != 0 && slot != viewerSlot)
+            Transmit.Hide(info, index);
         }
       }
 

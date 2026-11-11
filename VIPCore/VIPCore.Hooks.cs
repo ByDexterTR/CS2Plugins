@@ -43,6 +43,7 @@ public partial class VIPCore
         RegisterListener<OnMapStart>(DispatchMapStart);
         RegisterListener<OnClientPutInServer>(PlayersChanged);
         RegisterListener<OnClientDisconnect>(PlayersChanged);
+        RegisterListener<OnClientDisconnect>(WasdDisconnect);
         RegisterListener<OnClientDisconnectPost>(PlayersChanged);
         RegisterListener<OnClientAuthorized>((slot, _) => PlayersChanged(slot));
         RegisterListener<OnMapEnd>(DispatchMapEnd);
@@ -334,6 +335,7 @@ public partial class VIPCore
     {
         PlayerCache.Invalidate();
         _playersDirty = true;
+        _gameRulesProxy = null;
         Array.Clear(_identity);
         var hooks = _mapStartHooks;
         for (int i = 0; i < hooks.Length; i++)

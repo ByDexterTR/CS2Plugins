@@ -39,7 +39,16 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
 
   private const int MaxSlots = 64;
 
+  private const int MaxWeapons = 16;
+
   private readonly bool[] _hidden = new bool[MaxSlots];
+  private readonly bool[] _snapAlive = new bool[MaxSlots];
+  private readonly byte[] _snapTeam = new byte[MaxSlots];
+  private readonly int[] _snapPawn = new int[MaxSlots];
+  private readonly int[] _snapWeaponCount = new int[MaxSlots];
+  private readonly int[] _snapWeapons = new int[MaxSlots * MaxWeapons];
+  private ulong _hiddenMask;
+  private bool _hooked;
   private readonly HashSet<ulong> _saved = new();
   private readonly object _ioLock = new();
   private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
@@ -64,35 +73,69 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
     RegisterListener<OnClientAuthorized>((slot, steamId) =>
     {
       if (slot >= 0 && slot < MaxSlots)
-        _hidden[slot] = _saved.Contains(steamId.SteamId64);
+        SetHidden(slot, _saved.Contains(steamId.SteamId64));
     });
 
     RegisterListener<OnClientDisconnect>(slot =>
     {
       if (slot >= 0 && slot < MaxSlots)
-        _hidden[slot] = false;
+        SetHidden(slot, false);
     });
 
-    RegisterListener<CheckTransmit>(OnCheckTransmit);
-
-    if (Config.DisableSound == 1)
+    Server.NextWorldUpdate(() =>
     {
-      HookUserMessage(208, OnSound, HookMode.Pre);
-      HookUserMessage(369, OnWeaponSound, HookMode.Pre);
-      HookUserMessage(452, OnWeaponEvent, HookMode.Pre);
-    }
-
-    foreach (var player in Utilities.GetPlayers())
-    {
-      ulong steamId = Util.SteamId(player);
-      if (player.IsBot || steamId == 0UL)
-        continue;
-      _hidden[player.Slot] = _saved.Contains(steamId);
-    }
+      foreach (var player in Utilities.GetPlayers())
+      {
+        ulong steamId = Util.SteamId(player);
+        if (player.IsBot || steamId == 0UL)
+          continue;
+        SetHidden(player.Slot, _saved.Contains(steamId));
+      }
+    });
   }
 
   public override void Unload(bool hotReload)
   {
+    _hiddenMask = 0;
+    Array.Clear(_hidden);
+    UpdateHooks();
+  }
+
+  private void SetHidden(int slot, bool hidden)
+  {
+    if (_hidden[slot] == hidden)
+      return;
+
+    _hidden[slot] = hidden;
+    if (hidden)
+      _hiddenMask |= 1UL << slot;
+    else
+      _hiddenMask &= ~(1UL << slot);
+
+    UpdateHooks();
+  }
+
+  private void UpdateHooks()
+  {
+    bool want = _hiddenMask != 0;
+    if (want == _hooked)
+      return;
+
+    _hooked = want;
+
+    if (want)
+    {
+      RegisterListener<CheckTransmit>(OnCheckTransmit);
+      if (Config.DisableSound == 1)
+      {
+        HookUserMessage(208, OnSound, HookMode.Pre);
+        HookUserMessage(369, OnWeaponSound, HookMode.Pre);
+        HookUserMessage(452, OnWeaponEvent, HookMode.Pre);
+      }
+      return;
+    }
+
+    RemoveListener<CheckTransmit>(OnCheckTransmit);
     if (Config.DisableSound == 1)
     {
       UnhookUserMessage(208, OnSound, HookMode.Pre);
@@ -113,7 +156,7 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
     }
 
     int slot = player.Slot;
-    _hidden[slot] = !_hidden[slot];
+    SetHidden(slot, !_hidden[slot]);
 
     ulong steamId = Util.SteamId(player);
     if (steamId != 0UL)
@@ -184,11 +227,13 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
     if (viewer.Slot == target.Slot)
       return false;
 
+    return ShouldHide(viewer.TeamNum, target.TeamNum);
+  }
+
+  private bool ShouldHide(byte viewerTeam, byte targetTeam)
+  {
     if (Config.Mode == 3)
       return true;
-
-    byte viewerTeam = viewer.TeamNum;
-    byte targetTeam = target.TeamNum;
 
     if (viewerTeam <= (byte)CsTeam.Spectator || targetTeam <= (byte)CsTeam.Spectator)
       return false;
@@ -198,40 +243,81 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
 
   private void OnCheckTransmit(CCheckTransmitInfoList infoList)
   {
+    bool built = false;
+
     foreach ((CCheckTransmitInfo info, CCSPlayerController? viewer) in infoList)
     {
-      if (viewer == null || !viewer.IsValid || viewer.IsHLTV || !_hidden[viewer.Slot])
+      if (viewer == null)
         continue;
 
-      if (!Util.IsAlive(viewer))
+      int viewerSlot = viewer.Slot;
+      if ((uint)viewerSlot >= MaxSlots || !_hidden[viewerSlot])
         continue;
+
+      if (!built)
+      {
+        BuildSnapshot();
+        built = true;
+      }
+
+      if (!_snapAlive[viewerSlot])
+        continue;
+
+      byte viewerTeam = _snapTeam[viewerSlot];
 
       for (int slot = 0; slot < MaxSlots; slot++)
       {
-        if (slot == viewer.Slot)
-          continue;
-
-        var target = Utilities.GetPlayerFromSlot(slot);
-        if (target == null || !target.IsValid || !ShouldHide(viewer, target))
-          continue;
-
-        var pawn = target.PlayerPawn.Value;
-        if (pawn == null || !pawn.IsValid)
+        int pawn = _snapPawn[slot];
+        if (pawn == 0 || slot == viewerSlot || !ShouldHide(viewerTeam, _snapTeam[slot]))
           continue;
 
         Transmit.Hide(info, pawn);
 
-        var weapons = pawn.WeaponServices?.MyWeapons;
-        if (weapons == null)
-          continue;
+        int start = slot * MaxWeapons;
+        int end = start + _snapWeaponCount[slot];
+        for (int i = start; i < end; i++)
+          Transmit.Hide(info, _snapWeapons[i]);
+      }
+    }
+  }
 
+  private void BuildSnapshot()
+  {
+    Array.Clear(_snapPawn);
+    Array.Clear(_snapAlive);
+
+    foreach (var player in Util.Players())
+    {
+      if (!player.IsValid)
+        continue;
+
+      int slot = player.Slot;
+      if ((uint)slot >= MaxSlots)
+        continue;
+
+      var pawn = player.PlayerPawn.Value;
+      if (pawn == null || !pawn.IsValid)
+        continue;
+
+      _snapTeam[slot] = player.TeamNum;
+      _snapAlive[slot] = !player.IsHLTV && pawn.LifeState == (byte)LifeState_t.LIFE_ALIVE;
+      _snapPawn[slot] = (int)pawn.Index;
+
+      int count = 0;
+      var weapons = pawn.WeaponServices?.MyWeapons;
+      if (weapons != null)
+      {
         foreach (var handle in weapons)
         {
-          var weapon = handle.Value;
-          if (weapon != null && weapon.IsValid)
-            Transmit.Hide(info, weapon);
+          if (count == MaxWeapons)
+            break;
+
+          if (handle.IsValid)
+            _snapWeapons[slot * MaxWeapons + count++] = (int)handle.Index;
         }
       }
+
+      _snapWeaponCount[slot] = count;
     }
   }
 
@@ -239,6 +325,9 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
   {
     try
     {
+      if ((msg.Recipients.GetRecipientMask() & _hiddenMask) == 0)
+        return HookResult.Continue;
+
       if (!SoundHashes.Contains(msg.ReadUInt("soundevent_hash")))
         return HookResult.Continue;
 
@@ -260,6 +349,9 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
   {
     try
     {
+      if ((msg.Recipients.GetRecipientMask() & _hiddenMask) == 0)
+        return HookResult.Continue;
+
       var source = PlayerFromEntityIndex(msg.ReadInt("entidx"));
       if (source == null)
         return HookResult.Continue;
@@ -278,7 +370,10 @@ public class HideTeammates : BasePlugin, IPluginConfig<HideTeammatesConfig>
   {
     try
     {
-      var source = PlayerFromEntityIndex((int)(msg.ReadUInt("player") & 0x7FF));
+      if ((msg.Recipients.GetRecipientMask() & _hiddenMask) == 0)
+        return HookResult.Continue;
+
+      var source = PlayerFromEntityIndex((int)(msg.ReadUInt("player") & 0x3FFF));
       if (source == null)
         return HookResult.Continue;
 

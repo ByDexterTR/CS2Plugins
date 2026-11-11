@@ -106,6 +106,13 @@ public class Aura : VipModule
         Core.HookTransmit(OnCheckTransmit);
         Core.HookTick(OnTick, 2);
         Core.RegisterEventHandler<EventRoundEnd>((_, __) => { ClearRings(); return HookResult.Continue; });
+        Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) =>
+        {
+            int slot = ev.Userid?.Slot ?? -1;
+            if (slot >= 0 && slot < 64)
+                RemoveRing(slot);
+            return HookResult.Continue;
+        });
         Core.RegisterEventHandler<EventRoundStart>((_, __) =>
         {
             ClearRings();

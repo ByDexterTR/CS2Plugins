@@ -63,6 +63,7 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
       () => Localizer["menu.select"],
       () => Localizer["menu.exit"]);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
+    RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
 
     foreach (var name in Util.Split(Config.MeslekCommands))
       AddCommand(name, "Meslek menusunu acar", OnMeslekCommand);
@@ -92,6 +93,12 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
       dropTaser.SetValue(Config.ZeusDropTaser);
 
     meslekAktif.Clear();
+    return HookResult.Continue;
+  }
+
+  private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+  {
+    meslekAktif.Remove(Util.UserId(@event.Userid));
     return HookResult.Continue;
   }
 
@@ -251,14 +258,14 @@ public class MeslekmenuPlugin : BasePlugin, IPluginConfig<MeslekmenuConfig>
           PrintPrefix(player, Localizer["meslekmenu.rambo_low_hp"]);
           return false;
         }
+        if (Config.RamboHelmet)
+          player.GiveNamedItem("item_assaultsuit");
         ramboPawn.Health = Config.RamboHp;
         ramboPawn.MaxHealth = Config.RamboHp;
         ramboPawn.ArmorValue = Config.RamboArmor;
         NetState.Changed(ramboPawn, "CBaseEntity", "m_iHealth");
         NetState.Changed(ramboPawn, "CBaseEntity", "m_iMaxHealth");
         NetState.Changed(ramboPawn, "CCSPlayerPawn", "m_ArmorValue");
-        if (Config.RamboHelmet)
-          player.GiveNamedItem("item_assaultsuit");
 
         PrintPrefix(player, Localizer["meslekmenu.profession_changed", Localizer["meslekmenu.prof_rambo"]]);
         break;

@@ -468,8 +468,15 @@ public partial class VIPCore : BasePlugin
             if ((!IsModuleEnabled(module.Name) && !module.AlwaysLoad) || _loaded.Contains(module.Name))
                 continue;
 
-            module.OnLoad();
-            _loaded.Add(module.Name);
+            try
+            {
+                module.OnLoad();
+                _loaded.Add(module.Name);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("VIPCore: {0} modulu yuklenemedi. {1}", module.Name, ex.Message);
+            }
         }
     }
 

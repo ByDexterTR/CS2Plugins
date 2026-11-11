@@ -82,10 +82,12 @@ public static class ParticleTrail
         particle.AcceptInput("Start");
 
         float life = entry.Lifetime > 0 ? entry.Lifetime : lifetime;
+        uint handle = particle.EntityHandle.Raw;
         plugin.AddTimer(life, () =>
         {
-            if (particle.IsValid)
-                particle.Remove();
+            var entity = new CHandle<CParticleSystem>(handle).Value;
+            if (entity != null && entity.IsValid)
+                entity.Remove();
         }, TimerFlags.STOP_ON_MAPCHANGE);
 
         return particle;

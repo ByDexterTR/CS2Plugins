@@ -81,11 +81,13 @@ public static class TrailBeam
         beam.EndPos.Z = to.Z;
         NetState.Changed(beam, "CBeam", "m_vecEndPos");
 
+        uint handle = beam.EntityHandle.Raw;
         plugin.AddTimer(lifetime, () =>
         {
-            if (beam.IsValid)
-                beam.Remove();
-        });
+            var entity = new CHandle<CEnvBeam>(handle).Value;
+            if (entity != null && entity.IsValid)
+                entity.Remove();
+        }, CounterStrikeSharp.API.Modules.Timers.TimerFlags.STOP_ON_MAPCHANGE);
     }
 
     public static float Distance(Vector a, Vector b)

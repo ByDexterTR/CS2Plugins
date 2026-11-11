@@ -149,12 +149,13 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
       {
         Logger.LogError(ex, "[PlayerHourCheck] error in main-thread processor");
       }
-    });
+    }, TimerFlags.REPEAT);
 
-    foreach (var player in Utilities.GetPlayers().Where(p => p.IsValid && !p.IsBot && !p.IsHLTV))
+    Server.NextWorldUpdate(() =>
     {
-      CheckExistingPlayer(player);
-    }
+      foreach (var player in Utilities.GetPlayers())
+        CheckExistingPlayer(player);
+    });
 
     AddCommand("css_phc_reload", "Konfigi yeniden yukler ve tum oyunculari yeniden kontrol eder", (player, info) =>
     {
@@ -406,7 +407,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
       {
         try
         {
-          if (player == null || !player.IsValid) return;
+          if (player == null || !player.IsValid || Util.SteamId(player) != steamId) return;
 
           if (record.HasValue)
           {
@@ -500,7 +501,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
           {
             try
             {
-              if (player == null || !player.IsValid) return;
+              if (player == null || !player.IsValid || Util.SteamId(player) != steamId) return;
               ApplyPenalty(player, penaltyCount, result.Hours);
             }
             catch (Exception ex)
@@ -510,13 +511,13 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
           });
         }
       }
-      else
+      else if (result.Status == PlaytimeStatus.Private)
       {
         _mainThreadActions.Enqueue(() =>
         {
           try
           {
-            if (player == null || !player.IsValid) return;
+            if (player == null || !player.IsValid || Util.SteamId(player) != steamId) return;
             HandlePrivateProfile(player);
           }
           catch (Exception ex)
@@ -615,7 +616,8 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
   private void ApplyPrivatePenalty(CCSPlayerController player)
   {
-    var steamIdStr = Util.SteamId(player).ToString();
+    var steamId = Util.SteamId(player);
+    var steamIdStr = steamId.ToString();
 
     Task.Run(() =>
     {
@@ -623,7 +625,7 @@ public class PlayerHourCheck : BasePlugin, IPluginConfig<PlayerHourCheckConfig>
 
       _mainThreadActions.Enqueue(() =>
       {
-        if (player == null || !player.IsValid) return;
+        if (player == null || !player.IsValid || Util.SteamId(player) != steamId) return;
 
         var penaltyCount = (record?.PenaltyCount ?? 0) + 1;
         var playerHours = record?.Playtime ?? 0;

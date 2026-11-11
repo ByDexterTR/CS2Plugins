@@ -19,6 +19,7 @@ public class CustomWeaponModel : VipModule
     {
         public bool IsSubclass;
         public string? OriginalModel;
+        public string OriginalIndex = "0";
     }
 
     private static readonly Dictionary<string, string> Projectiles = new()
@@ -195,6 +196,7 @@ public class CustomWeaponModel : VipModule
             applied = new Applied
             {
                 IsSubclass = isSubclass,
+                OriginalIndex = weapon.AttributeManager.Item.ItemDefinitionIndex.ToString(),
                 OriginalModel = isSubclass ? null : weapon.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.ModelState.ModelName
             };
             _applied[weapon.Index] = applied;
@@ -226,7 +228,7 @@ public class CustomWeaponModel : VipModule
     private void Revert(CBasePlayerWeapon weapon, Applied applied)
     {
         if (applied.IsSubclass)
-            weapon.AcceptInput("ChangeSubclass", weapon, weapon, "0");
+            weapon.AcceptInput("ChangeSubclass", weapon, weapon, applied.OriginalIndex);
         else if (!string.IsNullOrEmpty(applied.OriginalModel))
             weapon.SetModel(applied.OriginalModel);
 

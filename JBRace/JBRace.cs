@@ -44,8 +44,8 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
   private bool _raceActive = false;
   private ulong _winnerInputSteamId = 0;
 
-  private CDynamicProp? _finishModel;
-  private CBeam? _finishBeam;
+  private uint _finishModelHandle;
+  private uint _finishBeamHandle;
   private CounterStrikeSharp.API.Modules.Timers.Timer? _countdownTimer = null;
 
   private readonly HashSet<ulong> _winners = new();
@@ -76,6 +76,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
     HudGuard.Install(this);
     RegisterListener<OnTick>(OnTickCheckFinish);
     RegisterEventHandler<EventRoundStart>(OnRoundStart);
+    RegisterListener<OnMapStart>(OnMapStart);
     RegisterListener<OnServerPrecacheResources>(OnServerPrecacheResources);
     AddCommandListener("say", OnPlayerChatHandler);
     AddCommandListener("say_team", OnPlayerChatHandler);
@@ -327,14 +328,17 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 
     foreach (var pl in _racers)
     {
-      if (_winners.Contains(pl.SteamID)) continue;
+      if (_winners.Contains(pl.EntityHandle.Raw)) continue;
 
       var pos = pl.PlayerPawn?.Value?.AbsOrigin;
       if (pos == null) continue;
 
-      if (CalculateDistance(new Vector(pos.X, pos.Y, pos.Z), _finishPos) <= _finishRadius)
+      float dx = pos.X - _finishPos.X;
+      float dy = pos.Y - _finishPos.Y;
+      float dz = pos.Z - _finishPos.Z;
+      if (dx * dx + dy * dy + dz * dz <= _finishRadius * _finishRadius)
       {
-        _winners.Add(pl.SteamID);
+        _winners.Add(pl.EntityHandle.Raw);
         var secs = _raceStartTime.HasValue ? (DateTime.Now - _raceStartTime.Value).TotalSeconds : 0.0;
         Server.PrintToChatAll($" {CC.Orchid}{ChatPrefix}{CC.Default} {Localizer["jbrace.winner", _winners.Count, pl.PlayerName]}");
 
@@ -351,7 +355,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
     {
       foreach (var pl in _racers)
       {
-        if (!_winners.Contains(pl.SteamID))
+        if (!_winners.Contains(pl.EntityHandle.Raw))
           pl.PlayerPawn.Value?.CommitSuicide(false, true);
       }
 
@@ -388,7 +392,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
 
         Server.NextWorldUpdate(() => model.AcceptInput("SetAnimation", value: "challenge_coin_idle"));
         model.Teleport(pos, new QAngle(0, 0, 0), Vector.Zero);
-        _finishModel = model;
+        _finishModelHandle = model.EntityHandle.Raw;
       }
     }
 
@@ -404,7 +408,7 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
         beam.EndPos.Y = _finishPos.Y;
         beam.EndPos.Z = _finishPos.Z + 10000f;
         beam.DispatchSpawn();
-        _finishBeam = beam;
+        _finishBeamHandle = beam.EntityHandle.Raw;
       }
     }
     catch
@@ -412,13 +416,30 @@ public class JBRace : BasePlugin, IPluginConfig<JBRaceConfig>
     }
   }
 
+  private void OnMapStart(string mapName)
+  {
+    _startPos = null;
+    _finishPos = null;
+    ResetRace();
+  }
+
   private void RemoveFinishMarker()
   {
-    try { _finishModel?.Remove(); } catch { }
-    _finishModel = null;
+    RemoveByHandle(_finishModelHandle);
+    _finishModelHandle = 0;
 
-    try { _finishBeam?.Remove(); } catch { }
-    _finishBeam = null;
+    RemoveByHandle(_finishBeamHandle);
+    _finishBeamHandle = 0;
+  }
+
+  private static void RemoveByHandle(uint handle)
+  {
+    if (handle == 0)
+      return;
+
+    var entity = new CHandle<CBaseEntity>(handle).Value;
+    if (entity != null && entity.IsValid)
+      entity.Remove();
   }
 
   private void ResetRace()

@@ -3,6 +3,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Memory;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace VIPCore;
 
@@ -11,7 +12,7 @@ public static class GlowPool
     public const string DefaultColor = "#612D53";
 
     private static VIPCore? _owner;
-    private static readonly (uint Glow, uint Relay, uint GlowHandle)?[] _entities = new (uint, uint, uint)?[64];
+    private static readonly (uint Glow, uint Relay, uint GlowHandle, uint RelayHandle)?[] _entities = new (uint, uint, uint, uint)?[64];
     private static readonly Color[] _colors = new Color[64];
     private static readonly ulong[] _visible = new ulong[64];
     private static int _users;
@@ -90,7 +91,7 @@ public static class GlowPool
         if (_entities[slot] is not { } handles || _colors[slot].ToArgb() == color.ToArgb())
             return;
 
-        var glow = Utilities.GetEntityFromIndex<CDynamicProp>((int)handles.Glow);
+        var glow = new CHandle<CDynamicProp>(handles.GlowHandle).Value;
         if (glow == null || !glow.IsValid)
             return;
 
@@ -134,7 +135,7 @@ public static class GlowPool
                 Destroy(slot);
     }
 
-    private static (uint, uint, uint)? Create(CCSPlayerController player)
+    private static (uint, uint, uint, uint)? Create(CCSPlayerController player)
     {
         var pawn = PlayerCache.Pawn(player);
         if (pawn == null || !pawn.IsValid)
@@ -176,19 +177,19 @@ public static class GlowPool
         relay.AcceptInput("FollowEntity", pawn, relay, "!activator");
         glow.AcceptInput("FollowEntity", relay, glow, "!activator");
 
-        return (glow.Index, relay.Index, glow.EntityHandle.Raw);
+        return (glow.Index, relay.Index, glow.EntityHandle.Raw, relay.EntityHandle.Raw);
     }
 
     private static void Destroy(int slot)
     {
         if (_entities[slot] is { } handles)
         {
-            var glow = Utilities.GetEntityFromIndex<CDynamicProp>((int)handles.Glow);
-            if (glow != null && glow.IsValid && glow.DesignerName == "prop_dynamic")
+            var glow = new CHandle<CDynamicProp>(handles.GlowHandle).Value;
+            if (glow != null && glow.IsValid)
                 glow.Remove();
 
-            var relay = Utilities.GetEntityFromIndex<CDynamicProp>((int)handles.Relay);
-            if (relay != null && relay.IsValid && relay.DesignerName == "prop_dynamic")
+            var relay = new CHandle<CDynamicProp>(handles.RelayHandle).Value;
+            if (relay != null && relay.IsValid)
                 relay.Remove();
         }
 

@@ -281,7 +281,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
   public HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0)
+    if (player == null || !player.IsValid || player.IsBot || Util.SteamId(player) == 0)
       return HookResult.Continue;
 
     if (!_useMySql)
@@ -321,7 +321,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
   public HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
   {
     var player = @event.Userid;
-    if (player == null || !player.IsValid || player.IsBot || player.SteamID == 0)
+    if (player == null || !player.IsValid || player.IsBot || Util.SteamId(player) == 0)
       return HookResult.Continue;
 
     if (_prefs.TryGetValue(Util.SteamId(player), out var pref))
@@ -332,7 +332,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
 
   private Pref GetPref(CCSPlayerController p)
   {
-    if (p?.IsValid != true || p.SteamID == 0)
+    if (p?.IsValid != true || Util.SteamId(p) == 0)
       return new Pref();
 
     if (!_prefs.TryGetValue(Util.SteamId(p), out var pref))
@@ -428,7 +428,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
 
   private void OnOffCommand(CCSPlayerController? player, CommandInfo info)
   {
-    if (player == null || !player.IsValid || player.SteamID == 0)
+    if (player == null || !player.IsValid || Util.SteamId(player) == 0)
       return;
 
     var pref = GetPref(player);
@@ -439,7 +439,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
 
   private void OnOnCommand(CCSPlayerController? player, CommandInfo info)
   {
-    if (player == null || !player.IsValid || player.SteamID == 0)
+    if (player == null || !player.IsValid || Util.SteamId(player) == 0)
       return;
 
     var pref = GetPref(player);
@@ -450,7 +450,7 @@ public class PrivateMessage : BasePlugin, IPluginConfig<PrivateMessageConfig>
 
   private void OnSoundCommand(CCSPlayerController? player, CommandInfo info)
   {
-    if (player == null || !player.IsValid || player.SteamID == 0)
+    if (player == null || !player.IsValid || Util.SteamId(player) == 0)
       return;
 
     var pref = GetPref(player);

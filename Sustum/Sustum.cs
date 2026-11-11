@@ -195,7 +195,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
             foreach (var player in Util.Players())
             {
                 if (player.IsValid && !HudGuard.Blocked(player))
-                    player.PrintToCenterHtml(_hudHtml);
+                    HudGuard.Send(player, _hudHtml);
             }
         }
     }
@@ -213,6 +213,7 @@ public class Sustum : BasePlugin, IPluginConfig<SustumConfig>
         PrintPrefixAll(SustumType == "CTSustum" ? Localizer["sustum.loser", winnerName].ToString() : Localizer["sustum.winner", winnerName].ToString());
         _hudHtml = SustumType == "CTSustum" ? $"<font color='#FF0000'>{Localizer["sustum.hud_lost", winnerName]}</font>" : $"<font color='#AAFF00'>{Localizer["sustum.hud_won", winnerName]}</font>";
         _showHud = true;
+        CurrentWord = "";
 
         AddTimer(2.0f, HideHud);
     }

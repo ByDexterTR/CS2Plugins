@@ -247,13 +247,12 @@ public class SpawnkillProtection : BasePlugin, IPluginConfig<SpawnkillProtection
 
   private HookResult HandleEntityDamage(CEntityInstance victimEnt, CTakeDamageInfo info)
   {
-    if (_protections.Count == 0 || victimEnt == null)
+    if (_protections.Count == 0 || victimEnt == null || victimEnt.DesignerName != "player")
       return HookResult.Continue;
 
     try
     {
-      var victimPawn = victimEnt as CCSPlayerPawn ?? new CCSPlayerPawn(victimEnt.Handle);
-      var victimController = victimPawn?.OriginalController.Value;
+      var victimController = victimEnt.As<CCSPlayerPawn>().OriginalController.Value;
       if (victimController == null || !victimController.IsValid || victimController.UserId == null)
         return HookResult.Continue;
 

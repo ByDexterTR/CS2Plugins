@@ -72,10 +72,12 @@ public static class ParticleUtil
         if (particle == null)
             return;
 
+        uint handle = particle.EntityHandle.Raw;
         plugin.AddTimer(lifetime, () =>
         {
-            if (particle.IsValid)
-                particle.Remove();
+            var entity = new CHandle<CParticleSystem>(handle).Value;
+            if (entity != null && entity.IsValid)
+                entity.Remove();
         }, TimerFlags.STOP_ON_MAPCHANGE);
     }
 }

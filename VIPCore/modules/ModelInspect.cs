@@ -58,7 +58,7 @@ public class ModelInspect : VipModule
         Core.RegisterEventHandler<EventPlayerDeath>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
         Core.RegisterEventHandler<EventPlayerDisconnect>((ev, _) => { Remove(ev.Userid?.Slot ?? -1); return HookResult.Continue; });
         Core.RegisterEventHandler<EventRoundStart>((_, _) => { RemoveAll(); return HookResult.Continue; });
-        Core.HookMapStart(_ => RemoveAll());
+        Core.HookMapStart(_ => Array.Clear(_previews));
     }
 
     public override void OnUnload() => RemoveAll();

@@ -45,6 +45,8 @@ public class WasdMenuManager
   private readonly List<Session> _tickBuffer = new(64);
   private readonly Dictionary<int, Dictionary<string, int>> _memory = new();
   private bool _tickHooked;
+  private bool _messageHooked;
+  private readonly UserMessage.UserMessageHandler _onCenterHtml;
 
   private class Session
   {
@@ -66,7 +68,14 @@ public class WasdMenuManager
     _pageLabel = pageLabel;
     _tag = $"<{new string(plugin.ModuleName.Where(char.IsLetterOrDigit).ToArray())}/>";
 
-    plugin.HookUserMessage(LegacyEventMessageId, OnCenterHtml);
+    _onCenterHtml = OnCenterHtml;
+    plugin.RegisterListener<OnClientDisconnect>(OnClientDisconnect);
+  }
+
+  private void OnClientDisconnect(int slot)
+  {
+    _sessions.Remove(slot);
+    _memory.Remove(slot);
   }
 
   private HookResult OnCenterHtml(UserMessage message)
@@ -133,6 +142,12 @@ public class WasdMenuManager
       _plugin.RegisterListener<OnTick>(OnTick);
       _tickHooked = true;
     }
+
+    if (!_messageHooked)
+    {
+      _plugin.HookUserMessage(LegacyEventMessageId, _onCenterHtml);
+      _messageHooked = true;
+    }
   }
 
   public bool IsOpen(CCSPlayerController player) => _sessions.ContainsKey(player.Slot);
@@ -157,7 +172,14 @@ public class WasdMenuManager
   private void OnTick()
   {
     if (_sessions.Count == 0)
+    {
+      if (_messageHooked)
+      {
+        _plugin.UnhookUserMessage(LegacyEventMessageId, _onCenterHtml);
+        _messageHooked = false;
+      }
       return;
+    }
 
     _tickBuffer.Clear();
     _tickBuffer.AddRange(_sessions.Values);

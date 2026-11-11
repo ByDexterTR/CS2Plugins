@@ -150,6 +150,7 @@ public partial class CommandMaker : BasePlugin, IPluginConfig<CommandMakerConfig
   {
     ClearEntityCache();
     _menus.Clear();
+    _globalCooldowns.Clear();
     ResetTrackedPlayers();
   }
 

@@ -34,6 +34,9 @@ public partial class Ads
   private readonly List<AdQueue> _queues = new();
 
   private readonly CPointWorldText?[] _screenTexts = new CPointWorldText?[MaxSlots];
+  private readonly int[] _screenTextIndex = new int[MaxSlots];
+  private readonly Vector _textPosition = new();
+  private readonly QAngle _textAngle = new();
   private readonly ScreenTextAd?[] _screenTextSource = new ScreenTextAd?[MaxSlots];
   private readonly float[] _lastPitch = new float[MaxSlots];
   private readonly float[] _lastYaw = new float[MaxSlots];
@@ -244,6 +247,7 @@ public partial class Ads
     var entity = _screenTexts[slot];
     if (entity == null || !entity.IsValid)
     {
+      RemoveScreenText(slot);
       CreateScreenText(slot, pawn, ad, player);
       return;
     }
@@ -321,6 +325,7 @@ public partial class Ads
 
     entity.AcceptInput("SetParent", pawn, null, "!activator");
     _screenTexts[slot] = entity;
+    _screenTextIndex[slot] = (int)entity.Index;
     _screenTextCount++;
 
     PlaceScreenText(slot, pawn, ad, true);
@@ -358,12 +363,14 @@ public partial class Ads
     float ex = origin.X, ey = origin.Y, ez = origin.Z + eyeZ;
     float forward = Config.Forward;
 
-    var position = new Vector(
-      ex + fx * forward + rx * ad.X + ux * ad.Y,
-      ey + fy * forward + ry * ad.X + uy * ad.Y,
-      ez + fz * forward + uz * ad.Y);
+    _textPosition.X = ex + fx * forward + rx * ad.X + ux * ad.Y;
+    _textPosition.Y = ey + fy * forward + ry * ad.X + uy * ad.Y;
+    _textPosition.Z = ez + fz * forward + uz * ad.Y;
+    _textAngle.X = 0f;
+    _textAngle.Y = eyeAngles.Y + 270f;
+    _textAngle.Z = 90f - eyeAngles.X;
 
-    entity.Teleport(position, new QAngle(0f, eyeAngles.Y + 270f, 90f - eyeAngles.X), null);
+    entity.Teleport(_textPosition, _textAngle, null);
   }
 
   private int _screenTextCount;
@@ -375,6 +382,7 @@ public partial class Ads
       return;
 
     _screenTexts[slot] = null;
+    _screenTextIndex[slot] = 0;
     _screenTextCount--;
 
     if (entity.IsValid)

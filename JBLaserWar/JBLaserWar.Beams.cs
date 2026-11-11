@@ -226,7 +226,10 @@ public partial class JBLaserWar
     if (beam == null)
       return;
 
-    beam.Teleport(new Vector(tail.X, tail.Y, tail.Z), new QAngle(), new Vector());
+    _beamOrigin.X = tail.X;
+    _beamOrigin.Y = tail.Y;
+    _beamOrigin.Z = tail.Z;
+    beam.Teleport(_beamOrigin);
     beam.EndPos.X = head.X;
     beam.EndPos.Y = head.Y;
     beam.EndPos.Z = head.Z;
@@ -311,6 +314,8 @@ public partial class JBLaserWar
     NetState.Changed(beam, "CBeam", "m_vecEndPos");
   }
 
+  private readonly Vector _beamOrigin = new();
+
   private void ClearBeams()
   {
     foreach (var flight in _flights)
@@ -345,7 +350,7 @@ public partial class JBLaserWar
     foreach (var target in Utilities.GetPlayers())
     {
       int targetId = Util.UserId(target);
-      if (targetId < 0 || targetId == shooterId || !Util.IsAlive(target))
+      if (targetId < 0 || targetId == shooterId || !InGameTeam(target) || !Util.IsAlive(target))
         continue;
 
       int targetTeam = TeamOf(target);

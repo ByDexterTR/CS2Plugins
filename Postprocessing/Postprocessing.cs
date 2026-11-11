@@ -246,8 +246,7 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
     RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
     RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
 
-    if (hotReload)
-      RefreshMapVolumes();
+    Server.NextWorldUpdate(RefreshMapVolumes);
   }
 
   public override void Unload(bool hotReload)
@@ -635,12 +634,16 @@ public class Postprocessing : BasePlugin, IPluginConfig<PostprocessingConfig>
     if (!Config.Remember || !player.IsValid || player.IsBot)
       return;
 
+    ulong steamId = Util.SteamId(player);
+    if (steamId == 0UL)
+      return;
+
     lock (_saveLock)
     {
       if (preset == null)
-        _saved.Remove(Util.SteamId(player));
+        _saved.Remove(steamId);
       else
-        _saved[Util.SteamId(player)] = preset.Name;
+        _saved[steamId] = preset.Name;
     }
 
     SaveAsync();

@@ -30,62 +30,70 @@ public sealed class VpkArchive : IDisposable
     _path = path;
     _stream = stream;
 
-    using var reader = new BinaryReader(_stream, Encoding.UTF8, leaveOpen: true);
-
-    uint signature = reader.ReadUInt32();
-    if (signature != Signature)
-      throw new InvalidDataException($"'{Path.GetFileName(path)}' bir VPK dosyasi degil.");
-
-    uint version = reader.ReadUInt32();
-    uint treeSize = reader.ReadUInt32();
-    long headerSize = 12;
-
-    if (version == 2)
+    try
     {
-      reader.ReadUInt32();
-      reader.ReadUInt32();
-      reader.ReadUInt32();
-      reader.ReadUInt32();
-      headerSize = 28;
-    }
-    else if (version != 1)
-    {
-      throw new InvalidDataException($"Desteklenmeyen VPK surumu: {version}");
-    }
+      using var reader = new BinaryReader(_stream, Encoding.UTF8, leaveOpen: true);
 
-    _dataStart = headerSize + treeSize;
+      uint signature = reader.ReadUInt32();
+      if (signature != Signature)
+        throw new InvalidDataException($"'{Path.GetFileName(path)}' bir VPK dosyasi degil.");
 
-    while (true)
-    {
-      string extension = ReadString(reader);
-      if (extension.Length == 0)
-        break;
+      uint version = reader.ReadUInt32();
+      uint treeSize = reader.ReadUInt32();
+      long headerSize = 12;
+
+      if (version == 2)
+      {
+        reader.ReadUInt32();
+        reader.ReadUInt32();
+        reader.ReadUInt32();
+        reader.ReadUInt32();
+        headerSize = 28;
+      }
+      else if (version != 1)
+      {
+        throw new InvalidDataException($"Desteklenmeyen VPK surumu: {version}");
+      }
+
+      _dataStart = headerSize + treeSize;
 
       while (true)
       {
-        string directory = ReadString(reader);
-        if (directory.Length == 0)
+        string extension = ReadString(reader);
+        if (extension.Length == 0)
           break;
 
         while (true)
         {
-          string name = ReadString(reader);
-          if (name.Length == 0)
+          string directory = ReadString(reader);
+          if (directory.Length == 0)
             break;
 
-          reader.ReadUInt32();
-          ushort preloadBytes = reader.ReadUInt16();
-          ushort archiveIndex = reader.ReadUInt16();
-          uint entryOffset = reader.ReadUInt32();
-          uint entryLength = reader.ReadUInt32();
-          reader.ReadUInt16();
+          while (true)
+          {
+            string name = ReadString(reader);
+            if (name.Length == 0)
+              break;
 
-          byte[] preload = preloadBytes > 0 ? reader.ReadBytes(preloadBytes) : [];
+            reader.ReadUInt32();
+            ushort preloadBytes = reader.ReadUInt16();
+            ushort archiveIndex = reader.ReadUInt16();
+            uint entryOffset = reader.ReadUInt32();
+            uint entryLength = reader.ReadUInt32();
+            reader.ReadUInt16();
 
-          string full = directory == " " ? $"{name}.{extension}" : $"{directory}/{name}.{extension}";
-          _entries[full] = new Entry(archiveIndex, entryOffset, entryLength, preload);
+            byte[] preload = preloadBytes > 0 ? reader.ReadBytes(preloadBytes) : [];
+
+            string full = directory == " " ? $"{name}.{extension}" : $"{directory}/{name}.{extension}";
+            _entries[full] = new Entry(archiveIndex, entryOffset, entryLength, preload);
+          }
         }
       }
+    }
+    catch
+    {
+      _stream.Dispose();
+      throw;
     }
   }
 
