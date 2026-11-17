@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="CounterStrikeSharp.API" Version="1.0.379" ExcludeAssets="runtime" />
-    <PackageReference Include="MySqlConnector" Version="2.6.1" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
   </ItemGroup>
 
   <ItemGroup>
