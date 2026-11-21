@@ -33,7 +33,20 @@ public partial class VIPCore
         public bool Dirty = true;
     }
 
-    private void InstallWasdGuard() => HookUserMessage(WasdLegacyEventMessageId, OnWasdCenterHtml);
+    private bool _wasdGuardHooked;
+
+    private void SyncWasdGuard()
+    {
+        bool want = _wasd.Count > 0;
+        if (want == _wasdGuardHooked)
+            return;
+
+        _wasdGuardHooked = want;
+        if (want)
+            HookUserMessage(WasdLegacyEventMessageId, OnWasdCenterHtml);
+        else
+            UnhookUserMessage(WasdLegacyEventMessageId, OnWasdCenterHtml);
+    }
 
     private HookResult OnWasdCenterHtml(UserMessage message)
     {
@@ -89,6 +102,7 @@ public partial class VIPCore
         };
         session.Html = BuildWasdHtml(session);
         _wasd[slot] = session;
+        SyncWasdGuard();
 
         if (!_wasdTickHooked)
         {
@@ -104,6 +118,7 @@ public partial class VIPCore
     {
         _wasd.Remove(slot);
         _wasdMemory.Remove(slot);
+        Server.NextFrame(SyncWasdGuard);
     }
 
     private void WasdOnTick()
@@ -214,6 +229,7 @@ public partial class VIPCore
     {
         _wasd.Remove(session.Player.Slot);
         _wasdMemory.Remove(session.Player.Slot);
+        Server.NextFrame(SyncWasdGuard);
 
         if (clear && session.Player.IsValid)
             session.Player.PrintToCenterHtml(WasdTag + " ");

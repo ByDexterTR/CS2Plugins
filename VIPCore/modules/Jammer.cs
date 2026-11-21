@@ -13,10 +13,8 @@ public class Jammer : VipModule
         public bool IgnoreEnemy { get; set; } = false;
     }
 
-    private readonly bool[] _jammed = new bool[64];
-    private readonly bool[] _state = new bool[64];
+    private const int Interval = 16;
     private static readonly Cfg DefaultCfg = new();
-    private const string Radar = "sv_disable_radar";
     private readonly List<(int Slot, byte Team, System.Numerics.Vector3 Pos, Cfg Cfg)> _jammers = new();
 
     public override string Name => "Jammer";
@@ -24,25 +22,11 @@ public class Jammer : VipModule
 
     public override void OnLoad()
     {
-        Core.HookTick(OnTick, 16);
-        Core.RegisterEventHandler<EventRoundStart>((_, __) => { UnjamAll(); return HookResult.Continue; });
+        RadarPool.Ensure(Core);
+        Core.HookTick(OnTick, Interval);
     }
 
-    public override void OnUnload() => UnjamAll();
-
-    private void UnjamAll()
-    {
-        for (int slot = 0; slot < 64; slot++)
-        {
-            if (!_jammed[slot])
-                continue;
-
-            _jammed[slot] = false;
-            var p = Core.PlayerAt(slot);
-            if (p != null && p.IsValid && !p.IsBot)
-                p.ReplicateConVar(Radar, ServerConVar.Value(Radar));
-        }
-    }
+    public override void OnUnload() => RadarPool.Restore();
 
     private void OnTick()
     {
@@ -60,36 +44,13 @@ public class Jammer : VipModule
             _jammers.Add((player.Slot, PlayerCache.Team(pawn), origin, cfg));
         }
 
-        Array.Clear(_state);
-
-        if (_jammers.Count > 0)
-            foreach (ref readonly var target in PlayerCache.AlivePlayers(Core.Players))
-                _state[target.Slot] = InJammerRange(target);
-
-        foreach (var target in Core.Humans)
-        {
-            if (target == null || !target.IsValid || target.Slot >= 64)
-                continue;
-
-            int slot = target.Slot;
-            bool jam = IsAlive(target) ? _state[slot] : ObservedJammed(target);
-
-            if (jam == _jammed[slot])
-                continue;
-
-            _jammed[slot] = jam;
-            target.ReplicateConVar(Radar, jam ? "1" : ServerConVar.Value(Radar));
-        }
-    }
-
-    private bool ObservedJammed(CCSPlayerController target)
-    {
         if (_jammers.Count == 0)
-            return false;
+            return;
 
-        var observed = PawnController(target.Pawn.Value?.ObserverServices?.ObserverTarget.Value);
-        int slot = observed?.Slot ?? -1;
-        return slot >= 0 && slot < 64 && _state[slot];
+        int ticks = Interval + 4;
+        foreach (ref readonly var target in PlayerCache.AlivePlayers(Core.Players))
+            if (InJammerRange(target))
+                RadarPool.Jam(target.Slot, ticks);
     }
 
     private bool InJammerRange(in PlayerCache.Living target)

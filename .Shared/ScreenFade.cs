@@ -26,4 +26,21 @@ public static class ScreenFade
 
         msg.Send(player);
     }
+
+    public static void Clear(CCSPlayerController? player)
+    {
+        if (player == null || !player.IsValid || player.IsBot)
+            return;
+
+        using var msg = UserMessage.FromPartialName("Fade");
+        if (msg == null)
+            return;
+
+        msg.SetInt("duration", 0);
+        msg.SetInt("hold_time", 0);
+        msg.SetInt("flags", 0x11);
+        msg.SetInt("color", 0);
+
+        msg.Send(player);
+    }
 }

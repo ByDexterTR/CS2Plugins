@@ -17,7 +17,7 @@ public class KillEffect : VipModule
         public bool LastKill { get; set; }
     }
 
-    private static ConVar? _cvFfa;
+    private static ConVar<bool>? _cvFfa;
 
     public override string Name => "KillEffect";
     public override string DisplayName => Core.Localizer["vip.module.killeffect"];
@@ -72,8 +72,8 @@ public class KillEffect : VipModule
             || attacker.Slot == victim.Slot || !Active(attacker))
             return HookResult.Continue;
 
-        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
-        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
+        _cvFfa ??= ConVar<bool>.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.Value ?? false;
         if (!ffa && victim.Team == attacker.Team)
             return HookResult.Continue;
 

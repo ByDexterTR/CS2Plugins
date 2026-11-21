@@ -136,9 +136,7 @@ public static class SpeedPool
                 continue;
             }
 
-            float target = (1f + bonus) * slow;
-            if (floored)
-                target = MathF.Max(target, _floor[slot]);
+            float target = (floored ? MathF.Max(1f + bonus, _floor[slot]) : 1f + bonus) * slow;
             _managed[slot] = true;
             _written[slot] = target;
 

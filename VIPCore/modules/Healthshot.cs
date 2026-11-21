@@ -38,7 +38,7 @@ public class Healthshot : VipModule
 
     private static int Limit()
     {
-        try { return ConVar.Find("ammo_item_limit_healthshot")?.GetPrimitiveValue<int>() ?? 0; }
+        try { return ConVar<int>.Find("ammo_item_limit_healthshot")?.Value ?? 0; }
         catch { return 0; }
     }
 }

@@ -15,13 +15,14 @@ public class WeaponGlow : VipModule
         public List<string> Ignore { get; set; } = new() { "weapon_c4" };
     }
 
-    private const int RescanTicks = 320;
     private const string DroppedAnim = "dropped";
+    private const int CreatesPerScan = 4;
 
     private static readonly Cfg DefaultCfg = new();
 
     private readonly HashSet<uint> _weapons = new();
     private readonly Dictionary<uint, uint> _glows = new();
+    private readonly Dictionary<uint, uint> _owners = new();
     private readonly HashSet<uint> _carried = new();
     private readonly HashSet<uint> _failed = new();
     private readonly List<uint> _stale = new();
@@ -66,8 +67,16 @@ public class WeaponGlow : VipModule
         if (_weapons.Count == 0)
             return;
 
-        _weapons.Remove(entity.Index);
-        Destroy(entity.Index);
+        uint index = entity.Index;
+        if (_owners.Remove(index, out uint weapon))
+        {
+            _glows.Remove(weapon);
+            _failed.Add(weapon);
+            return;
+        }
+
+        _weapons.Remove(index);
+        Destroy(index);
     }
 
     private void Rescan()
@@ -120,7 +129,7 @@ public class WeaponGlow : VipModule
         int tick = Server.TickCount;
         if (tick >= _nextScan)
         {
-            _nextScan = tick + RescanTicks;
+            _nextScan = int.MaxValue;
             RefreshCfg();
             Rescan();
         }
@@ -129,6 +138,7 @@ public class WeaponGlow : VipModule
             return;
 
         var cfg = _cfg;
+        int created = 0;
         _stale.Clear();
         CollectCarried();
 
@@ -141,13 +151,10 @@ public class WeaponGlow : VipModule
                 continue;
             }
 
-            if (_glows.TryGetValue(index, out uint glowIndex))
-            {
-                Verify(index, glowIndex);
+            if (_glows.ContainsKey(index))
                 continue;
-            }
 
-            if (_failed.Contains(index))
+            if (_failed.Contains(index) || created >= CreatesPerScan)
                 continue;
 
             var weapon = Utilities.GetEntityFromIndex<CCSWeaponBase>((int)index);
@@ -158,7 +165,10 @@ public class WeaponGlow : VipModule
             }
 
             if (!cfg.Ignore.Contains(weapon.DesignerName))
+            {
+                created++;
                 Create(index, weapon, cfg);
+            }
         }
 
         foreach (uint index in _stale)
@@ -224,6 +234,7 @@ public class WeaponGlow : VipModule
         MakeNonSolid(glow);
 
         _glows[index] = glow.Index;
+        _owners[glow.Index] = index;
 
         Server.NextFrame(() =>
         {
@@ -233,16 +244,6 @@ public class WeaponGlow : VipModule
             glow.AcceptInput("SetParent", weapon, glow, "!activator");
             Snap(glow);
         });
-    }
-
-    private void Verify(uint index, uint glowIndex)
-    {
-        var glow = Utilities.GetEntityFromIndex<CPhysicsProp>((int)glowIndex);
-        if (glow != null && glow.IsValid)
-            return;
-
-        _glows.Remove(index);
-        _failed.Add(index);
     }
 
     private static void Snap(CBaseEntity entity)
@@ -278,6 +279,8 @@ public class WeaponGlow : VipModule
     {
         if (!_glows.Remove(index, out uint glowIndex))
             return;
+
+        _owners.Remove(glowIndex);
 
         var glow = Utilities.GetEntityFromIndex<CPhysicsProp>((int)glowIndex);
         if (glow != null && glow.IsValid)

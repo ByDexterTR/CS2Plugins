@@ -8,6 +8,7 @@ public static class NativeTrace
 {
   public const ulong MaskShotPhysics = 0x2C3011;
   public const ulong MaskShotNoPlayers = 0x203011;
+  public const ulong MaskPlayerSolid = 0x2C1011;
 
   private const float MaxWorldCoord = 131072f;
   private const float MaxDistance = 8192f;
@@ -123,5 +124,35 @@ public static class NativeTrace
 
     var hit = Trace(pawn, eye, eye + forward * MaxDistance, mask);
     return hit is { DidHit: true } ? hit.Value.EndPos : null;
+  }
+
+  private static Vector? _mins;
+  private static Vector? _maxs;
+
+  public static bool? HullFree(CCSPlayerPawn pawn, System.Numerics.Vector3 origin, System.Numerics.Vector3 mins, System.Numerics.Vector3 maxs, ulong mask = MaskPlayerSolid)
+  {
+    if (_disabled)
+      return null;
+
+    TraceResult result;
+    try
+    {
+      _start ??= new Vector();
+      _end ??= new Vector();
+      _mins ??= new Vector();
+      _maxs ??= new Vector();
+      _start.X = origin.X; _start.Y = origin.Y; _start.Z = origin.Z + 1f;
+      _end.X = origin.X; _end.Y = origin.Y; _end.Z = origin.Z;
+      _mins.X = mins.X; _mins.Y = mins.Y; _mins.Z = mins.Z;
+      _maxs.X = maxs.X; _maxs.Y = maxs.Y; _maxs.Z = maxs.Z;
+      result = CounterStrikeSharp.API.Modules.Utils.Trace.TraceHullShape(_start, _end, _mins, _maxs, pawn, Options(mask));
+    }
+    catch (Exception ex)
+    {
+      SelfDisable($"CounterStrikeSharp Trace API cagrisi basarisiz (v1.0.372+ gerekli): {ex.Message}");
+      return null;
+    }
+
+    return !result.IsAllSolid && !result.DidHit();
   }
 }

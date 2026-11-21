@@ -26,6 +26,7 @@ public abstract class VipModule
     public abstract void OnLoad();
     public virtual void OnUnload() { }
     public virtual void OnSelect(CCSPlayerController player, string value) { }
+    public virtual bool OnCommand(CCSPlayerController player) => false;
 
     private int[]? _limitUsed;
     private int _limitRound = int.MinValue;

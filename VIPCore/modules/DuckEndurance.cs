@@ -9,7 +9,7 @@ public class DuckEndurance : VipModule
     public override string Name => "DuckEndurance";
     public override string DisplayName => Core.Localizer["vip.module.duckendurance"];
 
-    public override void OnLoad() => Core.HookPostThink(OnPostThink);
+    public override void OnLoad() => Core.HookPostThink(OnPostThink, Name);
 
     private void OnPostThink(CCSPlayerController player, CCSPlayerPawn pawn)
     {

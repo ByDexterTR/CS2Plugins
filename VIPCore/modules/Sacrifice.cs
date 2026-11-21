@@ -58,9 +58,14 @@ public class Sacrifice : VipModule
             if (cfg.Armor > 0 || cfg.Helmet)
             {
                 int newArmor = Math.Min(pawn.ArmorValue + Math.Max(cfg.Armor, 0), 100);
-                mate.GiveNamedItem(cfg.Helmet ? "item_assaultsuit" : "item_kevlar");
-                pawn.ArmorValue = newArmor;
-                NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
+                if (cfg.Helmet && pawn.ItemServices?.As<CCSPlayer_ItemServices>().HasHelmet != true)
+                    mate.GiveNamedItem("item_assaultsuit");
+
+                if (pawn.ArmorValue != newArmor)
+                {
+                    pawn.ArmorValue = newArmor;
+                    NetState.Changed(pawn, "CCSPlayerPawn", "m_ArmorValue");
+                }
             }
 
             foreach (var weapon in cfg.Give)

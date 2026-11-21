@@ -6,7 +6,7 @@ namespace VIPCore;
 
 public class HitSound : VipModule
 {
-    private static ConVar? _cvFfa;
+    private static ConVar<bool>? _cvFfa;
 
     private class Entry
     {
@@ -62,8 +62,8 @@ public class HitSound : VipModule
         if (!Active(attacker))
             return HookResult.Continue;
 
-        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
-        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
+        _cvFfa ??= ConVar<bool>.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.Value ?? false;
         if (!ffa && victim.Team == attacker.Team)
             return HookResult.Continue;
 

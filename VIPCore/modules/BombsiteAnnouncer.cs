@@ -74,9 +74,6 @@ public class BombsiteAnnouncer : VipModule
             if (player == null || !player.IsValid || player.IsBot || player.Team != CsTeam.CounterTerrorist || !Active(player))
                 continue;
 
-            if (VipHudGuard.Blocked(player))
-                continue;
-
             var cfg = GroupValue<Cfg>(player) ?? new Cfg();
             if (Server.CurrentTime - _plantTime > cfg.Duration)
                 continue;

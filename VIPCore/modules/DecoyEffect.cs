@@ -83,6 +83,27 @@ public class DecoyEffect : VipModule
         public int Limit { get; set; } = 0;
     }
 
+    private class EmpCfg
+    {
+        public float Radius { get; set; } = 250f;
+        public float Linger { get; set; } = 2f;
+        public bool IgnoreTeammates { get; set; } = true;
+        public bool IgnoreSelf { get; set; } = true;
+        public bool IgnoreEnemy { get; set; } = false;
+        public int Limit { get; set; } = 0;
+    }
+
+    private class ShockwaveCfg
+    {
+        public float Radius { get; set; } = 250f;
+        public float Force { get; set; } = 450f;
+        public float Lift { get; set; } = 250f;
+        public bool IgnoreTeammates { get; set; } = true;
+        public bool IgnoreSelf { get; set; } = false;
+        public bool IgnoreEnemy { get; set; } = false;
+        public int Limit { get; set; } = 0;
+    }
+
     private class Cfg
     {
         public PoisonCfg? Poison { get; set; }
@@ -92,6 +113,8 @@ public class DecoyEffect : VipModule
         public MagneticCfg? Magnetic { get; set; }
         public RadarhackCfg? Radarhack { get; set; }
         public StrengthCfg? Strength { get; set; }
+        public EmpCfg? Emp { get; set; }
+        public ShockwaveCfg? Shockwave { get; set; }
     }
 
     private class ActiveDecoy
@@ -130,6 +153,10 @@ public class DecoyEffect : VipModule
             options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.radarhack"], "radarhack"));
         if (cfg.Strength != null)
             options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.strength"], "strength"));
+        if (cfg.Emp != null)
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.emp"], "emp"));
+        if (cfg.Shockwave != null)
+            options.Add(new VipFeatureOption(Core.Localizer["vip.decoy.shockwave"], "shockwave"));
         return options;
     }
 
@@ -144,6 +171,9 @@ public class DecoyEffect : VipModule
 
         ActivityFilter.Ensure(Core);
 
+        if (Core.GetAllGroupValues<Cfg>(Name).Any(c => c?.Emp != null))
+            RadarPool.Ensure(Core);
+
         Core.HookPrecache(m => m.AddResource(DecoyRing.DiscModel));
         Core.HookDamage(OnDamage);
         Core.RegisterEventHandler<EventDecoyStarted>(OnStarted);
@@ -156,6 +186,7 @@ public class DecoyEffect : VipModule
     public override void OnUnload()
     {
         Clear();
+        RadarPool.Restore();
 
         if (!_glowUser)
             return;
@@ -189,6 +220,8 @@ public class DecoyEffect : VipModule
         "magnetic" when cfg.Magnetic != null => (cfg.Magnetic.Radius, cfg.Magnetic.Limit, Color.FromArgb(255, 255, 128, 0)),
         "radarhack" when cfg.Radarhack != null => (cfg.Radarhack.Radius, cfg.Radarhack.Limit, Color.FromArgb(255, 0, 255, 255)),
         "strength" when cfg.Strength != null => (cfg.Strength.Radius, cfg.Strength.Limit, Color.FromArgb(255, 255, 0, 0)),
+        "emp" when cfg.Emp != null => (cfg.Emp.Radius, cfg.Emp.Limit, Color.FromArgb(255, 80, 160, 255)),
+        "shockwave" when cfg.Shockwave != null => (cfg.Shockwave.Radius, cfg.Shockwave.Limit, Color.FromArgb(255, 255, 255, 255)),
         _ => (0f, 0, Color.White)
     };
 
@@ -211,6 +244,15 @@ public class DecoyEffect : VipModule
         LimitUse(slot);
 
         var pos = new Vector(ev.X, ev.Y, ev.Z);
+        if (mode == "shockwave")
+        {
+            Shockwave(pos, player, cfg.Shockwave!);
+            int ring = ev.Entityid;
+            DecoyRing.Show(Core, ring, pos, radius, color);
+            Core.AddTimer(0.6f, () => DecoyRing.Hide(ring));
+            return HookResult.Continue;
+        }
+
         _decoys[ev.Entityid] = new ActiveDecoy
         {
             Pos = pos,
@@ -267,6 +309,17 @@ public class DecoyEffect : VipModule
                 case "magnetic" when cfg.Magnetic != null:
                     decoy.NextTick = now + 0.05f;
                     Pull(decoy, owner!, cfg.Magnetic);
+                    break;
+
+                case "emp" when cfg.Emp != null:
+                    decoy.NextTick = now + 0.25f;
+                    int ticks = RadarPool.TicksFor(0.25f + Math.Max(cfg.Emp.Linger, 0f));
+                    Apply(decoy, owner!, cfg.Emp.Radius, cfg.Emp.IgnoreTeammates, cfg.Emp.IgnoreSelf, cfg.Emp.IgnoreEnemy, pawn =>
+                    {
+                        var controller = pawn.Controller.Value?.As<CCSPlayerController>();
+                        if (controller != null && controller.IsValid)
+                            RadarPool.Jam(controller.Slot, ticks);
+                    });
                     break;
 
                 case "poison" when cfg.Poison != null:
@@ -433,6 +486,37 @@ public class DecoyEffect : VipModule
 
         info.Damage = MathF.Max(info.Damage * scale, 0f);
         return HookResult.Changed;
+    }
+
+    private void Shockwave(Vector pos, CCSPlayerController owner, ShockwaveCfg cfg)
+    {
+        if (cfg.Radius <= 0f || (cfg.Force <= 0f && cfg.Lift <= 0f))
+            return;
+
+        var center = new ActiveDecoy { Pos = pos, OwnerSlot = owner.Slot };
+        Apply(center, owner, cfg.Radius, cfg.IgnoreTeammates, cfg.IgnoreSelf, cfg.IgnoreEnemy, pawn =>
+        {
+            if (pawn.AbsOrigin == null)
+                return;
+
+            float dx = pawn.AbsOrigin.X - pos.X;
+            float dy = pawn.AbsOrigin.Y - pos.Y;
+            float length = MathF.Sqrt(dx * dx + dy * dy);
+            float falloff = 1f - Math.Clamp(TrailBeam.Distance(pos, pawn.AbsOrigin) / cfg.Radius, 0f, 1f) * 0.5f;
+            if (length < 1f)
+            {
+                dx = 0f;
+                dy = 0f;
+                length = 1f;
+            }
+
+            var velocity = pawn.AbsVelocity;
+            float push = cfg.Force * falloff;
+            pawn.Teleport(null, null, new Vector(
+                velocity.X + dx / length * push,
+                velocity.Y + dy / length * push,
+                MathF.Max(velocity.Z, cfg.Lift * falloff)));
+        });
     }
 
     private void Pull(ActiveDecoy decoy, CCSPlayerController owner, MagneticCfg cfg)

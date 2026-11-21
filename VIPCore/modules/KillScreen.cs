@@ -13,7 +13,7 @@ public class KillScreen : VipModule
         public List<string> Colors { get; set; } = new();
     }
 
-    private static ConVar? _cvFfa;
+    private static ConVar<bool>? _cvFfa;
 
     public override string Name => "KillScreen";
     public override string DisplayName => Core.Localizer["vip.module.killscreen"];
@@ -31,8 +31,8 @@ public class KillScreen : VipModule
         if (!Active(attacker) || victim == null || !victim.IsValid || victim.Slot == attacker!.Slot)
             return HookResult.Continue;
 
-        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
-        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
+        _cvFfa ??= ConVar<bool>.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.Value ?? false;
         if (!ffa && victim.Team == attacker.Team)
             return HookResult.Continue;
 

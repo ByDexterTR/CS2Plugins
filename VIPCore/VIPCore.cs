@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.3.2";
+    public override string ModuleVersion => "1.3.3";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -173,41 +173,24 @@ public partial class VIPCore : BasePlugin
 
     private string GroupsPath => Path.Combine(ModuleDirectory, "vipgroups.json");
 
-    private CCSGameRulesProxy? _gameRulesProxy;
+    public bool IsFreezeTime() => Utilities.GetGameRules()?.FreezePeriod == true;
 
-    public bool IsFreezeTime()
-    {
-        if (_gameRulesProxy == null || !_gameRulesProxy.IsValid)
-            _gameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
+    public bool IsBuyTimeEnded() => Utilities.GetGameRules()?.BuyTimeEnded == true;
 
-        return _gameRulesProxy?.GameRules?.FreezePeriod == true;
-    }
-
-    public bool IsBuyTimeEnded()
-    {
-        if (_gameRulesProxy == null || !_gameRulesProxy.IsValid)
-            _gameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
-
-        return _gameRulesProxy?.GameRules?.BuyTimeEnded == true;
-    }
-
-    private ConVar? _cvHalftime;
-    private ConVar? _cvMaxRounds;
+    private ConVar<bool>? _cvHalftime;
+    private ConVar<int>? _cvMaxRounds;
 
     public bool IsPistolRound()
     {
-        if (_gameRulesProxy == null || !_gameRulesProxy.IsValid)
-            _gameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
-
-        var rules = _gameRulesProxy?.GameRules;
+        var rules = Utilities.GetGameRules();
         if (rules == null)
             return false;
 
-        _cvHalftime ??= ConVar.Find("mp_halftime");
-        _cvMaxRounds ??= ConVar.Find("mp_maxrounds");
+        _cvHalftime ??= ConVar<bool>.Find("mp_halftime");
+        _cvMaxRounds ??= ConVar<int>.Find("mp_maxrounds");
 
-        bool halftime = _cvHalftime?.GetPrimitiveValue<bool>() ?? false;
-        int maxRounds = _cvMaxRounds?.GetPrimitiveValue<int>() ?? 0;
+        bool halftime = _cvHalftime?.Value ?? false;
+        int maxRounds = _cvMaxRounds?.Value ?? 0;
 
         return rules.TotalRoundsPlayed == 0
             || (halftime && maxRounds / 2 == rules.TotalRoundsPlayed)
@@ -220,8 +203,6 @@ public partial class VIPCore : BasePlugin
     {
         Current = this;
         InstallHooks();
-        VipHudGuard.Install(this);
-        InstallWasdGuard();
         RollRoundColors();
         LoadConfig();
         PerfLog.Install(ModuleDirectory, Config.PerfLog, () => Players.Count == 0);

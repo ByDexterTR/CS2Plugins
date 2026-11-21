@@ -60,12 +60,25 @@ public class SmokeEffect : VipModule
         public int Limit { get; set; } = 0;
     }
 
+    private class EmpCfg
+    {
+        public float Duration { get; set; } = 20f;
+        public float Linger { get; set; } = 2f;
+        public List<int> SmokeColor { get; set; } = new() { 80, 160, 255 };
+        public float Radius { get; set; } = 180f;
+        public bool IgnoreTeammates { get; set; } = true;
+        public bool IgnoreSelf { get; set; } = true;
+        public bool IgnoreEnemy { get; set; } = false;
+        public int Limit { get; set; } = 0;
+    }
+
     private class Cfg
     {
         public PoisonCfg? Poison { get; set; }
         public HealCfg? Heal { get; set; }
         public SlowCfg? Slow { get; set; }
         public WallhackCfg? Wallhack { get; set; }
+        public EmpCfg? Emp { get; set; }
     }
 
     private class ActiveSmoke
@@ -100,6 +113,8 @@ public class SmokeEffect : VipModule
             options.Add(new VipFeatureOption(Core.Localizer["vip.smoke.slow"], "slow"));
         if (cfg.Wallhack != null)
             options.Add(new VipFeatureOption(Core.Localizer["vip.smoke.wallhack"], "wallhack"));
+        if (cfg.Emp != null)
+            options.Add(new VipFeatureOption(Core.Localizer["vip.smoke.emp"], "emp"));
         return options;
     }
 
@@ -112,6 +127,9 @@ public class SmokeEffect : VipModule
             ActivityFilter.Ensure(Core);
             _glowUser = true;
         }
+
+        if (Core.GetAllGroupValues<Cfg>(Name).Any(c => c?.Emp != null))
+            RadarPool.Ensure(Core);
 
         Core.HookEntitySpawned(OnEntitySpawned);
         Core.RegisterEventHandler<EventSmokegrenadeDetonate>(OnDetonate);
@@ -141,12 +159,15 @@ public class SmokeEffect : VipModule
             "heal" when cfg.Heal != null => (cfg.Heal.SmokeColor, cfg.Heal.Limit),
             "slow" when cfg.Slow != null => (cfg.Slow.SmokeColor, cfg.Slow.Limit),
             "wallhack" when cfg.Wallhack != null => (cfg.Wallhack.SmokeColor, cfg.Wallhack.Limit),
+            "emp" when cfg.Emp != null => (cfg.Emp.SmokeColor, cfg.Emp.Limit),
             _ => (null, 0)
         };
     }
 
     public override void OnUnload()
     {
+        RadarPool.Restore();
+
         if (!_glowUser)
             return;
 
@@ -212,6 +233,7 @@ public class SmokeEffect : VipModule
             "heal" when cfg.Heal != null => cfg.Heal.Duration,
             "slow" when cfg.Slow != null => cfg.Slow.Duration,
             "wallhack" when cfg.Wallhack != null => cfg.Wallhack.Duration,
+            "emp" when cfg.Emp != null => cfg.Emp.Duration,
             _ => 0f
         };
 
@@ -265,6 +287,17 @@ public class SmokeEffect : VipModule
 
             switch (smoke.Mode)
             {
+                case "emp" when cfg.Emp != null:
+                    smoke.NextTick = now + 0.25f;
+                    int ticks = RadarPool.TicksFor(0.25f + Math.Max(cfg.Emp.Linger, 0f));
+                    Apply(smoke, owner!, cfg.Emp.Radius, cfg.Emp.IgnoreTeammates, cfg.Emp.IgnoreSelf, cfg.Emp.IgnoreEnemy, pawn =>
+                    {
+                        var controller = pawn.Controller.Value?.As<CCSPlayerController>();
+                        if (controller != null && controller.IsValid)
+                            RadarPool.Jam(controller.Slot, ticks);
+                    });
+                    break;
+
                 case "poison" when cfg.Poison != null:
                     smoke.NextTick = now + Math.Max(cfg.Poison.Interval, 0.05f);
                     Apply(smoke, owner!, cfg.Poison.Radius, cfg.Poison.IgnoreTeammates, cfg.Poison.IgnoreSelf, false, pawn =>

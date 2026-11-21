@@ -60,6 +60,9 @@ public partial class VIPCore
             return;
         }
 
+        if (module.OnCommand(player))
+            return;
+
         if (module.MenuType == VipFeatureType.Toggle && module.SelectCategories(player).Count == 0)
         {
             string next = GetSetting(player.SteamID, module.Name) == "off" ? "on" : "off";

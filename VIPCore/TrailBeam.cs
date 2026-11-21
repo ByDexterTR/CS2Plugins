@@ -58,15 +58,15 @@ public static class TrailBeam
         return options;
     }
 
-    public static void Create(BasePlugin plugin, Vector from, Vector to, Color color, float width, float lifetime,
+    public static uint Create(BasePlugin plugin, Vector from, Vector to, Color color, float width, float lifetime,
         int hideModule = -1, int ownerSlot = -1)
     {
         if (hideModule >= 0 && !EffectHide.AnyViewer(hideModule, ownerSlot))
-            return;
+            return 0;
 
         var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam");
         if (beam == null || !beam.IsValid)
-            return;
+            return 0;
 
         if (hideModule >= 0)
             EffectHide.Track(hideModule, beam.Index, ownerSlot);
@@ -88,6 +88,8 @@ public static class TrailBeam
             if (entity != null && entity.IsValid)
                 entity.Remove();
         }, CounterStrikeSharp.API.Modules.Timers.TimerFlags.STOP_ON_MAPCHANGE);
+
+        return handle;
     }
 
     public static float Distance(Vector a, Vector b)

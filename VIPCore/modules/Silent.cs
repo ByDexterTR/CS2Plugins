@@ -45,9 +45,38 @@ public class Silent : VipModule
     public override string Name => "Silent";
     public override string DisplayName => Core.Localizer["vip.module.silent"];
 
-    public override void OnLoad() => Core.HookUserMessage(208, OnSound, HookMode.Pre);
+    private bool _hooked;
 
-    public override void OnUnload() => Core.UnhookUserMessage(208, OnSound, HookMode.Pre);
+    public override void OnLoad() => Core.HookTick(Sync, 32);
+
+    public override void OnUnload() => SetHooked(false);
+
+    private void Sync()
+    {
+        bool want = false;
+        foreach (var player in ActivePlayers())
+        {
+            if (IsAlive(player))
+            {
+                want = true;
+                break;
+            }
+        }
+
+        SetHooked(want);
+    }
+
+    private void SetHooked(bool want)
+    {
+        if (want == _hooked)
+            return;
+
+        _hooked = want;
+        if (want)
+            Core.HookUserMessage(208, OnSound, HookMode.Pre);
+        else
+            Core.UnhookUserMessage(208, OnSound, HookMode.Pre);
+    }
 
     private HookResult OnSound(UserMessage um)
     {

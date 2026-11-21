@@ -48,6 +48,7 @@ public class Ricochet : VipModule
         public required float Volume;
         public float Travelled;
         public int NextSound;
+        public Vector3 Tail = new(float.NaN);
         public CEnvBeam? Beam;
     }
 
@@ -384,14 +385,23 @@ public class Ricochet : VipModule
             flight.Beam = null;
         }
 
-        beam ??= Acquire(flight);
         if (beam == null)
-            return;
+        {
+            beam = Acquire(flight);
+            if (beam == null)
+                return;
 
-        _tail.X = tail.X;
-        _tail.Y = tail.Y;
-        _tail.Z = tail.Z;
-        Teleporter.Teleport(beam, _tail, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
+            flight.Tail = new Vector3(float.NaN);
+        }
+
+        if (flight.Tail != tail)
+        {
+            flight.Tail = tail;
+            _tail.X = tail.X;
+            _tail.Y = tail.Y;
+            _tail.Z = tail.Z;
+            Teleporter.Teleport(beam, _tail, TrailBeam.ZeroAngle, TrailBeam.ZeroVector);
+        }
 
         unsafe { *(Vector3*)(beam.Handle + RicochetOffsets.EndPosOffset) = head; }
         NetState.Changed(beam, "CBeam", "m_vecEndPos");

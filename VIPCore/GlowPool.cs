@@ -10,6 +10,7 @@ namespace VIPCore;
 public static class GlowPool
 {
     public const string DefaultColor = "#612D53";
+    private const int CreatesPerTick = 2;
 
     private static VIPCore? _owner;
     private static readonly (uint Glow, uint Relay, uint GlowHandle, uint RelayHandle)?[] _entities = new (uint, uint, uint, uint)?[64];
@@ -111,6 +112,7 @@ public static class GlowPool
         _builtAt = tick;
 
         ulong alive = 0;
+        int created = 0;
         foreach (ref readonly var target in PlayerCache.AlivePlayers(core.Players))
         {
             if (target.Team < 2)
@@ -126,6 +128,10 @@ public static class GlowPool
                 _entities[slot] = null;
             }
 
+            if (created >= CreatesPerTick)
+                continue;
+
+            created++;
             _entities[slot] = Create(target.Player);
             _colors[slot] = _entities[slot] != null ? TrailBeam.Resolve(DefaultColor) : default;
         }

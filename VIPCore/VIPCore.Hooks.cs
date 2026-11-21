@@ -110,27 +110,59 @@ public partial class VIPCore
     public delegate void PostThinkHook(CCSPlayerController player, CCSPlayerPawn pawn);
 
     private PostThinkHook[] _postThinkHooks = Array.Empty<PostThinkHook>();
+    private string[] _postThinkFeatures = Array.Empty<string>();
     private Func<DynamicHook, HookResult>? _postThinkListener;
     private int _pawnControllerOffset = -1;
 
-    public void HookPostThink(PostThinkHook handler)
+    public void HookPostThink(PostThinkHook handler, string feature)
     {
         Add(ref _postThinkHooks, handler);
-        if (_postThinkListener != null)
+        if (Array.IndexOf(_postThinkFeatures, feature) < 0)
+            _postThinkFeatures = [.. _postThinkFeatures, feature];
+
+        HookTick(SyncPostThink, 8);
+    }
+
+    private void SyncPostThink()
+    {
+        bool want = false;
+        foreach (string feature in _postThinkFeatures)
+        {
+            foreach (var player in ActivePlayers(feature))
+            {
+                if (!IsBotSlot(player))
+                {
+                    want = true;
+                    break;
+                }
+            }
+
+            if (want)
+                break;
+        }
+
+        if (want == (_postThinkListener != null))
             return;
 
-        _postThinkListener = DispatchPostThink;
-        VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Hook(_postThinkListener, HookMode.Post);
+        if (want)
+        {
+            _postThinkListener = DispatchPostThink;
+            VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Hook(_postThinkListener, HookMode.Post);
+            return;
+        }
+
+        VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Unhook(_postThinkListener!, HookMode.Post);
+        _postThinkListener = null;
     }
 
     private void UnhookPostThink()
     {
-        if (_postThinkListener == null)
-            return;
+        if (_postThinkListener != null)
+            VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Unhook(_postThinkListener, HookMode.Post);
 
-        VirtualFunctions.CCSPlayerPawnBase_PostThinkFunc.Unhook(_postThinkListener, HookMode.Post);
         _postThinkListener = null;
         _postThinkHooks = Array.Empty<PostThinkHook>();
+        _postThinkFeatures = Array.Empty<string>();
     }
 
     private unsafe HookResult DispatchPostThink(DynamicHook hook)
@@ -335,7 +367,6 @@ public partial class VIPCore
     {
         PlayerCache.Invalidate();
         _playersDirty = true;
-        _gameRulesProxy = null;
         Array.Clear(_identity);
         var hooks = _mapStartHooks;
         for (int i = 0; i < hooks.Length; i++)

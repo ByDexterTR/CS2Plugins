@@ -26,7 +26,7 @@ public class HitMarker : VipModule
         public required Entry Def;
     }
 
-    private static ConVar? _cvFfa;
+    private static ConVar<bool>? _cvFfa;
 
     private readonly Live?[] _active = new Live?[64];
     private readonly Dictionary<uint, ulong> _viewers = new();
@@ -84,8 +84,8 @@ public class HitMarker : VipModule
         if (!Active(attacker))
             return HookResult.Continue;
 
-        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
-        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
+        _cvFfa ??= ConVar<bool>.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.Value ?? false;
         if (!ffa && victim.Team == attacker.Team)
             return HookResult.Continue;
 

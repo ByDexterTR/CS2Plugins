@@ -106,7 +106,10 @@ public partial class VIPCore
     ],
     "SpawnProtection": {
       "duration": 2,
-      "limit": 0
+      "limit": 0,
+      "end_on_fire": false,
+      "screen_color": "#FFD000",
+      "screen_alpha": 90
     },
     "Tag": {
       "tag": "{BlueGrey}[LITE]",
@@ -493,7 +496,10 @@ public partial class VIPCore
     ],
     "SpawnProtection": {
       "duration": 3,
-      "limit": 0
+      "limit": 0,
+      "end_on_fire": false,
+      "screen_color": "#FFD000",
+      "screen_alpha": 90
     },
     "Tag": {
       "tag": "{Gold}[{Orchid}PLUS{Gold}]",
@@ -1337,6 +1343,23 @@ public partial class VIPCore
         "ignore_self": true,
         "ignore_enemy": false,
         "limit": 0
+      },
+      "emp": {
+        "radius": 250,
+        "linger": 2,
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false,
+        "limit": 0
+      },
+      "shockwave": {
+        "radius": 250,
+        "force": 450,
+        "lift": 250,
+        "ignore_teammates": true,
+        "ignore_self": false,
+        "ignore_enemy": false,
+        "limit": 0
       }
     },
     "DecoyTeleport": {
@@ -1515,6 +1538,13 @@ public partial class VIPCore
       "limit": 2,
       "delay": 2
     },
+    "Rewind": {
+      "delay": 3,
+      "cooldown": 20,
+      "limit": 0,
+      "color": "#4FC3F7",
+      "sound_volume": 0.5
+    },
     "Ricochet": {
       "bounces": 3,
       "segment_distance": 1200,
@@ -1599,6 +1629,20 @@ public partial class VIPCore
         "see_teammates": false,
         "only_mode": 0,
         "limit": 0
+      },
+      "emp": {
+        "duration": 20,
+        "linger": 2,
+        "radius": 180,
+        "smoke_color": [
+          80,
+          160,
+          255
+        ],
+        "ignore_teammates": true,
+        "ignore_self": true,
+        "ignore_enemy": false,
+        "limit": 0
       }
     },
     "Soul": {
@@ -1617,7 +1661,10 @@ public partial class VIPCore
     },
     "SpawnProtection": {
       "duration": 4,
-      "limit": 0
+      "limit": 0,
+      "end_on_fire": false,
+      "screen_color": "#FFD000",
+      "screen_alpha": 90
     },
     "Spy": true,
     "Tag": {
@@ -1625,6 +1672,16 @@ public partial class VIPCore
       "name_color": "lightred",
       "chat_color": "default",
       "tab": "[DELUXE]"
+    },
+    "Totem": {
+      "limit": 1,
+      "color": "#FFC83C",
+      "alpha": 140,
+      "fade": 0.6,
+      "hold": 0.2,
+      "sound_path": "sounds/items/healthshot_success_01.vsnd",
+      "sound_emit": "Healthshot.Success",
+      "sound_volume": 1
     },
     "WallHack": {
       "duration_on": 1,

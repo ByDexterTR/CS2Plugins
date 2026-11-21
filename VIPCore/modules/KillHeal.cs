@@ -7,7 +7,7 @@ namespace VIPCore;
 
 public class KillHeal : VipModule
 {
-    private static ConVar? _cvFfa;
+    private static ConVar<bool>? _cvFfa;
 
     public override string Name => "KillHeal";
     public override string DisplayName => Core.Localizer["vip.module.killheal"];
@@ -21,8 +21,8 @@ public class KillHeal : VipModule
         if (attacker == null || !attacker.IsValid || attacker.IsBot || victim == null || !victim.IsValid)
             return HookResult.Continue;
 
-        _cvFfa ??= ConVar.Find("mp_teammates_are_enemies");
-        bool ffa = _cvFfa?.GetPrimitiveValue<bool>() ?? false;
+        _cvFfa ??= ConVar<bool>.Find("mp_teammates_are_enemies");
+        bool ffa = _cvFfa?.Value ?? false;
         if (attacker.Slot == victim.Slot || (!ffa && attacker.Team == victim.Team) || !Active(attacker) || !IsAlive(attacker))
             return HookResult.Continue;
 

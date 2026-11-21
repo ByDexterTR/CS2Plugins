@@ -15,6 +15,7 @@ public class Respawn : VipModule
 
     private readonly int[] _used = new int[64];
     private int _round;
+    private bool _roundOver;
 
     public override string Name => "Respawn";
     public override string DisplayName => Core.Localizer["vip.module.respawn"];
@@ -25,7 +26,14 @@ public class Respawn : VipModule
         Core.RegisterEventHandler<EventRoundStart>((_, __) =>
         {
             _round++;
+            _roundOver = false;
             Array.Clear(_used);
+            return HookResult.Continue;
+        });
+        Core.RegisterEventHandler<EventRoundEnd>((_, __) =>
+        {
+            _round++;
+            _roundOver = true;
             return HookResult.Continue;
         });
     }
@@ -34,7 +42,7 @@ public class Respawn : VipModule
     {
         var player = ev.Userid;
         int slot = player?.Slot ?? -1;
-        if (slot < 0 || slot >= 64 || !Active(player))
+        if (_roundOver || slot < 0 || slot >= 64 || !Active(player))
             return HookResult.Continue;
 
         var cfg = GroupValue<Cfg>(player!) ?? new Cfg();
@@ -47,7 +55,7 @@ public class Respawn : VipModule
 
         Core.AddTimer(Math.Max(cfg.Delay, 0.1f), () =>
         {
-            if (round != _round || userId < 0)
+            if (round != _round || _roundOver || userId < 0)
                 return;
 
             var p = Utilities.GetPlayerFromUserid(userId);

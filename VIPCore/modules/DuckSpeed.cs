@@ -19,7 +19,7 @@ public class DuckSpeed : VipModule
     public override void OnLoad()
     {
         SpeedPool.Ensure(Core);
-        Core.HookPostThink(OnPostThink);
+        Core.HookPostThink(OnPostThink, Name);
     }
 
     private void OnPostThink(CCSPlayerController player, CCSPlayerPawn pawn)
@@ -29,12 +29,6 @@ public class DuckSpeed : VipModule
 
         float percent = Math.Clamp((GroupValue<Cfg>(player) ?? DefaultCfg).Percent, VanillaDuckPercent, 100f);
         float target = percent / VanillaDuckPercent;
-
-        if (pawn.VelocityModifier < target)
-        {
-            pawn.VelocityModifier = target;
-            NetState.Changed(pawn, "CCSPlayerPawn", "m_flVelocityModifier");
-        }
 
         SpeedPool.Floor(player.Slot, target);
     }

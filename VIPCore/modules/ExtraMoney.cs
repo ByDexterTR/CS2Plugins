@@ -11,7 +11,7 @@ public class ExtraMoney : VipModule
         public int Amount { get; set; } = 0;
     }
 
-    private static ConVar? _cvMaxMoney;
+    private static ConVar<int>? _cvMaxMoney;
 
     public override string Name => "ExtraMoney";
     public override string DisplayName => Core.Localizer["vip.module.extramoney"];
@@ -37,8 +37,8 @@ public class ExtraMoney : VipModule
             if (money == null)
                 return;
 
-            _cvMaxMoney ??= ConVar.Find("mp_maxmoney");
-            int maxMoney = _cvMaxMoney?.GetPrimitiveValue<int>() ?? 16000;
+            _cvMaxMoney ??= ConVar<int>.Find("mp_maxmoney");
+            int maxMoney = _cvMaxMoney?.Value ?? 16000;
             int target = Math.Clamp(money.Account + cfg.Amount, 0, maxMoney);
             if (target == money.Account)
                 return;
