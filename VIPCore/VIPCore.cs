@@ -96,7 +96,10 @@ public partial class VIPCore : BasePlugin
     {
         _playersDirty = true;
         if ((uint)slot < 64)
+        {
             _identity[slot] = default;
+            _clientStates[slot] = default;
+        }
     }
 
     private struct Identity
@@ -801,8 +804,10 @@ public partial class VIPCore : BasePlugin
         public ulong SteamId;
         public bool Vip;
         public string? Group;
+        public nint Handle;
     }
 
+    private const int ResolveTicks = 64;
     private readonly ClientState[] _clientStates = new ClientState[64];
     internal static string? BenchBotGroup { get; set; }
     private int _vipVersion = 1;
@@ -819,11 +824,11 @@ public partial class VIPCore : BasePlugin
         if (cacheable)
         {
             var cached = _clientStates[slot];
-            if (cached.Tick == tick && cached.Version == version)
+            if (cached.Version == version && cached.Handle == player.Handle && (uint)(tick - cached.Tick) < ResolveTicks)
                 return cached;
         }
 
-        var state = new ClientState { Tick = tick, Version = version };
+        var state = new ClientState { Tick = tick, Version = version, Handle = player.Handle };
         bool valid, bot;
         ulong steamId;
         if (cacheable)
