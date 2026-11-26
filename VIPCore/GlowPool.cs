@@ -49,7 +49,7 @@ public static class GlowPool
         _users = 0;
         _builtAt = -1;
 
-        core.HookTransmit(OnCheckTransmit);
+        core.HookTransmit(OnCheckTransmit, () => _users > 0);
         core.RegisterEventHandler<EventRoundStart>((_, _) => { DestroyAll(); return HookResult.Continue; });
         core.RegisterEventHandler<EventPlayerDeath>((ev, _) =>
         {

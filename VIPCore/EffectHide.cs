@@ -55,7 +55,7 @@ public static class EffectHide
         for (int m = 0; m < ModuleCount; m++)
             _locked[m] = core.HideDefault(Names[m]).Equals("off", StringComparison.OrdinalIgnoreCase);
 
-        core.HookTransmit(OnCheckTransmit);
+        core.HookTransmit(OnCheckTransmit, () => _transmitNonDefault != 0 && _entities.Count > 0);
         core.HookEntityDeleted(entity =>
         {
             if (_entities.Count > 0 && _entities.Remove(entity.Index, out var old))

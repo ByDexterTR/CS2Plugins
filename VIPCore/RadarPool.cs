@@ -10,6 +10,7 @@ public static class RadarPool
     private static VIPCore? _owner;
     private static readonly int[] _until = new int[64];
     private static readonly bool[] _sent = new bool[64];
+    private static int _latest;
 
     public static void Ensure(VIPCore core)
     {
@@ -32,7 +33,7 @@ public static class RadarPool
             }
             return HookResult.Continue;
         });
-        core.HookMapStart(_ => { Array.Clear(_until); Array.Clear(_sent); });
+        core.HookMapStart(_ => { Array.Clear(_until); Array.Clear(_sent); _latest = 0; });
     }
 
     public static int TicksFor(float seconds) => Math.Max((int)MathF.Ceiling(seconds * 64f), 1) + 4;
@@ -45,6 +46,8 @@ public static class RadarPool
         int until = Server.TickCount + Math.Max(ticks, 1);
         if (until > _until[slot])
             _until[slot] = until;
+        if (until > _latest)
+            _latest = until;
     }
 
     public static void Restore()
@@ -73,12 +76,15 @@ public static class RadarPool
             return;
 
         int now = Server.TickCount;
+        if (_latest <= now && Array.IndexOf(_sent, true) < 0)
+            return;
+
         foreach (var player in core.Humans)
         {
-            if (player == null || !player.IsValid || player.Slot >= 64)
+            int slot = PlayerCache.Slot(player);
+            if ((uint)slot >= 64 || !PlayerCache.Valid(player))
                 continue;
 
-            int slot = player.Slot;
             bool jam = player.PawnIsAlive ? _until[slot] > now : ObservedJammed(player, now);
             if (jam == _sent[slot])
                 continue;

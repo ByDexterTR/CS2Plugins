@@ -31,7 +31,7 @@ public static class InvisPool
         _count = 0;
         _attached.Clear();
 
-        core.HookTransmit(OnCheckTransmit);
+        core.HookTransmit(OnCheckTransmit, () => _count > 0);
         core.HookEntityDeleted(entity =>
         {
             if (_attached.Count > 0)

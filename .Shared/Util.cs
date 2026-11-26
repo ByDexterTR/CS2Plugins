@@ -15,7 +15,13 @@ public static class Util
   private const int PlayerCacheTicks = 32;
 
   private static readonly List<CCSPlayerController> CachedPlayers = new(64);
+  private static readonly CCSPlayerController?[] SlotPlayers = new CCSPlayerController?[64];
   private static int _playerStamp = int.MinValue;
+
+  private static class PlayerOffsets
+  {
+    internal static readonly int Connected = CounterStrikeSharp.API.Modules.Memory.Schema.GetSchemaOffset("CBasePlayerController", "m_iConnected");
+  }
 
   public static List<CCSPlayerController> Players()
   {
@@ -27,9 +33,21 @@ public static class Util
     _playerStamp = tick;
     CachedPlayers.Clear();
 
-    foreach (var player in Utilities.GetPlayers())
+    int max = Math.Min(Server.MaxPlayers, SlotPlayers.Length);
+    for (int slot = 0; slot < max; slot++)
     {
-      if (player != null && player.IsValid)
+      nint ptr = CounterStrikeSharp.API.Modules.Entities.EntitySystem.GetEntityByIndex((uint)slot + 1) ?? 0;
+      if (ptr == 0)
+      {
+        SlotPlayers[slot] = null;
+        continue;
+      }
+
+      var player = SlotPlayers[slot];
+      if (player == null || player.Handle != ptr)
+        SlotPlayers[slot] = player = new CCSPlayerController(ptr);
+
+      if (System.Runtime.InteropServices.Marshal.ReadInt32(ptr + PlayerOffsets.Connected) == (int)PlayerConnectedState.Connected && player.IsValid)
         CachedPlayers.Add(player);
     }
 
@@ -43,10 +61,10 @@ public static class Util
 
   public static ulong SteamId(CCSPlayerController? player)
   {
-    if (player == null || !player.IsValid)
+    if (player == null || !player.IsValid || player.IsBot || player.IsHLTV)
       return 0UL;
 
-    ulong id = player.AuthorizedSteamID?.SteamId64 ?? 0UL;
+    ulong id = NativeAPI.GetPlayerAuthorizedSteamid(player.Slot);
     return id > 76561197960265728UL && (id & 0xFFFFFFFFUL) != 0xFFFFFFFFUL ? id : 0UL;
   }
 

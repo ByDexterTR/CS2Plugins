@@ -51,7 +51,7 @@ public class ExtraJump : VipModule
             if (pawn == 0)
                 continue;
 
-            int slot = player.Slot;
+            int slot = PlayerCache.Slot(player);
             if (!PlayerCache.Buttons(pawn, out ulong raw, out _))
                 continue;
 

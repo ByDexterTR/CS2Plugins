@@ -50,6 +50,11 @@ public partial class VIPCore
         foreach (string command in MapChangeCommands)
             AddCommandListener(command, OnMapChangeCommand, HookMode.Pre);
         RegisterEventHandler<EventCsIntermission>((_, _) => DispatchMapChange());
+        RegisterEventHandler<EventPlayerSpawn>((_, _) => { AliveChanged(); return HookResult.Continue; });
+        RegisterEventHandler<EventPlayerDeath>((_, _) => { AliveChanged(); return HookResult.Continue; });
+        RegisterEventHandler<EventPlayerTeam>((_, _) => { AliveChanged(); return HookResult.Continue; });
+        RegisterEventHandler<EventRoundStart>((_, _) => { AliveChanged(); return HookResult.Continue; });
+        RegisterEventHandler<EventRoundEnd>((_, _) => { AliveChanged(); return HookResult.Continue; });
         RegisterEventHandler<EventCsWinPanelMatch>((_, _) => DispatchMapChange());
         RegisterListener<OnServerPrecacheResources>(manifest =>
         {
@@ -194,7 +199,16 @@ public partial class VIPCore
     }
 
     public void HookDamage(OnEntityTakeDamagePre handler) => Add(ref _damageHooks, handler);
-    public void HookTransmit(TransmitHook handler) => Add(ref _transmitHooks, handler);
+    private Func<bool>?[] _transmitGates = Array.Empty<Func<bool>?>();
+
+    public void HookTransmit(TransmitHook handler, Func<bool>? busy = null)
+    {
+        if (Array.IndexOf(_transmitHooks, handler) >= 0)
+            return;
+
+        Add(ref _transmitHooks, handler);
+        _transmitGates = [.. _transmitGates, busy];
+    }
     public void HookEntitySpawned(OnEntitySpawned handler) => Add(ref _spawnHooks, handler);
     public void HookEntityDeleted(OnEntityDeleted handler) => Add(ref _deleteHooks, handler);
     public void HookMapStart(OnMapStart handler) => Add(ref _mapStartHooks, handler);
@@ -216,6 +230,7 @@ public partial class VIPCore
         PlayerCache.Invalidate();
         var hooks = _tickHooks;
         int tick = Server.TickCount;
+        _frameTick = tick;
         long total = PerfLog.Start();
         long totalAlloc = PerfLog.Alloc();
 
@@ -232,6 +247,7 @@ public partial class VIPCore
             PerfLog.Sample(perf, alloc, "Tick", hook.Handler);
         }
 
+        _frameTick = -1;
         PerfLog.Sample(total, totalAlloc, "Tick (total)");
     }
 
@@ -302,12 +318,20 @@ public partial class VIPCore
         if (hooks.Length == 0)
             return;
 
+        bool busy = false;
+        var gates = _transmitGates;
+        for (int i = 0; i < gates.Length && !busy; i++)
+            busy = gates[i] == null || gates[i]!();
+        if (!busy)
+            return;
+
         long all = PerfLog.Start();
         long allAlloc = PerfLog.Alloc();
 
         if (_transmitSlotOffset < 0)
             _transmitSlotOffset = GameData.GetOffset("CheckTransmitPlayerSlot");
 
+        _ = Players;
         nint* list = (nint*)infoList.Handle;
         nint* entries = (nint*)list[0];
         int count = (int)list[1];
@@ -319,7 +343,7 @@ public partial class VIPCore
             if ((uint)slot >= 64)
                 continue;
 
-            _transmitViews[views++] = new TransmitView(PlayerAt(slot), slot, *(uint**)entry, *(uint**)(entry + 8));
+            _transmitViews[views++] = new TransmitView(_bySlot[slot], slot, *(uint**)entry, *(uint**)(entry + 8));
         }
 
         var span = new ReadOnlySpan<TransmitView>(_transmitViews, 0, views);

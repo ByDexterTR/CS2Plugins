@@ -81,10 +81,10 @@ public class ColoredModel : VipModule
     {
         foreach (var player in Core.Humans)
         {
-            if (player == null || !player.IsValid)
+            if (!PlayerCache.Valid(player))
                 continue;
 
-            int slot = player.Slot;
+            int slot = PlayerCache.Slot(player);
 
             if (!IsAlive(player) || !Active(player) || !TeamMatches(player, (GroupValue<Cfg>(player) ?? DefaultCfg).Team))
             {

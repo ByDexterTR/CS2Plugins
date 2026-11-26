@@ -11,7 +11,7 @@ namespace VIPCore;
 public partial class VIPCore : BasePlugin
 {
     public override string ModuleName => "VIPCore";
-    public override string ModuleVersion => "1.3.3";
+    public override string ModuleVersion => "1.3.6";
     public override string ModuleAuthor => "ByDexter";
     public override string ModuleDescription => "https://github.com/ByDexterTR/CS2Plugins";
 
@@ -45,11 +45,15 @@ public partial class VIPCore : BasePlugin
 
     private const int PlayersRefreshTicks = 64;
 
+    private int _frameTick = -1;
+
+    internal int CurrentTick => _frameTick >= 0 ? _frameTick : Server.TickCount;
+
     public IReadOnlyList<CCSPlayerController> Players
     {
         get
         {
-            int tick = Server.TickCount;
+            int tick = CurrentTick;
             if (_playersDirty || tick < _playersAt || tick - _playersAt >= PlayersRefreshTicks)
                 RefreshPlayers(tick);
             return _players;
@@ -75,7 +79,7 @@ public partial class VIPCore : BasePlugin
         Array.Clear(_bySlot);
         foreach (var player in players)
         {
-            int slot = player.Slot;
+            int slot = PlayerCache.Slot(player);
             if ((uint)slot < 64)
             {
                 _bySlot[slot] = player;
@@ -95,6 +99,7 @@ public partial class VIPCore : BasePlugin
     private void PlayersChanged(int slot)
     {
         _playersDirty = true;
+        AliveChanged();
         if ((uint)slot < 64)
         {
             _identity[slot] = default;
@@ -115,12 +120,12 @@ public partial class VIPCore : BasePlugin
     private ref Identity Identify(CCSPlayerController player, int slot)
     {
         ref var id = ref _identity[slot];
-        nint handle = player.Handle;
+        nint handle = PlayerCache.Ptr(player);
         if (id.Handle == handle && handle != 0)
             return ref id;
 
         id.Handle = handle;
-        id.Valid = player.IsValid;
+        id.Valid = handle != 0;
         id.Bot = id.Valid && player.IsBot;
         id.SteamId = id.Valid && !id.Bot ? player.SteamID : 0;
         return ref id;
@@ -128,7 +133,7 @@ public partial class VIPCore : BasePlugin
 
     public bool IsBotSlot(CCSPlayerController player)
     {
-        int slot = player.Slot;
+        int slot = PlayerCache.Slot(player);
         return (uint)slot < 64 ? Identify(player, slot).Bot : player.IsBot;
     }
 
@@ -298,6 +303,8 @@ public partial class VIPCore : BasePlugin
     private sealed class FeatureState
     {
         public int Tick = -1;
+        public int Source = -1;
+        public int SourceVersion;
         public readonly List<CCSPlayerController> Players = new();
         public readonly ActiveSlot[] Slots = new ActiveSlot[64];
     }
@@ -315,22 +322,39 @@ public partial class VIPCore : BasePlugin
     private readonly List<CCSPlayerController> _aliveVips = new();
     private int _aliveVipsAt = -1;
     private int _aliveVipsVersion;
+    private int _aliveBuild;
+    private bool _aliveDirty = true;
+    private int _aliveDirtyUntil;
+    private const int AliveRefreshTicks = 16;
+    private const int AliveSettleTicks = 4;
+
+    private void AliveChanged() => _aliveDirty = true;
 
     private List<CCSPlayerController> AliveVips(int tick)
     {
         int version = Volatile.Read(ref _vipVersion);
-        if (_aliveVipsAt == tick && _aliveVipsVersion == version)
+        if (_aliveDirty || _aliveDirtyUntil > tick + AliveSettleTicks)
+        {
+            _aliveDirty = false;
+            _aliveDirtyUntil = tick + AliveSettleTicks;
+        }
+
+        if (_aliveVipsVersion == version
+            && (_aliveVipsAt == tick || (_aliveVipsAt > _aliveDirtyUntil && tick > _aliveVipsAt && tick - _aliveVipsAt < AliveRefreshTicks)))
             return _aliveVips;
 
         _aliveVipsAt = tick;
         _aliveVipsVersion = version;
+        _aliveBuild++;
         _aliveVips.Clear();
 
         if (_vips.Count == 0 && BenchBotGroup == null)
             return _aliveVips;
 
-        foreach (var player in Players)
+        _ = Players;
+        for (int slot = 0; slot < _bySlot.Length; slot++)
         {
+            var player = _bySlot[slot];
             if (player == null || !Resolve(player).Vip || !PlayerCache.Alive(player))
                 continue;
 
@@ -342,19 +366,29 @@ public partial class VIPCore : BasePlugin
 
     public IReadOnlyList<CCSPlayerController> ActivePlayers(string feature)
     {
-        int tick = Server.TickCount;
+        int tick = CurrentTick;
         var state = Feature(feature);
         if (state.Tick == tick)
             return state.Players;
 
         state.Tick = tick;
         var list = state.Players;
-        list.Clear();
 
         if (!_enabled.Contains(feature))
+        {
+            list.Clear();
+            state.Source = -1;
+            return list;
+        }
+
+        var alive = AliveVips(tick);
+        if (state.Source == _aliveBuild && state.SourceVersion == _aliveVipsVersion)
             return list;
 
-        foreach (var player in AliveVips(tick))
+        state.Source = _aliveBuild;
+        state.SourceVersion = _aliveVipsVersion;
+        list.Clear();
+        foreach (var player in alive)
             if (IsActive(player, feature, state))
                 list.Add(player);
 
@@ -816,19 +850,20 @@ public partial class VIPCore : BasePlugin
 
     private ClientState Resolve(CCSPlayerController player)
     {
-        int slot = player.Slot;
+        int slot = PlayerCache.Slot(player);
         bool cacheable = slot >= 0 && slot < 64;
-        int tick = Server.TickCount;
+        nint handle = PlayerCache.Ptr(player);
+        int tick = CurrentTick;
         int version = Volatile.Read(ref _vipVersion);
 
         if (cacheable)
         {
             var cached = _clientStates[slot];
-            if (cached.Version == version && cached.Handle == player.Handle && (uint)(tick - cached.Tick) < ResolveTicks)
+            if (cached.Version == version && cached.Handle == handle && (uint)(tick - cached.Tick) < ResolveTicks)
                 return cached;
         }
 
-        var state = new ClientState { Tick = tick, Version = version, Handle = player.Handle };
+        var state = new ClientState { Tick = tick, Version = version, Handle = handle };
         bool valid, bot;
         ulong steamId;
         if (cacheable)

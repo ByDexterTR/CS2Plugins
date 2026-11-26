@@ -1,4 +1,5 @@
 using System.Numerics;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Memory;
@@ -68,6 +69,31 @@ public static unsafe class PlayerCache
 
     public static void Invalidate() => _generation++;
 
+    private static nint _entityList;
+
+    public static nint Lookup(uint raw)
+    {
+        uint index = raw & 0x7FFF;
+        if (index == 0x7FFF)
+            return 0;
+
+        if (_entityList == 0)
+            _entityList = NativeAPI.GetConcreteEntityListPointer();
+
+        nint chunk = ((nint*)_entityList)[index / 512];
+        if (chunk == 0)
+            return 0;
+
+        nint identity = chunk + 112 * (int)(index % 512);
+        return *(uint*)(identity + 16) == raw ? *(nint*)identity : 0;
+    }
+
+    public static nint Ptr(NativeEntity? entity) => entity == null ? 0 : Lookup(entity.EntityHandle.Raw);
+
+    public static int Slot(NativeEntity? entity) => entity == null ? -1 : (int)(entity.EntityHandle.Raw & 0x7FFF) - 1;
+
+    public static bool Valid(NativeEntity? entity) => Ptr(entity) != 0;
+
     public static ReadOnlySpan<Living> AlivePlayers(IReadOnlyList<CCSPlayerController> players)
     {
         if (_livingGeneration == _generation)
@@ -77,11 +103,12 @@ public static unsafe class PlayerCache
         for (int i = 0; i < players.Count && count < Slots; i++)
         {
             var player = players[i];
-            if (player == null || (uint)player.Slot >= Slots || !Alive(player))
+            int slot = Slot(player);
+            if ((uint)slot >= Slots || !Alive(player))
                 continue;
 
-            nint pawn = Pointers[player.Slot];
-            LivingBuffer[count++] = new Living { Player = player, Pawn = pawn, Slot = player.Slot, Team = Team(pawn) };
+            nint pawn = Pointers[slot];
+            LivingBuffer[count++] = new Living { Player = player!, Pawn = pawn, Slot = slot, Team = Team(pawn) };
         }
 
         _livingCount = count;
@@ -94,18 +121,19 @@ public static unsafe class PlayerCache
         if (player == null)
             return null;
 
-        int slot = player.Slot;
+        int slot = Slot(player);
         if ((uint)slot >= Slots)
-            return player.IsValid ? player.PlayerPawn.Value : null;
+            return Valid(player) ? player.PlayerPawn.Value : null;
 
         if (Stamps[slot] == _generation && Pointers[slot] != 0)
             return Pawns[slot];
 
-        if (!player.IsValid)
+        nint self = Ptr(player);
+        if (self == 0)
             return null;
 
-        uint raw = *(uint*)(player.Handle + Offsets.PawnHandle);
-        nint pointer = EntitySystem.GetEntityByHandle(raw) ?? 0;
+        uint raw = *(uint*)(self + Offsets.PawnHandle);
+        nint pointer = Lookup(raw);
         nint previous = Pointers[slot];
         Stamps[slot] = _generation;
         Pointers[slot] = pointer;
@@ -126,7 +154,8 @@ public static unsafe class PlayerCache
         var pawn = Pawn(player);
         if (pawn == null)
             return 0;
-        return (uint)player!.Slot < Slots ? Pointers[player.Slot] : pawn.Handle;
+        int slot = Slot(player);
+        return (uint)slot < Slots ? Pointers[slot] : pawn.Handle;
     }
 
     public static CBasePlayerWeapon? ActiveWeapon(CCSPlayerController? player)
@@ -135,7 +164,7 @@ public static unsafe class PlayerCache
         if (pawn == 0)
             return null;
 
-        int slot = player!.Slot;
+        int slot = Slot(player);
         if ((uint)slot >= Slots)
             return Pawn(player)?.WeaponServices?.ActiveWeapon.Value;
 
@@ -146,7 +175,7 @@ public static unsafe class PlayerCache
 
         WeaponStamps[slot] = _generation;
         WeaponHandles[slot] = raw;
-        nint pointer = services == 0 ? 0 : EntitySystem.GetEntityByHandle(raw) ?? 0;
+        nint pointer = services == 0 ? 0 : Lookup(raw);
         if (pointer == 0)
         {
             WeaponPointers[slot] = 0;
@@ -171,7 +200,7 @@ public static unsafe class PlayerCache
         if (weapon == null)
             return null;
 
-        int slot = player!.Slot;
+        int slot = Slot(player);
         if ((uint)slot >= Slots)
             return weapon.DesignerName;
 
@@ -184,7 +213,7 @@ public static unsafe class PlayerCache
         if (string.IsNullOrEmpty(designer))
             return null;
 
-        int slot = player!.Slot;
+        int slot = Slot(player);
         if ((uint)slot < Slots && WeaponNames[slot] is { } cached)
             return cached;
 
@@ -198,10 +227,14 @@ public static unsafe class PlayerCache
 
     public static bool Alive(CCSPlayerController? player)
     {
-        if (player == null || (uint)player.Slot >= Slots)
-            return player?.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
+        if (player == null)
+            return false;
 
-        return Pawn(player) != null && *(byte*)(Pointers[player.Slot] + Offsets.LifeStateOffset) == (byte)LifeState_t.LIFE_ALIVE;
+        int slot = Slot(player);
+        if ((uint)slot >= Slots)
+            return Valid(player) && player.PlayerPawn.Value?.LifeState == (byte)LifeState_t.LIFE_ALIVE;
+
+        return Pawn(player) != null && *(byte*)(Pointers[slot] + Offsets.LifeStateOffset) == (byte)LifeState_t.LIFE_ALIVE;
     }
 
     public static byte LifeState(nint pawn) => *(byte*)(pawn + Offsets.LifeStateOffset);
